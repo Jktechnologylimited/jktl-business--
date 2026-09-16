@@ -29,6 +29,7 @@ interface SessionShape {
   onboardingComplete: boolean;
   businessType: BusinessType;
   businessName: string;
+  avatarUrl: string | null;
 }
 
 const defaultSession: SessionShape = {
@@ -36,6 +37,7 @@ const defaultSession: SessionShape = {
   onboardingComplete: false,
   businessType: "salon",
   businessName: "Glam Hair Studio",
+  avatarUrl: null,
 };
 
 function readSession(): SessionShape {
@@ -140,6 +142,25 @@ export interface NewInvoiceInput {
   status: InvoiceStatus;
 }
 
+export interface NewMemberInput {
+  name: string;
+  email: string;
+  role: "manager" | "staff";
+  title: string;
+}
+
+export interface AccountPatch {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export interface NotificationPrefs {
+  bookingReminders: boolean;
+  lowStockAlerts: boolean;
+  dailySummaryEmail: boolean;
+}
+
 interface BusinessStore {
   hydrated: boolean;
   authenticated: boolean;
@@ -181,6 +202,14 @@ interface BusinessStore {
   deleteInvoice: (id: string) => void;
 
   adjustStock: (productId: string, delta: number, reason: string) => void;
+
+  addMember: (input: NewMemberInput) => void;
+  removeMember: (id: string) => void;
+  updateAccount: (patch: AccountPatch) => void;
+  setAvatar: (dataUrl: string | null) => void;
+
+  notificationPrefs: NotificationPrefs;
+  setNotificationPref: (key: keyof NotificationPrefs, value: boolean) => void;
 }
 
 function computeLineTotals(items: { quantity: number; unitPriceKobo: number }[]) {
@@ -204,6 +233,7 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
       online: typeof navigator === "undefined" ? true : navigator.onLine,
       data: {
         ...state.data,
+        user: { ...state.data.user, avatarUrl: session.avatarUrl },
         profile: {
           ...state.data.profile,
           businessType: session.businessType,
@@ -219,16 +249,18 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
     if (email.trim().toLowerCase() !== DEMO_EMAIL || password !== DEMO_PASSWORD) {
       return { ok: false, error: "That email and password don't match a JKTL Business account." };
     }
-    const session: SessionShape = { ...defaultSession, authenticated: true, onboardingComplete: true };
+    const existing = readSession();
+    const session: SessionShape = { ...defaultSession, authenticated: true, onboardingComplete: true, avatarUrl: existing.avatarUrl };
     writeSession(session);
-    set({ authenticated: true, onboardingComplete: true });
+    set((state) => ({ authenticated: true, onboardingComplete: true, data: { ...state.data, user: { ...state.data.user, avatarUrl: existing.avatarUrl } } }));
     return { ok: true };
   },
 
   openDemo: () => {
-    const session: SessionShape = { ...defaultSession, authenticated: true, onboardingComplete: true };
+    const existing = readSession();
+    const session: SessionShape = { ...defaultSession, authenticated: true, onboardingComplete: true, avatarUrl: existing.avatarUrl };
     writeSession(session);
-    set({ authenticated: true, onboardingComplete: true });
+    set((state) => ({ authenticated: true, onboardingComplete: true, data: { ...state.data, user: { ...state.data.user, avatarUrl: existing.avatarUrl } } }));
   },
 
   startSignup: (name, businessName) => {
@@ -471,6 +503,43 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
         ],
       },
     }));
+  },
+
+  // ---- Team members ----
+  addMember: (input) => {
+    const orgId = get().data.organization.id;
+    const member = {
+      id: makeId("mem"),
+      organizationId: orgId,
+      userId: makeId("usr"),
+      name: input.name,
+      email: input.email,
+      role: input.role,
+      title: input.title,
+      active: true,
+    };
+    set((state) => ({ data: { ...state.data, members: [...state.data.members, member] } }));
+  },
+  removeMember: (id) => {
+    set((state) => ({
+      data: { ...state.data, members: state.data.members.filter((m) => m.id !== id || m.role === "owner") },
+    }));
+  },
+
+  // ---- Account ----
+  updateAccount: (patch) => {
+    set((state) => ({ data: { ...state.data, user: { ...state.data.user, ...patch } } }));
+  },
+  setAvatar: (dataUrl) => {
+    const session = readSession();
+    writeSession({ ...session, avatarUrl: dataUrl });
+    set((state) => ({ data: { ...state.data, user: { ...state.data.user, avatarUrl: dataUrl } } }));
+  },
+
+  // ---- Notification preferences (session-only, not persisted) ----
+  notificationPrefs: { bookingReminders: true, lowStockAlerts: true, dailySummaryEmail: false },
+  setNotificationPref: (key, value) => {
+    set((state) => ({ notificationPrefs: { ...state.notificationPrefs, [key]: value } }));
   },
 }));
 

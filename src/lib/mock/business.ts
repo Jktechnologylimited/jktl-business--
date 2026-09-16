@@ -36,15 +36,16 @@ export function demoOwner(): AppUser {
     name: "Ada Briggs",
     email: "ada@glamhair.jktl.com.ng",
     phone: "0803 441 2291",
+    avatarUrl: null,
   };
 }
 
 export function demoMembers(): OrganizationMember[] {
   return [
-    { id: "mem_ada", organizationId: ORG_ID, userId: OWNER_USER_ID, role: "owner", title: "Owner · Senior Stylist", active: true },
-    { id: "mem_tonye", organizationId: ORG_ID, userId: "usr_tonye", role: "staff", title: "Stylist", active: true },
-    { id: "mem_ibinabo", organizationId: ORG_ID, userId: "usr_ibinabo", role: "staff", title: "Stylist", active: true },
-    { id: "mem_grace", organizationId: ORG_ID, userId: "usr_grace", role: "manager", title: "Front Desk", active: true },
+    { id: "mem_ada", organizationId: ORG_ID, userId: OWNER_USER_ID, name: "Ada Briggs", email: "ada@glamhair.jktl.com.ng", role: "owner", title: "Owner · Senior Stylist", active: true },
+    { id: "mem_tonye", organizationId: ORG_ID, userId: "usr_tonye", name: "Tonye Fiberesima", email: "tonye@glamhair.jktl.com.ng", role: "staff", title: "Stylist", active: true },
+    { id: "mem_ibinabo", organizationId: ORG_ID, userId: "usr_ibinabo", name: "Ibinabo Wodi", email: "ibinabo@glamhair.jktl.com.ng", role: "staff", title: "Stylist", active: true },
+    { id: "mem_grace", organizationId: ORG_ID, userId: "usr_grace", name: "Grace Okoro", email: "grace@glamhair.jktl.com.ng", role: "manager", title: "Front Desk", active: true },
   ];
 }
 

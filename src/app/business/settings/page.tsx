@@ -1,50 +1,238 @@
 "use client";
 
+import { useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { FilterTabs } from "@/components/app/filter-tabs";
+import { Button } from "@/components/ui/button";
+import { Sheet } from "@/components/ui/sheet";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Toggle } from "@/components/ui/toggle";
+import { StatusPill } from "@/components/app/status-pill";
+import { MemberForm } from "@/components/settings/member-form";
+import { AccountForm } from "@/components/settings/account-form";
+import { PasswordForm } from "@/components/settings/password-form";
+import { AvatarUpload } from "@/components/settings/avatar-upload";
 import { useBusinessStore } from "@/lib/store";
-import { formatKobo, formatShortDate } from "@/lib/format";
+import { useToastStore } from "@/lib/toast";
+import { formatKobo, formatShortDate, initials } from "@/lib/format";
+import type { OrganizationMember } from "@/lib/types";
 
-export default function SettingsPage() {
-  const profile = useBusinessStore((s) => s.data.profile);
-  const infra = useBusinessStore((s) => s.data.infrastructure);
+type Tab = "business" | "users" | "account" | "infrastructure";
 
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Settings</h1>
-
-      <section className="rounded-2xl border border-border p-4">
-        <h2 className="font-display text-sm font-semibold text-ink">Business</h2>
-        <dl className="mt-3 flex flex-col gap-2 text-sm">
-          <Row label="Name" value={profile.displayName} />
-          <Row label="Phone" value={profile.phone} />
-          <Row label="Email" value={profile.email} />
-          <Row label="Address" value={`${profile.address}, ${profile.city}, ${profile.state}`} />
-        </dl>
-      </section>
-
-      <section className="rounded-2xl border border-border p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-sm font-semibold text-ink">Your plan</h2>
-          <span className="text-xs font-medium text-primary">{infra.planName}</span>
-        </div>
-        <dl className="mt-3 flex flex-col gap-2 text-sm">
-          <Row label="Price" value={`${formatKobo(infra.priceKoboPerYear)}/year`} />
-          <Row label="Renewal" value={formatShortDate(infra.renewalDate)} />
-          <Row label="Storage" value={`${infra.storageUsedGb} GB / ${infra.storageLimitGb} GB`} />
-          <Row label="Database" value="Active" />
-          <Row label="Hosting" value="Active" />
-          <Row label="SSL" value="Active" />
-          <Row label="Business address" value={infra.domain} />
-        </dl>
-      </section>
+    <div className="flex items-center justify-between py-2">
+      <dt className="text-sm text-ink-muted">{label}</dt>
+      <dd className="text-sm font-medium text-ink">{value}</dd>
     </div>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+export default function SettingsPage() {
+  const profile = useBusinessStore((s) => s.data.profile);
+  const infra = useBusinessStore((s) => s.data.infrastructure);
+  const user = useBusinessStore((s) => s.data.user);
+  const members = useBusinessStore((s) => s.data.members);
+  const addMember = useBusinessStore((s) => s.addMember);
+  const removeMember = useBusinessStore((s) => s.removeMember);
+  const updateAccount = useBusinessStore((s) => s.updateAccount);
+  const setAvatar = useBusinessStore((s) => s.setAvatar);
+  const notificationPrefs = useBusinessStore((s) => s.notificationPrefs);
+  const setNotificationPref = useBusinessStore((s) => s.setNotificationPref);
+  const showToast = useToastStore((s) => s.show);
+
+  const [tab, setTab] = useState<Tab>("business");
+  const [addingMember, setAddingMember] = useState(false);
+  const [removingMember, setRemovingMember] = useState<OrganizationMember | null>(null);
+  const [editingAccount, setEditingAccount] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
   return (
-    <div className="flex items-center justify-between">
-      <dt className="text-ink-muted">{label}</dt>
-      <dd className="font-medium text-ink">{value}</dd>
+    <div className="flex flex-col gap-5">
+      <PageHeader title="Settings" />
+
+      <FilterTabs<Tab>
+        options={[
+          { value: "business", label: "Business" },
+          { value: "users", label: "Users" },
+          { value: "account", label: "Account" },
+          { value: "infrastructure", label: "Plan" },
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
+
+      {tab === "business" ? (
+        <section className="rounded-2xl border border-border p-4">
+          <h2 className="font-display text-sm font-semibold text-ink">Business</h2>
+          <dl className="mt-2 divide-y divide-border">
+            <Row label="Name" value={profile.displayName} />
+            <Row label="Type" value={profile.businessType[0].toUpperCase() + profile.businessType.slice(1)} />
+            <Row label="Phone" value={profile.phone} />
+            <Row label="Email" value={profile.email} />
+            <Row label="Address" value={`${profile.address}, ${profile.city}, ${profile.state}`} />
+          </dl>
+          <p className="mt-3 text-xs text-ink-muted">Editing business details and logo upload arrive with Phase 2.</p>
+        </section>
+      ) : null}
+
+      {tab === "users" ? (
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-sm font-semibold text-ink">Team members</h2>
+            <Button size="sm" onClick={() => setAddingMember(true)}>
+              <Plus className="size-4" /> Add
+            </Button>
+          </div>
+          <div className="divide-y divide-border rounded-2xl border border-border">
+            {members.map((m) => (
+              <div key={m.id} className="flex items-center gap-3 px-4 py-3.5">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent-strong">
+                  {initials(m.name)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-ink">{m.name}</div>
+                  <div className="truncate text-xs text-ink-muted">{m.title}</div>
+                </div>
+                <StatusPill tone={m.role === "owner" ? "primary" : "neutral"}>
+                  {m.role[0].toUpperCase() + m.role.slice(1)}
+                </StatusPill>
+                {m.role !== "owner" ? (
+                  <button
+                    onClick={() => setRemovingMember(m)}
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-danger hover:bg-danger-soft"
+                    aria-label="Remove"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {tab === "account" ? (
+        <div className="flex flex-col gap-5">
+          <section className="rounded-2xl border border-border p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-sm font-semibold text-ink">Profile</h2>
+              <button className="text-sm font-medium text-primary" onClick={() => setEditingAccount(true)}>
+                Edit
+              </button>
+            </div>
+            <div className="mt-3">
+              <AvatarUpload name={user.name} src={user.avatarUrl} onChange={setAvatar} />
+            </div>
+            <dl className="mt-4 divide-y divide-border border-t border-border pt-1">
+              <Row label="Name" value={user.name} />
+              <Row label="Email" value={user.email} />
+              <Row label="Phone" value={user.phone} />
+            </dl>
+          </section>
+
+          <section className="rounded-2xl border border-border p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-sm font-semibold text-ink">Password</h2>
+              <button className="text-sm font-medium text-primary" onClick={() => setChangingPassword(true)}>
+                Change
+              </button>
+            </div>
+            <p className="mt-1 text-sm text-ink-muted">••••••••</p>
+          </section>
+
+          <section className="rounded-2xl border border-border p-4">
+            <h2 className="font-display text-sm font-semibold text-ink">Notifications</h2>
+            <div className="mt-1 divide-y divide-border">
+              <Toggle
+                label="Booking reminders"
+                description="Notify me ahead of upcoming bookings"
+                checked={notificationPrefs.bookingReminders}
+                onChange={(v) => setNotificationPref("bookingReminders", v)}
+              />
+              <Toggle
+                label="Low-stock alerts"
+                description="Notify me when a product hits its threshold"
+                checked={notificationPrefs.lowStockAlerts}
+                onChange={(v) => setNotificationPref("lowStockAlerts", v)}
+              />
+              <Toggle
+                label="Daily summary email"
+                description="A morning recap of yesterday's numbers"
+                checked={notificationPrefs.dailySummaryEmail}
+                onChange={(v) => setNotificationPref("dailySummaryEmail", v)}
+              />
+            </div>
+            <p className="mt-2 text-xs text-ink-muted">Actual emails send once Resend is connected in Phase 2.</p>
+          </section>
+        </div>
+      ) : null}
+
+      {tab === "infrastructure" ? (
+        <section className="rounded-2xl border border-border p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-sm font-semibold text-ink">Your plan</h2>
+            <span className="text-xs font-medium text-primary">{infra.planName}</span>
+          </div>
+          <dl className="mt-2 divide-y divide-border">
+            <Row label="Price" value={`${formatKobo(infra.priceKoboPerYear)}/year`} />
+            <Row label="Renewal" value={formatShortDate(infra.renewalDate)} />
+            <Row label="Storage" value={`${infra.storageUsedGb} GB / ${infra.storageLimitGb} GB`} />
+            <Row label="Database" value="Active" />
+            <Row label="Hosting" value="Active" />
+            <Row label="SSL" value="Active" />
+            <Row label="Business address" value={infra.domain} />
+          </dl>
+        </section>
+      ) : null}
+
+      <Sheet open={addingMember} onClose={() => setAddingMember(false)} title="Add team member">
+        <MemberForm
+          onCancel={() => setAddingMember(false)}
+          onSubmit={(input) => {
+            addMember(input);
+            setAddingMember(false);
+            showToast(`${input.name} added to the team`);
+          }}
+        />
+      </Sheet>
+
+      <Sheet open={editingAccount} onClose={() => setEditingAccount(false)} title="Edit profile">
+        <AccountForm
+          initial={user}
+          onCancel={() => setEditingAccount(false)}
+          onSubmit={(patch) => {
+            updateAccount(patch);
+            setEditingAccount(false);
+            showToast("Profile updated");
+          }}
+        />
+      </Sheet>
+
+      <Sheet open={changingPassword} onClose={() => setChangingPassword(false)} title="Change password">
+        <PasswordForm
+          onCancel={() => setChangingPassword(false)}
+          onSubmit={() => {
+            setChangingPassword(false);
+            showToast("Password updated");
+          }}
+        />
+      </Sheet>
+
+      <ConfirmDialog
+        open={!!removingMember}
+        title={`Remove ${removingMember?.name}?`}
+        description="They'll lose access to JKTL Business immediately."
+        onCancel={() => setRemovingMember(null)}
+        onConfirm={() => {
+          if (removingMember) {
+            removeMember(removingMember.id);
+            showToast("Team member removed");
+          }
+          setRemovingMember(null);
+        }}
+      />
     </div>
   );
 }

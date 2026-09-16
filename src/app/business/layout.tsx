@@ -26,7 +26,7 @@ export default function BusinessLayout({ children }: { children: React.ReactNode
   if (!hydrated || !authenticated || !onboardingComplete) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-primary">
-        <JktlMark className="size-14 text-2xl" />
+        <JktlMark className="size-14" />
       </div>
     );
   }

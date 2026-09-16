@@ -1,7 +1,7 @@
 # JKTL Business
 
 A mobile-first, multi-tenant business platform for Nigerian SMEs. First
-vertical: **SalonDesk** for hair salons.
+vertical: hair salons.
 
 See **CHECKPOINT.md** for what's built in this pass, what was decided along
 the way, and what's next.

@@ -6,8 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { Banknote, CalendarClock, House, LayoutGrid, LogOut, Settings, Users, WifiOff } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { JktlMark } from "./logo";
+import { Avatar } from "./avatar";
 import { useBusinessStore, useCurrentIndustry } from "@/lib/store";
-import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { NavIcon } from "@/lib/industry";
 
@@ -53,7 +53,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border bg-paper lg:flex print:hidden">
         <div className="flex items-center gap-2.5 px-5 py-5">
-          <JktlMark className="size-9 text-base" />
+          <JktlMark className="size-9" />
           <div className="min-w-0">
             <div className="truncate font-display text-[15px] font-semibold tracking-tight text-ink">
               {profile.displayName}
@@ -102,9 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="border-t border-border p-3">
           <details className="group relative">
             <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-lg p-2 hover:bg-surface">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent-strong">
-                {initials(user.name)}
-              </span>
+              <Avatar name={user.name} src={user.avatarUrl} className="size-8 text-xs" />
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{user.name}</span>
             </summary>
             <div className="absolute bottom-full left-0 mb-1 w-full min-w-[180px] rounded-xl border border-border bg-paper p-1 shadow-lg">
@@ -125,7 +123,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobile top header */}
       <header className="flex items-center justify-between border-b border-border bg-paper px-4 py-3 lg:hidden print:hidden">
         <div className="flex items-center gap-2.5">
-          <JktlMark className="size-8 text-sm" />
+          <JktlMark className="size-8" />
           <div className="min-w-0">
             <div className="truncate font-display text-sm font-semibold tracking-tight text-ink">
               {profile.displayName}
@@ -134,8 +132,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <details className="group relative">
-          <summary className="flex size-9 cursor-pointer list-none items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent-strong">
-            {initials(user.name)}
+          <summary className="cursor-pointer list-none">
+            <Avatar name={user.name} src={user.avatarUrl} className="size-9 text-xs" />
           </summary>
           <div className="absolute right-0 z-40 mt-1 w-48 rounded-xl border border-border bg-paper p-1 shadow-lg">
             <Link href="/business/settings" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface">

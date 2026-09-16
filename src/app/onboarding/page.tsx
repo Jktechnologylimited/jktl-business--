@@ -7,16 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/app/field";
 import { JktlMark } from "@/components/app/logo";
+import { ServiceForm } from "@/components/services/service-form";
 import { useBusinessStore } from "@/lib/store";
 import { BUSINESS_TYPE_OPTIONS, getIndustry } from "@/lib/industry";
 import { cn } from "@/lib/utils";
 import type { BusinessType } from "@/lib/types";
 
-const STEPS = ["Business type", "Business details", "Finish"] as const;
+const STEPS = ["Business type", "Business details", "First service", "Finish"] as const;
 
 export default function OnboardingPage() {
   const router = useRouter();
   const profile = useBusinessStore((s) => s.data.profile);
+  const addService = useBusinessStore((s) => s.addService);
   const completeOnboarding = useBusinessStore((s) => s.completeOnboarding);
 
   const [step, setStep] = useState(0);
@@ -25,6 +27,7 @@ export default function OnboardingPage() {
   const [phone, setPhone] = useState(profile.phone);
   const [city, setCity] = useState(profile.city);
   const [state, setState] = useState(profile.state);
+  const [addedService, setAddedService] = useState(false);
 
   const industry = getIndustry(businessType);
 
@@ -36,7 +39,7 @@ export default function OnboardingPage() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 py-8">
       <div className="flex items-center gap-2">
-        <JktlMark className="size-8 text-sm" />
+        <JktlMark className="size-8" />
         <span className="font-display text-sm font-semibold text-ink">Set up your business</span>
       </div>
 
@@ -93,6 +96,33 @@ export default function OnboardingPage() {
       ) : null}
 
       {step === 2 ? (
+        <div className="mt-8 flex-1">
+          <h1 className="font-display text-xl font-bold tracking-tight text-ink">Add your first {industry.catalogLabel.toLowerCase().replace(/s$/, "")}</h1>
+          <p className="mt-1.5 text-sm text-ink-muted">
+            {industry.productName} already comes with sample {industry.catalogLabel.toLowerCase()} so you can see how
+            it works — add one of your own now, or skip and do it later from the menu.
+          </p>
+          {addedService ? (
+            <div className="mt-6 flex items-center gap-2 rounded-2xl bg-primary-soft px-4 py-3 text-sm font-medium text-primary-strong">
+              <Check className="size-4" /> Added — you can add more anytime from Services.
+            </div>
+          ) : (
+            <div className="mt-6">
+              <ServiceForm
+                categories={industry.serviceCategories}
+                cancelLabel="Skip for now"
+                onCancel={() => setStep(3)}
+                onSubmit={(input) => {
+                  addService(input);
+                  setAddedService(true);
+                }}
+              />
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {step === 3 ? (
         <div className="mt-8 flex flex-1 flex-col items-center justify-center text-center">
           <div className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
             <Check className="size-7" />
@@ -100,29 +130,29 @@ export default function OnboardingPage() {
           <h1 className="mt-5 font-display text-xl font-bold tracking-tight text-ink">You&apos;re all set, {displayName || "there"}</h1>
           <p className="mt-2 max-w-xs text-sm text-ink-muted">
             {industry.productName} is ready with sample {industry.bookingLabelPlural.toLowerCase()}, customers and
-            {" "}{industry.catalogLabel.toLowerCase()} so you can see it in action. Add your first{" "}
-            {industry.catalogLabel.toLowerCase().slice(0, -1) || industry.catalogLabel.toLowerCase()} anytime from the
-            menu.
+            {" "}{industry.catalogLabel.toLowerCase()} so you can see it in action. Add more anytime from the menu.
           </p>
         </div>
       ) : null}
 
-      <div className="mt-8 flex gap-3">
-        {step > 0 ? (
-          <Button type="button" variant="outline" className="flex-1" onClick={() => setStep((s) => s - 1)}>
-            Back
-          </Button>
-        ) : null}
-        {step < 2 ? (
-          <Button type="button" className="flex-1" onClick={() => setStep((s) => s + 1)}>
-            Continue
-          </Button>
-        ) : (
-          <Button type="button" className="flex-1" onClick={finish}>
-            Go to dashboard
-          </Button>
-        )}
-      </div>
+      {!(step === 2 && !addedService) ? (
+        <div className="mt-8 flex gap-3">
+          {step > 0 ? (
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setStep((s) => s - 1)}>
+              Back
+            </Button>
+          ) : null}
+          {step < 3 ? (
+            <Button type="button" className="flex-1" onClick={() => setStep((s) => s + 1)}>
+              Continue
+            </Button>
+          ) : (
+            <Button type="button" className="flex-1" onClick={finish}>
+              Go to dashboard
+            </Button>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

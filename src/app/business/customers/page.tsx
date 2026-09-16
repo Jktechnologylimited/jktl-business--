@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { SearchInput } from "@/components/app/search-input";
 import { EmptyState } from "@/components/app/empty-state";
+import { ListSkeleton } from "@/components/app/skeleton";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { CustomerForm } from "@/components/customers/customer-form";
@@ -19,12 +20,27 @@ export default function CustomersPage() {
   const showToast = useToastStore((s) => s.show);
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return customers;
     return customers.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q));
   }, [customers, query]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-5">
+        <PageHeader title="Customers" />
+        <ListSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">

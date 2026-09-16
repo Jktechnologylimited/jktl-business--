@@ -11,11 +11,13 @@ import type { Service } from "@/lib/types";
 export function ServiceForm({
   initial,
   categories,
+  cancelLabel = "Cancel",
   onSubmit,
   onCancel,
 }: {
   initial?: Service;
   categories: string[];
+  cancelLabel?: string;
   onSubmit: (input: NewServiceInput) => void;
   onCancel: () => void;
 }) {
@@ -68,7 +70,7 @@ export function ServiceForm({
       </label>
       <div className="mt-1 flex gap-3">
         <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
-          Cancel
+          {cancelLabel}
         </Button>
         <Button type="submit" className="flex-1">
           Save service

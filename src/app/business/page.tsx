@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Banknote, CalendarPlus, Package, Sparkles, UserPlus } from "lucide-react";
 import { StatTile } from "@/components/app/stat-tile";
 import { StatusPill, bookingStatusMeta } from "@/components/app/status-pill";
+import { DashboardSkeleton } from "@/components/app/skeleton";
 import { useBusinessStore } from "@/lib/store";
 import { formatKobo, formatLongDate, formatTime, firstName } from "@/lib/format";
 import {
@@ -29,6 +31,14 @@ function greeting(hour: number) {
 export default function DashboardPage() {
   const data = useBusinessStore((s) => s.data);
   const now = new Date();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 350);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) return <DashboardSkeleton />;
 
   const today = todaysBookings(data.bookings, now);
   const upcoming = upcomingBookings(data.bookings, now, 3);

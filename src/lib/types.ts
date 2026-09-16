@@ -57,12 +57,15 @@ export interface AppUser {
   name: string;
   email: string;
   phone: string;
+  avatarUrl: string | null;
 }
 
 export interface OrganizationMember {
   id: string;
   organizationId: string;
   userId: string;
+  name: string;
+  email: string;
   role: MemberRole;
   title: string;
   active: boolean;

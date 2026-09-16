@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "JKTL Business — SalonDesk",
-    short_name: "SalonDesk",
+    name: "JKTL Business",
+    short_name: "JKTL Business",
     description: "Manage your customers, sales, bookings, inventory and invoices — all in one place.",
     id: "/business",
     start_url: "/business",

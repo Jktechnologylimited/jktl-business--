@@ -25,7 +25,7 @@ export default function RootPage() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-primary">
-      <JktlMark className="size-16 text-3xl" />
+      <JktlMark className="size-16" />
       <div className="font-display text-sm font-medium tracking-wide text-white/80">JKTL Business</div>
     </div>
   );

@@ -1,10 +1,11 @@
 """Generate JKTL Business icons: the real JKTL logo mark, cropped to its
-content and centered on a rounded brand-green square (matching the app's
-in-app JktlMark component)."""
+content and centered on a plain white square. Platform icons still need a
+solid backing so they don't look broken on a home screen; the in-app mark
+itself (jktl-logo.png) is fully transparent with no colored box."""
 from PIL import Image, ImageDraw
 import os
 
-INK_TEAL = (15, 110, 92, 255)  # brand primary — the "green box"
+ICON_BG = (255, 255, 255, 255)  # plain white backing, no brand-color box
 HERE = os.path.dirname(__file__)
 OUT_DIR = os.path.join(HERE, "..", "public")
 SOURCE_LOGO = os.path.join(HERE, "brand", "jktl-logo-source.png")
@@ -32,7 +33,7 @@ def rounded_mask(size, radius):
 
 
 def make_icon(size, radius_ratio, path, logo_scale=0.72, rounded=True):
-    bg = Image.new("RGBA", (size, size), INK_TEAL)
+    bg = Image.new("RGBA", (size, size), ICON_BG)
     if rounded:
         bg.putalpha(rounded_mask(size, int(size * radius_ratio)))
     logo = load_cropped_logo()

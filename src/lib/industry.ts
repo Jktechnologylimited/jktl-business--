@@ -33,7 +33,7 @@ export interface IndustryConfig {
 const salon: IndustryConfig = {
   id: "salon",
   label: "Hair salon",
-  productName: "SalonDesk",
+  productName: "JKTL Business",
   tagline: "Run your salon from your phone.",
   staffLabel: "Stylist",
   staffLabelPlural: "Stylists",

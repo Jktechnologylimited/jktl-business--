@@ -1,86 +1,60 @@
-# JKTL Business — Checkpoint 2 (full salon module set)
+# JKTL Business — Checkpoint 4 (branding fixes + profile photos)
 
-Builds on Checkpoint 1 (shell, auth, dashboard). This pass: real JKTL brand
-mark, and every remaining salon module wired to working CRUD.
+Builds on Checkpoint 3 (all Phase 1 gaps closed). This pass: brand cleanup
+requested after reviewing the icon and copy, plus profile photo upload.
 
-## What changed since Checkpoint 1
+## What changed since Checkpoint 3
 
-- **Brand mark** — replaced the placeholder generated "J" icon with the
-  actual JKTL logo (uploaded), cropped to content and composited onto the
-  brand-teal rounded square. Regenerated `icon-192.png`, `icon-512.png`,
-  `icon-512-maskable.png`, `apple-touch-icon.png`, `favicon.png`, and added
-  `public/jktl-logo.png` (transparent) for in-app use. `JktlMark` now
-  renders the real logo image instead of a drawn letterform.
-- **Full CRUD store** (`src/lib/store.ts`) — add/update/delete for
-  customers, services, products, bookings, expenses, invoices; sale
-  creation that also decrements product stock and logs an inventory
-  movement automatically; manual stock adjustment.
-- **Shared UI added**: `Sheet` (bottom sheet on mobile / modal on desktop),
-  `ConfirmDialog`, `Toaster` + toast store, `SearchInput`, `FilterTabs`,
-  `PageHeader` — every module below is built from these.
-- **Every module is now real**, not a placeholder:
-  - **Customers** — list, search, add/edit sheet, detail page with visit
-    history (bookings + sales merged), delete.
-  - **Services** — category filter tabs, add/edit, delete.
-  - **Products** — search, low-stock badge inline, add/edit, delete.
-  - **Bookings** — Today/Upcoming/Past/All tabs, search, quick "mark
-    completed", full edit, delete.
-  - **Sales** — a real line-item builder (add service/product lines, live
-    subtotal/discount/total), records against the store, decrements stock.
-  - **Inventory** — stock-levels tab + movements-history tab, manual
-    add/remove stock with a reason logged.
-  - **Expenses** — category filter tabs, running total for the filtered
-    view, add/delete.
-  - **Invoices** — list with status tabs, create with generic line items,
-    detail page with mark-paid/mark-pending, print (via `window.print()`,
-    with app chrome hidden through `print:hidden`), and copy-summary to
-    clipboard.
-  - **Reports** — Today/This week/This month tabs: sales, expenses, net,
-    outstanding, booking-status breakdown, top services, top products,
-    low-stock list. New selectors added to `selectors.ts` for all of this
-    (`salesInRangeTotalKobo`, `topServicesInRange`, etc.).
+- **Removed the green box from the logo everywhere.** The in-app
+  `JktlMark` no longer wraps the logo in a colored rounded square — it's
+  just the transparent logo image now, sized by whatever container it's
+  in. The generated PWA icons (`icon-192`, `icon-512`, the maskable
+  variant, the apple-touch-icon, the favicon) switched from a teal
+  backing to plain white — a home-screen icon still needs *some* solid
+  backing so it doesn't look broken on a real device, but it's no longer
+  brand-teal. `scripts/make-icons.py` reflects this; rerun it if you want
+  a different treatment.
+- **"SalonDesk" is gone, everywhere.** It only ever existed in the salon
+  industry config's `productName` (inconsistent with every other vertical,
+  which already said "JKTL Business") plus a few copies of it in page
+  metadata and the wordmark. Fixed in `industry.ts`, `manifest.ts`,
+  `layout.tsx` metadata, the `JktlWordmark` component (dropped the
+  subtitle line entirely rather than show "JKTL Business" twice), and
+  `README.md`.
+- **Profile photo upload** — new `AvatarUpload` component in Settings →
+  Account. Picks an image, center-crops and downsizes it to 256×256 client
+  side (canvas, JPEG @ 0.85 quality) before storing it, so a phone photo
+  doesn't balloon into megabytes of stored data. The resulting data URL is
+  persisted alongside the session (survives a reload, clears on logout,
+  like the rest of the mock session). The photo now shows wherever the
+  account avatar appears — sidebar, mobile header, Settings — falling back
+  to initials when none is set. Added a small shared `Avatar` component so
+  that fallback logic lives in one place instead of being copy-pasted.
 
 ## Verified
 
-`tsc --noEmit`, `eslint`, and `npm run build` all pass clean — 21 routes (2
-of them dynamic: `/business/customers/[id]`, `/business/invoices/[id]`).
-As in Checkpoint 1, the build was proven with a temporary local font swap
-since this sandbox can't reach `fonts.googleapis.com`; the real
-Manrope/Public Sans are back in for delivery and will resolve normally
-wherever this actually runs.
+`tsc --noEmit`, `eslint`, and `npm run build` all pass clean — still 21
+routes. Build proven with the same temporary-local-font trick as every
+prior checkpoint (this sandbox has no route to `fonts.googleapis.com`);
+reverted to real Manrope/Public Sans before packaging.
 
-Two real lint issues surfaced and were fixed along the way, worth knowing
-about since they reflect genuine React 19 correctness rules, not style
-nitpicks: a `Date.now()` call directly in a `useState` initializer (fixed
-with a lazy initializer function) and a `setState` call inside a bare
-`useEffect` (removed in favor of the lazy initializer).
+**Not yet checked in a real browser**: the actual file-picker → crop →
+store flow for avatar upload, and how the new white-background icons
+render at each real size (192/512/apple-touch) on an actual home screen.
+Those are exactly the kind of thing static analysis can't catch — worth
+five minutes on a real phone before considering this final.
 
-**Not yet done**: an actual in-browser click-through. I'd specifically
-check the Sales line-item builder and the Bookings date/time picker on a
-real phone before trusting this fully — those are the two most
-interaction-heavy pieces and the ones I'm least able to verify without a
-browser in this environment.
+## Decision worth flagging
 
-## Decisions worth flagging
-
-- Invoice numbers are assigned as `INV-{count+1}` from the live invoice
-  array length — fine for a demo, but will produce a collision if an
-  invoice is deleted and another created after. Not a real risk until
-  Phase 2 gives invoices a real sequence in Postgres.
-- "Print / Download" on an invoice uses the browser's native print dialog
-  (which can save as PDF) rather than a generated PDF file — genuinely
-  functional, not a placeholder, but worth knowing it depends on the
-  browser's print-to-PDF rather than a server-rendered PDF.
-- Deleting a service or product doesn't check whether past bookings/sales
-  reference it — historical records keep their own copy of the name and
-  price, so nothing breaks, but there's no "can't delete, it's in use"
-  guard. Reasonable for V1; worth a guard later if it matters.
+Avatar images are stored as base64 data URLs in `localStorage` alongside
+the session — fine for a single ~20–40KB compressed photo, but this is a
+Phase 1 convenience, not how Phase 2 should work. Real file storage
+(Section 17's `files` table + actual blob storage) is the right home for
+this once the backend exists; the client-side resize logic in
+`lib/image.ts` is still useful then; the storage destination isn't.
 
 ## Next steps
 
-Frontend acceptance criteria (brief Section 26) are now essentially all
-met with mock data. Worth a manual click-through pass next, then it's
-ready to review against "would a real salon owner in Yenagoa use this
-every day" before considering Phase 2 (Neon, real auth, Resend) — which
-still hasn't been started, per the brief's instruction not to start it
-automatically.
+Same as Checkpoint 3: this is a good point for your own click-through
+review. Phase 2 (Neon, real auth, multi-tenancy, Resend) still hasn't
+started, per the brief's instruction not to begin it automatically.

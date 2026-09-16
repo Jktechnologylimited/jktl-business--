@@ -17,13 +17,13 @@ const publicSans = Public_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "JKTL Business — SalonDesk",
+  title: "JKTL Business",
   description: "Manage your customers, sales, bookings, inventory and invoices — all in one place.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "SalonDesk",
+    title: "JKTL Business",
   },
   icons: {
     icon: "/favicon.png",
