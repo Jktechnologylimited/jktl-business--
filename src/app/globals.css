@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  /* Surfaces */
+  --color-paper: #ffffff;
+  --color-surface: #f5f6f8;
+  --color-surface-strong: #eceef2;
+  --color-border: #e4e7eb;
+  --color-border-strong: #d6dae2;
+
+  /* Text */
+  --color-ink: #12151b;
+  --color-ink-muted: #5b6472;
+  --color-ink-faint: #8a92a1;
+
+  /* Brand */
+  --color-primary: #0f6e5c;
+  --color-primary-strong: #0b5747;
+  --color-primary-soft: #e3f1ed;
+
+  /* Accent (gold) */
+  --color-accent: #c98a2c;
+  --color-accent-strong: #a6701f;
+  --color-accent-soft: #f8ecd8;
+
+  /* Status */
+  --color-info: #2f6fad;
+  --color-info-soft: #e6eef7;
+  --color-danger: #c4432b;
+  --color-danger-soft: #f8e7e2;
+}
+
+@theme inline {
+  --font-display: var(--font-manrope);
+  --font-body: var(--font-public-sans);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Prevent iOS zoom-on-focus on form fields under 16px */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+@media (min-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 0.9375rem;
+  }
+}
