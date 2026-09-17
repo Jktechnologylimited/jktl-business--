@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Banknote, CalendarClock, House, LayoutGrid, LogOut, Settings, Users, WifiOff } from "lucide-react";
+import { Banknote, CalendarClock, House, LayoutGrid, LogOut, RefreshCw, Settings, Users, WifiOff } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { JktlMark } from "./logo";
 import { Avatar } from "./avatar";
@@ -32,6 +32,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const profile = useBusinessStore((s) => s.data.profile);
   const user = useBusinessStore((s) => s.data.user);
   const online = useBusinessStore((s) => s.online);
+  const mode = useBusinessStore((s) => s.mode);
+  const pendingSyncCount = useBusinessStore((s) => s.pendingSyncCount);
   const logout = useBusinessStore((s) => s.logout);
 
   const moreHrefs = industry.nav.more.map((m) => m.href);
@@ -46,7 +48,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       {!online ? (
         <div className="flex items-center justify-center gap-2 bg-ink px-4 py-2 text-center text-xs font-medium text-white">
           <WifiOff className="size-3.5" />
-          You&apos;re offline — you can still browse. Changes will wait until you&apos;re back.
+          {mode === "live" && pendingSyncCount > 0
+            ? `You're offline — ${pendingSyncCount} change${pendingSyncCount > 1 ? "s" : ""} waiting to sync.`
+            : "You're offline — you can still browse. Changes will wait until you're back."}
+        </div>
+      ) : mode === "live" && pendingSyncCount > 0 ? (
+        <div className="flex items-center justify-center gap-2 bg-accent px-4 py-2 text-center text-xs font-medium text-white">
+          <RefreshCw className="size-3.5 animate-spin" />
+          {`Syncing ${pendingSyncCount} change${pendingSyncCount > 1 ? "s" : ""}…`}
         </div>
       ) : null}
 

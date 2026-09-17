@@ -18,11 +18,11 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setPending(true);
     setError("");
-    const result = login(email, password);
+    const result = await login(email, password);
     setPending(false);
     if (!result.ok) {
       setError(result.error);

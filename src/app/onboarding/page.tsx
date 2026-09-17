@@ -18,7 +18,9 @@ const STEPS = ["Business type", "Business details", "First service", "Finish"] a
 export default function OnboardingPage() {
   const router = useRouter();
   const profile = useBusinessStore((s) => s.data.profile);
+  const pendingSignup = useBusinessStore((s) => s.pendingSignup);
   const addService = useBusinessStore((s) => s.addService);
+  const createLiveAccount = useBusinessStore((s) => s.createLiveAccount);
   const completeOnboarding = useBusinessStore((s) => s.completeOnboarding);
 
   const [step, setStep] = useState(0);
@@ -28,8 +30,28 @@ export default function OnboardingPage() {
   const [city, setCity] = useState(profile.city);
   const [state, setState] = useState(profile.state);
   const [addedService, setAddedService] = useState(false);
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [accountError, setAccountError] = useState("");
 
   const industry = getIndustry(businessType);
+
+  async function continueFromBusinessType() {
+    // Only a fresh signup needs the account created here — resuming
+    // onboarding after a reload (account already exists) just advances.
+    if (!pendingSignup) {
+      setStep(1);
+      return;
+    }
+    setCreatingAccount(true);
+    setAccountError("");
+    const result = await createLiveAccount(businessType);
+    setCreatingAccount(false);
+    if (!result.ok) {
+      setAccountError(result.error);
+      return;
+    }
+    setStep(1);
+  }
 
   function finish() {
     completeOnboarding(businessType, displayName);
@@ -69,6 +91,7 @@ export default function OnboardingPage() {
               </button>
             ))}
           </div>
+          {accountError ? <p className="mt-4 text-sm text-danger">{accountError}</p> : null}
         </div>
       ) : null}
 
@@ -143,8 +166,13 @@ export default function OnboardingPage() {
             </Button>
           ) : null}
           {step < 3 ? (
-            <Button type="button" className="flex-1" onClick={() => setStep((s) => s + 1)}>
-              Continue
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={creatingAccount}
+              onClick={() => (step === 0 ? continueFromBusinessType() : setStep((s) => s + 1))}
+            >
+              {step === 0 && creatingAccount ? "Creating account…" : "Continue"}
             </Button>
           ) : (
             <Button type="button" className="flex-1" onClick={finish}>

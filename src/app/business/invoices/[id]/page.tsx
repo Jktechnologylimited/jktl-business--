@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Printer, Share2, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Printer, Share2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { StatusPill, invoiceStatusMeta } from "@/components/app/status-pill";
@@ -11,15 +11,19 @@ import { useBusinessStore } from "@/lib/store";
 import { useToastStore } from "@/lib/toast";
 import { customerName } from "@/lib/selectors";
 import { formatKobo, formatShortDate } from "@/lib/format";
+import { sendInvoiceEmailAction } from "@/lib/actions/invoice-actions";
 
 export default function InvoiceDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const data = useBusinessStore((s) => s.data);
+  const mode = useBusinessStore((s) => s.mode);
+  const online = useBusinessStore((s) => s.online);
   const updateInvoiceStatus = useBusinessStore((s) => s.updateInvoiceStatus);
   const deleteInvoice = useBusinessStore((s) => s.deleteInvoice);
   const showToast = useToastStore((s) => s.show);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const invoice = data.invoices.find((i) => i.id === params.id);
   const items = data.invoiceItems.filter((i) => i.invoiceId === params.id);
@@ -147,6 +151,22 @@ export default function InvoiceDetailPage() {
         <Button size="sm" variant="outline" onClick={copySummary}>
           <Share2 className="size-4" /> Copy summary
         </Button>
+        {mode === "live" ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={sendingEmail || !online}
+            onClick={async () => {
+              setSendingEmail(true);
+              const result = await sendInvoiceEmailAction(invoice.id);
+              setSendingEmail(false);
+              showToast(result.ok ? "Invoice emailed to customer" : result.error, result.ok ? "default" : "danger");
+            }}
+          >
+            {sendingEmail ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
+            Email invoice
+          </Button>
+        ) : null}
       </div>
 
       <ConfirmDialog

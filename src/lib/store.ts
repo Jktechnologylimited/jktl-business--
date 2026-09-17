@@ -4,6 +4,10 @@ import { create } from "zustand";
 import { buildTenantData } from "@/lib/mock";
 import { getIndustry } from "@/lib/industry";
 import { id as makeId } from "@/lib/ids";
+import { addOutboxEntry, getCachedTenant, outboxCount, putCachedTenant } from "@/lib/offline/idb";
+import { onSyncProgress, processOutbox } from "@/lib/offline/sync";
+import { signupAction, loginAction, logoutAction, currentSessionAction } from "@/lib/actions/auth-actions";
+import { pullAllAction } from "@/lib/actions/sync-actions";
 import type {
   BookingStatus,
   BusinessType,
@@ -15,14 +19,12 @@ import type {
   PaymentMethod,
   PaymentStatus,
   Product,
-  Sale,
   Service,
   TenantData,
 } from "@/lib/types";
 
 const SESSION_KEY = "jktl.session.v1";
-const DEMO_EMAIL = "ada@glamhair.jktl.com.ng";
-const DEMO_PASSWORD = "glamhair";
+type Mode = "demo" | "live";
 
 interface SessionShape {
   authenticated: boolean;
@@ -30,6 +32,8 @@ interface SessionShape {
   businessType: BusinessType;
   businessName: string;
   avatarUrl: string | null;
+  mode: Mode;
+  organizationId: string | null;
 }
 
 const defaultSession: SessionShape = {
@@ -38,6 +42,8 @@ const defaultSession: SessionShape = {
   businessType: "salon",
   businessName: "Glam Hair Studio",
   avatarUrl: null,
+  mode: "demo",
+  organizationId: null,
 };
 
 function readSession(): SessionShape {
@@ -60,7 +66,14 @@ function writeSession(session: SessionShape) {
   }
 }
 
-type LoginResult = { ok: true } | { ok: false; error: string };
+function newId(mode: Mode, prefix: string): string {
+  // Live mode needs real UUIDs (they're Postgres primary keys, and stay
+  // stable from optimistic creation through eventual sync — see the
+  // db/ layer's ON CONFLICT upserts). Demo mode keeps short mock ids.
+  return mode === "live" ? crypto.randomUUID() : makeId(prefix);
+}
+
+type ActionOutcome = { ok: true } | { ok: false; error: string };
 
 export interface NewCustomerInput {
   name: string;
@@ -161,18 +174,33 @@ export interface NotificationPrefs {
   dailySummaryEmail: boolean;
 }
 
+interface PendingSignup {
+  name: string;
+  email: string;
+  password: string;
+  businessName: string;
+}
+
 interface BusinessStore {
   hydrated: boolean;
   authenticated: boolean;
   onboardingComplete: boolean;
   online: boolean;
+  mode: Mode;
+  pendingSyncCount: number;
   data: TenantData;
+  pendingSignup: PendingSignup | null;
 
   hydrate: () => void;
   setOnline: (online: boolean) => void;
-  login: (email: string, password: string) => LoginResult;
+
+  login: (email: string, password: string) => Promise<ActionOutcome>;
   openDemo: () => void;
-  startSignup: (name: string, businessName: string) => void;
+  /** Stashes signup details; the real account isn't created until business
+   * type is chosen in onboarding (createLiveAccount), since the backend
+   * needs it up front to create the org + profile in one shot. */
+  startSignup: (name: string, email: string, password: string, businessName: string) => void;
+  createLiveAccount: (businessType: BusinessType) => Promise<ActionOutcome>;
   completeOnboarding: (type: BusinessType, displayName: string) => void;
   logout: () => void;
 
@@ -192,7 +220,7 @@ interface BusinessStore {
   updateBooking: (id: string, patch: Partial<NewBookingInput>) => void;
   deleteBooking: (id: string) => void;
 
-  addSale: (input: NewSaleInput) => Sale;
+  addSale: (input: NewSaleInput) => void;
 
   addExpense: (input: NewExpenseInput) => void;
   deleteExpense: (id: string) => void;
@@ -210,6 +238,11 @@ interface BusinessStore {
 
   notificationPrefs: NotificationPrefs;
   setNotificationPref: (key: keyof NotificationPrefs, value: boolean) => void;
+
+  /** Internal: queues a mutation for sync and kicks off processing. No-op in demo mode. */
+  enqueueSync: (type: string, payload: unknown) => void;
+  /** Internal: writes the current tenant snapshot to IndexedDB. No-op in demo mode. */
+  persistCache: () => void;
 }
 
 function computeLineTotals(items: { quantity: number; unitPriceKobo: number }[]) {
@@ -221,7 +254,10 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
   authenticated: false,
   onboardingComplete: false,
   online: true,
+  mode: "demo",
+  pendingSyncCount: 0,
   data: buildTenantData(),
+  pendingSignup: null,
 
   hydrate: () => {
     if (get().hydrated) return;
@@ -230,6 +266,7 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
       hydrated: true,
       authenticated: session.authenticated,
       onboardingComplete: session.onboardingComplete,
+      mode: session.mode,
       online: typeof navigator === "undefined" ? true : navigator.onLine,
       data: {
         ...state.data,
@@ -241,34 +278,46 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
         },
       },
     }));
+
+    onSyncProgress((count) => set({ pendingSyncCount: count }));
+    outboxCount().then((count) => set({ pendingSyncCount: count }));
+
+    if (session.mode === "live" && session.authenticated && session.organizationId) {
+      void hydrateLiveData(session.organizationId, set, get);
+    }
   },
 
-  setOnline: (online) => set({ online }),
-
-  login: (email, password) => {
-    if (email.trim().toLowerCase() !== DEMO_EMAIL || password !== DEMO_PASSWORD) {
-      return { ok: false, error: "That email and password don't match a JKTL Business account." };
+  setOnline: (online) => {
+    set({ online });
+    if (online && get().mode === "live") {
+      processOutbox().then(() => {
+        if (get().pendingSyncCount === 0) void refreshFromServer(set);
+      });
     }
+  },
+
+  login: async (email, password) => {
+    const result = await loginAction(email, password);
+    if (!result.ok) return { ok: false, error: result.error };
     const existing = readSession();
-    const session: SessionShape = { ...defaultSession, authenticated: true, onboardingComplete: true, avatarUrl: existing.avatarUrl };
+    const session: SessionShape = { ...existing, authenticated: true, onboardingComplete: true, mode: "live", organizationId: result.data.organizationId };
     writeSession(session);
-    set((state) => ({ authenticated: true, onboardingComplete: true, data: { ...state.data, user: { ...state.data.user, avatarUrl: existing.avatarUrl } } }));
+    set({ authenticated: true, onboardingComplete: true, mode: "live" });
+    await hydrateLiveData(result.data.organizationId, set, get);
     return { ok: true };
   },
 
   openDemo: () => {
     const existing = readSession();
-    const session: SessionShape = { ...defaultSession, authenticated: true, onboardingComplete: true, avatarUrl: existing.avatarUrl };
+    const session: SessionShape = { ...defaultSession, authenticated: true, onboardingComplete: true, avatarUrl: existing.avatarUrl, mode: "demo" };
     writeSession(session);
-    set((state) => ({ authenticated: true, onboardingComplete: true, data: { ...state.data, user: { ...state.data.user, avatarUrl: existing.avatarUrl } } }));
+    set((state) => ({ authenticated: true, onboardingComplete: true, mode: "demo", data: { ...state.data, user: { ...state.data.user, avatarUrl: existing.avatarUrl } } }));
   },
 
-  startSignup: (name, businessName) => {
-    const session = readSession();
-    const next: SessionShape = { ...session, authenticated: true, onboardingComplete: false, businessName };
-    writeSession(next);
+  startSignup: (name, email, password, businessName) => {
     set((state) => ({
-      authenticated: true,
+      pendingSignup: { name, email, password, businessName },
+      authenticated: false,
       onboardingComplete: false,
       data: {
         ...state.data,
@@ -278,95 +327,153 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
     }));
   },
 
+  createLiveAccount: async (businessType) => {
+    const pending = get().pendingSignup;
+    if (!pending) return { ok: false, error: "Missing signup details — please start again." };
+    const result = await signupAction({ ...pending, businessType });
+    if (!result.ok) return { ok: false, error: result.error };
+
+    const session: SessionShape = {
+      ...defaultSession,
+      authenticated: true,
+      onboardingComplete: false,
+      mode: "live",
+      organizationId: result.data.organizationId,
+      businessType,
+      businessName: pending.businessName,
+    };
+    writeSession(session);
+    set({ authenticated: true, onboardingComplete: false, mode: "live", pendingSignup: null });
+    await hydrateLiveData(result.data.organizationId, set, get);
+    return { ok: true };
+  },
+
   completeOnboarding: (type, displayName) => {
     const session = readSession();
     const next: SessionShape = { ...session, authenticated: true, onboardingComplete: true, businessType: type, businessName: displayName };
     writeSession(next);
     set((state) => ({
       onboardingComplete: true,
-      data: {
-        ...state.data,
-        profile: { ...state.data.profile, businessType: type, displayName },
-      },
+      data: { ...state.data, profile: { ...state.data.profile, businessType: type, displayName } },
     }));
+    const profile = get().data.profile;
+    get().enqueueSync("business.updateProfile", {
+      patch: { displayName, phone: profile.phone, email: profile.email, address: profile.address, city: profile.city, state: profile.state },
+    });
+    get().persistCache();
   },
 
   logout: () => {
+    const mode = get().mode;
+    if (mode === "live") void logoutAction();
     writeSession(defaultSession);
-    set({ authenticated: false, onboardingComplete: false });
+    set({ authenticated: false, onboardingComplete: false, mode: "demo" });
   },
 
   // ---- Customers ----
   addCustomer: (input) => {
-    const customer: Customer = {
-      id: makeId("cus"),
-      organizationId: get().data.organization.id,
-      createdAt: new Date().toISOString(),
-      ...input,
-    };
+    const mode = get().mode;
+    const customer: Customer = { id: newId(mode, "cus"), organizationId: get().data.organization.id, createdAt: new Date().toISOString(), ...input };
     set((state) => ({ data: { ...state.data, customers: [customer, ...state.data.customers] } }));
+    get().enqueueSync("customer.create", { id: customer.id, input });
+    get().persistCache();
     return customer;
   },
   updateCustomer: (id, patch) => {
-    set((state) => ({
-      data: { ...state.data, customers: state.data.customers.map((c) => (c.id === id ? { ...c, ...patch } : c)) },
-    }));
+    set((state) => ({ data: { ...state.data, customers: state.data.customers.map((c) => (c.id === id ? { ...c, ...patch } : c)) } }));
+    const full = get().data.customers.find((c) => c.id === id);
+    if (full) get().enqueueSync("customer.update", { id, input: { name: full.name, phone: full.phone, email: full.email, gender: full.gender, notes: full.notes } });
+    get().persistCache();
   },
   deleteCustomer: (id) => {
     set((state) => ({ data: { ...state.data, customers: state.data.customers.filter((c) => c.id !== id) } }));
+    get().enqueueSync("customer.delete", { id });
+    get().persistCache();
   },
 
   // ---- Services ----
   addService: (input) => {
-    const service: Service = { id: makeId("svc"), organizationId: get().data.organization.id, ...input };
+    const mode = get().mode;
+    const service: Service = { id: newId(mode, "svc"), organizationId: get().data.organization.id, ...input };
     set((state) => ({ data: { ...state.data, services: [service, ...state.data.services] } }));
+    get().enqueueSync("service.create", { id: service.id, input });
+    get().persistCache();
     return service;
   },
   updateService: (id, patch) => {
-    set((state) => ({
-      data: { ...state.data, services: state.data.services.map((s) => (s.id === id ? { ...s, ...patch } : s)) },
-    }));
+    set((state) => ({ data: { ...state.data, services: state.data.services.map((s) => (s.id === id ? { ...s, ...patch } : s)) } }));
+    const full = get().data.services.find((s) => s.id === id);
+    if (full) get().enqueueSync("service.update", { id, input: { name: full.name, category: full.category, priceKobo: full.priceKobo, durationMin: full.durationMin, description: full.description, active: full.active } });
+    get().persistCache();
   },
   deleteService: (id) => {
     set((state) => ({ data: { ...state.data, services: state.data.services.filter((s) => s.id !== id) } }));
+    get().enqueueSync("service.delete", { id });
+    get().persistCache();
   },
 
   // ---- Products ----
   addProduct: (input) => {
-    const product: Product = { id: makeId("prd"), organizationId: get().data.organization.id, ...input };
+    const mode = get().mode;
+    const product: Product = { id: newId(mode, "prd"), organizationId: get().data.organization.id, ...input };
     set((state) => ({ data: { ...state.data, products: [product, ...state.data.products] } }));
+    get().enqueueSync("product.create", { id: product.id, input });
+    get().persistCache();
     return product;
   },
   updateProduct: (id, patch) => {
-    set((state) => ({
-      data: { ...state.data, products: state.data.products.map((p) => (p.id === id ? { ...p, ...patch } : p)) },
-    }));
+    set((state) => ({ data: { ...state.data, products: state.data.products.map((p) => (p.id === id ? { ...p, ...patch } : p)) } }));
+    const full = get().data.products.find((p) => p.id === id);
+    if (full) {
+      get().enqueueSync("product.update", {
+        id,
+        input: { name: full.name, sku: full.sku, category: full.category, costKobo: full.costKobo, priceKobo: full.priceKobo, stockQty: full.stockQty, lowStockThreshold: full.lowStockThreshold, supplier: full.supplier, active: full.active },
+      });
+    }
+    get().persistCache();
   },
   deleteProduct: (id) => {
     set((state) => ({ data: { ...state.data, products: state.data.products.filter((p) => p.id !== id) } }));
+    get().enqueueSync("product.delete", { id });
+    get().persistCache();
   },
 
   // ---- Bookings ----
   addBooking: (input) => {
-    const booking = { id: makeId("bk"), organizationId: get().data.organization.id, ...input };
+    const mode = get().mode;
+    const booking = { id: newId(mode, "bk"), organizationId: get().data.organization.id, ...input };
     set((state) => ({ data: { ...state.data, bookings: [booking, ...state.data.bookings] } }));
+    get().enqueueSync("booking.create", { id: booking.id, input });
+    get().persistCache();
   },
   updateBooking: (id, patch) => {
-    set((state) => ({
-      data: { ...state.data, bookings: state.data.bookings.map((b) => (b.id === id ? { ...b, ...patch } : b)) },
-    }));
+    set((state) => ({ data: { ...state.data, bookings: state.data.bookings.map((b) => (b.id === id ? { ...b, ...patch } : b)) } }));
+    const full = get().data.bookings.find((b) => b.id === id);
+    if (full) {
+      if (Object.keys(patch).length === 1 && "status" in patch) {
+        get().enqueueSync("booking.updateStatus", { id, status: full.status });
+      } else {
+        get().enqueueSync("booking.update", { id, input: { customerId: full.customerId, serviceId: full.serviceId, staffId: full.staffId, startsAt: full.startsAt, status: full.status, notes: full.notes, priceKobo: full.priceKobo } });
+      }
+    }
+    get().persistCache();
   },
   deleteBooking: (id) => {
     set((state) => ({ data: { ...state.data, bookings: state.data.bookings.filter((b) => b.id !== id) } }));
+    get().enqueueSync("booking.delete", { id });
+    get().persistCache();
   },
 
   // ---- Sales (also deducts stock + logs movements for product lines) ----
   addSale: (input) => {
+    const mode = get().mode;
     const orgId = get().data.organization.id;
     const subtotalKobo = computeLineTotals(input.items);
     const totalKobo = Math.max(0, subtotalKobo - input.discountKobo);
-    const sale: Sale = {
-      id: makeId("sl"),
+    const saleId = newId(mode, "sl");
+    const createdAt = new Date().toISOString();
+    const sale = {
+      id: saleId,
       organizationId: orgId,
       customerId: input.customerId,
       subtotalKobo,
@@ -375,12 +482,12 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
       paymentMethod: input.paymentMethod,
       paymentStatus: input.paymentStatus,
       notes: input.notes,
-      createdAt: new Date().toISOString(),
+      createdAt,
     };
     const saleItems = input.items.map((line) => ({
-      id: makeId("si"),
+      id: newId(mode, "si"),
       organizationId: orgId,
-      saleId: sale.id,
+      saleId,
       kind: line.kind,
       refId: line.refId,
       name: line.name,
@@ -392,52 +499,55 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
     set((state) => {
       let products = state.data.products;
       const movements = [...state.data.movements];
-      for (const line of input.items) {
+      for (const line of saleItems) {
         if (line.kind !== "product") continue;
         products = products.map((p) => (p.id === line.refId ? { ...p, stockQty: p.stockQty - line.quantity } : p));
-        movements.unshift({
-          id: makeId("mv"),
-          organizationId: orgId,
-          productId: line.refId,
-          type: "sale",
-          quantity: -line.quantity,
-          reason: `Sold in sale ${sale.id}`,
-          createdAt: sale.createdAt,
-        });
+        movements.unshift({ id: newId(mode, "mv"), organizationId: orgId, productId: line.refId, type: "sale", quantity: -line.quantity, reason: `Sold in sale ${saleId}`, createdAt });
       }
-      return {
-        data: {
-          ...state.data,
-          sales: [sale, ...state.data.sales],
-          saleItems: [...saleItems, ...state.data.saleItems],
-          products,
-          movements,
-        },
-      };
+      return { data: { ...state.data, sales: [sale, ...state.data.sales], saleItems: [...saleItems, ...state.data.saleItems], products, movements } };
     });
-    return sale;
+
+    get().enqueueSync("sale.create", {
+      input: {
+        id: saleId,
+        customerId: input.customerId,
+        items: saleItems.map((i) => ({ id: i.id, kind: i.kind, refId: i.refId, name: i.name, quantity: i.quantity, unitPriceKobo: i.unitPriceKobo })),
+        discountKobo: input.discountKobo,
+        paymentMethod: input.paymentMethod,
+        paymentStatus: input.paymentStatus,
+        notes: input.notes,
+      },
+    });
+    get().persistCache();
   },
 
   // ---- Expenses ----
   addExpense: (input) => {
-    const expense: Expense = { id: makeId("ex"), organizationId: get().data.organization.id, ...input };
+    const mode = get().mode;
+    const expense: Expense = { id: newId(mode, "ex"), organizationId: get().data.organization.id, ...input };
     set((state) => ({ data: { ...state.data, expenses: [expense, ...state.data.expenses] } }));
+    get().enqueueSync("expense.create", { id: expense.id, input });
+    get().persistCache();
   },
   deleteExpense: (id) => {
     set((state) => ({ data: { ...state.data, expenses: state.data.expenses.filter((e) => e.id !== id) } }));
+    get().enqueueSync("expense.delete", { id });
+    get().persistCache();
   },
 
   // ---- Invoices ----
   addInvoice: (input) => {
+    const mode = get().mode;
     const orgId = get().data.organization.id;
-    const existing = get().data.invoices;
-    const nextNumber = existing.length + 1;
+    const nextNumber = get().data.invoices.length + 1;
     const subtotalKobo = computeLineTotals(input.items);
     const totalKobo = Math.max(0, subtotalKobo - input.discountKobo);
+    const invoiceId = newId(mode, "inv");
+    const number = `INV-${String(nextNumber).padStart(4, "0")}`;
     const invoice: Invoice = {
-      id: makeId("inv"),
+      id: invoiceId,
       organizationId: orgId,
-      number: `INV-${String(nextNumber).padStart(4, "0")}`,
+      number,
       customerId: input.customerId,
       status: input.status,
       issueDate: new Date().toISOString().slice(0, 10),
@@ -449,91 +559,76 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
       paidAt: input.status === "paid" ? new Date().toISOString() : null,
     };
     const items = input.items.map((line) => ({
-      id: makeId("ii"),
+      id: newId(mode, "ii"),
       organizationId: orgId,
-      invoiceId: invoice.id,
+      invoiceId,
       description: line.description,
       quantity: line.quantity,
       unitPriceKobo: line.unitPriceKobo,
       totalKobo: line.quantity * line.unitPriceKobo,
     }));
-    set((state) => ({
-      data: {
-        ...state.data,
-        invoices: [invoice, ...state.data.invoices],
-        invoiceItems: [...items, ...state.data.invoiceItems],
-      },
-    }));
+    set((state) => ({ data: { ...state.data, invoices: [invoice, ...state.data.invoices], invoiceItems: [...items, ...state.data.invoiceItems] } }));
+    get().enqueueSync("invoice.create", {
+      input: { id: invoiceId, number, customerId: input.customerId, items: items.map((i) => ({ id: i.id, description: i.description, quantity: i.quantity, unitPriceKobo: i.unitPriceKobo })), discountKobo: input.discountKobo, dueDate: input.dueDate, notes: input.notes, status: input.status },
+    });
+    get().persistCache();
     return invoice;
   },
   updateInvoiceStatus: (id, status) => {
     set((state) => ({
-      data: {
-        ...state.data,
-        invoices: state.data.invoices.map((inv) =>
-          inv.id === id
-            ? { ...inv, status, paidAt: status === "paid" ? new Date().toISOString() : inv.paidAt }
-            : inv,
-        ),
-      },
+      data: { ...state.data, invoices: state.data.invoices.map((inv) => (inv.id === id ? { ...inv, status, paidAt: status === "paid" ? new Date().toISOString() : inv.paidAt } : inv)) },
     }));
+    get().enqueueSync("invoice.updateStatus", { id, status });
+    get().persistCache();
   },
   deleteInvoice: (id) => {
     set((state) => ({ data: { ...state.data, invoices: state.data.invoices.filter((i) => i.id !== id) } }));
+    get().enqueueSync("invoice.delete", { id });
+    get().persistCache();
   },
 
   // ---- Inventory ----
   adjustStock: (productId, delta, reason) => {
+    const mode = get().mode;
     const orgId = get().data.organization.id;
     set((state) => ({
       data: {
         ...state.data,
         products: state.data.products.map((p) => (p.id === productId ? { ...p, stockQty: p.stockQty + delta } : p)),
-        movements: [
-          {
-            id: makeId("mv"),
-            organizationId: orgId,
-            productId,
-            type: delta >= 0 ? "addition" : "adjustment",
-            quantity: delta,
-            reason,
-            createdAt: new Date().toISOString(),
-          },
-          ...state.data.movements,
-        ],
+        movements: [{ id: newId(mode, "mv"), organizationId: orgId, productId, type: delta >= 0 ? "addition" : "adjustment", quantity: delta, reason, createdAt: new Date().toISOString() }, ...state.data.movements],
       },
     }));
+    get().enqueueSync("inventory.adjust", { productId, delta, reason });
+    get().persistCache();
   },
 
   // ---- Team members ----
   addMember: (input) => {
+    const mode = get().mode;
     const orgId = get().data.organization.id;
-    const member = {
-      id: makeId("mem"),
-      organizationId: orgId,
-      userId: makeId("usr"),
-      name: input.name,
-      email: input.email,
-      role: input.role,
-      title: input.title,
-      active: true,
-    };
+    const member = { id: newId(mode, "mem"), organizationId: orgId, userId: newId(mode, "usr"), name: input.name, email: input.email, role: input.role, title: input.title, active: true };
     set((state) => ({ data: { ...state.data, members: [...state.data.members, member] } }));
+    get().enqueueSync("member.add", { id: member.id, input });
+    get().persistCache();
   },
   removeMember: (id) => {
-    set((state) => ({
-      data: { ...state.data, members: state.data.members.filter((m) => m.id !== id || m.role === "owner") },
-    }));
+    set((state) => ({ data: { ...state.data, members: state.data.members.filter((m) => m.id !== id || m.role === "owner") } }));
+    get().enqueueSync("member.remove", { id });
+    get().persistCache();
   },
 
   // ---- Account ----
   updateAccount: (patch) => {
     set((state) => ({ data: { ...state.data, user: { ...state.data.user, ...patch } } }));
+    get().enqueueSync("account.update", { patch });
+    get().persistCache();
   },
   setAvatar: (dataUrl) => {
     const session = readSession();
     writeSession({ ...session, avatarUrl: dataUrl });
     set((state) => ({ data: { ...state.data, user: { ...state.data.user, avatarUrl: dataUrl } } }));
+    get().enqueueSync("account.setAvatar", { dataUrl });
+    get().persistCache();
   },
 
   // ---- Notification preferences (session-only, not persisted) ----
@@ -541,7 +636,48 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
   setNotificationPref: (key, value) => {
     set((state) => ({ notificationPrefs: { ...state.notificationPrefs, [key]: value } }));
   },
+
+  enqueueSync: (type, payload) => {
+    if (get().mode !== "live") return;
+    void addOutboxEntry(type, payload).then(() => {
+      set({ pendingSyncCount: get().pendingSyncCount + 1 });
+      void processOutbox();
+    });
+  },
+
+  persistCache: () => {
+    const state = get();
+    if (state.mode !== "live") return;
+    void putCachedTenant(state.data.organization.id, state.data);
+  },
 }));
+
+async function hydrateLiveData(
+  organizationId: string,
+  set: (partial: Partial<BusinessStore>) => void,
+  get: () => BusinessStore,
+): Promise<void> {
+  // Cache first: instant, and works fully offline.
+  const cached = await getCachedTenant(organizationId);
+  if (cached) set({ data: cached.data as TenantData });
+
+  // Verify the server session is still valid, and refresh from it — but
+  // only overwrite local state if nothing is queued that a fresh pull
+  // would otherwise clobber (see refreshFromServer).
+  if (typeof navigator !== "undefined" && navigator.onLine) {
+    const session = await currentSessionAction();
+    if (!session.ok) return; // stale local session; leave cache in place, offline banner will show
+    await processOutbox();
+    if (get().pendingSyncCount === 0) await refreshFromServer(set);
+  }
+}
+
+async function refreshFromServer(set: (partial: Partial<BusinessStore>) => void): Promise<void> {
+  const result = await pullAllAction();
+  if (!result.ok) return;
+  set({ data: result.data });
+  void putCachedTenant(result.data.organization.id, result.data);
+}
 
 export function useCurrentIndustry() {
   const businessType = useBusinessStore((s) => s.data.profile.businessType);

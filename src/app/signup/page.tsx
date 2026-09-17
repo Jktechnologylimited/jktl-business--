@@ -19,7 +19,7 @@ export default function SignupPage() {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    startSignup(name, businessName);
+    startSignup(name, email, password, businessName);
     router.push("/onboarding");
   }
 
