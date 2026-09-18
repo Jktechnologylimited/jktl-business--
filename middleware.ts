@@ -13,7 +13,20 @@ import type { NextRequest } from "next/server";
  */
 
 const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "jktl.com.ng").toLowerCase();
-const RESERVED_HOSTS = new Set(["www", "app", "api", ROOT_DOMAIN]);
+
+// Subdomains that are real, separately-meaningful parts of the platform —
+// not a tenant's public site — and so must pass straight through to
+// whatever actually lives there instead of being rewritten to /sites/<name>.
+// "business" matters most: this app (the dashboard/login/API routes) is
+// itself served from business.jktl.com.ng, sharing this same Vercel project
+// with the wildcard, so without this it would swallow its own domain.
+// RESERVED_APP_SUBDOMAINS lets more be added via an env var (comma-
+// separated) without a code change if new fixed subdomains show up later.
+const EXTRA_RESERVED = (process.env.RESERVED_APP_SUBDOMAINS || "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+const RESERVED_HOSTS = new Set(["www", "app", "api", "business", "admin", "accounts", ROOT_DOMAIN, ...EXTRA_RESERVED]);
 
 function extractSubdomain(host: string): string | null {
   const hostname = host.split(":")[0].toLowerCase();

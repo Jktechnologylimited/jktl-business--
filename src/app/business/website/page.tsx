@@ -27,10 +27,10 @@ export default function WebsitePage() {
   const showToast = useToastStore((s) => s.show);
 
   const [subdomain, setSubdomain] = useState(profile.subdomain);
-  const [tagline, setTagline] = useState(profile.tagline);
-  const [themeColor, setThemeColor] = useState(profile.themeColor);
+  const [tagline, setTagline] = useState(profile.tagline ?? "");
+  const [themeColor, setThemeColor] = useState(profile.themeColor || "#0f6e5c");
   const [logoUrl, setLogoUrl] = useState<string | null>(profile.logoUrl);
-  const [published, setPublished] = useState(profile.published);
+  const [published, setPublished] = useState(Boolean(profile.published));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 

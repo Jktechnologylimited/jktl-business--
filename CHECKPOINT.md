@@ -478,6 +478,61 @@ columns).
   and `middleware.ts` compiling and being listed as Proxy/Middleware in
   the build output) only.
 
+## Update: fixed a crash from an un-migrated database
+
+You hit this immediately after checkpoint14, and it's the same category of
+mistake as the earlier sale-creation incident: **migration 003 hadn't been
+run yet**, so `business_profiles` didn't have `tagline`/`theme_color`/
+`published` columns. Saving website settings failed loudly (a clear
+Postgres error, caught and shown as "Couldn't save your website settings"),
+but simply *reading* the profile elsewhere degraded silently instead —
+`SELECT *` against a table missing those columns just omits those keys
+rather than erroring, so `profile.themeColor` came back `undefined`, which
+crashed the color picker (`value.toLowerCase()` on `undefined`).
+
+Two fixes:
+1. **The real fix, on your end**: run `npm run db:migrate` — this adds the
+   missing columns and everything works.
+2. **Defensive fixes here regardless**: `mapProfile` in both
+   `src/lib/db/organizations.ts` and `src/lib/db/public.ts` now falls back
+   to sane defaults (`""`, `false`, `"#0f6e5c"`) instead of passing through
+   `undefined`; `ColorPicker` validates its `value` prop and falls back to
+   the default brand color rather than crashing if it ever gets handed
+   something unexpected again. None of this replaces actually running the
+   migration — it just means a similar gap won't take down the whole page
+   next time.
+
+## Update: fixed the middleware swallowing `business.jktl.com.ng` itself
+
+Real-world deployment turned up something the sandbox couldn't: this app
+isn't deployed on the apex domain — it's its own Vercel project at
+`business.jktl.com.ng`, sharing that project (and the `*.jktl.com.ng`
+wildcard) with the dashboard itself, alongside separate sibling projects
+at `admin.jktl.com.ng` and `accounts.jktl.com.ng` on their own domains.
+
+`middleware.ts`'s reserved-host list only knew about `www`/`app`/`api`/the
+apex — it had no idea `business` was itself a real, fixed part of the
+platform rather than a tenant's chosen subdomain. So a visit to
+`business.jktl.com.ng` was being rewritten to `/sites/business`, and since
+no business had published a site with the literal subdomain `"business"`,
+it showed the generic "this site isn't available" page instead of the
+actual dashboard/login.
+
+Fixed by adding `business`, `admin`, and `accounts` to `RESERVED_HOSTS` in
+`middleware.ts` (so they always pass straight through, whichever Vercel
+project actually serves them) and to `RESERVED_SUBDOMAINS` in
+`src/lib/subdomain.ts` (so a business can never pick one of those words as
+their own site's subdomain in the first place — same reserved list backing
+both the live-typing validation and the server-side check). Also added a
+`RESERVED_APP_SUBDOMAINS` env var (comma-separated) so any *other* fixed
+subdomain that comes up later — a new internal app on its own subdomain,
+say — can be reserved with just an env var + redeploy, no code change.
+
+**If you add another fixed subdomain in the future**, set
+`RESERVED_APP_SUBDOMAINS` to a comma-separated list on the Vercel project
+that owns the wildcard domain, or ask for it to be added to the hardcoded
+list directly.
+
 ## Next steps
 
 **Stage 2, deferred on purpose**: a scripted (non-AI) chat widget on the

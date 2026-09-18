@@ -24,9 +24,14 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     state: row.state as string,
     logoUrl: (row.logo_url as string) ?? null,
     subdomain: row.subdomain as string,
-    published: row.published as boolean,
-    tagline: row.tagline as string,
-    themeColor: row.theme_color as string,
+    // Defensive fallbacks: if migration 003 hasn't been run yet, these three
+    // columns simply won't be in the row (not an error, just missing keys),
+    // and every reader of BusinessProfile should still get sane values
+    // instead of undefined leaking into the UI (e.g. a color picker doing
+    // `value.toLowerCase()`).
+    published: Boolean(row.published),
+    tagline: (row.tagline as string) ?? "",
+    themeColor: (row.theme_color as string) || "#0f6e5c",
   };
 }
 
