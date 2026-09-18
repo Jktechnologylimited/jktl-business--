@@ -24,6 +24,9 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     state: row.state as string,
     logoUrl: (row.logo_url as string) ?? null,
     subdomain: row.subdomain as string,
+    published: row.published as boolean,
+    tagline: row.tagline as string,
+    themeColor: row.theme_color as string,
   };
 }
 
@@ -79,6 +82,48 @@ export async function updateBusinessProfile(
   return rows[0] ? mapProfile(rows[0]) : null;
 }
 
+/** True if `subdomain` isn't already taken by a different organization —
+ * used for both the live-as-you-type check and the authoritative one right
+ * before saving. */
+export async function isSubdomainAvailable(subdomain: string, excludingOrgId: string): Promise<boolean> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT 1 FROM business_profiles WHERE subdomain = ${subdomain} AND organization_id <> ${excludingOrgId}
+  `;
+  return rows.length === 0;
+}
+
+export interface WebsiteSettingsPatch {
+  subdomain: string;
+  tagline: string;
+  themeColor: string;
+  logoUrl: string | null;
+  published: boolean;
+}
+
+export async function updateWebsiteSettings(orgId: string, patch: WebsiteSettingsPatch): Promise<BusinessProfile | null> {
+  const sql = getSql();
+  const rows = await sql`
+    UPDATE business_profiles
+    SET subdomain = ${patch.subdomain}, tagline = ${patch.tagline}, theme_color = ${patch.themeColor},
+        logo_url = ${patch.logoUrl}, published = ${patch.published}
+    WHERE organization_id = ${orgId}
+    RETURNING *
+  `;
+  return rows[0] ? mapProfile(rows[0]) : null;
+}
+
+/** The owner's email, for best-effort notifications (e.g. a new public
+ * booking request) — returns '' rather than null when there's no email on
+ * file, so callers can just check truthiness before sending. */
+export async function getOwnerEmail(orgId: string): Promise<string> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT email FROM organization_members WHERE organization_id = ${orgId} AND role = 'owner' LIMIT 1
+  `;
+  return (rows[0]?.email as string) ?? "";
+}
+
 export async function getInfrastructure(orgId: string): Promise<Infrastructure | null> {
   const sql = getSql();
   const rows = await sql`SELECT * FROM infrastructure_accounts WHERE organization_id = ${orgId}`;
@@ -105,4 +150,38 @@ export async function setAvatar(userId: string, dataUrl: string | null): Promise
   const sql = getSql();
   const rows = await sql`UPDATE users SET avatar_url = ${dataUrl} WHERE id = ${userId} RETURNING *`;
   return rows[0] ? mapUser(rows[0]) : null;
+}
+
+export interface UpcomingRenewal {
+  organizationId: string;
+  businessName: string;
+  ownerEmail: string;
+  renewalDate: string;
+  priceKoboPerYear: number;
+}
+
+/**
+ * Organizations whose plan renews in exactly `daysAhead` days — used by the
+ * renewal-reminder cron so each one gets exactly one email per cycle rather
+ * than daily nagging every day inside a "within N days" window. The
+ * trade-off: if the cron doesn't run on that exact day, that org's reminder
+ * for this cycle is simply missed rather than caught up later.
+ */
+export async function listUpcomingRenewals(daysAhead: number): Promise<UpcomingRenewal[]> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT bp.display_name, om.email AS owner_email, ia.organization_id, ia.renewal_date, ia.price_kobo_per_year
+    FROM infrastructure_accounts ia
+    JOIN business_profiles bp ON bp.organization_id = ia.organization_id
+    JOIN organization_members om ON om.organization_id = ia.organization_id AND om.role = 'owner'
+    WHERE ia.renewal_date = (CURRENT_DATE + (${daysAhead}::int * INTERVAL '1 day'))
+      AND om.email <> ''
+  `;
+  return rows.map((row) => ({
+    organizationId: row.organization_id as string,
+    businessName: row.display_name as string,
+    ownerEmail: row.owner_email as string,
+    renewalDate: String(row.renewal_date).slice(0, 10),
+    priceKoboPerYear: Number(row.price_kobo_per_year),
+  }));
 }

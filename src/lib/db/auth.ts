@@ -1,8 +1,10 @@
 import bcrypt from "bcryptjs";
+import { randomBytes, createHash } from "node:crypto";
 import { getSql } from "./client";
 import type { AppUser, BusinessType } from "@/lib/types";
 
 const SESSION_DAYS = 30;
+const RESET_TOKEN_MINUTES = 60;
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
@@ -142,4 +144,77 @@ export async function validateSession(sessionId: string): Promise<SessionInfo | 
 export async function destroySession(sessionId: string): Promise<void> {
   const sql = getSql();
   await sql`DELETE FROM sessions WHERE id = ${sessionId}`;
+}
+
+function hashToken(rawToken: string): string {
+  return createHash("sha256").update(rawToken).digest("hex");
+}
+
+export interface UserLookup {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export async function findUserByEmail(email: string): Promise<UserLookup | null> {
+  const sql = getSql();
+  const rows = await sql`SELECT id, name, email FROM users WHERE email = ${email.toLowerCase()}`;
+  const row = rows[0];
+  if (!row) return null;
+  return { id: row.id as string, name: row.name as string, email: row.email as string };
+}
+
+/**
+ * Creates a password-reset token for a user and returns the raw token —
+ * only its SHA-256 hash is ever written to the database (same principle as
+ * password_hash: the plaintext exists just long enough to email it once).
+ */
+export async function createPasswordResetToken(userId: string): Promise<string> {
+  const sql = getSql();
+  const rawToken = randomBytes(32).toString("hex");
+  const tokenHash = hashToken(rawToken);
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_MINUTES * 60 * 1000).toISOString();
+  await sql`
+    INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+    VALUES (${userId}, ${tokenHash}, ${expiresAt})
+  `;
+  return rawToken;
+}
+
+/**
+ * Validates a raw reset token (not expired, not already used) and, if valid,
+ * updates the user's password and marks every outstanding token for that
+ * user as used — a successful reset invalidates any other reset links that
+ * were still live for the same account.
+ */
+export async function consumePasswordResetToken(rawToken: string, newPassword: string): Promise<boolean> {
+  const sql = getSql();
+  const tokenHash = hashToken(rawToken);
+  const rows = await sql`
+    SELECT id, user_id FROM password_reset_tokens
+    WHERE token_hash = ${tokenHash} AND used_at IS NULL AND expires_at > now()
+  `;
+  const row = rows[0];
+  if (!row) return false;
+
+  const passwordHash = await hashPassword(newPassword);
+  const userId = row.user_id as string;
+  await sql`UPDATE users SET password_hash = ${passwordHash} WHERE id = ${userId}`;
+  await sql`UPDATE password_reset_tokens SET used_at = now() WHERE user_id = ${userId} AND used_at IS NULL`;
+  return true;
+}
+
+/** Changes a signed-in user's password after verifying their current one. */
+export async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<boolean> {
+  const sql = getSql();
+  const rows = await sql`SELECT password_hash FROM users WHERE id = ${userId}`;
+  const row = rows[0];
+  if (!row) return false;
+
+  const ok = await verifyPassword(currentPassword, row.password_hash as string);
+  if (!ok) return false;
+
+  const passwordHash = await hashPassword(newPassword);
+  await sql`UPDATE users SET password_hash = ${passwordHash} WHERE id = ${userId}`;
+  return true;
 }

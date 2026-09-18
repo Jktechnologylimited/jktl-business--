@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Field } from "@/components/app/field";
 import { JktlWordmark } from "@/components/app/logo";
 import { useBusinessStore } from "@/lib/store";
@@ -46,7 +47,7 @@ export default function SignupPage() {
           <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </Field>
         <Field label="Password" htmlFor="password">
-          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+          <PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
         </Field>
         <Button type="submit" size="lg" className="mt-1 w-full">
           Continue

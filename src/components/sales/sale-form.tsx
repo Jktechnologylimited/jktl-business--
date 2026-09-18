@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Field } from "@/components/app/field";
+import { ReceiptPhotoField } from "@/components/sales/receipt-photo-field";
 import type { NewSaleInput, NewSaleLineInput } from "@/lib/store";
 import { formatKobo, nairaToKobo } from "@/lib/format";
 import type { Customer, LineKind, PaymentMethod, PaymentStatus, Product, Service } from "@/lib/types";
@@ -42,6 +43,8 @@ export function SaleForm({
   const [discount, setDiscount] = useState("0");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("paid");
+  const [amountPaid, setAmountPaid] = useState("0");
+  const [receiptPhotoUrl, setReceiptPhotoUrl] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
 
   function catalogFor(kind: LineKind) {
@@ -82,6 +85,8 @@ export function SaleForm({
   const subtotalKobo = resolvedLines.reduce((sum, l) => sum + l.quantity * l.unitPriceKobo, 0);
   const discountKobo = nairaToKobo(Number(discount) || 0);
   const totalKobo = Math.max(0, subtotalKobo - discountKobo);
+  const amountPaidKobo = Math.min(totalKobo, Math.max(0, nairaToKobo(Number(amountPaid) || 0)));
+  const balanceKobo = Math.max(0, totalKobo - amountPaidKobo);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -98,6 +103,8 @@ export function SaleForm({
       discountKobo,
       paymentMethod,
       paymentStatus,
+      amountPaidKobo: paymentStatus === "partial" ? amountPaidKobo : undefined,
+      receiptPhotoUrl,
       notes,
     });
   }
@@ -185,6 +192,24 @@ export function SaleForm({
           </Select>
         </Field>
       </div>
+
+      {paymentStatus === "partial" ? (
+        <Field label="Amount paid now (₦)" htmlFor="sl-amount-paid">
+          <Input
+            id="sl-amount-paid"
+            type="number"
+            min="0"
+            max={totalKobo / 100}
+            value={amountPaid}
+            onChange={(e) => setAmountPaid(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-ink-muted">
+            Balance of {formatKobo(balanceKobo)} left — come back to this sale once it&apos;s paid in full.
+          </p>
+        </Field>
+      ) : null}
+
+      <ReceiptPhotoField value={receiptPhotoUrl} onChange={setReceiptPhotoUrl} />
 
       <Field label="Notes (optional)" htmlFor="sl-notes">
         <Input id="sl-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />

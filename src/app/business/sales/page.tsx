@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Banknote, Plus } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { SearchInput } from "@/components/app/search-input";
@@ -59,7 +60,7 @@ export default function SalesPage() {
           {filtered.map((s) => {
             const meta = paymentStatusMeta(s.paymentStatus);
             return (
-              <div key={s.id} className="flex items-center gap-3 px-4 py-3.5">
+              <Link key={s.id} href={`/business/sales/${s.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface">
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-ink">{customerName(data.customers, s.customerId)}</div>
                   <div className="text-xs text-ink-muted">
@@ -68,7 +69,7 @@ export default function SalesPage() {
                 </div>
                 <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
                 <div className="w-24 shrink-0 text-right text-sm font-semibold text-ink">{formatKobo(s.totalKobo)}</div>
-              </div>
+              </Link>
             );
           })}
         </div>

@@ -27,6 +27,9 @@ export function demoProfile(): BusinessProfile {
     state: "Bayelsa",
     logoUrl: null,
     subdomain: "glamhair",
+    published: false,
+    tagline: "Braids, wash & style, nails — walk-ins welcome.",
+    themeColor: "#0f6e5c",
   };
 }
 

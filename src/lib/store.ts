@@ -10,6 +10,7 @@ import { signupAction, loginAction, logoutAction, currentSessionAction } from "@
 import { pullAllAction } from "@/lib/actions/sync-actions";
 import type {
   BookingStatus,
+  BusinessProfile,
   BusinessType,
   Customer,
   Expense,
@@ -128,7 +129,16 @@ export interface NewSaleInput {
   discountKobo: number;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+  /** Only meaningful (and required from the form) when paymentStatus is "partial". */
+  amountPaidKobo?: number;
+  receiptPhotoUrl?: string | null;
   notes: string;
+}
+
+export interface SalePaymentInput {
+  paymentStatus: PaymentStatus;
+  amountPaidKobo: number;
+  receiptPhotoUrl?: string | null;
 }
 
 export interface NewExpenseInput {
@@ -166,6 +176,15 @@ export interface AccountPatch {
   name: string;
   email: string;
   phone: string;
+}
+
+export interface BusinessProfilePatch {
+  displayName: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
 }
 
 export interface NotificationPrefs {
@@ -221,6 +240,7 @@ interface BusinessStore {
   deleteBooking: (id: string) => void;
 
   addSale: (input: NewSaleInput) => void;
+  updateSalePayment: (id: string, patch: SalePaymentInput) => void;
 
   addExpense: (input: NewExpenseInput) => void;
   deleteExpense: (id: string) => void;
@@ -235,6 +255,12 @@ interface BusinessStore {
   removeMember: (id: string) => void;
   updateAccount: (patch: AccountPatch) => void;
   setAvatar: (dataUrl: string | null) => void;
+  updateBusinessProfile: (patch: BusinessProfilePatch) => void;
+  /** Replaces the whole business profile — used by the website-settings page
+   * after a direct (non-outbox) save, since that flow already has the
+   * canonical result (from the server in live mode, or constructed locally
+   * in demo mode) rather than a partial patch to merge and re-queue. */
+  setWebsiteProfile: (profile: BusinessProfile) => void;
 
   notificationPrefs: NotificationPrefs;
   setNotificationPref: (key: keyof NotificationPrefs, value: boolean) => void;
@@ -473,6 +499,8 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
     const orgId = get().data.organization.id;
     const subtotalKobo = computeLineTotals(input.items);
     const totalKobo = Math.max(0, subtotalKobo - input.discountKobo);
+    const amountPaidKobo =
+      input.paymentStatus === "paid" ? totalKobo : input.paymentStatus === "pending" ? 0 : Math.min(totalKobo, Math.max(0, input.amountPaidKobo ?? 0));
     const saleId = newId(mode, "sl");
     const createdAt = new Date().toISOString();
     const sale = {
@@ -484,6 +512,8 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
       totalKobo,
       paymentMethod: input.paymentMethod,
       paymentStatus: input.paymentStatus,
+      amountPaidKobo,
+      receiptPhotoUrl: input.receiptPhotoUrl ?? null,
       notes: input.notes,
       createdAt,
     };
@@ -518,9 +548,25 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
         discountKobo: input.discountKobo,
         paymentMethod: input.paymentMethod,
         paymentStatus: input.paymentStatus,
+        amountPaidKobo,
+        receiptPhotoUrl: sale.receiptPhotoUrl,
         notes: input.notes,
       },
     });
+    get().persistCache();
+  },
+  updateSalePayment: (id, patch) => {
+    set((state) => ({
+      data: {
+        ...state.data,
+        sales: state.data.sales.map((s) =>
+          s.id === id
+            ? { ...s, paymentStatus: patch.paymentStatus, amountPaidKobo: patch.amountPaidKobo, receiptPhotoUrl: patch.receiptPhotoUrl !== undefined ? patch.receiptPhotoUrl : s.receiptPhotoUrl }
+            : s,
+        ),
+      },
+    }));
+    get().enqueueSync("sale.updatePayment", { id, patch });
     get().persistCache();
   },
 
@@ -631,6 +677,20 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
     writeSession({ ...session, avatarUrl: dataUrl });
     set((state) => ({ data: { ...state.data, user: { ...state.data.user, avatarUrl: dataUrl } } }));
     get().enqueueSync("account.setAvatar", { dataUrl });
+    get().persistCache();
+  },
+
+  // ---- Business profile ----
+  updateBusinessProfile: (patch) => {
+    const session = readSession();
+    writeSession({ ...session, businessName: patch.displayName });
+    set((state) => ({ data: { ...state.data, profile: { ...state.data.profile, ...patch } } }));
+    get().enqueueSync("business.updateProfile", { patch });
+    get().persistCache();
+  },
+
+  setWebsiteProfile: (profile) => {
+    set((state) => ({ data: { ...state.data, profile } }));
     get().persistCache();
   },
 

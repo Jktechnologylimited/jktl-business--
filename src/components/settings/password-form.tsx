@@ -2,16 +2,20 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Field } from "@/components/app/field";
+import { useBusinessStore } from "@/lib/store";
+import { changePasswordAction } from "@/lib/actions/auth-actions";
 
 export function PasswordForm({ onSubmit, onCancel }: { onSubmit: () => void; onCancel: () => void }) {
+  const mode = useBusinessStore((s) => s.mode);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (next.length < 6) {
       setError("New password must be at least 6 characters.");
@@ -22,31 +26,44 @@ export function PasswordForm({ onSubmit, onCancel }: { onSubmit: () => void; onC
       return;
     }
     setError("");
+
+    if (mode !== "live") {
+      // Demo mode has no real account to change — keep the flow usable to try out.
+      onSubmit();
+      return;
+    }
+
+    setPending(true);
+    const result = await changePasswordAction(current, next);
+    setPending(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
     onSubmit();
   }
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      <p className="text-xs text-ink-muted">
-        This is a mock form — no account system is connected yet, so nothing is actually changed. Real password
-        changes arrive with Phase 2.
-      </p>
+      {mode !== "live" ? (
+        <p className="text-xs text-ink-muted">You&apos;re in demo mode — this won&apos;t change a real account.</p>
+      ) : null}
       <Field label="Current password" htmlFor="pw-current">
-        <Input id="pw-current" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} required autoFocus />
+        <PasswordInput id="pw-current" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} required autoFocus />
       </Field>
       <Field label="New password" htmlFor="pw-next">
-        <Input id="pw-next" type="password" value={next} onChange={(e) => setNext(e.target.value)} required />
+        <PasswordInput id="pw-next" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} required />
       </Field>
       <Field label="Confirm new password" htmlFor="pw-confirm">
-        <Input id="pw-confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+        <PasswordInput id="pw-confirm" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
       </Field>
       {error ? <p className="text-sm text-danger">{error}</p> : null}
       <div className="mt-1 flex gap-3">
         <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" className="flex-1">
-          Update password
+        <Button type="submit" className="flex-1" disabled={pending}>
+          {pending ? "Updating…" : "Update password"}
         </Button>
       </div>
     </form>

@@ -3,7 +3,7 @@ import { createCustomerAction, updateCustomerAction, deleteCustomerAction } from
 import { createServiceAction, updateServiceAction, deleteServiceAction } from "@/lib/actions/service-actions";
 import { createProductAction, updateProductAction, deleteProductAction } from "@/lib/actions/product-actions";
 import { createBookingAction, updateBookingAction, updateBookingStatusAction, deleteBookingAction } from "@/lib/actions/booking-actions";
-import { createSaleAction } from "@/lib/actions/sale-actions";
+import { createSaleAction, updateSalePaymentAction } from "@/lib/actions/sale-actions";
 import { createExpenseAction, deleteExpenseAction } from "@/lib/actions/expense-actions";
 import { createInvoiceAction, updateInvoiceStatusAction, deleteInvoiceAction } from "@/lib/actions/invoice-actions";
 import { adjustStockAction } from "@/lib/actions/inventory-actions";
@@ -35,6 +35,7 @@ export const MUTATION_HANDLERS: Record<string, Handler> = {
   "booking.delete": (p) => deleteBookingAction(p.id),
 
   "sale.create": (p) => createSaleAction(p.input),
+  "sale.updatePayment": (p) => updateSalePaymentAction(p.id, p.patch),
 
   "expense.create": (p) => createExpenseAction(p.id, p.input),
   "expense.delete": (p) => deleteExpenseAction(p.id),

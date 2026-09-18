@@ -57,6 +57,43 @@ export async function updateBooking(orgId: string, id: string, input: BookingInp
   return rows[0] ? mapRow(rows[0]) : null;
 }
 
+export interface PublicBookingInput {
+  customerId: string;
+  serviceId: string;
+  startsAt: string;
+  notes: string;
+}
+
+/**
+ * Creates a booking from the public, unauthenticated site — the guest-facing
+ * counterpart to `createBooking`. Two things are deliberately different from
+ * the staff-facing version:
+ *   - `staff_id` is always '' (the public booking flow never lets a guest
+ *     pick a staff member — that's assigned internally later).
+ *   - `price_kobo` is read from the service row itself rather than trusted
+ *     from the client, so a tampered request can't book a service at an
+ *     arbitrary price.
+ * Both the price lookup and the insert happen in one CTE so a service that
+ * doesn't belong to this org (or was deleted) simply yields no booking,
+ * rather than a booking with a fabricated price.
+ */
+export async function createPublicBooking(orgId: string, id: string, input: PublicBookingInput): Promise<Booking | null> {
+  const sql = getSql();
+  const rows = await sql`
+    WITH svc AS (
+      SELECT id, price_kobo FROM services WHERE id = ${input.serviceId} AND organization_id = ${orgId}
+    ),
+    new_booking AS (
+      INSERT INTO bookings (id, organization_id, customer_id, service_id, staff_id, starts_at, status, notes, price_kobo)
+      SELECT ${id}, ${orgId}, ${input.customerId}, svc.id, '', ${input.startsAt}, 'pending', ${input.notes}, svc.price_kobo
+      FROM svc
+      RETURNING *
+    )
+    SELECT * FROM new_booking
+  `;
+  return rows[0] ? mapRow(rows[0]) : null;
+}
+
 export async function updateBookingStatus(orgId: string, id: string, status: BookingStatus): Promise<Booking | null> {
   const sql = getSql();
   const rows = await sql`

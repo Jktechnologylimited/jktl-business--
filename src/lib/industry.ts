@@ -67,7 +67,9 @@ const salon: IndustryConfig = {
       { href: "/business/expenses", label: "Expenses", description: "Rent, power, staff and supplies" },
       { href: "/business/invoices", label: "Invoices", description: "Bills and outstanding payments" },
       { href: "/business/reports", label: "Reports", description: "Sales, bookings and stock" },
+      { href: "/business/website", label: "Website", description: "Your public site and online booking" },
       { href: "/business/settings", label: "Settings", description: "Business, team and plan" },
+      { href: "/business/help", label: "Help & guides", description: "How-tos and installing the app" },
     ],
   },
 };

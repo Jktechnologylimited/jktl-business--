@@ -106,6 +106,44 @@ export async function sendPaymentConfirmationEmail(params: {
   return send(to, `Payment received — ${invoiceNumber}`, html, text);
 }
 
+export async function sendPasswordResetEmail(params: {
+  to: string;
+  name: string;
+  resetUrl: string;
+}): Promise<EmailResult> {
+  const { to, name, resetUrl } = params;
+  const html = wrapper(`
+    <p>Hi ${name},</p>
+    <p>We got a request to reset your JKTL Business password. This link works for 1 hour:</p>
+    <p style="margin:20px 0"><a href="${resetUrl}" style="background:#0f6e5c;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Reset password</a></p>
+    <p style="font-size:13px;color:#5b6675">If you didn't request this, you can safely ignore this email — your password won't change.</p>
+  `);
+  const text = `Hi ${name},\n\nWe got a request to reset your JKTL Business password. This link works for 1 hour:\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`;
+  return send(to, "Reset your JKTL Business password", html, text);
+}
+
+export async function sendNewBookingRequestEmail(params: {
+  to: string;
+  businessName: string;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  requestedAt: string;
+}): Promise<EmailResult> {
+  const { to, businessName, customerName, customerPhone, serviceName, requestedAt } = params;
+  const html = wrapper(`
+    <p>Hi,</p>
+    <p>Someone just booked through your <strong>${businessName}</strong> website:</p>
+    <p style="background:#f5f6f8;border-radius:8px;padding:12px 16px;margin:16px 0">
+      ${serviceName}<br/>${formatShortDate(requestedAt)} at ${formatTime(requestedAt)}<br/>
+      ${customerName}${customerPhone ? ` · ${customerPhone}` : ""}
+    </p>
+    <p>It's saved as a pending booking — open JKTL Business to confirm it.</p>
+  `);
+  const text = `New booking request for ${businessName}: ${serviceName} on ${formatShortDate(requestedAt)} at ${formatTime(requestedAt)} — ${customerName}${customerPhone ? ` (${customerPhone})` : ""}. It's pending in JKTL Business.`;
+  return send(to, `New booking request — ${businessName}`, html, text);
+}
+
 export async function sendRenewalReminderEmail(params: {
   to: string;
   businessName: string;

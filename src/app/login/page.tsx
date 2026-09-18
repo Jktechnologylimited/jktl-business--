@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Field } from "@/components/app/field";
 import { JktlWordmark } from "@/components/app/logo";
 import { useBusinessStore } from "@/lib/store";
@@ -50,9 +51,8 @@ export default function LoginPage() {
           />
         </Field>
         <Field label="Password" htmlFor="password">
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Banknote, CalendarClock, House, LayoutGrid, LogOut, RefreshCw, Settings, Users, WifiOff } from "lucide-react";
+import { Banknote, CalendarClock, House, LayoutGrid, LifeBuoy, LogOut, RefreshCw, Settings, Users, WifiOff } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { JktlMark } from "./logo";
 import { Avatar } from "./avatar";
@@ -118,6 +118,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link href="/business/settings" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface">
                 <Settings className="size-4" /> Settings
               </Link>
+              <Link href="/business/help" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface">
+                <LifeBuoy className="size-4" /> Help & guides
+              </Link>
               <button
                 onClick={handleLogout}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger hover:bg-danger-soft"
@@ -147,6 +150,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="absolute right-0 z-40 mt-1 w-48 rounded-xl border border-border bg-paper p-1 shadow-lg">
             <Link href="/business/settings" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface">
               <Settings className="size-4" /> Settings
+            </Link>
+            <Link href="/business/help" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface">
+              <LifeBuoy className="size-4" /> Help & guides
             </Link>
             <button
               onClick={handleLogout}

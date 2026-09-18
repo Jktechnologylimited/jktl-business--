@@ -50,6 +50,9 @@ export interface BusinessProfile {
   state: string;
   logoUrl: string | null;
   subdomain: string;
+  published: boolean;
+  tagline: string;
+  themeColor: string;
 }
 
 export interface AppUser {
@@ -128,6 +131,8 @@ export interface Sale {
   totalKobo: Kobo;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+  amountPaidKobo: Kobo;
+  receiptPhotoUrl: string | null;
   notes: string;
   createdAt: string;
 }

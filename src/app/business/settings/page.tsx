@@ -11,6 +11,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { StatusPill } from "@/components/app/status-pill";
 import { MemberForm } from "@/components/settings/member-form";
 import { AccountForm } from "@/components/settings/account-form";
+import { BusinessForm } from "@/components/settings/business-form";
 import { PasswordForm } from "@/components/settings/password-form";
 import { AvatarUpload } from "@/components/settings/avatar-upload";
 import { useBusinessStore } from "@/lib/store";
@@ -37,6 +38,7 @@ export default function SettingsPage() {
   const addMember = useBusinessStore((s) => s.addMember);
   const removeMember = useBusinessStore((s) => s.removeMember);
   const updateAccount = useBusinessStore((s) => s.updateAccount);
+  const updateBusinessProfile = useBusinessStore((s) => s.updateBusinessProfile);
   const setAvatar = useBusinessStore((s) => s.setAvatar);
   const notificationPrefs = useBusinessStore((s) => s.notificationPrefs);
   const setNotificationPref = useBusinessStore((s) => s.setNotificationPref);
@@ -46,6 +48,7 @@ export default function SettingsPage() {
   const [addingMember, setAddingMember] = useState(false);
   const [removingMember, setRemovingMember] = useState<OrganizationMember | null>(null);
   const [editingAccount, setEditingAccount] = useState(false);
+  const [editingBusiness, setEditingBusiness] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
   return (
@@ -65,15 +68,20 @@ export default function SettingsPage() {
 
       {tab === "business" ? (
         <section className="rounded-2xl border border-border p-4">
-          <h2 className="font-display text-sm font-semibold text-ink">Business</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-sm font-semibold text-ink">Business</h2>
+            <button className="text-sm font-medium text-primary" onClick={() => setEditingBusiness(true)}>
+              Edit
+            </button>
+          </div>
           <dl className="mt-2 divide-y divide-border">
             <Row label="Name" value={profile.displayName} />
             <Row label="Type" value={profile.businessType[0].toUpperCase() + profile.businessType.slice(1)} />
-            <Row label="Phone" value={profile.phone} />
-            <Row label="Email" value={profile.email} />
-            <Row label="Address" value={`${profile.address}, ${profile.city}, ${profile.state}`} />
+            <Row label="Phone" value={profile.phone || "—"} />
+            <Row label="Email" value={profile.email || "—"} />
+            <Row label="Address" value={profile.address ? `${profile.address}, ${profile.city}, ${profile.state}` : "—"} />
           </dl>
-          <p className="mt-3 text-xs text-ink-muted">Editing business details and logo upload arrive with Phase 2.</p>
+          <p className="mt-3 text-xs text-ink-muted">Business type and logo upload are set at signup and aren&apos;t editable here yet.</p>
         </section>
       ) : null}
 
@@ -194,6 +202,18 @@ export default function SettingsPage() {
             addMember(input);
             setAddingMember(false);
             showToast(`${input.name} added to the team`);
+          }}
+        />
+      </Sheet>
+
+      <Sheet open={editingBusiness} onClose={() => setEditingBusiness(false)} title="Edit business">
+        <BusinessForm
+          initial={profile}
+          onCancel={() => setEditingBusiness(false)}
+          onSubmit={(patch) => {
+            updateBusinessProfile(patch);
+            setEditingBusiness(false);
+            showToast("Business details updated");
           }}
         />
       </Sheet>

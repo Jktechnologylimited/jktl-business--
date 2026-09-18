@@ -1,9 +1,10 @@
 "use server";
 
-import { signup, verifyLogin } from "@/lib/db/auth";
+import { headers } from "next/headers";
+import { signup, verifyLogin, findUserByEmail, createPasswordResetToken, consumePasswordResetToken, changePassword } from "@/lib/db/auth";
 import { getBusinessProfile, getUser } from "@/lib/db/organizations";
-import { startSession, endSession, getSession } from "@/lib/session";
-import { sendWelcomeEmail } from "@/lib/email";
+import { startSession, endSession, getSession, requireSession } from "@/lib/session";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
 import type { ActionResult } from "./types";
 import type { BusinessType } from "@/lib/types";
 
@@ -62,6 +63,65 @@ export async function currentSessionAction(): Promise<ActionResult<{ organizatio
   } catch (err) {
     console.error(err);
     return { ok: false, error: "Couldn't restore your session." };
+  }
+}
+
+async function currentOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const protocol = host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https";
+  return `${protocol}://${host}`;
+}
+
+/**
+ * Always returns ok:true regardless of whether the email matches an account —
+ * revealing that would let anyone probe which emails have a JKTL Business
+ * account. The email itself (sent only when a match exists) is the real
+ * signal back to the actual owner.
+ */
+export async function requestPasswordResetAction(email: string): Promise<ActionResult<null>> {
+  try {
+    const user = await findUserByEmail(email);
+    if (user) {
+      const rawToken = await createPasswordResetToken(user.id);
+      const origin = await currentOrigin();
+      const resetUrl = `${origin}/reset-password?token=${rawToken}`;
+      await sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl }).catch((err) => console.error("sendPasswordResetEmail failed:", err));
+    }
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    // Still report success — a failed lookup shouldn't leak account existence either.
+    return { ok: true, data: null };
+  }
+}
+
+export async function resetPasswordAction(token: string, newPassword: string): Promise<ActionResult<null>> {
+  try {
+    if (newPassword.length < 6) {
+      return { ok: false, error: "Password must be at least 6 characters." };
+    }
+    const ok = await consumePasswordResetToken(token, newPassword);
+    if (!ok) return { ok: false, error: "This reset link is invalid or has expired. Request a new one." };
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't reset your password right now. Please try again." };
+  }
+}
+
+export async function changePasswordAction(currentPassword: string, newPassword: string): Promise<ActionResult<null>> {
+  try {
+    if (newPassword.length < 6) {
+      return { ok: false, error: "New password must be at least 6 characters." };
+    }
+    const { userId } = await requireSession();
+    const ok = await changePassword(userId, currentPassword, newPassword);
+    if (!ok) return { ok: false, error: "Your current password isn't correct." };
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't update your password right now." };
   }
 }
 

@@ -27,6 +27,18 @@ export async function getCustomer(orgId: string, id: string): Promise<Customer |
   return rows[0] ? mapRow(rows[0]) : null;
 }
 
+/** Used by the public booking form to avoid creating a duplicate customer
+ * every time the same guest books again — matched by phone within the
+ * tenant only (never across organizations). Empty phone never matches. */
+export async function findCustomerByPhone(orgId: string, phone: string): Promise<Customer | null> {
+  if (!phone.trim()) return null;
+  const sql = getSql();
+  const rows = await sql`
+    SELECT * FROM customers WHERE organization_id = ${orgId} AND phone = ${phone} ORDER BY created_at ASC LIMIT 1
+  `;
+  return rows[0] ? mapRow(rows[0]) : null;
+}
+
 export interface CustomerInput {
   name: string;
   phone: string;
