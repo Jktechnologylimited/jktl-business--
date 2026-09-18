@@ -202,7 +202,7 @@ interface BusinessStore {
   startSignup: (name: string, email: string, password: string, businessName: string) => void;
   createLiveAccount: (businessType: BusinessType) => Promise<ActionOutcome>;
   completeOnboarding: (type: BusinessType, displayName: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 
   addCustomer: (input: NewCustomerInput) => Customer;
   updateCustomer: (id: string, patch: Partial<NewCustomerInput>) => void;
@@ -315,14 +315,16 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
   },
 
   startSignup: (name, email, password, businessName) => {
-    set((state) => ({
+    const fresh = buildTenantData();
+    set(() => ({
       pendingSignup: { name, email, password, businessName },
       authenticated: false,
       onboardingComplete: false,
+      mode: "demo",
       data: {
-        ...state.data,
-        user: { ...state.data.user, name: name || state.data.user.name },
-        profile: { ...state.data.profile, displayName: businessName || state.data.profile.displayName },
+        ...fresh,
+        user: { ...fresh.user, name: name || fresh.user.name, avatarUrl: null },
+        profile: { ...fresh.profile, displayName: businessName || fresh.profile.displayName },
       },
     }));
   },
@@ -353,6 +355,7 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
     const next: SessionShape = { ...session, authenticated: true, onboardingComplete: true, businessType: type, businessName: displayName };
     writeSession(next);
     set((state) => ({
+      authenticated: true,
       onboardingComplete: true,
       data: { ...state.data, profile: { ...state.data.profile, businessType: type, displayName } },
     }));
@@ -363,11 +366,11 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
     get().persistCache();
   },
 
-  logout: () => {
+  logout: async () => {
     const mode = get().mode;
-    if (mode === "live") void logoutAction();
     writeSession(defaultSession);
     set({ authenticated: false, onboardingComplete: false, mode: "demo" });
+    if (mode === "live") await logoutAction();
   },
 
   // ---- Customers ----

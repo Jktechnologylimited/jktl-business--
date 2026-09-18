@@ -25,6 +25,7 @@ export async function signupAction(input: SignupPayload): Promise<ActionResult<{
     await sendWelcomeEmail(input.email, input.name, input.businessName).catch(() => undefined);
     return { ok: true, data: { organizationId } };
   } catch (err) {
+    console.error("signupAction failed:", err);
     if (isUniqueViolation(err)) {
       return { ok: false, error: "An account with that email already exists." };
     }
@@ -40,7 +41,8 @@ export async function loginAction(email: string, password: string): Promise<Acti
     }
     await startSession(result.user.id, result.organizationId);
     return { ok: true, data: { organizationId: result.organizationId } };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't sign in right now. Please try again." };
   }
 }
@@ -57,7 +59,8 @@ export async function currentSessionAction(): Promise<ActionResult<{ organizatio
     const [profile, user] = await Promise.all([getBusinessProfile(session.organizationId), getUser(session.userId)]);
     if (!profile || !user) return { ok: false, error: "Account not found." };
     return { ok: true, data: { organizationId: session.organizationId, businessType: profile.businessType, displayName: profile.displayName } };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't restore your session." };
   }
 }

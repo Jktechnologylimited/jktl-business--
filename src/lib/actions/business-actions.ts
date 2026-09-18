@@ -13,7 +13,8 @@ export async function updateBusinessProfileAction(
     const profile = await updateBusinessProfile(organizationId, patch);
     if (!profile) return { ok: false, error: "Business profile not found." };
     return { ok: true, data: profile };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't update your business details." };
   }
 }

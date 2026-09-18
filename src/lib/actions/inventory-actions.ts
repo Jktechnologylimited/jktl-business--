@@ -11,7 +11,8 @@ export async function adjustStockAction(productId: string, delta: number, reason
     const movement = await adjustStock(organizationId, productId, delta, reason);
     if (!movement) return { ok: false, error: "Product not found." };
     return { ok: true, data: movement };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't adjust stock." };
   }
 }

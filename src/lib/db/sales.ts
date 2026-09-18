@@ -79,7 +79,9 @@ export async function createSale(orgId: string, input: SaleInput): Promise<{ sal
   const sql = getSql();
   const subtotalKobo = input.items.reduce((sum, i) => sum + i.quantity * i.unitPriceKobo, 0);
   const totalKobo = Math.max(0, subtotalKobo - input.discountKobo);
-  const itemsJson = JSON.stringify(input.items);
+  const itemsJson = JSON.stringify(
+    input.items.map((i) => ({ id: i.id, kind: i.kind, ref_id: i.refId, name: i.name, quantity: i.quantity, unit_price_kobo: i.unitPriceKobo })),
+  );
 
   const rows = await sql`
     WITH new_sale AS (

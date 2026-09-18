@@ -9,7 +9,8 @@ export async function createProductAction(id: string, input: db.ProductInput): P
   try {
     const { organizationId } = await requireSession();
     return { ok: true, data: await db.createProduct(organizationId, id, input) };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't save this product." };
   }
 }
@@ -20,7 +21,8 @@ export async function updateProductAction(id: string, input: db.ProductInput): P
     const product = await db.updateProduct(organizationId, id, input);
     if (!product) return { ok: false, error: "Product not found." };
     return { ok: true, data: product };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't update this product." };
   }
 }
@@ -30,7 +32,8 @@ export async function deleteProductAction(id: string): Promise<ActionResult<null
     const { organizationId } = await requireSession();
     await db.deleteProduct(organizationId, id);
     return { ok: true, data: null };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't delete this product." };
   }
 }

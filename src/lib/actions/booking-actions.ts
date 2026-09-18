@@ -36,7 +36,8 @@ export async function createBookingAction(id: string, input: db.BookingInput): P
     const booking = await db.createBooking(organizationId, id, input);
     await notifyIfConfirmed(organizationId, booking);
     return { ok: true, data: booking };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't save this booking." };
   }
 }
@@ -48,7 +49,8 @@ export async function updateBookingAction(id: string, input: db.BookingInput): P
     if (!booking) return { ok: false, error: "Booking not found." };
     await notifyIfConfirmed(organizationId, booking);
     return { ok: true, data: booking };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't update this booking." };
   }
 }
@@ -60,7 +62,8 @@ export async function updateBookingStatusAction(id: string, status: BookingStatu
     if (!booking) return { ok: false, error: "Booking not found." };
     await notifyIfConfirmed(organizationId, booking);
     return { ok: true, data: booking };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't update this booking." };
   }
 }
@@ -70,7 +73,8 @@ export async function deleteBookingAction(id: string): Promise<ActionResult<null
     const { organizationId } = await requireSession();
     await db.deleteBooking(organizationId, id);
     return { ok: true, data: null };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't delete this booking." };
   }
 }

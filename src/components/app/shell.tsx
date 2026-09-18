@@ -38,8 +38,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const moreHrefs = industry.nav.more.map((m) => m.href);
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await logout();
     router.push("/login");
   }
 

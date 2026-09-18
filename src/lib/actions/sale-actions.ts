@@ -10,7 +10,8 @@ export async function createSaleAction(input: db.SaleInput): Promise<ActionResul
     const { organizationId } = await requireSession();
     const result = await db.createSale(organizationId, input);
     return { ok: true, data: result };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't record this sale." };
   }
 }

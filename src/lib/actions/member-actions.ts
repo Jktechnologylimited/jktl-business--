@@ -9,7 +9,8 @@ export async function addMemberAction(id: string, input: db.MemberInput): Promis
   try {
     const { organizationId } = await requireSession();
     return { ok: true, data: await db.addMember(organizationId, id, input) };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't add this team member." };
   }
 }
@@ -19,7 +20,8 @@ export async function removeMemberAction(id: string): Promise<ActionResult<null>
     const { organizationId } = await requireSession();
     await db.removeMember(organizationId, id);
     return { ok: true, data: null };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't remove this team member." };
   }
 }

@@ -77,7 +77,9 @@ export async function createInvoice(orgId: string, input: InvoiceInput): Promise
   const sql = getSql();
   const subtotalKobo = input.items.reduce((sum, i) => sum + i.quantity * i.unitPriceKobo, 0);
   const totalKobo = Math.max(0, subtotalKobo - input.discountKobo);
-  const itemsJson = JSON.stringify(input.items);
+  const itemsJson = JSON.stringify(
+    input.items.map((i) => ({ id: i.id, description: i.description, quantity: i.quantity, unit_price_kobo: i.unitPriceKobo })),
+  );
   const paidAt = input.status === "paid" ? new Date().toISOString() : null;
 
   const rows = await sql`

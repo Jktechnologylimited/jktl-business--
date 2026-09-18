@@ -9,7 +9,8 @@ export async function createServiceAction(id: string, input: db.ServiceInput): P
   try {
     const { organizationId } = await requireSession();
     return { ok: true, data: await db.createService(organizationId, id, input) };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't save this service." };
   }
 }
@@ -20,7 +21,8 @@ export async function updateServiceAction(id: string, input: db.ServiceInput): P
     const service = await db.updateService(organizationId, id, input);
     if (!service) return { ok: false, error: "Service not found." };
     return { ok: true, data: service };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't update this service." };
   }
 }
@@ -30,7 +32,8 @@ export async function deleteServiceAction(id: string): Promise<ActionResult<null
     const { organizationId } = await requireSession();
     await db.deleteService(organizationId, id);
     return { ok: true, data: null };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't delete this service." };
   }
 }

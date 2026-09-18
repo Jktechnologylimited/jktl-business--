@@ -11,7 +11,8 @@ export async function updateAccountAction(patch: { name: string; email: string; 
     const user = await updateAccount(userId, patch);
     if (!user) return { ok: false, error: "Account not found." };
     return { ok: true, data: user };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't update your profile." };
   }
 }
@@ -22,7 +23,8 @@ export async function setAvatarAction(dataUrl: string | null): Promise<ActionRes
     const user = await setAvatar(userId, dataUrl);
     if (!user) return { ok: false, error: "Account not found." };
     return { ok: true, data: user };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't update your photo." };
   }
 }

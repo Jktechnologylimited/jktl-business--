@@ -48,7 +48,8 @@ export async function pullAllAction(): Promise<ActionResult<TenantData>> {
       ok: true,
       data: { organization, profile, user, members, customers, services, products, bookings, sales, saleItems, expenses, invoices, invoiceItems, movements, infrastructure },
     };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't load your data." };
   }
 }

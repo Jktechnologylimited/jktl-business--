@@ -9,7 +9,8 @@ export async function createExpenseAction(id: string, input: db.ExpenseInput): P
   try {
     const { organizationId } = await requireSession();
     return { ok: true, data: await db.createExpense(organizationId, id, input) };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't save this expense." };
   }
 }
@@ -19,7 +20,8 @@ export async function deleteExpenseAction(id: string): Promise<ActionResult<null
     const { organizationId } = await requireSession();
     await db.deleteExpense(organizationId, id);
     return { ok: true, data: null };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't delete this expense." };
   }
 }

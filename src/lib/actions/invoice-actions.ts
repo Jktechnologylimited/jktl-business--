@@ -12,7 +12,8 @@ export async function createInvoiceAction(input: db.InvoiceInput): Promise<Actio
   try {
     const { organizationId } = await requireSession();
     return { ok: true, data: await db.createInvoice(organizationId, input) };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't create this invoice." };
   }
 }
@@ -44,7 +45,8 @@ export async function updateInvoiceStatusAction(id: string, status: InvoiceStatu
     }
 
     return { ok: true, data: invoice };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't update this invoice." };
   }
 }
@@ -74,7 +76,8 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult<n
     });
     if (!result.ok) return { ok: false, error: result.error };
     return { ok: true, data: null };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't send this invoice." };
   }
 }
@@ -84,7 +87,8 @@ export async function deleteInvoiceAction(id: string): Promise<ActionResult<null
     const { organizationId } = await requireSession();
     await db.deleteInvoice(organizationId, id);
     return { ok: true, data: null };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return { ok: false, error: "Couldn't delete this invoice." };
   }
 }
