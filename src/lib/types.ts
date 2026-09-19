@@ -66,6 +66,16 @@ export interface BusinessProfile {
    * then, `customDomain` is just a pending, unverified request and
    * middleware won't route traffic for it. */
   customDomainVerified: boolean;
+  /** A longer free-text description shown in the site's "About" section.
+   * Empty string shows nothing — the section just doesn't render. */
+  aboutText: string;
+  instagramUrl: string;
+  tiktokUrl: string;
+  facebookUrl: string;
+  snapchatUrl: string;
+  /** One of the ids in `src/lib/site-fonts.ts` — a display+body Google Font
+   * pairing for the public website, chosen independently of `themeColor`. */
+  fontPairId: string;
 }
 
 export interface AppUser {
@@ -107,6 +117,9 @@ export interface Service {
   durationMin: number;
   description: string;
   active: boolean;
+  /** Shown on the public website's services section. Null falls back to a
+   * plain card with no photo — same optional-photo pattern as `Product`. */
+  imageUrl: string | null;
 }
 
 export interface Product {
@@ -189,6 +202,16 @@ export interface Invoice {
   totalKobo: Kobo;
   notes: string;
   paidAt: string | null;
+  /** "online" once paid through the public payment link (Paystack split
+   * payment), "manual" for the existing owner-toggled "Mark as paid" — the
+   * default for every invoice until it's actually paid one way or the
+   * other. */
+  paidVia: "manual" | "online";
+  /** JKTL's ₦50 cut, only ever non-zero on an "online" paid invoice — the
+   * payer's surcharge, not deducted from the business's own total above. */
+  platformFeeKobo: Kobo;
+  /** Paystack's transaction reference, only set once paid online. */
+  paymentReference: string;
 }
 
 export interface InvoiceItem {
@@ -199,6 +222,19 @@ export interface InvoiceItem {
   quantity: number;
   unitPriceKobo: Kobo;
   totalKobo: Kobo;
+}
+
+/** Owner-entered customer testimonial shown on the public website. Not a
+ * public submission form — see CHECKPOINT.md for why (no moderation queue
+ * needed with this trust model). */
+export interface Testimonial {
+  id: string;
+  organizationId: string;
+  customerName: string;
+  quote: string;
+  /** 1-5, or null if the owner didn't set one. */
+  rating: number | null;
+  createdAt: string;
 }
 
 export interface InventoryMovement {
@@ -243,6 +279,7 @@ export interface TenantData {
   customers: Customer[];
   services: Service[];
   products: Product[];
+  testimonials: Testimonial[];
   bookings: Booking[];
   sales: Sale[];
   saleItems: SaleItem[];

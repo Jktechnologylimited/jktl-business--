@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyWebhookSignature } from "@/lib/paystack";
+import { verifyWebhookSignature, INVOICE_PLATFORM_FEE_KOBO } from "@/lib/paystack";
 import {
   applyPaymentSuccess,
   saveSubscriptionCode,
@@ -9,6 +9,8 @@ import {
   findOrgIdByOwnerEmail,
   recordWebhookEventOnce,
 } from "@/lib/db/billing";
+import { markInvoicePaidOnline } from "@/lib/db/invoices";
+import { finalizeInvoicePaid } from "@/lib/invoice-finalize";
 import { addBillingCycle, getCycleDef, type BillingCycle } from "@/lib/billing";
 
 interface PaystackEvent {
@@ -94,11 +96,20 @@ export async function POST(request: NextRequest) {
 /** Fires for every successful charge — the very first one (initiated by us
  * via `initializeTransaction`, carrying our metadata) and every later
  * Paystack-initiated renewal charge (no metadata, matched by customer
- * code instead). Only charges tied to a plan are subscription charges. */
+ * code instead). Only charges tied to a plan are subscription charges;
+ * an invoice payment (checked first, below) is a one-off charge that
+ * never has a plan either, so it has to be told apart by its metadata
+ * before the "no plan" early-return would otherwise swallow it. */
 async function handleChargeSuccess(data: Record<string, unknown>) {
+  const metadata = asRecord(data.metadata);
+
+  if (metadata.type === "invoice_payment") {
+    await handleInvoicePaymentSuccess(data, metadata);
+    return;
+  }
+
   if (!data.plan) return; // a one-off charge unrelated to a subscription plan
 
-  const metadata = asRecord(data.metadata);
   const customer = asRecord(data.customer);
   const orgId = (metadata.organizationId as string) || (await findOrgIdByCustomerCode(customer.customer_code as string));
   if (!orgId) {
@@ -117,6 +128,29 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
     customerCode: (customer.customer_code as string) ?? "",
     renewalDate,
   });
+}
+
+/** A customer paid an invoice through the public `/pay/[id]` link. The
+ * charge itself already split automatically at Paystack's end (see
+ * initializeInvoicePayment) — all that's left here is recording it and
+ * telling the business. `markInvoicePaidOnline` is itself idempotent
+ * (`WHERE status <> 'paid'`), on top of the dedupe already done above by
+ * reference, so a retried webhook delivery can never double-apply this. */
+async function handleInvoicePaymentSuccess(data: Record<string, unknown>, metadata: Record<string, unknown>) {
+  const organizationId = metadata.organizationId as string;
+  const invoiceId = metadata.invoiceId as string;
+  if (!organizationId || !invoiceId) {
+    console.error("paystack webhook: invoice_payment charge with missing metadata", data.reference);
+    return;
+  }
+
+  const invoice = await markInvoicePaidOnline(organizationId, invoiceId, {
+    reference: (data.reference as string) ?? "",
+    platformFeeKobo: INVOICE_PLATFORM_FEE_KOBO,
+  });
+  if (!invoice) return; // already paid, or the ids didn't match a real invoice
+
+  await finalizeInvoicePaid(organizationId, invoice);
 }
 
 /** Fires once, right after the first successful charge on a plan creates

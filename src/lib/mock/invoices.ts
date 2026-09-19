@@ -24,6 +24,9 @@ export function demoInvoices(now = new Date()): Invoice[] {
       totalKobo: 2_400_000,
       notes: "Full sew-in install, deposit already received.",
       paidAt: subDays(now, 15).toISOString(),
+      paidVia: "manual",
+      platformFeeKobo: 0,
+      paymentReference: "",
     },
     {
       id: "inv_2",
@@ -38,6 +41,9 @@ export function demoInvoices(now = new Date()): Invoice[] {
       totalKobo: 2_500_000,
       notes: "Hair installation, balance due on collection.",
       paidAt: null,
+      paidVia: "manual",
+      platformFeeKobo: 0,
+      paymentReference: "",
     },
     {
       id: "inv_3",
@@ -52,6 +58,9 @@ export function demoInvoices(now = new Date()): Invoice[] {
       totalKobo: 1_700_000,
       notes: "Makeup and styling for a family event.",
       paidAt: null,
+      paidVia: "manual",
+      platformFeeKobo: 0,
+      paymentReference: "",
     },
     {
       id: "inv_4",
@@ -66,6 +75,9 @@ export function demoInvoices(now = new Date()): Invoice[] {
       totalKobo: 600_000,
       notes: "",
       paidAt: subDays(now, 6).toISOString(),
+      paidVia: "manual",
+      platformFeeKobo: 0,
+      paymentReference: "",
     },
     {
       id: "inv_5",
@@ -80,6 +92,9 @@ export function demoInvoices(now = new Date()): Invoice[] {
       totalKobo: 300_000,
       notes: "Not yet sent to customer.",
       paidAt: null,
+      paidVia: "manual",
+      platformFeeKobo: 0,
+      paymentReference: "",
     },
   ];
 }

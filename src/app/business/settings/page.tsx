@@ -7,7 +7,6 @@ import { FilterTabs } from "@/components/app/filter-tabs";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Toggle } from "@/components/ui/toggle";
 import { StatusPill } from "@/components/app/status-pill";
 import { MemberForm } from "@/components/settings/member-form";
 import { AccountForm } from "@/components/settings/account-form";
@@ -16,6 +15,8 @@ import { PasswordForm } from "@/components/settings/password-form";
 import { AvatarUpload } from "@/components/settings/avatar-upload";
 import { BillingPanel } from "@/components/settings/billing-panel";
 import { StorageUsagePanel } from "@/components/settings/storage-usage-panel";
+import { NotificationsPanel } from "@/components/settings/notifications-panel";
+import { PaymentSettingsPanel } from "@/components/settings/payment-settings-panel";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
 import { UpgradeSheet } from "@/components/settings/upgrade-sheet";
 import { useBusinessStore } from "@/lib/store";
@@ -24,7 +25,7 @@ import { initials } from "@/lib/format";
 import { FREE_TEAM_SEATS } from "@/lib/billing";
 import type { OrganizationMember } from "@/lib/types";
 
-type Tab = "business" | "users" | "account" | "infrastructure";
+type Tab = "business" | "payments" | "users" | "account" | "infrastructure";
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -46,8 +47,6 @@ export default function SettingsPage() {
   const updateAccount = useBusinessStore((s) => s.updateAccount);
   const updateBusinessProfile = useBusinessStore((s) => s.updateBusinessProfile);
   const setAvatar = useBusinessStore((s) => s.setAvatar);
-  const notificationPrefs = useBusinessStore((s) => s.notificationPrefs);
-  const setNotificationPref = useBusinessStore((s) => s.setNotificationPref);
   const showToast = useToastStore((s) => s.show);
 
   // Paystack redirects back to this page after checkout with
@@ -79,6 +78,7 @@ export default function SettingsPage() {
       <FilterTabs<Tab>
         options={[
           { value: "business", label: "Business" },
+          { value: "payments", label: "Payments" },
           { value: "users", label: "Users" },
           { value: "account", label: "Account" },
           { value: "infrastructure", label: "Plan" },
@@ -105,6 +105,8 @@ export default function SettingsPage() {
           <p className="mt-3 text-xs text-ink-muted">Business type and logo upload are set at signup and aren&apos;t editable here yet.</p>
         </section>
       ) : null}
+
+      {tab === "payments" ? <PaymentSettingsPanel mode={mode === "live" ? "live" : "demo"} /> : null}
 
       {tab === "users" ? (
         <section>
@@ -186,30 +188,7 @@ export default function SettingsPage() {
             <ThemeToggle />
           </section>
 
-          <section className="rounded-2xl border border-border p-4">
-            <h2 className="font-display text-sm font-semibold text-ink">Notifications</h2>
-            <div className="mt-1 divide-y divide-border">
-              <Toggle
-                label="Booking reminders"
-                description="Notify me ahead of upcoming bookings"
-                checked={notificationPrefs.bookingReminders}
-                onChange={(v) => setNotificationPref("bookingReminders", v)}
-              />
-              <Toggle
-                label="Low-stock alerts"
-                description="Notify me when a product hits its threshold"
-                checked={notificationPrefs.lowStockAlerts}
-                onChange={(v) => setNotificationPref("lowStockAlerts", v)}
-              />
-              <Toggle
-                label="Daily summary email"
-                description="A morning recap of yesterday's numbers"
-                checked={notificationPrefs.dailySummaryEmail}
-                onChange={(v) => setNotificationPref("dailySummaryEmail", v)}
-              />
-            </div>
-            <p className="mt-2 text-xs text-ink-muted">Actual emails send once Resend is connected in Phase 2.</p>
-          </section>
+          <NotificationsPanel mode={mode === "live" ? "live" : "demo"} />
         </div>
       ) : null}
 

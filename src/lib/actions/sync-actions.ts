@@ -4,6 +4,7 @@ import { requireSession } from "@/lib/session";
 import { listCustomers } from "@/lib/db/customers";
 import { listServices } from "@/lib/db/services";
 import { listProducts } from "@/lib/db/products";
+import { listTestimonials } from "@/lib/db/testimonials";
 import { listBookings } from "@/lib/db/bookings";
 import { listSales, listSaleItems } from "@/lib/db/sales";
 import { listExpenses } from "@/lib/db/expenses";
@@ -21,7 +22,7 @@ export async function pullAllAction(): Promise<ActionResult<TenantData>> {
   try {
     const { userId, organizationId } = await requireSession();
 
-    const [organization, profile, user, infrastructure, members, customers, services, products, bookings, sales, saleItems, expenses, invoices, invoiceItems, movements] =
+    const [organization, profile, user, infrastructure, members, customers, services, products, testimonials, bookings, sales, saleItems, expenses, invoices, invoiceItems, movements] =
       await Promise.all([
         getOrganization(organizationId),
         getBusinessProfile(organizationId),
@@ -31,6 +32,7 @@ export async function pullAllAction(): Promise<ActionResult<TenantData>> {
         listCustomers(organizationId),
         listServices(organizationId),
         listProducts(organizationId),
+        listTestimonials(organizationId),
         listBookings(organizationId),
         listSales(organizationId),
         listSaleItems(organizationId),
@@ -46,7 +48,7 @@ export async function pullAllAction(): Promise<ActionResult<TenantData>> {
 
     return {
       ok: true,
-      data: { organization, profile, user, members, customers, services, products, bookings, sales, saleItems, expenses, invoices, invoiceItems, movements, infrastructure },
+      data: { organization, profile, user, members, customers, services, products, testimonials, bookings, sales, saleItems, expenses, invoices, invoiceItems, movements, infrastructure },
     };
   } catch (err) {
     console.error(err);

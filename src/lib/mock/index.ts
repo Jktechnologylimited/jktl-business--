@@ -3,6 +3,7 @@ import { demoInfrastructure, demoMembers, demoOrganization, demoOwner, demoProfi
 import { demoCustomers } from "./customers";
 import { demoServices } from "./services";
 import { demoProducts } from "./products";
+import { demoTestimonials } from "./testimonials";
 import { demoBookings } from "./bookings";
 import { demoSales, demoSaleItems } from "./sales";
 import { demoExpenses } from "./expenses";
@@ -27,6 +28,7 @@ export function buildTenantData(now = new Date()): TenantData {
     customers: demoCustomers(now),
     services: demoServices(),
     products: demoProducts(),
+    testimonials: demoTestimonials(now),
     bookings: demoBookings(now),
     sales: demoSales(now),
     saleItems: demoSaleItems(),

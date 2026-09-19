@@ -22,6 +22,7 @@ import type {
   PaymentStatus,
   Product,
   Service,
+  Testimonial,
   TenantData,
 } from "@/lib/types";
 
@@ -92,6 +93,13 @@ export interface NewServiceInput {
   durationMin: number;
   description: string;
   active: boolean;
+  imageUrl: string | null;
+}
+
+export interface NewTestimonialInput {
+  customerName: string;
+  quote: string;
+  rating: number | null;
 }
 
 export interface NewProductInput {
@@ -189,12 +197,6 @@ export interface BusinessProfilePatch {
   state: string;
 }
 
-export interface NotificationPrefs {
-  bookingReminders: boolean;
-  lowStockAlerts: boolean;
-  dailySummaryEmail: boolean;
-}
-
 interface PendingSignup {
   name: string;
   email: string;
@@ -237,6 +239,10 @@ interface BusinessStore {
   updateProduct: (id: string, patch: Partial<NewProductInput>) => void;
   deleteProduct: (id: string) => void;
 
+  addTestimonial: (input: NewTestimonialInput) => Testimonial;
+  updateTestimonial: (id: string, patch: Partial<NewTestimonialInput>) => void;
+  deleteTestimonial: (id: string) => void;
+
   addBooking: (input: NewBookingInput) => void;
   updateBooking: (id: string, patch: Partial<NewBookingInput>) => void;
   deleteBooking: (id: string) => void;
@@ -267,9 +273,6 @@ interface BusinessStore {
    * "Plan" tab right after a checkout is confirmed, so the new
    * subscription status shows up immediately without a full re-sync. */
   setInfrastructure: (infra: Infrastructure) => void;
-
-  notificationPrefs: NotificationPrefs;
-  setNotificationPref: (key: keyof NotificationPrefs, value: boolean) => void;
 
   /** Internal: queues a mutation for sync and kicks off processing. No-op in demo mode. */
   enqueueSync: (type: string, payload: unknown) => void;
@@ -438,7 +441,12 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
   updateService: (id, patch) => {
     set((state) => ({ data: { ...state.data, services: state.data.services.map((s) => (s.id === id ? { ...s, ...patch } : s)) } }));
     const full = get().data.services.find((s) => s.id === id);
-    if (full) get().enqueueSync("service.update", { id, input: { name: full.name, category: full.category, priceKobo: full.priceKobo, durationMin: full.durationMin, description: full.description, active: full.active } });
+    if (full) {
+      get().enqueueSync("service.update", {
+        id,
+        input: { name: full.name, category: full.category, priceKobo: full.priceKobo, durationMin: full.durationMin, description: full.description, active: full.active, imageUrl: full.imageUrl },
+      });
+    }
     get().persistCache();
   },
   deleteService: (id) => {
@@ -470,6 +478,27 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
   deleteProduct: (id) => {
     set((state) => ({ data: { ...state.data, products: state.data.products.filter((p) => p.id !== id) } }));
     get().enqueueSync("product.delete", { id });
+    get().persistCache();
+  },
+
+  // ---- Testimonials ----
+  addTestimonial: (input) => {
+    const mode = get().mode;
+    const testimonial: Testimonial = { id: newId(mode, "tst"), organizationId: get().data.organization.id, createdAt: new Date().toISOString(), ...input };
+    set((state) => ({ data: { ...state.data, testimonials: [testimonial, ...state.data.testimonials] } }));
+    get().enqueueSync("testimonial.create", { id: testimonial.id, input });
+    get().persistCache();
+    return testimonial;
+  },
+  updateTestimonial: (id, patch) => {
+    set((state) => ({ data: { ...state.data, testimonials: state.data.testimonials.map((t) => (t.id === id ? { ...t, ...patch } : t)) } }));
+    const full = get().data.testimonials.find((t) => t.id === id);
+    if (full) get().enqueueSync("testimonial.update", { id, input: { customerName: full.customerName, quote: full.quote, rating: full.rating } });
+    get().persistCache();
+  },
+  deleteTestimonial: (id) => {
+    set((state) => ({ data: { ...state.data, testimonials: state.data.testimonials.filter((t) => t.id !== id) } }));
+    get().enqueueSync("testimonial.delete", { id });
     get().persistCache();
   },
 
@@ -612,6 +641,9 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
       totalKobo,
       notes: input.notes,
       paidAt: input.status === "paid" ? new Date().toISOString() : null,
+      paidVia: "manual",
+      platformFeeKobo: 0,
+      paymentReference: "",
     };
     const items = input.items.map((line) => ({
       id: newId(mode, "ii"),
@@ -703,12 +735,6 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
   setInfrastructure: (infrastructure) => {
     set((state) => ({ data: { ...state.data, infrastructure } }));
     get().persistCache();
-  },
-
-  // ---- Notification preferences (session-only, not persisted) ----
-  notificationPrefs: { bookingReminders: true, lowStockAlerts: true, dailySummaryEmail: false },
-  setNotificationPref: (key, value) => {
-    set((state) => ({ notificationPrefs: { ...state.notificationPrefs, [key]: value } }));
   },
 
   enqueueSync: (type, payload) => {

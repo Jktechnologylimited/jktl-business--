@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Field } from "@/components/app/field";
+import { ServicePhotoField } from "./service-photo-field";
 import type { NewServiceInput } from "@/lib/store";
 import { koboToNaira, nairaToKobo } from "@/lib/format";
 import type { Service } from "@/lib/types";
@@ -27,6 +28,7 @@ export function ServiceForm({
   const [duration, setDuration] = useState(initial ? String(initial.durationMin) : "30");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [active, setActive] = useState(initial?.active ?? true);
+  const [imageUrl, setImageUrl] = useState<string | null>(initial?.imageUrl ?? null);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,11 +39,15 @@ export function ServiceForm({
       durationMin: Number(duration) || 0,
       description,
       active,
+      imageUrl,
     });
   }
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
+      <Field label="Photo" htmlFor="sv-photo">
+        <ServicePhotoField value={imageUrl} onChange={setImageUrl} />
+      </Field>
       <Field label="Service name" htmlFor="sv-name">
         <Input id="sv-name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
       </Field>

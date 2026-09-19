@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LifeBuoy } from "lucide-react";
+import { LifeBuoy, MessageCircle } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { SearchInput } from "@/components/app/search-input";
 import { FilterTabs } from "@/components/app/filter-tabs";
@@ -9,13 +9,16 @@ import { GuideBubble } from "@/components/help/guide-bubble";
 import { AddToHomeScreenGuide } from "@/components/help/add-to-home-screen-guide";
 import { GUIDE_CATEGORIES, GUIDES } from "@/lib/guides";
 import { useCurrentIndustry } from "@/lib/store";
+import { waLink } from "@/lib/contact";
 
 const ALL = "all";
+const SUPPORT_PHONE = "07036580994";
 
 export default function HelpPage() {
   const industry = useCurrentIndustry();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>(ALL);
+  const supportLink = waLink(SUPPORT_PHONE, "Hi JKTL Business, I need some help with my account.");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -43,6 +46,23 @@ export default function HelpPage() {
       <p className="-mt-2 text-sm text-ink-muted">
         Answers to common questions about running {industry.productName} — tap any question to open it up.
       </p>
+
+      {supportLink ? (
+        <a
+          href={supportLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+            <MessageCircle className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-ink">Need more help? Chat with support</span>
+            <span className="block text-xs text-ink-muted">Message us on WhatsApp — we usually reply quickly</span>
+          </span>
+        </a>
+      ) : null}
 
       <SearchInput value={query} onChange={setQuery} placeholder={'Search guides — e.g. "partial payment"'} />
 

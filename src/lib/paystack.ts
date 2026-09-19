@@ -123,3 +123,112 @@ export async function getSubscriptionManageLink(subscriptionCode: string): Promi
   });
   return data.link;
 }
+
+// ---- Invoice payment links (split payments via Subaccounts) ----
+//
+// A customer pays an invoice through a hosted Paystack checkout that
+// splits automatically at the moment of payment: the invoice amount goes
+// straight to the business's own bank account (their Subaccount), and a
+// flat platform fee goes to JKTL's main account — nobody has to move
+// money by hand afterward. See src/lib/db/payments.ts for the settlement
+// details a business enters once, and src/app/pay/[id] for the public
+// checkout page this all supports.
+
+/** Flat fee, in kobo, added on top of every invoice paid through the
+ * online link — the payer bears it, so the business always receives the
+ * full invoice amount. ₦50. */
+export const INVOICE_PLATFORM_FEE_KOBO = 5000;
+
+export interface PaystackBank {
+  code: string;
+  name: string;
+}
+
+/** Nigerian banks Paystack can settle a Subaccount to, for the bank-picker
+ * in Settings → Payments. Free, no special approval needed per Paystack's
+ * docs — same secret key as everything else in this file. */
+export async function listBanks(): Promise<PaystackBank[]> {
+  const data = await paystackFetch<Array<{ name: string; code: string; active: boolean }>>(
+    "/bank?country=nigeria&currency=NGN&perPage=100",
+    { method: "GET" },
+  );
+  return data.filter((b) => b.active).map((b) => ({ code: b.code, name: b.name }));
+}
+
+export interface ResolvedAccount {
+  accountNumber: string;
+  accountName: string;
+}
+
+/** Looks up the real name on a Nigerian bank account — used right before
+ * saving payment settings so a mistyped account number is caught
+ * immediately rather than silently sending a business's customers' money
+ * to the wrong place. Free endpoint, per Paystack's docs. */
+export async function resolveAccountNumber(accountNumber: string, bankCode: string): Promise<ResolvedAccount> {
+  const data = await paystackFetch<{ account_number: string; account_name: string }>(
+    `/bank/resolve?account_number=${encodeURIComponent(accountNumber)}&bank_code=${encodeURIComponent(bankCode)}`,
+    { method: "GET" },
+  );
+  return { accountNumber: data.account_number, accountName: data.account_name };
+}
+
+/** Creates the Paystack Subaccount a business's invoice payments settle
+ * into. `percentage_charge: 0` is deliberately a no-op default — every
+ * real invoice charge overrides the split per-transaction with a flat
+ * `transaction_charge` (see initializeInvoicePayment below), so this
+ * default only matters as a safety net: if a charge were ever made
+ * without that override, the business keeps 100% rather than losing a
+ * cut to a stale percentage. */
+export async function createSubaccount(params: { businessName: string; bankCode: string; accountNumber: string }): Promise<{ subaccountCode: string }> {
+  const data = await paystackFetch<{ subaccount_code: string }>("/subaccount", {
+    method: "POST",
+    body: JSON.stringify({
+      business_name: params.businessName,
+      bank_code: params.bankCode,
+      account_number: params.accountNumber,
+      percentage_charge: 0,
+    }),
+  });
+  return { subaccountCode: data.subaccount_code };
+}
+
+/** Updates an existing Subaccount's settlement bank — used when a business
+ * changes their bank details after already having one. */
+export async function updateSubaccountBank(subaccountCode: string, params: { bankCode: string; accountNumber: string }): Promise<void> {
+  await paystackFetch(`/subaccount/${encodeURIComponent(subaccountCode)}`, {
+    method: "PUT",
+    body: JSON.stringify({ settlement_bank: params.bankCode, account_number: params.accountNumber }),
+  });
+}
+
+/** Starts a hosted Paystack checkout for a single invoice, splitting the
+ * charge at the moment it's paid: `amountKobo` (invoice total + the flat
+ * platform fee) is what the payer is charged, `transactionChargeKobo`
+ * (JKTL's cut) goes to the main account, and the remainder settles to the
+ * business's Subaccount automatically. `bearer: "account"` — Paystack's
+ * own default — means JKTL's main account absorbs Paystack's processing
+ * fee out of that cut, never the business's side of the split, since the
+ * whole point of the surcharge is that the business receives the full
+ * invoice amount. */
+export async function initializeInvoicePayment(params: {
+  email: string;
+  amountKobo: number;
+  subaccountCode: string;
+  transactionChargeKobo: number;
+  callbackUrl: string;
+  metadata: Record<string, unknown>;
+}): Promise<InitializeTransactionResult> {
+  const data = await paystackFetch<{ authorization_url: string; reference: string; access_code: string }>("/transaction/initialize", {
+    method: "POST",
+    body: JSON.stringify({
+      email: params.email,
+      amount: params.amountKobo,
+      subaccount: params.subaccountCode,
+      transaction_charge: params.transactionChargeKobo,
+      bearer: "account",
+      callback_url: params.callbackUrl,
+      metadata: params.metadata,
+    }),
+  });
+  return { authorizationUrl: data.authorization_url, reference: data.reference, accessCode: data.access_code };
+}

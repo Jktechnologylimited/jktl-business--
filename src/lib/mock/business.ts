@@ -33,6 +33,13 @@ export function demoProfile(): BusinessProfile {
     themeColor: "#0f6e5c",
     customDomain: "",
     customDomainVerified: false,
+    aboutText:
+      "Glam Hair Studio has been Yenagoa's go-to for braids, silk presses and nails since 2019. We use quality products, keep appointments on time, and treat every client like family.",
+    instagramUrl: "https://instagram.com/glamhairstudio",
+    tiktokUrl: "",
+    facebookUrl: "",
+    snapchatUrl: "",
+    fontPairId: "romantic",
   };
 }
 

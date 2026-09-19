@@ -35,6 +35,12 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     themeColor: (row.theme_color as string) || "#0f6e5c",
     customDomain: (row.custom_domain as string) ?? "",
     customDomainVerified: Boolean(row.custom_domain_verified),
+    aboutText: (row.about_text as string) ?? "",
+    instagramUrl: (row.instagram_url as string) ?? "",
+    tiktokUrl: (row.tiktok_url as string) ?? "",
+    facebookUrl: (row.facebook_url as string) ?? "",
+    snapchatUrl: (row.snapchat_url as string) ?? "",
+    fontPairId: (row.font_pair_id as string) || "classic",
   };
 }
 
@@ -114,6 +120,12 @@ export interface WebsiteSettingsPatch {
   logoUrl: string | null;
   coverPhotoUrl: string | null;
   published: boolean;
+  aboutText: string;
+  instagramUrl: string;
+  tiktokUrl: string;
+  facebookUrl: string;
+  snapchatUrl: string;
+  fontPairId: string;
 }
 
 export async function updateWebsiteSettings(orgId: string, patch: WebsiteSettingsPatch): Promise<BusinessProfile | null> {
@@ -121,7 +133,9 @@ export async function updateWebsiteSettings(orgId: string, patch: WebsiteSetting
   const rows = await sql`
     UPDATE business_profiles
     SET subdomain = ${patch.subdomain}, tagline = ${patch.tagline}, theme_color = ${patch.themeColor},
-        logo_url = ${patch.logoUrl}, cover_photo_url = ${patch.coverPhotoUrl}, published = ${patch.published}
+        logo_url = ${patch.logoUrl}, cover_photo_url = ${patch.coverPhotoUrl}, published = ${patch.published},
+        about_text = ${patch.aboutText}, instagram_url = ${patch.instagramUrl}, tiktok_url = ${patch.tiktokUrl},
+        facebook_url = ${patch.facebookUrl}, snapchat_url = ${patch.snapchatUrl}, font_pair_id = ${patch.fontPairId}
     WHERE organization_id = ${orgId}
     RETURNING *
   `;

@@ -1093,15 +1093,359 @@ here, which was always fine to index. Inline storage is meant as a
 zero-setup fallback, not the long-term path for a business with real
 traffic.
 
+## Dashboard rebrand + public-site fonts, socials, about, testimonials, service photos, support button (migration 008)
+
+A large round covering everything asked for in one go:
+
+**Dashboard rebrand.** The dashboard itself (not the public website — see
+below) now uses Cormorant Garamond (display) + Plus Jakarta Sans (body) +
+JetBrains Mono, and a navy color scale (light mode: navy-700/800 primary
+on a navy-50 soft background; dark mode: the full navy-950→200 scale),
+replacing the old mint-green primary. `src/lib/fonts.ts` is the single
+place every Google Font is loaded from; `src/app/layout.tsx` and
+`globals.css` were updated to use it.
+
+**7 accent colors, replacing the free-form color wheel.**
+`src/lib/accent-colors.ts` has 7 curated, contrast-checked swatches; the
+website settings page's color picker now shows only these.
+
+**7 font pairings for public websites — "girlie" to professional.**
+`SITE_FONT_PAIRS` in `src/lib/fonts.ts`: Playful, Romantic, Chic, Classic,
+Bold & Glam, Modern, Professional — each its own display+body Google Font
+pair, completely independent of the dashboard's own fixed brand and of
+the business's chosen accent color. Picked via the new
+`<FontPairPicker>` on the Website settings page; applied on the public
+site through a scoped CSS custom-property override, the same pattern
+already used for the public site's fixed light-mode colors.
+
+**Public website: about, social links, testimonials, responsive nav,
+motion, footer.** `src/components/public-site/public-site-view.tsx` was
+substantially rewritten:
+- New About section (owner-written, shown only if filled in) and a
+  Reviews section built from owner-entered testimonials (`Testimonial`
+  in `src/lib/types.ts`, managed from a new "Testimonials" block on the
+  Website settings page — add/edit/delete, saved instantly through the
+  same offline outbox as services and products, same reasoning as
+  before: no public submission form, so no moderation queue needed).
+- Instagram/TikTok/Facebook/Snapchat links in the footer as icon buttons
+  (hand-drawn monochrome icons in `src/components/public-site/social-icons.tsx`,
+  since no icon library here ships TikTok/Snapchat marks) — only the ones
+  a business actually fills in are shown.
+- Responsive nav: a proper hamburger menu on mobile (Framer Motion
+  `AnimatePresence` open/close), plain link row on larger screens.
+- Small Framer Motion touches throughout: scroll-reveal on each section,
+  hover/tap feedback on buttons and cards — `framer-motion` is a new
+  dependency (`package.json`).
+- Footer now reads "Powered by JKTL Business", linking to
+  `https://business.jktl.com.ng`.
+- Services can now have a photo too (`Service.imageUrl`, same
+  upload/persist/release pattern products already had) — shown on both
+  the services list in the dashboard and the public site's service cards.
+
+**Dashboard WhatsApp support.** The Help page (`src/app/business/help/page.tsx`)
+now has a "Chat with support" card at the top, linking to WhatsApp
+07036580994 via the existing `waLink()` helper — opens a pre-filled
+WhatsApp chat, nothing sent automatically.
+
+**Migration**: `migrations/008_website_v3.sql` adds `about_text`,
+`instagram_url`, `tiktok_url`, `facebook_url`, `snapchat_url`,
+`font_pair_id` to `business_profiles`, an `image_url` column to
+`services`, and a new `testimonials` table — deliberately with **no
+index on `quote`**, learning directly from the migration 007 bug above
+(a long free-text column must never get a btree index; only
+`organization_id` is indexed here). **Run `npm run db:migrate` again**
+to pick this up.
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build` (this
+sandbox has no route to fonts.googleapis.com, so the production build was
+run once against a temporary in-repo stub of `src/lib/fonts.ts` — same
+shape, no real network fetch — purely to prove everything else compiles
+and prerenders; the real font-loading code you're shipping was restored
+immediately after and is what's in this zip). Not visually checked on an
+actual device — worth a look on your phone before you consider this done.
+
+## Footer fix + JKTL command center (migration 009)
+
+Two more things from this round:
+
+**Footer**: the public site's footer now reads "Powered by *(the business's
+own name)*", not "Powered by JKTL Business" — still linking to
+`business.jktl.com.ng`. (The onboarding welcome note — JKTL logo, "John ·
+Founder & CEO, JKTL," shown to every new account on the final onboarding
+screen — was already in place from the round above; no change was needed
+there.)
+
+**Command center**: a superadmin view across every business on the
+platform, at `/admin`, built exactly to the scope you picked:
+
+- **A separate login**, not a mode on a business account. `admin_users`
+  and `admin_sessions` (migration `009_admin.sql`) are two brand-new
+  tables with no foreign key into `users`/`organizations`/`sessions` at
+  all — a command-center credential is a completely different account,
+  not a business owner with extra privileges. It even uses its own cookie
+  (`jktl_admin_session`, scoped to the `/admin` path) instead of the
+  business session cookie.
+- **View-only.** The dashboard at `/admin` lists every business with:
+  plan/subscription status, publish status, storage used, customer/
+  service/product/booking/sale *counts*, total recorded revenue, when
+  they signed up, and when they were last active (most recent booking or
+  sale timestamp) — searchable by name and filterable by business type.
+  Nothing here edits, suspends, or logs into a business account; that's
+  deliberately not built, per what you picked.
+- **Account-level only — no drill-down.** The query behind this
+  (`src/lib/db/admin.ts`) returns counts and sums, never an actual
+  customer, booking or sale row. A business's operational records are
+  only ever visible from that business's own dashboard.
+
+**There's no signup page for this — on purpose.** The only way to create
+or reset a command-center login is from a terminal with database access:
+
+```
+npm run admin:create -- "John" "john@jktl.com.ng" "a-strong-password"
+```
+
+(or set `ADMIN_NAME`/`ADMIN_EMAIL`/`ADMIN_PASSWORD` env vars and run
+`npm run admin:create` with no arguments). Safe to re-run for the same
+email — it resets that account's password rather than erroring, so this
+also doubles as "I forgot it." Requires 8+ characters given what this
+account can see. Once created, sign in at `/admin/login` on your deployed
+app (e.g. `https://business.jktl.com.ng/admin/login`).
+
+**Run `npm run db:migrate` again** to pick up migration 009, then run
+`npm run admin:create` once to make your own login before trying `/admin`.
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build` (same
+temporary font-stub approach as the round above — this sandbox has no
+route to fonts.googleapis.com; the real font code is what's shipped). Not
+live-tested against a real database or visually checked — worth creating
+your admin login and looking at `/admin` for real before relying on it,
+especially since it's now querying data across every business at once
+rather than one tenant at a time like everything else in this app.
+
 ## Next steps
 
 All three billing gates (team seats, storage, custom domain), all four
 asks from the landing-page round (redesign, product photos, report
-charts, dark mode), and the Upgrade-popup/wording pass are built and live.
-Worth doing before relying on any of it: run `npm run db:migrate` again to
-pick up migration 007 above, the real test-mode Paystack run-through
-already noted earlier, a visual pass on an actual phone/desktop for the
-new public site, and the service-worker unregister step above if the new
-layout still isn't showing after this update (all of this was built and
-verified via `tsc`/`eslint`/a full production build, not by looking at it
-rendered — I have no way to screenshot it from here).
+charts, dark mode), the Upgrade-popup/wording pass, last round's dashboard
+rebrand + public-site fonts/socials/about/testimonials/service photos/
+support button, and this round's footer fix + command center are built
+and live. Worth doing before relying on any of it: run `npm run db:migrate`
+again to pick up migrations 007 through 009, run `npm run admin:create`
+once to get your own `/admin` login, the real test-mode Paystack
+run-through already noted earlier, a visual pass on an actual phone/
+desktop for the new public site and the rebranded dashboard, and the
+service-worker unregister step above if a UI change still isn't showing
+after an update (all of this was built and verified via `tsc`/`eslint`/a
+full production build, not by looking at it rendered — I have no way to
+screenshot it from here).
+
+Queued for after this: adding new business types (nail tech, lash tech,
+nail & lash studio) and removing the dashboard's "Quick Actions" section —
+explicitly deferred per your own "once this is done" framing, not
+forgotten.
+
+## Round: migration bug fix + real push notifications (replacing the email placeholder)
+
+### The migration failure, root-caused
+
+You hit this running `npm run db:migrate` on a real database:
+
+```
+Applying 005_storage_and_custom_domain.sql ...
+Migration failed: index row requires 134864 bytes, maximum size is 8191
+```
+
+**Cause:** this project's migration runner (`scripts/migrate.mjs`) has no
+migration ledger — every single run replays *every* `.sql` file in
+`migrations/`, in order, from 001 onward, relying on `IF NOT EXISTS`
+everywhere for safety. Migration 005 originally created a btree index on
+`image_uploads(url)`. That's fine for a normal URL, but this app also
+lets `url` hold an inline base64 `data:image/...` string when Vercel Blob
+isn't configured — and Postgres btree indexes cap out at 8191 bytes per
+row, so any base64 image over roughly 2.7KB blows the index up. A later
+migration (007) already *dropped* that broken index — but because 005
+itself still contained the `CREATE INDEX` statement, every full replay
+(which is what happens on a fresh `db:migrate` run against a database
+that already has this data) recreated the exact same broken index and
+failed again, blocking every migration after it (006, 008, 009, 010) in
+the same run.
+
+**Fix:** removed the `CREATE INDEX` line directly from migration 005
+itself (not just relying on 007's `DROP`), with a comment explaining why
+editing an old migration file — rather than only adding a new one — is
+the correct move under this "replay everything, forever" model. The
+org-scoped index on `image_uploads` (`idx_image_uploads_org`) stays; only
+the one on the raw `url` column is gone for good. Also improved
+`migrate.mjs`'s failure output to print Postgres's `.detail`/`.table`/
+`.column`/`.constraint`/`.schema`/`.code` fields, not just the message, so
+any future migration failure is easier to pin down without guessing.
+
+**Run `npm run db:migrate` again** — it will now get past 005 cleanly and
+pick up everything through migration 010 (below) in the same run.
+
+### Push notifications, replacing the "Daily summary email" placeholder
+
+The Settings page used to say "Actual emails send once Resend is
+connected in Phase 2" next to a set of toggles that didn't persist
+anywhere. That's gone. In its place: real, working Web Push notifications
+— no email involved, nothing waiting on "Phase 2."
+
+**What it looks like:** Settings → Notifications now has one master
+"Push notifications" toggle (this is what actually subscribes your
+browser — tapping it on asks for notification permission and registers
+your device) plus four category toggles underneath it: new bookings, low
+stock, invoice paid, and a daily summary. Each persists per-business in
+the database and can be flipped independently.
+
+**What triggers a push, and when:**
+- **New booking** — fires the moment a customer books, so you don't have
+  to keep the dashboard open to know one came in.
+- **Low stock** — fires only the moment a product's stock *crosses into*
+  at-or-below its low-stock threshold (from a sale, a manual stock
+  adjustment, or an edit to the product itself) — not on every sale
+  afterward while it's already low, so it can't spam you.
+- **Invoice paid** — fires when an invoice's status is set to paid.
+- **Daily summary** — a once-a-day push (6am WAT / `Africa/Lagos`) with a
+  recap of yesterday's bookings, sales revenue, and new customers, sent
+  by a new scheduled job (`/api/cron/daily-summary`, same `CRON_SECRET`-
+  gated pattern as the existing renewal-reminders cron, added to
+  `vercel.json`). It only covers yesterday because Vercel's free/Hobby
+  plan only allows daily-granularity cron schedules — there's no way to
+  run a more frequent "reminder ahead of your next booking" job on that
+  tier, so booking notifications are immediate/event-based instead of
+  scheduled ahead of time.
+
+Every notification send is best-effort and wrapped so it can never break
+the action that triggered it (same pattern as existing email sending) —
+if push isn't configured yet, or a send fails, the booking/sale/invoice/
+stock update still succeeds normally.
+
+**One-time setup required before any of this actually sends anything:**
+push notifications need a VAPID key pair (the standard way a server
+proves its identity to push services like Chrome's or Firefox's). Without
+it, the toggle is there and flips, but nothing is delivered — same
+"missing integration never breaks the app" behavior as `RESEND_API_KEY`.
+Generate one once:
+
+```
+npm run push:generate-keys
+```
+
+That prints a public and private key. Set all three of these in your
+deployment's environment variables (see the updated `.env.example` for
+the full explanation of each):
+
+```
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<the public key, verbatim>
+VAPID_PRIVATE_KEY=<the private key, verbatim>
+VAPID_SUBJECT=mailto:support@jktl.com.ng
+```
+
+New tables (migration 010): `notification_preferences` (one row per
+business — the master switch plus the four category flags) and
+`push_subscriptions` (one row per subscribed device/browser, keyed by its
+unique push endpoint so the same business can have several devices
+subscribed, e.g. phone + laptop).
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build` (font-
+stub technique again). Not live-tested against a real push service or a
+real database — worth generating your VAPID keys, setting them, running
+the migration, and toggling push on for real once this is deployed.
+
+## Round: Quick Actions removed, invoice payment links, and command-center broadcasts
+
+### Quick Actions removed
+
+The dashboard's "Quick actions" grid (New sale / New booking / Add
+customer / Add product) is gone from `src/app/business/page.tsx`, per
+your request — everything there was already one tap away from the bottom
+nav anyway.
+
+### Invoice payment links — customers can now pay online, straight to your bank
+
+Run `npm run db:migrate` to pick up migration 011, then you're set up —
+no new environment variables, this reuses your existing `PAYSTACK_SECRET_KEY`
+/`PAYSTACK_PUBLIC_KEY`.
+
+**How it works, end to end:**
+1. You enter your bank account once, in Settings → Payments — pick your
+   bank, type your account number, tap "Verify account" (this calls
+   Paystack's bank-resolve API and shows back the real account name on
+   file, so a typo is caught before anything is saved, never trusting a
+   name you typed yourself), then "Save". This creates a Paystack
+   Subaccount behind the scenes (`src/lib/paystack.ts`'s
+   `createSubaccount`) and stores it in a new `payment_settings` table.
+2. On any unpaid invoice, "Share payment link" opens WhatsApp with a
+   message and a link pre-filled to that customer's number (converted from
+   local `0805...` format to the international form WhatsApp needs — see
+   `toWhatsAppNumber` in `src/lib/format.ts`); "Copy payment link" copies
+   the same link for pasting anywhere else.
+3. The customer opens `business.<yourdomain>/pay/<invoice-id>` — a public
+   page needing no login — sees the invoice and taps "Pay now", which
+   opens a hosted Paystack checkout (card, bank transfer, USSD, whatever
+   Paystack offers). If you haven't set up your bank yet, this page shows
+   the invoice with a "please pay directly" note instead, plus your bank
+   details as a manual-transfer fallback if you've entered them.
+4. **The split happens automatically, inside that one Paystack charge**:
+   the invoice amount goes straight to your Subaccount (your bank
+   account), and a flat **₦50** goes to JKTL's main account —
+   `transaction_charge` in `initializeInvoicePayment`. The customer pays
+   invoice total + ₦50; you always receive the full invoice amount. Paystack's
+   own processing fee comes out of JKTL's ₦50 cut (`bearer: "account"`),
+   never out of your side of the split.
+5. Paystack's `charge.success` webhook (already configured, from the
+   billing setup) marks the invoice paid, records the Paystack reference,
+   and fires the same "Invoice paid" push + customer email as manually
+   tapping "Mark as paid" always has — both paths now go through one
+   shared `finalizeInvoicePaid` helper (`src/lib/invoice-finalize.ts`) so
+   they can never drift apart.
+
+An invoice's own id doubles as its payment link's secret — it's already a
+`crypto.randomUUID()` for every real (non-demo) invoice, the same
+128-bit-random id Postgres uses as its primary key, so there's no
+separate token to manage or leak.
+
+**Worth knowing:** I couldn't test this against a live Paystack account
+or real bank details from here — I read Paystack's own docs for
+Subaccounts, bank-resolve, and split-payment fields to build this
+correctly (business-name/bank-code/account-number for creating a
+Subaccount; `transaction_charge` + `bearer` for the flat-fee split), but a
+real test-mode run-through once you're set up is worth doing before
+relying on it. This is also worth being aware of as a real merchant-of-
+record / money-routing feature, not just a UI addition — you're now
+sitting between customers and businesses' bank accounts and taking a cut
+per transaction, which is a meaningfully different posture than the
+subscription billing you already had.
+
+### Command-center broadcasts — downtime notices and promotions
+
+New tab at `/admin/broadcasts`. Pick a category (downtime notice /
+promotion / other), write a title and message, optionally a link to open
+when tapped, and send — it goes out as a real push notification to every
+business that has push turned on. Reuses the exact same push
+infrastructure as booking/low-stock/invoice-paid notifications, just
+fanned out across every business's subscriptions at once
+(`listBroadcastSubscriptions` in `src/lib/db/push.ts`) instead of one.
+
+A business can opt out of these specifically — a new "Platform updates"
+toggle in Settings → Notifications, on by default, separate from their
+own booking/stock/invoice alerts (per your call on keeping it a distinct
+toggle rather than tying it to the master push switch). Every broadcast
+is logged in a new `admin_broadcasts` table with how many devices it
+actually reached, shown as a history under the send form.
+
+### On "I can't log into admin"
+
+Almost certainly explained by the migration bug from the round above:
+migration 009 (the one that creates `admin_users` in the first place)
+never got to run, because migration 005's broken index blocked everything
+after it. That's fixed now — run `npm run db:migrate` again (it'll pick
+up 009, 010, and this round's 011 in one pass), then `npm run admin:create`
+once more. If it still doesn't work after that, the actual error message
+`db:migrate` or `admin:create` prints will say exactly why.
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
+(font-stub technique, same as every round). Not live-tested against a
+real Paystack account, real bank details, or a real push subscriber —
+worth a real test-mode payment and a real broadcast send once this is
+deployed and your VAPID/Paystack keys are in place.

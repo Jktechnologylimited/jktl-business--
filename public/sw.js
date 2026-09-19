@@ -99,3 +99,45 @@ self.addEventListener("fetch", (event) => {
     }),
   );
 });
+
+// Push notifications — see src/lib/push.ts for what sends these. Payload
+// is always JSON: { title, body, url? } (src/lib/push.ts's PushPayload).
+self.addEventListener("push", (event) => {
+  let payload = { title: "JKTL Business", body: "" };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch {
+    // A push with no JSON body (or a malformed one) still shows something
+    // rather than silently doing nothing.
+    if (event.data) payload.body = event.data.text();
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      data: { url: payload.url || "/business" },
+    }),
+  );
+});
+
+// Tapping a notification focuses an already-open tab on that URL if one
+// exists, instead of always opening a new one.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data && event.notification.data.url ? event.notification.data.url : "/business";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        const clientUrl = new URL(client.url);
+        if (clientUrl.origin === self.location.origin && "focus" in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(targetUrl);
+    }),
+  );
+});

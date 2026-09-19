@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Field } from "@/components/app/field";
 import { JktlMark } from "@/components/app/logo";
 import { ServiceForm } from "@/components/services/service-form";
+import { WelcomeNote } from "@/components/onboarding/welcome-note";
 import { useBusinessStore } from "@/lib/store";
 import { BUSINESS_TYPE_OPTIONS, getIndustry } from "@/lib/industry";
 import { cn } from "@/lib/utils";
@@ -146,7 +147,7 @@ export default function OnboardingPage() {
       ) : null}
 
       {step === 3 ? (
-        <div className="mt-8 flex flex-1 flex-col items-center justify-center text-center">
+        <div className="mt-8 flex flex-1 flex-col items-center text-center">
           <div className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
             <Check className="size-7" />
           </div>
@@ -155,6 +156,7 @@ export default function OnboardingPage() {
             {industry.productName} is ready with sample {industry.bookingLabelPlural.toLowerCase()}, customers and
             {" "}{industry.catalogLabel.toLowerCase()} so you can see it in action. Add more anytime from the menu.
           </p>
+          <WelcomeNote businessName={displayName} />
         </div>
       ) : null}
 

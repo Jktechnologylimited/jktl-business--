@@ -4,7 +4,8 @@ import * as db from "@/lib/db/invoices";
 import { getCustomer } from "@/lib/db/customers";
 import { getBusinessProfile } from "@/lib/db/organizations";
 import { requireSession } from "@/lib/session";
-import { sendInvoiceEmail, sendPaymentConfirmationEmail } from "@/lib/email";
+import { sendInvoiceEmail } from "@/lib/email";
+import { finalizeInvoicePaid } from "@/lib/invoice-finalize";
 import type { ActionResult } from "./types";
 import type { Invoice, InvoiceItem, InvoiceStatus } from "@/lib/types";
 
@@ -25,23 +26,7 @@ export async function updateInvoiceStatusAction(id: string, status: InvoiceStatu
     if (!invoice) return { ok: false, error: "Invoice not found." };
 
     if (status === "paid") {
-      try {
-        const [customer, profile] = await Promise.all([
-          getCustomer(organizationId, invoice.customerId),
-          getBusinessProfile(organizationId),
-        ]);
-        if (customer?.email && profile) {
-          await sendPaymentConfirmationEmail({
-            to: customer.email,
-            customerName: customer.name,
-            businessName: profile.displayName,
-            invoiceNumber: invoice.number,
-            totalKobo: invoice.totalKobo,
-          }).catch(() => undefined);
-        }
-      } catch {
-        // Best-effort — never let notification failure affect the status update.
-      }
+      void finalizeInvoicePaid(organizationId, invoice);
     }
 
     return { ok: true, data: invoice };

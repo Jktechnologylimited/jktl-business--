@@ -10,6 +10,20 @@ const nairaFormatterWithKobo = new Intl.NumberFormat("en-NG", {
   maximumFractionDigits: 2,
 });
 
+/** Converts a locally-formatted Nigerian phone number (e.g. "0805 234
+ * 1011", however it's spaced/punctuated) into the digits-only,
+ * country-code form a `wa.me` link needs ("2348052341011"). A number
+ * already in international form (234... or +234...) passes through
+ * unchanged; anything that doesn't look like a Nigerian number at all
+ * (wrong length) is returned digits-only as a best effort rather than
+ * guessed at. */
+export function toWhatsAppNumber(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("234")) return digits;
+  if (digits.startsWith("0") && digits.length === 11) return `234${digits.slice(1)}`;
+  return digits;
+}
+
 /** Format integer kobo as a Naira string, e.g. 18550000 -> "₦185,500". */
 export function formatKobo(kobo: number, opts?: { showKobo?: boolean }): string {
   const naira = kobo / 100;

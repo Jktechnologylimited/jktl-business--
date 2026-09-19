@@ -41,6 +41,7 @@ export default async function PublicSitePage({ params }: { params: Promise<{ sub
       profile={site.profile}
       services={site.services}
       products={site.products}
+      testimonials={site.testimonials}
       subdomain={subdomain.toLowerCase()}
       mode="live"
     />

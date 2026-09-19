@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Mail, Printer, Share2, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, MessageCircle, Printer, Share2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { StatusPill, invoiceStatusMeta } from "@/components/app/status-pill";
 import { useBusinessStore } from "@/lib/store";
 import { useToastStore } from "@/lib/toast";
 import { customerName } from "@/lib/selectors";
-import { formatKobo, formatShortDate } from "@/lib/format";
+import { formatKobo, formatShortDate, toWhatsAppNumber } from "@/lib/format";
 import { sendInvoiceEmailAction } from "@/lib/actions/invoice-actions";
 
 export default function InvoiceDetailPage() {
@@ -42,6 +42,25 @@ export default function InvoiceDetailPage() {
   const meta = invoiceStatusMeta(invoice.status);
   const customer = data.customers.find((c) => c.id === invoice.customerId);
   const inv = invoice; // narrowed, non-undefined — safe to close over below
+
+  function paymentLink() {
+    return `${window.location.origin}/pay/${inv.id}`;
+  }
+
+  function shareViaWhatsApp() {
+    const message = `Hi${customer?.name ? ` ${customer.name}` : ""}, here's invoice ${inv.number} from ${data.profile.displayName} for ${formatKobo(inv.totalKobo)}. You can pay online here: ${paymentLink()}`;
+    const phone = customer?.phone ? toWhatsAppNumber(customer.phone) : "";
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+  }
+
+  async function copyPaymentLink() {
+    try {
+      await navigator.clipboard.writeText(paymentLink());
+      showToast("Payment link copied");
+    } catch {
+      showToast("Couldn't copy — try WhatsApp instead", "danger");
+    }
+  }
 
   async function copySummary() {
     const lines = [
@@ -151,6 +170,16 @@ export default function InvoiceDetailPage() {
         <Button size="sm" variant="outline" onClick={copySummary}>
           <Share2 className="size-4" /> Copy summary
         </Button>
+        {mode === "live" && invoice.status !== "paid" ? (
+          <>
+            <Button size="sm" variant="outline" onClick={shareViaWhatsApp}>
+              <MessageCircle className="size-4" /> Share payment link
+            </Button>
+            <Button size="sm" variant="outline" onClick={copyPaymentLink}>
+              <Share2 className="size-4" /> Copy payment link
+            </Button>
+          </>
+        ) : null}
         {mode === "live" ? (
           <Button
             size="sm"

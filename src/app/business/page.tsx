@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Banknote, CalendarPlus, Package, Sparkles, UserPlus } from "lucide-react";
 import { StatTile } from "@/components/app/stat-tile";
 import { StatusPill, bookingStatusMeta } from "@/components/app/status-pill";
 import { DashboardSkeleton } from "@/components/app/skeleton";
@@ -162,38 +161,6 @@ export default function DashboardPage() {
           ))}
         </div>
       </section>
-
-      <section>
-        <h2 className="mb-3 font-display text-base font-semibold text-ink">Quick actions</h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <QuickAction href="/business/sales" icon={Banknote} label="New sale" />
-          <QuickAction href="/business/bookings" icon={CalendarPlus} label="New booking" />
-          <QuickAction href="/business/customers" icon={UserPlus} label="Add customer" />
-          <QuickAction href="/business/products" icon={Package} label="Add product" />
-        </div>
-      </section>
     </div>
-  );
-}
-
-function QuickAction({
-  href,
-  icon: Icon,
-  label,
-}: {
-  href: string;
-  icon: typeof Sparkles;
-  label: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex flex-col items-center gap-2 rounded-2xl border border-border-strong bg-paper p-4 text-center hover:bg-surface"
-    >
-      <span className="flex size-9 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
-        <Icon className="size-4.5" />
-      </span>
-      <span className="text-xs font-medium text-ink">{label}</span>
-    </Link>
   );
 }

@@ -68,5 +68,14 @@ async function main() {
 
 main().catch((err) => {
   console.error("Migration failed:", err.message);
+  // `err.message` alone doesn't say which table/index/constraint a
+  // Postgres error came from — the exact detail that would have made the
+  // "index row requires N bytes" bug immediately attributable instead of
+  // needing to read every migration file by hand. `pg` attaches these
+  // extra fields to the error object when Postgres provides them; print
+  // whichever are present.
+  for (const field of ["detail", "table", "column", "constraint", "schema", "code"]) {
+    if (err[field]) console.error(`  ${field}: ${err[field]}`);
+  }
   process.exit(1);
 });

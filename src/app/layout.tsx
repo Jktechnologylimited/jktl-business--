@@ -1,20 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Public_Sans } from "next/font/google";
+import { jetBrainsMono, ALL_SITE_FONT_VARIABLES } from "@/lib/fonts";
 import { AppBootstrap } from "@/components/app/app-bootstrap";
 import { Toaster } from "@/components/app/toaster";
 import "./globals.css";
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-manrope",
-  display: "swap",
-});
-
-const publicSans = Public_Sans({
-  subsets: ["latin"],
-  variable: "--font-public-sans",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "JKTL Business",
@@ -36,8 +24,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0f6e5c" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0d11" },
+    { media: "(prefers-color-scheme: light)", color: "#112055" },
+    { media: "(prefers-color-scheme: dark)", color: "#020818" },
   ],
 };
 
@@ -56,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // the server can't read the browser's localStorage) and the first
     // client paint legitimately differ on this one attribute. This tells
     // React that's expected here, rather than treating it as a bug.
-    <html lang="en" className={`${manrope.variable} ${publicSans.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${jetBrainsMono.variable} ${ALL_SITE_FONT_VARIABLES}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>

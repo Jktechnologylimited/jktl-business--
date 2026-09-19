@@ -6,6 +6,7 @@ import { getService } from "@/lib/db/services";
 import { getBusinessProfile } from "@/lib/db/organizations";
 import { requireSession } from "@/lib/session";
 import { sendBookingConfirmationEmail } from "@/lib/email";
+import { notifyNewBooking } from "@/lib/notify";
 import type { ActionResult } from "./types";
 import type { Booking, BookingStatus } from "@/lib/types";
 
@@ -30,11 +31,33 @@ async function notifyIfConfirmed(organizationId: string, booking: Booking): Prom
   }
 }
 
+/** The owner-facing push ("you got a booking") — separate from
+ * `notifyIfConfirmed` above, which emails the *customer* a confirmation
+ * and only for bookings that are already confirmed. This fires for every
+ * new booking regardless of status, since the owner wants to know right
+ * away either way. */
+async function notifyOwnerOfNewBooking(organizationId: string, booking: Booking): Promise<void> {
+  try {
+    const [customer, service] = await Promise.all([
+      getCustomer(organizationId, booking.customerId),
+      getService(organizationId, booking.serviceId),
+    ]);
+    await notifyNewBooking(organizationId, {
+      customerName: customer?.name ?? "",
+      serviceName: service?.name ?? "a service",
+      startsAt: booking.startsAt,
+    });
+  } catch {
+    // Best-effort — never let this affect the booking result.
+  }
+}
+
 export async function createBookingAction(id: string, input: db.BookingInput): Promise<ActionResult<Booking>> {
   try {
     const { organizationId } = await requireSession();
     const booking = await db.createBooking(organizationId, id, input);
     await notifyIfConfirmed(organizationId, booking);
+    void notifyOwnerOfNewBooking(organizationId, booking);
     return { ok: true, data: booking };
   } catch (err) {
     console.error(err);

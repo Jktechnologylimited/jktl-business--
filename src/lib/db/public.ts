@@ -1,7 +1,7 @@
 import "server-only";
 import { getSql } from "./client";
-import { kobo } from "./rows";
-import type { BusinessProfile, Product, Service } from "@/lib/types";
+import { kobo, isoDate } from "./rows";
+import type { BusinessProfile, Product, Service, Testimonial } from "@/lib/types";
 
 /**
  * Reads for the public, unauthenticated business-website surface only.
@@ -31,6 +31,12 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     themeColor: (row.theme_color as string) || "#0f6e5c",
     customDomain: (row.custom_domain as string) ?? "",
     customDomainVerified: Boolean(row.custom_domain_verified),
+    aboutText: (row.about_text as string) ?? "",
+    instagramUrl: (row.instagram_url as string) ?? "",
+    tiktokUrl: (row.tiktok_url as string) ?? "",
+    facebookUrl: (row.facebook_url as string) ?? "",
+    snapchatUrl: (row.snapchat_url as string) ?? "",
+    fontPairId: (row.font_pair_id as string) || "classic",
   };
 }
 
@@ -44,6 +50,7 @@ function mapService(row: Record<string, unknown>): Service {
     durationMin: Number(row.duration_min),
     description: row.description as string,
     active: row.active as boolean,
+    imageUrl: (row.image_url as string) ?? null,
   };
 }
 
@@ -64,10 +71,22 @@ function mapProduct(row: Record<string, unknown>): Product {
   };
 }
 
+function mapTestimonial(row: Record<string, unknown>): Testimonial {
+  return {
+    id: row.id as string,
+    organizationId: row.organization_id as string,
+    customerName: row.customer_name as string,
+    quote: row.quote as string,
+    rating: row.rating === null || row.rating === undefined ? null : Number(row.rating),
+    createdAt: isoDate(row.created_at as string),
+  };
+}
+
 export interface PublicSite {
   profile: BusinessProfile;
   services: Service[];
   products: Product[];
+  testimonials: Testimonial[];
 }
 
 /** Returns the full public site for a subdomain — only when that business
@@ -80,12 +99,18 @@ export async function getPublicSiteBySubdomain(subdomain: string): Promise<Publi
   if (!rows[0]) return null;
   const profile = mapProfile(rows[0]);
 
-  const [serviceRows, productRows] = await Promise.all([
+  const [serviceRows, productRows, testimonialRows] = await Promise.all([
     sql`SELECT * FROM services WHERE organization_id = ${profile.organizationId} AND active = true ORDER BY category, name`,
     sql`SELECT * FROM products WHERE organization_id = ${profile.organizationId} AND active = true ORDER BY category, name`,
+    sql`SELECT * FROM testimonials WHERE organization_id = ${profile.organizationId} ORDER BY created_at DESC`,
   ]);
 
-  return { profile, services: serviceRows.map(mapService), products: productRows.map(mapProduct) };
+  return {
+    profile,
+    services: serviceRows.map(mapService),
+    products: productRows.map(mapProduct),
+    testimonials: testimonialRows.map(mapTestimonial),
+  };
 }
 
 /**

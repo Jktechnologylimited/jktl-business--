@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Pencil, Plus, Scissors, Sparkles, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { FilterTabs } from "@/components/app/filter-tabs";
 import { EmptyState } from "@/components/app/empty-state";
@@ -56,6 +56,14 @@ export default function ServicesPage() {
         <div className="divide-y divide-border rounded-2xl border border-border">
           {filtered.map((s) => (
             <div key={s.id} className="flex items-center gap-3 px-4 py-3.5">
+              {s.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- data URL or hosted URL, not a static asset
+                <img src={s.imageUrl} alt="" className="size-10 shrink-0 rounded-lg border border-border object-cover" />
+              ) : (
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-strong text-ink-faint">
+                  <Scissors className="size-4" />
+                </span>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="truncate text-sm font-medium text-ink">{s.name}</span>

@@ -12,4 +12,10 @@
 -- handful of tracked images, so filtering the rest by `url` in-memory
 -- costs nothing. Dropping it, not replacing it with something cleverer
 -- (like an index on a hash of the url), keeps this simple.
+--
+-- Migration 005 has since been corrected to never create this index in
+-- the first place (see the note there), so on any database that picks up
+-- both files together this is a permanent no-op — kept only so a database
+-- that already applied the old 005 (before that fix) still gets the index
+-- removed.
 DROP INDEX IF EXISTS idx_image_uploads_url;

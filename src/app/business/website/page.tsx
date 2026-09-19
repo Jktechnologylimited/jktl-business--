@@ -10,7 +10,9 @@ import { Toggle } from "@/components/ui/toggle";
 import { LogoUploadField } from "@/components/website/logo-upload-field";
 import { CoverPhotoField } from "@/components/website/cover-photo-field";
 import { ColorPicker } from "@/components/website/color-picker";
+import { FontPairPicker } from "@/components/website/font-pair-picker";
 import { CustomDomainField } from "@/components/website/custom-domain-field";
+import { TestimonialManager } from "@/components/website/testimonial-manager";
 import { PublicSiteView } from "@/components/public-site/public-site-view";
 import { useBusinessStore } from "@/lib/store";
 import { useToastStore } from "@/lib/toast";
@@ -23,6 +25,7 @@ export default function WebsitePage() {
   const profile = useBusinessStore((s) => s.data.profile);
   const services = useBusinessStore((s) => s.data.services);
   const products = useBusinessStore((s) => s.data.products);
+  const testimonials = useBusinessStore((s) => s.data.testimonials);
   const infra = useBusinessStore((s) => s.data.infrastructure);
   const mode = useBusinessStore((s) => s.mode);
   const online = useBusinessStore((s) => s.online);
@@ -39,6 +42,12 @@ export default function WebsitePage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(profile.logoUrl);
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(profile.coverPhotoUrl);
   const [published, setPublished] = useState(Boolean(profile.published));
+  const [aboutText, setAboutText] = useState(profile.aboutText ?? "");
+  const [instagramUrl, setInstagramUrl] = useState(profile.instagramUrl ?? "");
+  const [tiktokUrl, setTiktokUrl] = useState(profile.tiktokUrl ?? "");
+  const [facebookUrl, setFacebookUrl] = useState(profile.facebookUrl ?? "");
+  const [snapchatUrl, setSnapchatUrl] = useState(profile.snapchatUrl ?? "");
+  const [fontPairId, setFontPairId] = useState(profile.fontPairId || "classic");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
@@ -48,7 +57,13 @@ export default function WebsitePage() {
     themeColor !== profile.themeColor ||
     logoUrl !== profile.logoUrl ||
     coverPhotoUrl !== profile.coverPhotoUrl ||
-    published !== profile.published;
+    published !== profile.published ||
+    aboutText !== profile.aboutText ||
+    instagramUrl !== profile.instagramUrl ||
+    tiktokUrl !== profile.tiktokUrl ||
+    facebookUrl !== profile.facebookUrl ||
+    snapchatUrl !== profile.snapchatUrl ||
+    fontPairId !== profile.fontPairId;
 
   const siteUrl = `https://${subdomain || "yourname"}.${ROOT_DOMAIN}`;
 
@@ -64,8 +79,14 @@ export default function WebsitePage() {
       address: profile.address,
       city: profile.city,
       state: profile.state,
+      aboutText,
+      instagramUrl,
+      tiktokUrl,
+      facebookUrl,
+      snapchatUrl,
+      fontPairId,
     }),
-    [profile, tagline, themeColor, logoUrl, coverPhotoUrl],
+    [profile, tagline, themeColor, logoUrl, coverPhotoUrl, aboutText, instagramUrl, tiktokUrl, facebookUrl, snapchatUrl, fontPairId],
   );
 
   async function save() {
@@ -80,13 +101,40 @@ export default function WebsitePage() {
     if (mode !== "live") {
       // Demo mode has nothing real to publish to — just update local state
       // so the settings still feel usable when trying the app out.
-      setWebsiteProfile({ ...profile, subdomain: cleanSubdomain, tagline: tagline.trim(), themeColor, logoUrl, coverPhotoUrl, published });
+      setWebsiteProfile({
+        ...profile,
+        subdomain: cleanSubdomain,
+        tagline: tagline.trim(),
+        themeColor,
+        logoUrl,
+        coverPhotoUrl,
+        published,
+        aboutText: aboutText.trim(),
+        instagramUrl: instagramUrl.trim(),
+        tiktokUrl: tiktokUrl.trim(),
+        facebookUrl: facebookUrl.trim(),
+        snapchatUrl: snapchatUrl.trim(),
+        fontPairId,
+      });
       showToast("Saved — you're in demo mode, so nothing was actually published");
       return;
     }
 
     setPending(true);
-    const result = await updateWebsiteSettingsAction({ subdomain: cleanSubdomain, tagline, themeColor, logoUrl, coverPhotoUrl, published });
+    const result = await updateWebsiteSettingsAction({
+      subdomain: cleanSubdomain,
+      tagline,
+      themeColor,
+      logoUrl,
+      coverPhotoUrl,
+      published,
+      aboutText,
+      instagramUrl,
+      tiktokUrl,
+      facebookUrl,
+      snapchatUrl,
+      fontPairId,
+    });
     setPending(false);
 
     if (!result.ok) {
@@ -97,6 +145,12 @@ export default function WebsitePage() {
     setSubdomain(result.data.subdomain);
     setLogoUrl(result.data.logoUrl);
     setCoverPhotoUrl(result.data.coverPhotoUrl);
+    setAboutText(result.data.aboutText);
+    setInstagramUrl(result.data.instagramUrl);
+    setTiktokUrl(result.data.tiktokUrl);
+    setFacebookUrl(result.data.facebookUrl);
+    setSnapchatUrl(result.data.snapchatUrl);
+    setFontPairId(result.data.fontPairId);
     showToast(result.data.published ? "Website published" : "Website settings saved");
   }
 
@@ -157,6 +211,34 @@ export default function WebsitePage() {
           <ColorPicker value={themeColor} onChange={setThemeColor} />
         </Field>
 
+        <Field label="Font style" htmlFor="site-font" hint="From girlie to professional — pick the vibe that fits your brand">
+          <FontPairPicker value={fontPairId} onChange={setFontPairId} />
+        </Field>
+
+        <Field label="About" htmlFor="site-about" hint="A short story about your business, shown in an About section">
+          <Textarea id="site-about" rows={4} value={aboutText} onChange={(e) => setAboutText(e.target.value)} maxLength={800} />
+        </Field>
+
+        <div className="border-t border-border pt-4">
+          <p className="mb-3 text-sm font-medium text-ink">Social links</p>
+          <div className="flex flex-col gap-3">
+            <Field label="Instagram" htmlFor="site-instagram">
+              <Input id="site-instagram" value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/yourbusiness" autoCapitalize="off" autoCorrect="off" />
+            </Field>
+            <Field label="TikTok" htmlFor="site-tiktok">
+              <Input id="site-tiktok" value={tiktokUrl} onChange={(e) => setTiktokUrl(e.target.value)} placeholder="https://tiktok.com/@yourbusiness" autoCapitalize="off" autoCorrect="off" />
+            </Field>
+            <Field label="Facebook" htmlFor="site-facebook">
+              <Input id="site-facebook" value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/yourbusiness" autoCapitalize="off" autoCorrect="off" />
+            </Field>
+            <Field label="Snapchat" htmlFor="site-snapchat">
+              <Input id="site-snapchat" value={snapchatUrl} onChange={(e) => setSnapchatUrl(e.target.value)} placeholder="https://snapchat.com/add/yourbusiness" autoCapitalize="off" autoCorrect="off" />
+            </Field>
+          </div>
+        </div>
+
+        <TestimonialManager />
+
         {error ? <p className="text-sm text-danger">{error}</p> : null}
         {!online && mode === "live" ? <p className="text-xs text-ink-muted">You&apos;re offline — reconnect to save website settings.</p> : null}
 
@@ -171,7 +253,14 @@ export default function WebsitePage() {
         <p className="text-xs text-ink-muted">This is exactly what visitors will see. Booking is disabled in this preview.</p>
         <div className="overflow-hidden rounded-2xl border border-border">
           <div className="max-h-[640px] overflow-y-auto">
-            <PublicSiteView profile={previewProfile} services={services} products={products} subdomain={subdomain || "preview"} mode="preview" />
+            <PublicSiteView
+              profile={previewProfile}
+              services={services}
+              products={products}
+              testimonials={testimonials}
+              subdomain={subdomain || "preview"}
+              mode="preview"
+            />
           </div>
         </div>
       </section>

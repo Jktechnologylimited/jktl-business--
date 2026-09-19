@@ -2,6 +2,7 @@ import type { ActionResult } from "@/lib/actions/types";
 import { createCustomerAction, updateCustomerAction, deleteCustomerAction } from "@/lib/actions/customer-actions";
 import { createServiceAction, updateServiceAction, deleteServiceAction } from "@/lib/actions/service-actions";
 import { createProductAction, updateProductAction, deleteProductAction } from "@/lib/actions/product-actions";
+import { createTestimonialAction, updateTestimonialAction, deleteTestimonialAction } from "@/lib/actions/testimonial-actions";
 import { createBookingAction, updateBookingAction, updateBookingStatusAction, deleteBookingAction } from "@/lib/actions/booking-actions";
 import { createSaleAction, updateSalePaymentAction } from "@/lib/actions/sale-actions";
 import { createExpenseAction, deleteExpenseAction } from "@/lib/actions/expense-actions";
@@ -28,6 +29,10 @@ export const MUTATION_HANDLERS: Record<string, Handler> = {
   "product.create": (p) => createProductAction(p.id, p.input),
   "product.update": (p) => updateProductAction(p.id, p.input),
   "product.delete": (p) => deleteProductAction(p.id),
+
+  "testimonial.create": (p) => createTestimonialAction(p.id, p.input),
+  "testimonial.update": (p) => updateTestimonialAction(p.id, p.input),
+  "testimonial.delete": (p) => deleteTestimonialAction(p.id),
 
   "booking.create": (p) => createBookingAction(p.id, p.input),
   "booking.update": (p) => updateBookingAction(p.id, p.input),

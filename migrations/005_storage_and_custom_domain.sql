@@ -26,6 +26,20 @@ ALTER TABLE infrastructure_accounts
 -- engineer around) so a later replace/remove can look up and release the
 -- exact size that was added, instead of trying to re-derive it from the
 -- URL alone (impossible for a Blob URL without an extra network call).
+-- NOTE: this table deliberately has NO index on `url`. It originally did
+-- (`idx_image_uploads_url`), and that was wrong: without a Blob store
+-- configured, `url` holds a full inline base64 `data:` image — routinely
+-- 50-250KB+ — and Postgres refuses to index anything past roughly 2.7KB in
+-- a standard btree ("index row requires N bytes, maximum size is 8191"),
+-- so that index broke every inline image upload. Migration 007 drops it.
+-- Since this app has no migration ledger and simply replays every file in
+-- order on every `npm run db:migrate` (see scripts/migrate.mjs), leaving
+-- the `CREATE INDEX` here would silently recreate the exact same broken
+-- index on the very next full replay — which is exactly what happened:
+-- once any inline image existed in this table, re-running migrations from
+-- scratch hit this same error again, this time failing migration 005
+-- itself and blocking every migration after it. So the fix belongs here,
+-- not just in 007 — a file in this project must be safe to replay forever.
 CREATE TABLE IF NOT EXISTS image_uploads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -33,7 +47,6 @@ CREATE TABLE IF NOT EXISTS image_uploads (
   size_bytes BIGINT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS idx_image_uploads_url ON image_uploads(url);
 CREATE INDEX IF NOT EXISTS idx_image_uploads_org ON image_uploads(organization_id);
 
 -- Custom domain: manual setup (per your choice) — the business proves

@@ -31,6 +31,12 @@ export interface WebsiteSettingsInput {
   /** Same shape as `logoUrl`, for the website hero's banner photo. */
   coverPhotoUrl: string | null;
   published: boolean;
+  aboutText: string;
+  instagramUrl: string;
+  tiktokUrl: string;
+  facebookUrl: string;
+  snapchatUrl: string;
+  fontPairId: string;
 }
 
 /**
@@ -69,6 +75,12 @@ export async function updateWebsiteSettingsAction(input: WebsiteSettingsInput): 
       logoUrl,
       coverPhotoUrl,
       published: input.published,
+      aboutText: input.aboutText.trim(),
+      instagramUrl: input.instagramUrl.trim(),
+      tiktokUrl: input.tiktokUrl.trim(),
+      facebookUrl: input.facebookUrl.trim(),
+      snapchatUrl: input.snapchatUrl.trim(),
+      fontPairId: input.fontPairId,
     });
     if (!profile) return { ok: false, error: "Business profile not found." };
 

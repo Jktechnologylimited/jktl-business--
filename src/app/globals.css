@@ -13,10 +13,12 @@
   --color-ink-muted: #5b6472;
   --color-ink-faint: #8a92a1;
 
-  /* Brand */
-  --color-primary: #0f6e5c;
-  --color-primary-strong: #0b5747;
-  --color-primary-soft: #e3f1ed;
+  /* Brand — navy, matching business.jktl.com.ng. The public website is
+     unaffected: it always renders through `.jktl-light` below, which keeps
+     its own (per-business, user-chosen) accent color independent of this. */
+  --color-primary: #112055; /* navy-700 */
+  --color-primary-strong: #0b1640; /* navy-800 */
+  --color-primary-soft: #eef2f9; /* navy-50 */
 
   /* Accent (gold) */
   --color-accent: #c98a2c;
@@ -31,8 +33,9 @@
 }
 
 @theme inline {
-  --font-display: var(--font-manrope);
-  --font-body: var(--font-public-sans);
+  --font-display: var(--font-cormorant-garamond);
+  --font-body: var(--font-plus-jakarta-sans);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 /*
@@ -49,19 +52,20 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-paper: #0b0d11;
-    --color-surface: #14171d;
-    --color-surface-strong: #1c2028;
-    --color-border: #262b34;
-    --color-border-strong: #333a46;
+    /* Navy dark scale, matching business.jktl.com.ng's own dark palette. */
+    --color-paper: #020818; /* navy-950 */
+    --color-surface: #060e2a; /* navy-900 */
+    --color-surface-strong: #0b1640; /* navy-800 */
+    --color-border: #0b1640; /* navy-800 */
+    --color-border-strong: #112055; /* navy-700 */
 
-    --color-ink: #f2f4f7;
-    --color-ink-muted: #9aa3b2;
-    --color-ink-faint: #6b7280;
+    --color-ink: #eef2f9; /* navy-50 */
+    --color-ink-muted: #96aecf; /* navy-200 */
+    --color-ink-faint: #3a5fa3; /* navy-400 */
 
-    --color-primary: #2bbf9e;
-    --color-primary-strong: #1e9a80;
-    --color-primary-soft: #123a30;
+    --color-primary: #6080bc; /* navy-300 — lighter than light-mode's navy-700 so it still reads against a navy-950 background */
+    --color-primary-strong: #96aecf; /* navy-200 */
+    --color-primary-soft: #112055; /* navy-700 */
 
     --color-accent: #d9a238;
     --color-accent-strong: #b8842a;
@@ -107,19 +111,19 @@
 }
 
 :root[data-theme="dark"] {
-  --color-paper: #0b0d11;
-  --color-surface: #14171d;
-  --color-surface-strong: #1c2028;
-  --color-border: #262b34;
-  --color-border-strong: #333a46;
+  --color-paper: #020818;
+  --color-surface: #060e2a;
+  --color-surface-strong: #0b1640;
+  --color-border: #0b1640;
+  --color-border-strong: #112055;
 
-  --color-ink: #f2f4f7;
-  --color-ink-muted: #9aa3b2;
-  --color-ink-faint: #6b7280;
+  --color-ink: #eef2f9;
+  --color-ink-muted: #96aecf;
+  --color-ink-faint: #3a5fa3;
 
-  --color-primary: #2bbf9e;
-  --color-primary-strong: #1e9a80;
-  --color-primary-soft: #123a30;
+  --color-primary: #6080bc;
+  --color-primary-strong: #96aecf;
+  --color-primary-soft: #112055;
 
   --color-accent: #d9a238;
   --color-accent-strong: #b8842a;

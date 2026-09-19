@@ -37,7 +37,7 @@ export class StorageQuotaError extends Error {
  */
 export async function persistImage(
   value: string | null | undefined,
-  folder: "avatars" | "receipts" | "logos" | "covers" | "products",
+  folder: "avatars" | "receipts" | "logos" | "covers" | "products" | "services",
   orgId: string,
 ): Promise<string | null | undefined> {
   if (!value) return value;
