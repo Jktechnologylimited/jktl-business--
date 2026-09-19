@@ -77,6 +77,20 @@ export async function applyPaymentSuccess(
   `;
 }
 
+/** Caches the reusable card token from a successful subscription charge —
+ * see `chargeAuthorization` in `src/lib/paystack.ts` for why this is what
+ * makes storage-overage billing possible without its own separate card
+ * flow. Only ever called with a token Paystack itself marked `reusable`
+ * (checked in the webhook handler before this is called); a non-reusable
+ * one-off authorization is never saved. Empty string is a valid no-op call
+ * (nothing to overwrite an existing token with), so this stays a plain
+ * UPDATE rather than skipping when the code is blank. */
+export async function saveAuthorizationCode(orgId: string, authorizationCode: string): Promise<void> {
+  if (!authorizationCode) return;
+  const sql = getSql();
+  await sql`UPDATE infrastructure_accounts SET paystack_authorization_code = ${authorizationCode} WHERE organization_id = ${orgId}`;
+}
+
 export async function saveSubscriptionCode(
   orgId: string,
   params: { subscriptionCode: string; emailToken: string; renewalDate?: Date },

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -10,23 +10,28 @@ import { Field } from "@/components/app/field";
 import { JktlWordmark } from "@/components/app/logo";
 import { useBusinessStore } from "@/lib/store";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const startSignup = useBusinessStore((s) => s.startSignup);
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // From an affiliate's referral link (?ref=CODE) — carried through to
+  // signupAction once the account is actually created in onboarding (see
+  // createLiveAccount in src/lib/store.ts). A missing or invalid code is
+  // silently ignored server-side, so this never blocks signup.
+  const referralCode = searchParams.get("ref");
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    startSignup(name, email, password, businessName);
+    startSignup(name, email, password, businessName, referralCode);
     router.push("/onboarding");
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
-      <JktlWordmark />
+    <>
       <h1 className="mt-10 font-display text-2xl font-bold tracking-tight text-ink">Create your account</h1>
       <p className="mt-1.5 text-sm text-ink-muted">Takes about two minutes. No card required.</p>
 
@@ -60,6 +65,17 @@ export default function SignupPage() {
           Sign in
         </Link>
       </p>
+    </>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
+      <JktlWordmark />
+      <Suspense fallback={null}>
+        <SignupForm />
+      </Suspense>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { StatTile } from "@/components/app/stat-tile";
 import { AdminBusinessTable } from "@/components/admin/business-table";
 import { listBusinessesForAdmin, summarize } from "@/lib/db/admin";
-import { formatKobo, formatMb } from "@/lib/format";
+import { formatKobo, formatGb } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ export default async function AdminHomePage() {
         <StatTile label="Businesses" value={overview.totalBusinesses.toLocaleString()} />
         <StatTile label="Published sites" value={overview.publishedCount.toLocaleString()} rule="info" />
         <StatTile label="Active subscriptions" value={overview.activeSubscriptions.toLocaleString()} rule="accent" />
-        <StatTile label="Total storage used" value={formatMb(overview.totalStorageUsedBytes)} rule="danger" />
+        <StatTile label="Total storage used" value={formatGb(overview.totalStorageUsedBytes)} rule="danger" />
       </div>
       <StatTile label="Combined recorded revenue (all businesses)" value={formatKobo(overview.totalRevenueKobo)} />
 

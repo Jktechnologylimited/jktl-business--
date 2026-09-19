@@ -1,6 +1,7 @@
 import "server-only";
 import { getSql } from "./client";
 import { kobo, isoDate } from "./rows";
+import { computeStorageOverageKobo } from "@/lib/billing";
 
 /**
  * Reads for the JKTL command center only — every other db/ module scopes
@@ -30,6 +31,10 @@ export interface AdminBusinessRow {
   renewalDate: string | null;
   storageUsedBytes: number;
   storageLimitBytes: number;
+  /** What the next renewal will bill for storage overage, in kobo — same
+   * live-preview computation as `getStorageUsage`'s `overageKobo`, derived
+   * here from the two fields above rather than a separate query. */
+  overageKobo: number;
   customersCount: number;
   servicesCount: number;
   productsCount: number;
@@ -44,6 +49,8 @@ export interface AdminBusinessRow {
 }
 
 function mapRow(row: Record<string, unknown>): AdminBusinessRow {
+  const storageUsedBytes = Number(row.storage_used_bytes ?? 0);
+  const storageLimitBytes = Number(row.storage_limit_bytes ?? 0);
   return {
     organizationId: row.organization_id as string,
     organizationName: row.organization_name as string,
@@ -57,8 +64,9 @@ function mapRow(row: Record<string, unknown>): AdminBusinessRow {
     subscriptionStatus: ((row.subscription_status as string) || "inactive") as AdminBusinessRow["subscriptionStatus"],
     billingCycle: (row.billing_cycle as string) || "yearly",
     renewalDate: row.renewal_date ? isoDate(row.renewal_date as string) : null,
-    storageUsedBytes: Number(row.storage_used_bytes ?? 0),
-    storageLimitBytes: Number(row.storage_limit_bytes ?? 0),
+    storageUsedBytes,
+    storageLimitBytes,
+    overageKobo: computeStorageOverageKobo(storageUsedBytes, storageLimitBytes),
     customersCount: Number(row.customers_count ?? 0),
     servicesCount: Number(row.services_count ?? 0),
     productsCount: Number(row.products_count ?? 0),

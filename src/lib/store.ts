@@ -202,6 +202,9 @@ interface PendingSignup {
   email: string;
   password: string;
   businessName: string;
+  /** Captured from a `?ref=<code>` on the signup link, if present — see
+   * src/app/signup/page.tsx. Best-effort only; never blocks signup. */
+  referralCode?: string | null;
 }
 
 interface BusinessStore {
@@ -222,7 +225,7 @@ interface BusinessStore {
   /** Stashes signup details; the real account isn't created until business
    * type is chosen in onboarding (createLiveAccount), since the backend
    * needs it up front to create the org + profile in one shot. */
-  startSignup: (name: string, email: string, password: string, businessName: string) => void;
+  startSignup: (name: string, email: string, password: string, businessName: string, referralCode?: string | null) => void;
   createLiveAccount: (businessType: BusinessType) => Promise<ActionOutcome>;
   completeOnboarding: (type: BusinessType, displayName: string) => void;
   logout: () => Promise<void>;
@@ -349,10 +352,10 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
     set((state) => ({ authenticated: true, onboardingComplete: true, mode: "demo", data: { ...state.data, user: { ...state.data.user, avatarUrl: existing.avatarUrl } } }));
   },
 
-  startSignup: (name, email, password, businessName) => {
+  startSignup: (name, email, password, businessName, referralCode) => {
     const fresh = buildTenantData();
     set(() => ({
-      pendingSignup: { name, email, password, businessName },
+      pendingSignup: { name, email, password, businessName, referralCode },
       authenticated: false,
       onboardingComplete: false,
       mode: "demo",

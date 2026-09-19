@@ -1640,3 +1640,487 @@ fonts without seven tiles taking up the screen.
 
 Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
 (font-stub technique).
+
+## Round: affiliate program — referrals that earn a recurring commission
+
+A full affiliate/agency system: an affiliate shares a referral link, a
+business signs up through it, and the affiliate earns a recurring cut of
+that business's Website & Hosting subscription for as long as it stays
+active. Scoped per your answers to three questions this round:
+**recurring % commission** (not a one-time bounty), **manual payout**
+(tracked in the command center, no automated bank transfers), and a
+**self-serve affiliate dashboard** (its own login, not admin-only).
+
+### Three separate logins, on purpose
+
+Same isolation pattern as the command center (migration 009): an
+affiliate account is a third, completely distinct credential from a
+business account and a command-center account — its own table
+(`affiliates`), its own session table (`affiliate_sessions`), its own
+cookie (`jktl_affiliate_session`, scoped to the `/affiliates` path) so
+the browser never sends it on a `/business` or `/admin` request. A leak
+of one credential type can never touch the others.
+
+There's no public affiliate signup — same reasoning as admin accounts.
+You create an affiliate from **Admin → Affiliates**, setting their name,
+email, initial password, and commission rate (defaults to 20%, adjustable
+per affiliate so different agencies can be offered different rates). You
+hand them that password directly; they can change it themselves once
+signed in, but can't reset a forgotten one yet (no email flow for that
+was in scope this round — worth adding if this gets real usage).
+
+### How a referral gets tracked and paid
+
+1. Every affiliate gets a random 7-character referral code and a link:
+   `.../signup?ref=CODE`. The **Affiliates** admin page shows it with a
+   one-tap copy button; the affiliate's own dashboard shows the same.
+2. When someone signs up through that link, `src/app/signup/page.tsx`
+   captures the `?ref=` code and carries it through to `signupAction`,
+   which records the referral (`affiliate_referrals`) right after the
+   account is created — best-effort: an invalid, missing, or suspended
+   affiliate's code is silently ignored and never blocks signup. First
+   touch wins — a business can only ever be credited to one affiliate
+   (enforced by a UNIQUE constraint), so re-clicking a link later can't
+   double-attribute it.
+3. Commission is accrued **only from the Paystack webhook**
+   (`handleChargeSuccess` in the webhook route), never from the
+   optimistic checkout-callback path in `billing-actions.ts`. Both paths
+   call `applyPaymentSuccess` for the same real payment (one gives
+   immediate UI feedback, the other is authoritative — see that
+   function's existing comment) — accruing commission in both would have
+   double-counted every single subscription payment. The webhook is the
+   one place a real charge is confirmed exactly once, so that's the only
+   place commission is computed and logged (`affiliate_earnings`).
+4. An affiliate's balance is never a stored running number — it's always
+   `SUM(earnings) − SUM(payouts)`, computed fresh on every read, so it
+   can never silently drift from what actually happened.
+5. You pay the affiliate yourself (bank transfer, WhatsApp, whatever) and
+   log it from **Admin → Affiliates → Record payout** — amount plus an
+   optional note (e.g. a transfer reference). Deliberately no Paystack
+   transfer integration — automating real outbound money movement was
+   explicitly scoped out this round as a bigger, higher-stakes build than
+   was warranted for a first version.
+6. Suspending an affiliate (a toggle in the admin list) stops new
+   commission from accruing on their referrals and blocks their login,
+   without touching what they've already earned or been paid.
+
+### Where things live
+
+- `migrations/012_affiliates.sql` — `affiliates`, `affiliate_sessions`,
+  `affiliate_referrals`, `affiliate_earnings`, `affiliate_payouts`.
+- `src/lib/db/affiliate-auth.ts` + `src/lib/affiliate-session.ts` — login
+  and cookie-session handling, mirroring `admin-auth.ts`/`admin-session.ts`.
+- `src/lib/db/affiliates.ts` — everything else: creating affiliates,
+  listing with stats, recording referrals/commission/payouts.
+- `src/lib/actions/admin-actions.ts` — `listAffiliatesAction`,
+  `createAffiliateAction`, `setAffiliateStatusAction`,
+  `recordAffiliatePayoutAction`.
+- `src/lib/actions/affiliate-actions.ts` — the affiliate-facing actions
+  (login, dashboard data, change password).
+- `src/app/admin/(command)/affiliates` + `src/components/admin/affiliate-manager.tsx`
+  — the command-center management screen (new "Affiliates" tab in the nav).
+- `src/app/affiliates/login` + `src/app/affiliates/(dashboard)` — the
+  affiliate's own portal: referral link with copy button, running
+  balance, referred businesses and their subscription status, an
+  earnings ledger, a payout history, and a password-change form.
+- `src/app/api/webhooks/paystack/route.ts` — the one line that actually
+  accrues commission, right after a subscription charge is confirmed.
+
+### What's intentionally not built yet
+
+- No automated payout — you pay affiliates manually and log it.
+- No "forgot password" for affiliates (they can change it once signed in,
+  but not reset a forgotten one) and no email invite when an account is
+  created — you share the password you set directly.
+- No agency-managing-sub-affiliates hierarchy — every affiliate (or
+  agency) is a flat, independent account with its own single referral
+  link. If you want an agency to track several of its own referrers
+  separately later, that'd be a real follow-on feature, not a tweak.
+- Commission is only computed on Website & Hosting subscription revenue,
+  not on the ₦50-per-paid-invoice platform fee — kept to the one clear,
+  meaningful revenue source rather than fragmenting commission across
+  every small transaction.
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
+(font-stub technique) after every batch of changes.
+
+## Round: storage overage becomes its own metered charge
+
+Previously, crossing the free storage quota (image uploads only — logos,
+avatars, receipts, product photos) just required an active Website &
+Hosting subscription, and being subscribed made storage unlimited for no
+extra charge. That's changed: storage overage is now billed separately, on
+top of the flat plan, priced per GB actually used past the quota. Team
+seats and a custom domain are unaffected — still gated exactly as before by
+`isSubscriptionActive`, still flat, still free once unlocked.
+
+- **Rate**: `STORAGE_OVERAGE_RATE_KOBO_PER_GB` in `src/lib/billing.ts` —
+  ₦2,000/GB/month, roughly 4x Neon's own $0.35/GB-month cost (a normal
+  cost-plus markup for a usage-based add-on). Charges are proportional to
+  the exact overage, not rounded up to a whole GB, and anything under
+  `MIN_OVERAGE_CHARGE_KOBO` (₦50) is skipped for that cycle rather than
+  billed — it doesn't carry forward or compound.
+- **How it's actually charged**: Paystack has no native metered/usage-based
+  price the way Stripe does. Instead, the webhook now captures the
+  *reusable* card token (`authorization_code`) from every successful
+  subscription charge (`paystack_authorization_code` on
+  `infrastructure_accounts`, migration 013) and charges that same token
+  again, separately, for the cycle's overage amount via Paystack's
+  `/transaction/charge_authorization` endpoint
+  (`chargeAuthorization` in `src/lib/paystack.ts`). This piggybacks on the
+  exact same `charge.success` webhook event that renews the flat
+  subscription (`src/app/api/webhooks/paystack/route.ts`), so it fires on
+  the same cadence and is guaranteed a card is already on file.
+- **Ledger**: `storage_overage_charges` (migration 013) — one row per
+  billing-cycle attempt per organization (`charged`/`failed`/`skipped`,
+  with a reason), same append-only reasoning as the affiliate ledgers.
+  The unique index on `(organization_id, cycle_key)` means a redelivered
+  webhook can't double-charge the same renewal.
+- **Failure handling is deliberately simple**: if a charge fails (declined
+  card, revoked authorization) or there's no saved card yet, that cycle's
+  overage just isn't collected — it doesn't retry or roll forward into the
+  next cycle's amount, since overage is computed live from current usage,
+  not from an unpaid balance.
+- **Display**: storage is now shown in GB everywhere (`formatGb` in
+  `src/lib/format.ts`, replacing `formatMb`), matching how Neon's own
+  dashboard displays it. The Settings → Plan storage panel previews what
+  the *next* renewal will bill (`overageKobo`, computed live in
+  `getStorageUsage`) before any charge happens, and distinguishes an
+  unsubscribed business (still hard-blocked at the quota, same as before)
+  from a subscribed one that's simply going to be billed for the extra.
+  The admin business table shows the same live overage preview per
+  business.
+
+### Where things live
+
+- `migrations/013_storage_overage_billing.sql` — the authorization-code
+  column and the `storage_overage_charges` ledger.
+- `src/lib/billing.ts` — the rate, the minimum-charge floor, and
+  `computeStorageOverageKobo`.
+- `src/lib/paystack.ts` — `chargeAuthorization`.
+- `src/lib/db/billing.ts` — `saveAuthorizationCode`.
+- `src/lib/db/storage-overage.ts` — `chargeStorageOverageForOrg` (the
+  actual charge attempt + ledger write) and `listStorageOverageCharges`.
+- `src/lib/db/storage.ts` — `getStorageUsage` now also returns a live
+  `overageKobo` preview.
+- `src/app/api/webhooks/paystack/route.ts` — captures the authorization
+  code and calls `chargeStorageOverageForOrg`, both best-effort, right
+  after the existing affiliate-commission call.
+
+### What's intentionally not built yet
+
+- **Email/SMS and every other infra-touching feature are still flat/free**,
+  by explicit choice for now — Resend (and whatever it's replaced with) is
+  still on a free tier, so there's nothing real to meter yet. If/when a
+  paid email tier is needed, it should get the same treatment: a documented
+  rate, a ledger, and a clear trigger point, not a silent cost absorbed
+  into the flat plan.
+- No automatic retry or rollover for a failed/skipped overage charge — see
+  "Failure handling" above.
+- No business-facing history view of past overage charges yet — the data
+  exists (`listStorageOverageCharges`) but isn't wired into the Settings
+  UI; only the live "what would be billed next" preview is.
+- Vercel and Resend are both still on free tiers in production right now —
+  see the "JKTL — Pricing & Unit Economics" doc in the project for the
+  cost implications and when that's expected to change.
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
+(font-stub technique).
+
+## Round: self-serve affiliate applications + an in-app playbook
+
+Two things this round, both aimed at getting two specific waiting
+affiliates working as fast as possible: affiliates can now apply for
+themselves instead of only being created by an admin, and every affiliate
+gets a JKTL-specific "how to actually earn from this" guide, both inside
+the app and as a standalone PDF you can send today, before either
+affiliate has an account.
+
+### Self-serve application, with an approval gate
+
+Affiliate accounts could previously only be created directly from
+**Admin → Affiliates**. Now anyone can apply at `/affiliates/apply` — name,
+email, a password they choose themselves, and an optional note — and the
+account is created immediately but starts in a new `pending` status. A
+pending affiliate cannot sign in yet; they see a clear "your application
+is awaiting approval" message rather than a generic login failure. You
+approve or reject each application from a new **Pending applications**
+section at the top of **Admin → Affiliates**, above the existing "Add an
+affiliate" form (which still works exactly as before, for affiliates you
+want to create directly and skip the queue entirely). Approving flips the
+status to `active` — no password reset or separate onboarding step,
+since the affiliate already set their own password at application time.
+Rejecting deletes the row outright; there's nothing worth keeping about
+an application nobody approved, and it frees the email address for a
+possible re-application later.
+
+- `migrations/014_affiliate_applications.sql` — adds
+  `affiliates.application_note` (plain `ALTER TABLE ... ADD COLUMN`; the
+  `status` column already had no CHECK constraint, so `'pending'` needed
+  no schema change beyond this).
+- `src/lib/db/affiliates.ts` — `applyAsAffiliate` (the insert, starting
+  at `pending`), `listPendingApplications`, `approveAffiliateApplication`,
+  `rejectAffiliateApplication`.
+- `src/lib/db/affiliate-auth.ts` — `verifyAffiliateLogin` now returns a
+  discriminated `AffiliateLoginResult` (`ok: true` with the affiliate, or
+  `ok: false` with a `reason` of `not_found` / `pending` / `suspended` /
+  `wrong_password`) instead of a bare nullable user, so the login page can
+  show pending/suspended-specific messaging. This is a deliberate
+  exception to this app's usual vague-on-purpose credential errors —
+  application status isn't sensitive information worth hiding the way a
+  wrong password is.
+- `src/lib/actions/affiliate-actions.ts` — `applyAsAffiliateAction`;
+  `affiliateLoginAction` updated for the new result shape.
+- `src/lib/actions/admin-actions.ts` — `approveAffiliateApplicationAction`,
+  `rejectAffiliateApplicationAction`.
+- `src/app/affiliates/apply/page.tsx` — the application form.
+- `src/app/affiliates/login/page.tsx` — links to it.
+- `src/components/admin/affiliate-manager.tsx` — the pending-applications
+  review section.
+
+### An in-app playbook, plus a standalone PDF for the two affiliates waiting right now
+
+Adapted from a social-media-monetization course you shared: the generic
+growth frameworks in it are common, widely-taught marketing concepts, so
+they've been rewritten with original JKTL-specific examples and stripped
+of anything that wasn't actually about earning a referral commission
+(platform monetization thresholds like TikTok's follower/view minimums
+govern a creator's own ad revenue, not a JKTL referral, so those didn't
+carry over).
+
+Every affiliate now has a **Playbook** tab next to their Dashboard
+(`/affiliates/playbook`, `src/components/affiliates/affiliate-nav.tsx`),
+and a callout on the dashboard itself pointing new affiliates to it. It
+covers: how the referral loop actually pays out, two content styles
+(face vs. faceless), six content angles with fill-in-the-blank templates
+and a worked example each (Education, Authority, Relatable, Storytelling,
+List, Pattern-break), where to post (TikTok/Reels, Facebook, WhatsApp
+Status), and a 7-day launch challenge — one angle a day, then check the
+dashboard for clicks and sign-ups.
+
+For the two affiliates who applied under your old, separate system and
+don't have an account here yet, the same content also exists as a
+standalone two-page PDF (delivered separately this round) you can send
+over WhatsApp right now — it ends with a line pointing them to
+`/affiliates/apply`, so it works as a real onboarding piece even before
+their accounts exist.
+
+One rendering bug caught before it shipped: the playbook page was
+initially marked `force-static`, on the assumption that hardcoded content
+is safe to pre-render. It isn't here — the page sits inside the
+`(dashboard)` layout's cookie-based session check
+(`getAffiliateSession()` + `redirect()` if signed out), and a forced
+static page can serve a cached hit without that check ever running. Build
+output confirmed the difference (`○ Static` vs. the correct `ƒ Dynamic`,
+matching every other page under that layout) — fixed by removing the
+directive, rebuilt, confirmed dynamic.
+
+### Addendum: follow-and-reshare, and jktl.com.ng as a brand mention
+
+Two follow-ups added right after the above shipped, both in the in-app
+playbook and the standalone PDF:
+
+- A **"The fastest content: follow & reshare us"** section, ahead of the
+  original-content frameworks — resharing JKTL's own posts (WhatsApp
+  Status, a Reel share, a retweet) is lower-effort than creating original
+  content and keeps an affiliate's feed consistent with the brand. It's
+  meant alongside the frameworks, not instead of them.
+- Step 2 of "how this earns you money" now also suggests mentioning
+  **jktl.com.ng** — the main JKTL website — by name before dropping a
+  personal referral link, for credibility.
+
+**The actual tracked referral link is unchanged** — affiliates still
+share their own `.../signup?ref=CODE` link exactly as before; that's a
+deliberate choice (asked and confirmed this round) to avoid touching
+commission attribution, since jktl.com.ng is a separate site from this
+app and isn't wired to forward a `?ref=` code anywhere.
+
+Real social links aren't hardcoded yet — nobody gave me actual
+Instagram/TikTok/Facebook/WhatsApp-Channel URLs to use, and guessing at a
+handle would risk linking to the wrong account or a dead page. Both
+places are built to make adding them a one-line change:
+
+- `src/app/affiliates/(dashboard)/playbook/page.tsx` — fill in the
+  `SOCIAL_LINKS` array near the top (`{ label: "Instagram", href: "https://instagram.com/..." }`);
+  the "follow & reshare" card renders the links automatically once
+  there's at least one, and stays hidden (no dead links shown) until then.
+- `scripts/build-affiliate-playbook-pdf.py` — the standalone PDF's build
+  script, saved here so it's reproducible later instead of one-off. Same
+  `SOCIAL_LINKS` list near the top; fill it in and re-run
+  `python3 scripts/build-affiliate-playbook-pdf.py` (needs `reportlab`,
+  `pip install reportlab --break-system-packages` if it's not already
+  installed) to regenerate `jktl-affiliate-playbook.pdf` with real links.
+
+### What this doesn't do yet
+
+- **The two specific affiliates still need their accounts created.** This
+  environment has no live database credentials, so nothing here can write
+  to your production Neon database. Either send them the PDF and let them
+  apply at `/affiliates/apply` (then approve them in Admin → Affiliates),
+  or create their accounts directly from the existing "Add an affiliate"
+  form — either way needs migrations **013** and **014** run against your
+  live database first, if you haven't already.
+- No email notification when an application is submitted or
+  approved/rejected — you'd need to check the Pending applications
+  section yourself. Same "no email flow yet" gap noted for password
+  resets in the original affiliate-program round.
+- The standalone PDF is static content, not personalized per affiliate
+  (no name, no referral link — they don't have one until approved).
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
+(font-stub technique).
+
+## Round: welcome bonus, verified bank payouts, monthly payout requests, and three Content business types
+
+Four pieces this round, all from the same conversation: a signup bonus for
+new affiliates, a way to actually pay them without typos, a self-serve
+payout request instead of the admin having to remember, and three new
+business types for the photographers/videographers/creators most likely
+to become affiliates in the first place.
+
+### The ₦2,000 welcome bonus — unlock-gated, not free money
+
+**On sizing**: asked directly whether ₦2,000 is too much — it's roughly
+two months of commission on one referral (20% × ₦5,000/mo = ₦1,000/mo),
+but the real number that matters is the downside: it only credits after a
+referred business's *first real payment* clears, the same webhook that
+credits ordinary commission. Worst case — someone signs up for one month
+at a friend's request and cancels immediately — JKTL still nets the
+subscription payment minus the bonus, so there's no scenario where this
+loses money outright, and it's a one-time-per-affiliate flag, not
+something repeatable per referral. ₦2,000 reads as reasonable for that
+risk profile; if affiliate volume ever gets large enough for the abuse
+case (churn-and-rejoin cycling) to matter in aggregate, that's the number
+to revisit first.
+
+- `migrations/015_affiliate_bonus_bank_payouts.sql` — adds
+  `affiliates.welcome_bonus_claimed_at` (nullable timestamp, not a balance
+  column — see below) plus the bank columns and `payout_requests` table
+  covered next.
+- `WELCOME_BONUS_KOBO` (src/lib/db/affiliates.ts) — the ₦2,000, as one
+  named constant.
+- `claimWelcomeBonusIfEligible` — called from inside `accrueCommissionForOrg`
+  (the existing webhook-triggered commission function) right after a real
+  commission row would be inserted. An atomic
+  `UPDATE ... WHERE welcome_bonus_claimed_at IS NULL RETURNING id` guards
+  against crediting it twice under a redelivered webhook or two referred
+  businesses paying near-simultaneously; only the call that wins the
+  update goes on to insert the bonus as a normal
+  `affiliate_earnings` row (`source_amount_kobo = 0`,
+  `commission_kobo = WELCOME_BONUS_KOBO`, `paystack_reference =
+  'welcome-bonus'`). This keeps the existing "balance is always
+  SUM(earnings) − SUM(payouts), never a stored counter" invariant intact
+  — the bonus is a real ledger row, not a special-cased number bolted on
+  top.
+- The affiliate dashboard shows an unclaimed-bonus banner until it fires,
+  then the bonus appears in "Recent earnings" labeled "Signup bonus"
+  (`AffiliateEarning.isBonus`, detected by `sourceAmountKobo === 0` — a
+  real commission row is always > 0).
+
+### Bank details, verified through Paystack
+
+Reused, not rebuilt: `listBanks()` and `resolveAccountNumber()` in
+`src/lib/paystack.ts` already existed for a business's own Settings →
+Payments panel. The affiliate side is the same free Paystack
+account-resolve call, minus the Subaccount creation (that's specific to
+automated split payments on invoices) — payouts are still a manual bank
+transfer the admin makes and records, exactly as scoped in the original
+affiliate-program round. Verification only removes the "did I copy the
+account number right" risk from that manual step.
+
+- New columns on `affiliates`: `bank_code`, `bank_name`, `account_number`,
+  `account_name` (the Paystack-resolved name, never client-supplied),
+  `bank_verified_at`.
+- `saveAffiliateBankDetails` (src/lib/db/affiliates.ts).
+- `listBanksForAffiliateAction`, `verifyAffiliateAccountAction`,
+  `saveAffiliateBankDetailsAction` (affiliate-actions.ts) — same pattern
+  as `payment-settings-actions.ts`, gated by an affiliate session instead
+  of a business one.
+- `src/components/affiliates/bank-details-form.tsx` — near-identical UI to
+  `PaymentSettingsPanel`, verify-then-save, shows the resolved name back
+  before saving.
+- The command center shows each affiliate's verified bank line (or "No
+  bank details yet") right in their card in Admin → Affiliates, and full
+  details again on any pending payout request — the admin always has what
+  they need to actually make the transfer.
+
+### Monthly payout requests, from the 21st
+
+An affiliate requests their *entire* current balance — not a custom
+amount, deliberately, so this is a one-tap action instead of needing
+amount validation against a balance that could change between load and
+submit — once a month, starting the 21st (Africa/Lagos time; Nigeria has
+one timezone, no DST, so `Intl.DateTimeFormat` with that zone is
+unambiguous regardless of where the server runs). The admin still pays by
+bank transfer and resolves the request as paid or declined — no automated
+Paystack transfer, same manual-payout choice as before; this just means
+the admin finds out an affiliate wants paying instead of having to check.
+
+- `payout_requests` table (migration 015) — `window_key` ('YYYY-MM') with
+  a `UNIQUE (affiliate_id, window_key)` constraint enforces one request
+  per affiliate per calendar month at the database level, same pattern as
+  `storage_overage_charges.cycle_key` from migration 013.
+- `isPayoutWindowOpen`, `currentPayoutWindowKey`, `requestPayout`,
+  `getCurrentPayoutRequest` (affiliate-side); `listPendingPayoutRequests`,
+  `markPayoutRequestPaid`, `declinePayoutRequest` (admin-side) — all in
+  `src/lib/db/affiliates.ts`. Requesting requires a verified bank on file
+  and a positive balance, or throws a specific sentinel
+  (`PAYOUT_WINDOW_CLOSED` / `PAYOUT_BANK_NOT_VERIFIED` /
+  `PAYOUT_NOTHING_TO_REQUEST` / `PAYOUT_ALREADY_REQUESTED`) that the
+  action layer turns into a real message.
+- `src/components/affiliates/payout-request-card.tsx` +
+  `payout-section.tsx` (a thin client wrapper so saving bank details can
+  flip the request card's "bank verified" state immediately, without a
+  full page reload — the dashboard page itself is a server component).
+- Admin → Affiliates gets a "Payout requests" section, same shape as
+  "Pending applications" — amount, verified bank details, an optional
+  note, Mark paid / Decline.
+- `markPayoutRequestPaid` records the payout through the *same*
+  `recordPayout` the manual "Record payout" form already used, so a
+  request-driven payout looks identical in the affiliate's payout history
+  — then marks the request resolved as two sequential statements (this
+  driver's tagged-template mode has no interactive transaction support;
+  a manual, one-off admin click carries the same acceptable risk window
+  this codebase takes elsewhere).
+
+### "Know what you're promoting"
+
+Added directly to the affiliate dashboard: a link right under the
+referral link itself — "Not sure what you're promoting? Open your link
+and see it yourself" — opening their own `.../signup?ref=CODE` link in a
+new tab, so they can walk through the real signup flow as a prospective
+customer would. No separate marketing/demo page exists in this app (the
+root `/` route is just an auth-state redirect, not a public page), so
+this was the honest option that needed no guessed URLs. The playbook (both
+in-app and the standalone PDF) has the same instruction in words, plus
+the welcome-bonus explanation above.
+
+### Three new business types: Photographer, Videographer, Content creator
+
+Added under a new "Content" category, same `stub()` pattern as every
+non-salon type (shares the salon engine's bookings/services/products
+until each gets its own tailored categories) — `catalogLabel: "Packages"`,
+matching how `wedding_events` is set up, since photographers and
+videographers typically sell packages rather than a per-item catalogue.
+
+- `src/lib/types.ts` — `BusinessType` union gains `photographer` |
+  `videographer` | `content_creator`.
+- `src/lib/industry.ts` — registry entries plus a new `{ category:
+  "Content", ... }` group in `BUSINESS_TYPE_GROUPS`, appearing in the
+  onboarding picker between "Events" and "Other".
+
+### What this doesn't do yet
+
+- The command center has no automated Paystack Transfer — "Mark paid"
+  just logs that the admin already sent the money by hand. Automating the
+  transfer itself would need Paystack Transfer Recipients and a funded
+  Paystack balance on JKTL's side, out of scope for the "manual, tracked
+  in command center" choice made from the start.
+- No reminder/notification when a payout request comes in — same gap as
+  applications; the admin has to check Admin → Affiliates.
+- The ₦2,000 bonus size is a constant, not configurable per affiliate the
+  way commission rate is — revisit if different agencies ever need
+  different bonus terms.
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
+(font-stub technique).

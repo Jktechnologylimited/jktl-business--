@@ -6,7 +6,7 @@ import { SearchInput } from "@/components/app/search-input";
 import { FilterTabs } from "@/components/app/filter-tabs";
 import { StatusPill, type Tone } from "@/components/app/status-pill";
 import { EmptyState } from "@/components/app/empty-state";
-import { formatKobo, formatMb, formatRelativeDay } from "@/lib/format";
+import { formatKobo, formatGb, formatRelativeDay } from "@/lib/format";
 import { getIndustry } from "@/lib/industry";
 import type { AdminBusinessRow } from "@/lib/db/admin";
 import type { BusinessType } from "@/lib/types";
@@ -89,7 +89,10 @@ export function AdminBusinessTable({ businesses }: { businesses: AdminBusinessRo
                       </div>
                     </td>
                     <td className="px-4 py-3 text-ink-muted">
-                      {formatMb(b.storageUsedBytes)} / {formatMb(b.storageLimitBytes)}
+                      <div>{formatGb(b.storageUsedBytes)} / {formatGb(b.storageLimitBytes)}</div>
+                      {b.overageKobo > 0 ? (
+                        <div className="text-[11px] text-danger">+{formatKobo(b.overageKobo)}/cycle overage</div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 text-ink-muted">{b.customersCount.toLocaleString()}</td>
                     <td className="px-4 py-3 text-ink-muted">{b.bookingsCount.toLocaleString()}</td>

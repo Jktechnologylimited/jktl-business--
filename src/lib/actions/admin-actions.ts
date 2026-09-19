@@ -6,6 +6,21 @@ import { startAdminSession, endAdminSession, requireAdminSession } from "@/lib/a
 import { listBroadcastSubscriptions } from "@/lib/db/push";
 import { sendBroadcastPush } from "@/lib/push";
 import { recordBroadcast, listBroadcasts } from "@/lib/db/admin";
+import {
+  listAffiliatesWithStats,
+  createAffiliate,
+  setAffiliateStatus,
+  approveAffiliateApplication,
+  rejectAffiliateApplication,
+  recordPayout,
+  listPendingPayoutRequests,
+  markPayoutRequestPaid,
+  declinePayoutRequest,
+  AFFILIATE_EMAIL_TAKEN,
+  type AffiliateStats,
+  type AffiliatePayout,
+  type PendingPayoutRequest,
+} from "@/lib/db/affiliates";
 import type { AdminBroadcast } from "@/lib/db/admin";
 import type { ActionResult } from "./types";
 
@@ -78,5 +93,125 @@ export async function listBroadcastsAction(): Promise<ActionResult<AdminBroadcas
   } catch (err) {
     console.error(err);
     return { ok: false, error: "Couldn't load broadcast history." };
+  }
+}
+
+export async function listAffiliatesAction(): Promise<ActionResult<AffiliateStats[]>> {
+  try {
+    await requireAdminSession();
+    return { ok: true, data: await listAffiliatesWithStats() };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't load affiliates." };
+  }
+}
+
+export async function createAffiliateAction(input: {
+  name: string;
+  email: string;
+  password: string;
+  commissionBps: number;
+}): Promise<ActionResult<AffiliateStats>> {
+  try {
+    await requireAdminSession();
+    if (!input.name.trim() || !input.email.trim()) return { ok: false, error: "Name and email are both required." };
+    if (input.password.length < 6) return { ok: false, error: "Password must be at least 6 characters." };
+    if (!Number.isFinite(input.commissionBps) || input.commissionBps < 0 || input.commissionBps > 10000) {
+      return { ok: false, error: "Commission rate must be between 0% and 100%." };
+    }
+    const affiliate = await createAffiliate(input);
+    return { ok: true, data: { ...affiliate, referralCount: 0, totalEarnedKobo: 0, totalPaidOutKobo: 0, balanceKobo: 0 } };
+  } catch (err) {
+    if (err instanceof Error && err.message === AFFILIATE_EMAIL_TAKEN) {
+      return { ok: false, error: "An affiliate with that email already exists." };
+    }
+    console.error(err);
+    return { ok: false, error: "Couldn't create that affiliate." };
+  }
+}
+
+export async function setAffiliateStatusAction(affiliateId: string, status: "active" | "suspended"): Promise<ActionResult<null>> {
+  try {
+    await requireAdminSession();
+    await setAffiliateStatus(affiliateId, status);
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't update that affiliate." };
+  }
+}
+
+/** Approves a self-serve application (migration 014) — the applicant
+ * already set their own password when they applied, so this is just a
+ * status flip to 'active'; nothing to generate or share with them. */
+export async function approveAffiliateApplicationAction(affiliateId: string): Promise<ActionResult<null>> {
+  try {
+    await requireAdminSession();
+    await approveAffiliateApplication(affiliateId);
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't approve that application." };
+  }
+}
+
+/** Deletes the application outright — see rejectAffiliateApplication's own
+ * comment for why that's fine (nothing worth keeping about one nobody
+ * approved). */
+export async function rejectAffiliateApplicationAction(affiliateId: string): Promise<ActionResult<null>> {
+  try {
+    await requireAdminSession();
+    await rejectAffiliateApplication(affiliateId);
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't reject that application." };
+  }
+}
+
+export async function recordAffiliatePayoutAction(affiliateId: string, amountKobo: number, note: string): Promise<ActionResult<AffiliatePayout>> {
+  try {
+    const admin = await requireAdminSession();
+    if (!Number.isFinite(amountKobo) || amountKobo <= 0) return { ok: false, error: "Enter a valid payout amount." };
+    const payout = await recordPayout(affiliateId, admin.id, amountKobo, note.trim());
+    return { ok: true, data: payout };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't record that payout." };
+  }
+}
+
+export async function listPendingPayoutRequestsAction(): Promise<ActionResult<PendingPayoutRequest[]>> {
+  try {
+    await requireAdminSession();
+    return { ok: true, data: await listPendingPayoutRequests() };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't load payout requests." };
+  }
+}
+
+/** Pays a request via the same ledger the manual "Record payout" form
+ * uses (see `markPayoutRequestPaid`'s own comment), then marks the
+ * request resolved. */
+export async function markPayoutRequestPaidAction(requestId: string, note: string): Promise<ActionResult<AffiliatePayout>> {
+  try {
+    const admin = await requireAdminSession();
+    const payout = await markPayoutRequestPaid(requestId, admin.id, note.trim());
+    return { ok: true, data: payout };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't mark that payout request paid." };
+  }
+}
+
+export async function declinePayoutRequestAction(requestId: string): Promise<ActionResult<null>> {
+  try {
+    const admin = await requireAdminSession();
+    await declinePayoutRequest(requestId, admin.id);
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't decline that payout request." };
   }
 }

@@ -82,9 +82,13 @@ export function firstName(fullName: string): string {
   return fullName.trim().split(/\s+/)[0] ?? fullName;
 }
 
-/** Format a byte count as MB to one decimal place, e.g. 5_242_880 -> "5.0 MB". */
-export function formatMb(bytes: number): string {
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+/** Format a byte count in GB to two decimal places, e.g. 52_428_800 ->
+ * "0.05 GB". Matches how Neon (our own Postgres provider) displays storage
+ * on its own dashboard, so a business's usage reads in the same units as
+ * our actual infra bill does — no separate "MB for customers, GB for us"
+ * mental conversion. */
+export function formatGb(bytes: number): string {
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 export function initials(fullName: string): string {

@@ -5,6 +5,7 @@ import { signup, verifyLogin, findUserByEmail, createPasswordResetToken, consume
 import { getBusinessProfile, getUser } from "@/lib/db/organizations";
 import { startSession, endSession, getSession, requireSession } from "@/lib/session";
 import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
+import { recordReferralIfValid } from "@/lib/db/affiliates";
 import type { ActionResult } from "./types";
 import type { BusinessType } from "@/lib/types";
 
@@ -14,6 +15,9 @@ export interface SignupPayload {
   password: string;
   businessName: string;
   businessType: BusinessType;
+  /** From a `?ref=<code>` on the signup link (see src/app/signup/page.tsx)
+   * — best-effort only, see recordReferralIfValid. */
+  referralCode?: string | null;
 }
 
 export async function signupAction(input: SignupPayload): Promise<ActionResult<{ organizationId: string }>> {
@@ -23,6 +27,7 @@ export async function signupAction(input: SignupPayload): Promise<ActionResult<{
     }
     const { userId, organizationId } = await signup(input);
     await startSession(userId, organizationId);
+    await recordReferralIfValid(organizationId, input.referralCode).catch((err) => console.error("recordReferralIfValid failed:", err));
     await sendWelcomeEmail(input.email, input.name, input.businessName).catch(() => undefined);
     return { ok: true, data: { organizationId } };
   } catch (err) {

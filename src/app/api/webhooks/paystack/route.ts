@@ -3,6 +3,7 @@ import { verifyWebhookSignature, INVOICE_PLATFORM_FEE_KOBO } from "@/lib/paystac
 import {
   applyPaymentSuccess,
   saveSubscriptionCode,
+  saveAuthorizationCode,
   setSubscriptionStatus,
   findOrgIdByCustomerCode,
   findOrgIdBySubscriptionCode,
@@ -11,6 +12,8 @@ import {
 } from "@/lib/db/billing";
 import { markInvoicePaidOnline } from "@/lib/db/invoices";
 import { finalizeInvoicePaid } from "@/lib/invoice-finalize";
+import { accrueCommissionForOrg } from "@/lib/db/affiliates";
+import { chargeStorageOverageForOrg } from "@/lib/db/storage-overage";
 import { addBillingCycle, getCycleDef, type BillingCycle } from "@/lib/billing";
 
 interface PaystackEvent {
@@ -121,13 +124,44 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
   const cycle = getCycleDef(cycleId);
   const paidAt = data.paid_at ? new Date(data.paid_at as string) : new Date();
   const renewalDate = addBillingCycle(paidAt, cycleId);
+  const priceKobo = cycle?.priceKobo ?? Number(data.amount);
 
   await applyPaymentSuccess(orgId, {
     cycle: cycleId,
-    priceKobo: cycle?.priceKobo ?? Number(data.amount),
+    priceKobo,
     customerCode: (customer.customer_code as string) ?? "",
     renewalDate,
   });
+
+  // Cache the reusable card token from this charge — see
+  // `chargeAuthorization` in src/lib/paystack.ts. Only ever a *reusable*
+  // one; a non-reusable authorization can't charge again later, so saving
+  // it would just mean a future overage attempt fails against a dead
+  // token instead of skipping cleanly with "no card on file".
+  const authorization = asRecord(data.authorization);
+  if (authorization.reusable === true && authorization.authorization_code) {
+    await saveAuthorizationCode(orgId, authorization.authorization_code as string).catch((err) =>
+      console.error("paystack webhook: saveAuthorizationCode failed", err),
+    );
+  }
+
+  // Affiliate commission, if this business signed up through a referral
+  // link — deliberately here (the authoritative webhook), never from the
+  // optimistic checkout-callback path in billing-actions.ts, so a single
+  // real payment is never double-counted. Best-effort: a commission
+  // bookkeeping failure must never break subscription billing itself.
+  await accrueCommissionForOrg(orgId, priceKobo, (data.reference as string) ?? "").catch((err) =>
+    console.error("paystack webhook: accrueCommissionForOrg failed", err),
+  );
+
+  // Storage overage for the cycle that just ended — metered separately
+  // from the flat price above (see src/lib/billing.ts). `renewalDate` (the
+  // *new* one, just computed) is this attempt's idempotency key, so a
+  // redelivered webhook for the same renewal can't double-charge. Also
+  // best-effort, for the same reason as the commission call just above.
+  await chargeStorageOverageForOrg(orgId, renewalDate.toISOString().slice(0, 10)).catch((err) =>
+    console.error("paystack webhook: chargeStorageOverageForOrg failed", err),
+  );
 }
 
 /** A customer paid an invoice through the public `/pay/[id]` link. The

@@ -195,7 +195,7 @@ export default function SettingsPage() {
       {tab === "infrastructure" ? (
         <div className="flex flex-col gap-4">
           <BillingPanel infra={infra} mode={mode} />
-          <StorageUsagePanel mode={mode} />
+          <StorageUsagePanel mode={mode} isSubscribed={infra.subscriptionStatus === "active" || infra.subscriptionStatus === "past_due"} />
           <section className="rounded-2xl border border-border p-4">
             <h2 className="font-display text-sm font-semibold text-ink">Infrastructure status</h2>
             <dl className="mt-2 divide-y divide-border">

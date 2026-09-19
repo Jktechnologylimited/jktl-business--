@@ -1,6 +1,7 @@
 import "server-only";
 import { getSql } from "./client";
 import { isSubscriptionActive } from "./billing";
+import { computeStorageOverageKobo } from "@/lib/billing";
 
 /**
  * Tracks and enforces the "Website & Hosting" storage quota — see
@@ -13,6 +14,11 @@ import { isSubscriptionActive } from "./billing";
 export interface StorageUsage {
   usedBytes: number;
   limitBytes: number;
+  /** What the *next* renewal would bill for the current overage, in kobo,
+   * if usage stays exactly where it is — a live preview, not a charge that
+   * has happened yet. 0 whenever there's no overage. See
+   * `src/lib/db/storage-overage.ts` for where this actually gets charged. */
+  overageKobo: number;
 }
 
 export async function getStorageUsage(orgId: string): Promise<StorageUsage> {
@@ -21,10 +27,9 @@ export async function getStorageUsage(orgId: string): Promise<StorageUsage> {
     SELECT storage_used_bytes, storage_limit_bytes FROM infrastructure_accounts WHERE organization_id = ${orgId}
   `;
   const row = rows[0];
-  return {
-    usedBytes: Number(row?.storage_used_bytes ?? 0),
-    limitBytes: Number(row?.storage_limit_bytes ?? 52_428_800),
-  };
+  const usedBytes = Number(row?.storage_used_bytes ?? 0);
+  const limitBytes = Number(row?.storage_limit_bytes ?? 52_428_800);
+  return { usedBytes, limitBytes, overageKobo: computeStorageOverageKobo(usedBytes, limitBytes) };
 }
 
 /**

@@ -47,6 +47,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/broadcasts" className="border-b-2 border-transparent py-3 text-ink-muted hover:border-border-strong hover:text-ink">
             Broadcasts
           </Link>
+          <Link href="/admin/affiliates" className="border-b-2 border-transparent py-3 text-ink-muted hover:border-border-strong hover:text-ink">
+            Affiliates
+          </Link>
         </div>
       </nav>
       <main className="mx-auto max-w-6xl px-5 py-6">{children}</main>

@@ -124,6 +124,43 @@ export async function getSubscriptionManageLink(subscriptionCode: string): Promi
   return data.link;
 }
 
+export interface ChargeAuthorizationResult {
+  reference: string;
+  status: "success" | "failed" | string;
+}
+
+/**
+ * Charges a previously-seen *reusable* authorization directly — no hosted
+ * checkout, no new card entry. This is what makes storage-overage billing
+ * possible at all: Paystack has no native usage-based/metered price the
+ * way Stripe does, so overage is instead charged as its own one-off amount
+ * against the same card token that's already paying the flat subscription
+ * (see `handleChargeSuccess` in the webhook route for where that token is
+ * captured, and `src/lib/db/storage-overage.ts` for the caller). Throws if
+ * Paystack reports failure — a declined or revoked authorization is a
+ * normal outcome here, not a bug, so callers catch this rather than
+ * letting it propagate. */
+export async function chargeAuthorization(params: {
+  authorizationCode: string;
+  email: string;
+  amountKobo: number;
+  metadata: Record<string, unknown>;
+}): Promise<ChargeAuthorizationResult> {
+  const data = await paystackFetch<{ reference: string; status: string }>("/transaction/charge_authorization", {
+    method: "POST",
+    body: JSON.stringify({
+      authorization_code: params.authorizationCode,
+      email: params.email,
+      amount: params.amountKobo,
+      metadata: params.metadata,
+    }),
+  });
+  if (data.status !== "success") {
+    throw new Error(`Paystack declined the charge (status: ${data.status})`);
+  }
+  return { reference: data.reference, status: data.status };
+}
+
 // ---- Invoice payment links (split payments via Subaccounts) ----
 //
 // A customer pays an invoice through a hosted Paystack checkout that

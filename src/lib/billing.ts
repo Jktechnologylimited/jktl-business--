@@ -6,16 +6,24 @@
  * gates, because each has a real per-business cost, all three built and live:
  *   1. **Team seats** — the owner is free; a 2nd+ member needs it (see
  *      `FREE_TEAM_SEATS` below and `addMemberAction`).
- *   2. **Storage past the free 50MB quota** — image uploads (logos, avatars,
- *      receipts, product photos) only; see `src/lib/db/storage.ts`.
+ *   2. **Going past the free storage quota at all** — image uploads (logos,
+ *      avatars, receipts, product photos) only; see `src/lib/db/storage.ts`.
+ *      Being subscribed is what lets a business exceed the quota in the
+ *      first place — but unlike the other two gates, exceeding it isn't
+ *      free once unlocked. See `STORAGE_OVERAGE_RATE_KOBO_PER_GB` below:
+ *      the overage itself is billed separately, on top of this flat price,
+ *      each time the subscription renews (`src/lib/db/storage-overage.ts`).
  *   3. **A custom domain** — DNS-verified, manually added in Vercel; see
  *      `src/lib/actions/domain-actions.ts`.
  *
- * Prices are flat regardless of business size — no per-seat or per-GB
- * tiering beyond the one free-tier cutoff for each of the above. That's a
- * deliberate simplicity choice: real cost variance between a solo operator
- * and a busy salon is small at this scale, and finer tiering would mean
- * more Paystack plans and more UI to explain for not much benefit yet.
+ * Prices are flat regardless of business size — no per-seat tiering beyond
+ * the one free-seat cutoff. That's a deliberate simplicity choice: real
+ * cost variance between a solo operator and a busy salon is small at this
+ * scale for seats and domains, and finer tiering would mean more Paystack
+ * plans and more UI to explain for not much benefit yet. Storage is the one
+ * exception, because unlike seats or a domain, storage cost scales
+ * continuously with how many photos a business uploads rather than sitting
+ * at one of a couple of discrete levels — so it gets metered instead.
  */
 
 export type BillingCycle = "monthly" | "quarterly" | "biannually" | "yearly";
@@ -69,4 +77,40 @@ export const PLAN_NAME_PREFIX = "Website & Hosting";
 export function planNameFor(cycle: BillingCycle): string {
   const def = getCycleDef(cycle);
   return `${PLAN_NAME_PREFIX} — ${def?.label ?? cycle}`;
+}
+
+// ---- Storage overage (metered, on top of the flat plan above) ----
+//
+// Neon's real marginal cost is $0.35/GB-month (~₦465 at ₦1,330/$1, Sept
+// 2026). This charges roughly 4x that — a normal cost-plus markup for a
+// usage-based SaaS storage add-on (the going range is 3-5x raw infra cost),
+// covering Vercel/Paystack overhead and the fact that a metered charge this
+// small still costs Paystack's flat ₦100-or-so per transaction regardless
+// of amount. Rounded to a clean number for UI copy rather than carrying
+// the exact multiple.
+
+/** ₦2,000 per GB of storage over the free quota, per billing cycle. */
+export const STORAGE_OVERAGE_RATE_KOBO_PER_GB = 200_000;
+
+/** Below this, a cycle's overage charge is skipped rather than billed —
+ * Paystack's own per-transaction overhead would eat a meaningful share of
+ * anything smaller than this, and it's not worth surprising a business
+ * with a trivial line item for a few extra photos. The overage simply
+ * isn't collected for that cycle; it doesn't carry forward or compound. */
+export const MIN_OVERAGE_CHARGE_KOBO = 5_000;
+
+/**
+ * What a business owes for storage over its free quota, in kobo, for one
+ * billing cycle — proportional to the exact overage rather than rounded up
+ * to a whole GB, so being a little over the line doesn't cost a full extra
+ * gigabyte. Returns 0 both when there's no overage at all and when there
+ * is some but it's below `MIN_OVERAGE_CHARGE_KOBO` — callers should treat
+ * either case as "nothing to charge this cycle."
+ */
+export function computeStorageOverageKobo(usedBytes: number, limitBytes: number): number {
+  const overageBytes = Math.max(0, usedBytes - limitBytes);
+  if (overageBytes === 0) return 0;
+  const overageGb = overageBytes / (1024 * 1024 * 1024);
+  const amountKobo = Math.round(overageGb * STORAGE_OVERAGE_RATE_KOBO_PER_GB);
+  return amountKobo >= MIN_OVERAGE_CHARGE_KOBO ? amountKobo : 0;
 }

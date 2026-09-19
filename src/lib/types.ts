@@ -11,6 +11,9 @@ export type BusinessType =
   | "gas"
   | "filling_station"
   | "wedding_events"
+  | "photographer"
+  | "videographer"
+  | "content_creator"
   | "general";
 
 export type MemberRole = "owner" | "manager" | "staff";

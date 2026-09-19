@@ -116,6 +116,9 @@ const registry: Record<BusinessType, IndustryConfig> = {
   gas: stub("gas", "Gas business", "Order", "Products"),
   filling_station: stub("filling_station", "Filling station", "Shift", "Products"),
   wedding_events: stub("wedding_events", "Wedding & events", "Event", "Packages"),
+  photographer: stub("photographer", "Photographer", "Booking", "Packages"),
+  videographer: stub("videographer", "Videographer", "Booking", "Packages"),
+  content_creator: stub("content_creator", "Content creator", "Booking", "Packages"),
   general: stub("general", "General business", "Booking", "Catalogue"),
 };
 
@@ -171,6 +174,14 @@ export const BUSINESS_TYPE_GROUPS: BusinessTypeGroup[] = [
   {
     category: "Events",
     options: [{ id: "wedding_events", label: "Wedding & events", hint: "Events, vendors, invoices" }],
+  },
+  {
+    category: "Content",
+    options: [
+      { id: "photographer", label: "Photographer", hint: "Shoots, prints, packages" },
+      { id: "videographer", label: "Videographer", hint: "Event & promo video, editing" },
+      { id: "content_creator", label: "Content creator", hint: "UGC, brand deals, social content" },
+    ],
   },
   {
     category: "Other",
