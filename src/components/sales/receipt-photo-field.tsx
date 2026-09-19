@@ -60,7 +60,7 @@ export function ReceiptPhotoField({
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-ink/70 text-white"
+            className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-toast/70 text-white"
             aria-label="Remove photo"
           >
             <X className="size-3.5" />

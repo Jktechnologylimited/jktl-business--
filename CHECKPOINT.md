@@ -1449,3 +1449,194 @@ Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
 real Paystack account, real bank details, or a real push subscriber —
 worth a real test-mode payment and a real broadcast send once this is
 deployed and your VAPID/Paystack keys are in place.
+
+## Round: new business types, spreadsheet import, and a pay-page/WhatsApp bug fix
+
+### Bug fixes from the round above
+
+- **WhatsApp share crash** ("`toWhatsAppNumber is not a function`") — the
+  function was always correctly exported; this was a stale Turbopack dev
+  cache not picking up a new export added to an already-loaded file. Fixed
+  on your end by a clean `rm -rf .next` + `npm run dev` restart, not a
+  code change.
+- **Pay page trust line** — now reads "Secured by Paystack · JKTL
+  Business" (`src/app/pay/[id]/page.tsx`), Paystack named first since
+  they're the one actually processing the payment.
+
+### New business types — Nail tech, Lash tech, Nail & lash studio
+
+Added under a new "Nails & lashes" group on the onboarding business-type
+picker (`src/lib/industry.ts`, `src/app/onboarding/page.tsx`). The picker
+is now grouped into categories (Hair & beauty, Nails & lashes, Food, Auto
+& fuel, Building & trade, Events, Other) instead of one flat grid — a
+side effect worth knowing about, since it changes the onboarding screen's
+layout for every business type, not just the three new ones.
+
+The three new types reuse the salon engine underneath (same as every
+non-salon vertical already does — restaurant, auto parts, etc.) — bookings,
+services and products all work the same way; they just get their own
+label, and can get tailored service/product categories later the same way
+salon eventually will. No migration needed — `business_type` has always
+been a plain text column, not a fixed enum.
+
+### Import data — bring in customers, services and products from a spreadsheet
+
+New page at Business → More → **Import data** (`/business/import`),
+available to every business type. Three independent sections — Customers,
+Services, Products — each works the same way:
+
+1. **Download template** — a CSV with the exact column headers expected,
+   plus one filled-in example row so it's obvious what goes where. Money
+   columns ask for naira (not kobo), like every other form in this app.
+2. Fill it in (Excel, Google Sheets, whatever), save as CSV, and
+   **Upload filled-in file** back.
+3. The page parses it (using `papaparse`, a new dependency — handles
+   quoted fields with commas in them, like an address, correctly), shows
+   how many rows are ready and how many were skipped and why (missing
+   name, invalid price, etc.), and lets you review before committing.
+4. **Import N customers/services/products** actually creates them — one
+   at a time through the exact same `addCustomer`/`addService`/
+   `addProduct` store actions every existing "Add" form already uses, so
+   imported records behave identically to hand-typed ones (same
+   offline-first sync to the database, same validation).
+
+Deliberately template-based rather than a free-form "upload anything and
+map your own columns" importer — simpler to build, simpler to explain,
+and works for anyone regardless of what system (or spreadsheet, or paper)
+their data currently lives in. Historical sales/invoices import wasn't
+included in this round — only customers, services and products, per what
+you scoped.
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
+(font-stub technique). The CSV parsing itself was exercised with the
+example rows the templates generate; not tested against a real messy
+spreadsheet someone actually exports from another system — worth trying
+with real data once you're testing this for real.
+
+## Round: iPhone push notifications — why they weren't working
+
+You reported push notifications not working on your iPhone. This is an
+Apple platform limitation, not a bug in the app — but the app now
+explains it clearly instead of just failing quietly.
+
+**Why it happens**: Safari on iPhone only supports web push for a site
+that's been added to the Home Screen (opened from that icon, not a
+Safari tab), and only from **iOS 16.4 onward**. There's no workaround for
+either restriction — both are Apple's rules, not something JKTL Business's
+code can change.
+
+**What changed**:
+
+- `src/lib/push-client.ts` — added `isIOS()` and `isStandalone()` helpers
+  (same device-detection pattern already used by the "Add to home screen"
+  guide) so the rest of the app can tell "not installed yet" apart from
+  "installed but iOS is too old".
+- `src/components/settings/notifications-panel.tsx` — the push toggle's
+  error and the panel's fallback note are now iOS-aware: if you're on an
+  iPhone not opened from the home screen, it tells you to add it to your
+  home screen first; if you're already opened from the home screen, it
+  tells you the iOS version is too old. Both link into the Help page.
+- `src/lib/guides.ts` — new Help & Guides entry, "Why aren't push
+  notifications working on my iPhone?" (under Install the app), covering
+  the home-screen requirement, the iOS 16.4+ requirement, and what to try
+  if permission still isn't prompting after both are satisfied.
+
+**To actually get push working on your iPhone**: add JKTL Business to
+your Home Screen (there's already a guide for this in Help), make sure
+you're on iOS 16.4 or later, then open the app from the Home Screen icon
+(not Safari) and turn Push notifications on from there.
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
+(font-stub technique).
+
+## Round: toast/banner visibility fix (dark mode) + where broadcasts show up
+
+### Fix: white-on-white toasts, offline banner, and modal overlays in dark mode
+
+The toast pill, the "You're offline" banner, and a couple of small dark
+overlays (the photo-remove button on receipt photos, and the dimmed
+backdrop behind sheets/confirm dialogs) all used `bg-ink` with white text.
+`--color-ink` is a *text* color token that deliberately flips to a
+near-white shade in dark mode (`src/app/globals.css`) — so on a phone in
+dark mode, those pills rendered as white text on a near-white background:
+functionally invisible, which is exactly what you saw.
+
+Fixed by adding two new tokens that intentionally do **not** flip with the
+theme — `--color-toast` (dark, for pills/overlays) and `--color-toast-danger`
+(a darker red than the danger token so white text stays readable even in
+dark mode) — and switching those spots to use them:
+
+- `src/components/app/toaster.tsx` — toast pills
+- `src/components/app/shell.tsx` — the offline banner
+- `src/components/sales/receipt-photo-field.tsx` — the remove-photo button
+- `src/components/ui/sheet.tsx`, `src/components/ui/confirm-dialog.tsx` —
+  the dimmed backdrop behind bottom sheets and confirm dialogs (same root
+  cause — these used `bg-ink/40` as a dark scrim, which also went pale in
+  dark mode)
+
+### Where a command-center broadcast actually shows up
+
+A broadcast is a real push notification — same mechanism as "new booking"
+or "low stock" alerts, just sent to every subscribed business instead of
+one. On an iPhone 14 Pro it'll show exactly like any other app's push:
+
+- As a banner at the top of the screen (if the phone is unlocked and JKTL
+  Business isn't the open app), on the **lock screen**, and in **Notification
+  Center** — with the JKTL Business icon, the broadcast's title and
+  message.
+- Tapping it opens JKTL Business (installed on the home screen) straight
+  to whatever URL the broadcast was sent with, or the dashboard if none
+  was set.
+
+This only reaches a business if they've turned Push notifications on
+*and* left "Platform updates" switched on under Settings → Notifications
+(on by default, but a business can opt out of just that category without
+losing booking/stock/invoice alerts). On iPhone specifically, that also
+means the same requirements as the push round above: added to the home
+screen, opened from there, iOS 16.4+. There's currently no in-app inbox
+or history of past broadcasts for a business to browse — it's push-only,
+so if a business's phone is off or push isn't set up, they simply won't
+see it (the command center's own Broadcasts page keeps a history of what
+was sent and to how many recipients, but only for admin, not the
+business side).
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
+(font-stub technique).
+
+## Round: grouped the More page, and a minimal dropdown for website fonts
+
+### More page — grouped into sections instead of one flat list
+
+`src/app/business/more` was one long undifferentiated list (10 items, no
+structure). It's now organized into labeled sections, same order as
+before but clustered by what they're for:
+
+- **Catalogue & stock** — Services, Products, Inventory
+- **Money** — Expenses, Invoices, Reports
+- **Grow your business** — Website, Import data
+- **Account** — Settings, Help & guides
+
+This is driven by a new `group` field on each `nav.more` entry in
+`src/lib/industry.ts` (every business type shares the same grouping,
+since they all currently reuse the salon config's nav — same pattern as
+everything else that's not yet vertical-specific). Adding a new More-page
+item for a future business type just means giving it a `group` string and
+it'll land in the right section, or start a new one automatically.
+
+The desktop sidebar's own "more" links (below the divider in the left nav
+on wide screens) weren't touched — that's a compact vertical list, not a
+page, and grouping headers there would add more clutter than clarity in
+that space.
+
+### Website font picker — dropdown instead of a card grid
+
+`src/components/website/font-pair-picker.tsx` was 7 cards in a 2-column
+grid. It's now a single `<select>` dropdown (same styled `Select`
+component used elsewhere, e.g. the bank picker in Payment settings) with
+the 7 pairings as plain options ("Playful — Rounded and fun", etc.), plus
+one small preview strip underneath showing "Aa" and a sample line in the
+actually-selected pairing's fonts — so you still get a live look at the
+fonts without seven tiles taking up the screen.
+
+Verified via `tsc --noEmit`, `eslint .`, and a full `npm run build`
+(font-stub technique).

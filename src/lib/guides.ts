@@ -250,4 +250,15 @@ export const GUIDES: GuideItem[] = [
     keywords: ["install", "home screen", "app icon", "pwa", "add to homescreen"],
     custom: "add-to-home-screen",
   },
+  {
+    id: "push-not-working-iphone",
+    category: "install",
+    question: "Why aren't push notifications working on my iPhone?",
+    answer: [
+      "iPhones only support push notifications for a website if it's been added to your home screen first (see \"How do I add JKTL Business to my home screen?\" above) — and you need to open it from that home screen icon, not from a Safari tab, for the notification toggle in Settings to actually work.",
+      "You'll also need iOS 16.4 or later. On an older iPhone, the \"Push notifications\" toggle will stay on but nothing will actually arrive — there's no way around this, Apple only added web push support in that version.",
+      "If you've done both of those and it's still not asking for permission: open the app from your home screen, go to Settings → Notifications, and turn the push toggle off then on again. If iOS still doesn't show a permission prompt, check your iPhone's own Settings app → JKTL Business → Notifications, and make sure notifications aren't already turned off there.",
+    ],
+    keywords: ["iphone", "ios", "push", "notification", "not working", "safari"],
+  },
 ];

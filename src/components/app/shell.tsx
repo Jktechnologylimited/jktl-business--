@@ -46,7 +46,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh bg-paper lg:pl-60">
       {!online ? (
-        <div className="flex items-center justify-center gap-2 bg-ink px-4 py-2 text-center text-xs font-medium text-white">
+        <div className="flex items-center justify-center gap-2 bg-toast px-4 py-2 text-center text-xs font-medium text-white">
           <WifiOff className="size-3.5" />
           {mode === "live" && pendingSyncCount > 0
             ? `You're offline — ${pendingSyncCount} change${pendingSyncCount > 1 ? "s" : ""} waiting to sync.`

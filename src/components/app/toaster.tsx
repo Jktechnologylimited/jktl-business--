@@ -13,7 +13,7 @@ export function Toaster() {
           key={t.id}
           className={cn(
             "pointer-events-auto rounded-full px-4 py-2.5 text-sm font-medium text-white shadow-lg",
-            t.tone === "danger" ? "bg-danger" : "bg-ink",
+            t.tone === "danger" ? "bg-toast-danger" : "bg-toast",
           )}
         >
           {t.message}

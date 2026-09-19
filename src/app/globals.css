@@ -30,6 +30,14 @@
   --color-info-soft: #e6eef7;
   --color-danger: #c4432b;
   --color-danger-soft: #f8e7e2;
+
+  /* Toast — deliberately NOT redefined in the dark-mode blocks below, unlike
+     every other token here. `--color-ink` flips to a near-white text color
+     in dark mode, which made the (bg-ink, text-white) toast pill render as
+     white-on-white — invisible. These two stay fixed dark colors in both
+     themes so white toast text always has something dark behind it. */
+  --color-toast: #12151b;
+  --color-toast-danger: #a5321d;
 }
 
 @theme inline {

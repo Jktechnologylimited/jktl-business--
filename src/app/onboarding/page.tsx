@@ -10,7 +10,7 @@ import { JktlMark } from "@/components/app/logo";
 import { ServiceForm } from "@/components/services/service-form";
 import { WelcomeNote } from "@/components/onboarding/welcome-note";
 import { useBusinessStore } from "@/lib/store";
-import { BUSINESS_TYPE_OPTIONS, getIndustry } from "@/lib/industry";
+import { BUSINESS_TYPE_GROUPS, getIndustry } from "@/lib/industry";
 import { cn } from "@/lib/utils";
 import type { BusinessType } from "@/lib/types";
 
@@ -76,20 +76,27 @@ export default function OnboardingPage() {
         <div className="mt-8 flex-1">
           <h1 className="font-display text-xl font-bold tracking-tight text-ink">What kind of business is this?</h1>
           <p className="mt-1.5 text-sm text-ink-muted">This sets up the right modules and terms for you.</p>
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            {BUSINESS_TYPE_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setBusinessType(opt.id)}
-                className={cn(
-                  "rounded-2xl border p-3.5 text-left transition-colors",
-                  businessType === opt.id ? "border-primary bg-primary-soft" : "border-border-strong hover:bg-surface",
-                )}
-              >
-                <div className="text-sm font-semibold text-ink">{opt.label}</div>
-                <div className="mt-0.5 text-xs text-ink-muted">{opt.hint}</div>
-              </button>
+          <div className="mt-6 flex flex-col gap-5">
+            {BUSINESS_TYPE_GROUPS.map((group) => (
+              <div key={group.category}>
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">{group.category}</div>
+                <div className="grid grid-cols-2 gap-3">
+                  {group.options.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setBusinessType(opt.id)}
+                      className={cn(
+                        "rounded-2xl border p-3.5 text-left transition-colors",
+                        businessType === opt.id ? "border-primary bg-primary-soft" : "border-border-strong hover:bg-surface",
+                      )}
+                    >
+                      <div className="text-sm font-semibold text-ink">{opt.label}</div>
+                      <div className="mt-0.5 text-xs text-ink-muted">{opt.hint}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
           {accountError ? <p className="mt-4 text-sm text-danger">{accountError}</p> : null}

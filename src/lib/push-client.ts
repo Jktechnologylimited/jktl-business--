@@ -26,6 +26,25 @@ export function isPushSupported(): boolean {
   );
 }
 
+/** True on an iPhone/iPad/iPod, including an iPad reporting itself as
+ * "Macintosh" with touch support (iPadOS 13+'s default desktop-site UA) —
+ * the same check used by the "Add to home screen" guide's platform
+ * detection, kept here too so push-support messaging can be iOS-specific. */
+export function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return /iPhone|iPad|iPod/.test(ua) || (ua.includes("Macintosh") && navigator.maxTouchPoints > 1);
+}
+
+/** True when this page was opened from its home-screen icon rather than a
+ * normal browser tab. iOS Safari only ever exposes `navigator.standalone`
+ * for this; other browsers report it through the display-mode media query. */
+export function isStandalone(): boolean {
+  if (typeof window === "undefined") return false;
+  const iosStandalone = (navigator as unknown as { standalone?: boolean }).standalone;
+  return Boolean(iosStandalone) || window.matchMedia("(display-mode: standalone)").matches;
+}
+
 export interface PushSubscriptionKeys {
   endpoint: string;
   p256dh: string;

@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BellOff } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { useToastStore } from "@/lib/toast";
-import { isPushSupported, notificationPermission, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
+import { isPushSupported, isIOS, isStandalone, notificationPermission, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
 import { getNotificationPrefsAction, updateNotificationPrefsAction, saveSubscriptionAction, removeSubscriptionAction } from "@/lib/actions/push-actions";
 import type { NotificationPrefs } from "@/lib/db/push";
 
@@ -24,6 +25,17 @@ const CATEGORY_TOGGLES: Array<{ key: keyof Omit<NotificationPrefs, "pushEnabled"
   { key: "dailySummary", label: "Daily summary", description: "A morning recap of yesterday's numbers" },
   { key: "platformAnnouncements", label: "Platform updates", description: "Downtime notices and promotions from JKTL" },
 ];
+
+/** Plain-text reason shown as the toggle's own error message when push
+ * isn't available — kept iOS-specific since that's the case people hit
+ * most (Apple only supports web push for an installed home-screen app,
+ * and only from iOS 16.4 onward). See unsupportedPushNote() below for the
+ * longer version with a link into Help, shown under the panel itself. */
+function unsupportedPushReason(): string {
+  if (!isIOS()) return "Push notifications aren't available here — this needs a supported browser and the installed app (not the dev server).";
+  if (!isStandalone()) return "On iPhone, push only works once JKTL Business is added to your home screen — open it from there and try again.";
+  return "This iPhone's iOS version is too old for push notifications — iOS 16.4 or later is needed.";
+}
 
 /**
  * Real push notifications (replacing the old "actual emails send once
@@ -58,11 +70,7 @@ export function NotificationsPanel({ mode }: { mode: "demo" | "live" }) {
       return;
     }
     if (!supported) {
-      setError(
-        permission === "denied"
-          ? "Notifications are blocked for this site in your browser settings."
-          : "Push notifications aren't available here — this needs a supported browser and the installed app (not the dev server)."
-      );
+      setError(permission === "denied" ? "Notifications are blocked for this site in your browser settings." : unsupportedPushReason());
       return;
     }
 
@@ -140,8 +148,23 @@ export function NotificationsPanel({ mode }: { mode: "demo" | "live" }) {
 
       {error ? <p className="mt-2 text-xs text-danger">{error}</p> : null}
       {!supported && mode === "live" ? (
-        <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-muted">
-          <BellOff className="size-3.5" /> Push needs the installed app (add to home screen) or a supported desktop browser.
+        <p className="mt-2 flex items-start gap-1.5 text-xs text-ink-muted">
+          <BellOff className="mt-0.5 size-3.5 shrink-0" />
+          <span>
+            {isIOS() ? (
+              !isStandalone() ? (
+                <>On iPhone, push only works once JKTL Business is added to your home screen and opened from there — not from a Safari tab.</>
+              ) : (
+                <>This iPhone&apos;s iOS version is too old for push — iOS 16.4 or later is needed, with no workaround for earlier versions.</>
+              )
+            ) : (
+              <>Push needs the installed app (add to home screen) or a supported desktop browser.</>
+            )}{" "}
+            <Link href="/business/help" className="font-medium text-primary underline underline-offset-2">
+              See the Help guide
+            </Link>
+            .
+          </span>
         </p>
       ) : null}
     </section>

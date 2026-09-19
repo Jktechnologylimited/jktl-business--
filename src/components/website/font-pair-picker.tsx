@@ -1,41 +1,34 @@
 "use client";
 
-import { Check } from "lucide-react";
-import { SITE_FONT_PAIRS } from "@/lib/fonts";
+import { Select } from "@/components/ui/input";
+import { SITE_FONT_PAIRS, getSiteFontPair } from "@/lib/fonts";
 
 /** Lets a business pick one of 7 display+body font pairings for their
- * public website, independent of the accent color. Each option previews
- * itself in its own actual fonts (the CSS custom properties for every
- * pairing are defined globally on `<html>` — see `ALL_SITE_FONT_VARIABLES`
- * in `src/lib/fonts.ts` — so this works without any extra wrapper here). */
+ * public website, independent of the accent color. A plain dropdown
+ * rather than a grid of cards — one line to scan instead of seven tiles —
+ * with a small live preview underneath in the actual chosen fonts (the
+ * CSS custom properties for every pairing are defined globally on
+ * `<html>` — see `ALL_SITE_FONT_VARIABLES` in `src/lib/fonts.ts` — so the
+ * preview works without any extra wrapper here). */
 export function FontPairPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const selected = getSiteFontPair(value);
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      {SITE_FONT_PAIRS.map((pair) => {
-        const active = value === pair.id;
-        return (
-          <button
-            key={pair.id}
-            type="button"
-            onClick={() => onChange(pair.id)}
-            aria-pressed={active}
-            className={`flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-colors ${
-              active ? "border-primary bg-primary-soft" : "border-border-strong hover:border-primary"
-            }`}
-          >
-            <div className="flex w-full items-center justify-between gap-2">
-              <span style={{ fontFamily: pair.displayVar }} className="text-lg font-semibold text-ink">
-                Aa
-              </span>
-              {active ? <Check className="size-4 shrink-0 text-primary" /> : null}
-            </div>
-            <span className="text-xs font-medium text-ink">{pair.label}</span>
-            <span style={{ fontFamily: pair.bodyVar }} className="text-[11px] text-ink-muted">
-              {pair.vibe}
-            </span>
-          </button>
-        );
-      })}
+    <div className="flex flex-col gap-2">
+      <Select value={value} onChange={(e) => onChange(e.target.value)}>
+        {SITE_FONT_PAIRS.map((pair) => (
+          <option key={pair.id} value={pair.id}>
+            {pair.label} — {pair.vibe}
+          </option>
+        ))}
+      </Select>
+      <div className="flex items-center gap-3 rounded-xl border border-border-strong bg-surface px-3.5 py-2.5">
+        <span style={{ fontFamily: selected.displayVar }} className="text-xl font-semibold text-ink">
+          Aa
+        </span>
+        <span style={{ fontFamily: selected.bodyVar }} className="text-sm text-ink-muted">
+          The quick brown fox jumps
+        </span>
+      </div>
     </div>
   );
 }

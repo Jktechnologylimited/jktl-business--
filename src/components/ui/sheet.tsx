@@ -33,7 +33,7 @@ export function Sheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-ink/40" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-toast/40" onClick={onClose} aria-hidden />
       <div className="relative z-10 max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl bg-paper p-5 shadow-xl sm:max-w-lg sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>

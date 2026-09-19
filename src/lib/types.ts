@@ -1,5 +1,8 @@
 export type BusinessType =
   | "salon"
+  | "nail_tech"
+  | "lash_tech"
+  | "nail_lash_studio"
   | "restaurant"
   | "auto_parts"
   | "building_materials"
