@@ -15,6 +15,7 @@ function mapRow(row: Record<string, unknown>): Product {
     lowStockThreshold: Number(row.low_stock_threshold),
     supplier: row.supplier as string,
     active: row.active as boolean,
+    imageUrl: (row.image_url as string) ?? null,
   };
 }
 
@@ -34,17 +35,23 @@ export interface ProductInput {
   lowStockThreshold: number;
   supplier: string;
   active: boolean;
+  /** A data URL for a newly-picked photo, an existing hosted URL to leave
+   * as is, or null for none. Persisted (Blob upload + storage-quota check)
+   * one layer up, in `product-actions.ts` — this layer just stores
+   * whatever URL it's handed. */
+  imageUrl: string | null;
 }
 
 export async function createProduct(orgId: string, id: string, input: ProductInput): Promise<Product> {
   const sql = getSql();
   const rows = await sql`
-    INSERT INTO products (id, organization_id, name, sku, category, cost_kobo, price_kobo, stock_qty, low_stock_threshold, supplier, active)
-    VALUES (${id}, ${orgId}, ${input.name}, ${input.sku}, ${input.category}, ${input.costKobo}, ${input.priceKobo}, ${input.stockQty}, ${input.lowStockThreshold}, ${input.supplier}, ${input.active})
+    INSERT INTO products (id, organization_id, name, sku, category, cost_kobo, price_kobo, stock_qty, low_stock_threshold, supplier, active, image_url)
+    VALUES (${id}, ${orgId}, ${input.name}, ${input.sku}, ${input.category}, ${input.costKobo}, ${input.priceKobo}, ${input.stockQty}, ${input.lowStockThreshold}, ${input.supplier}, ${input.active}, ${input.imageUrl})
     ON CONFLICT (id) DO UPDATE SET
       name = excluded.name, sku = excluded.sku, category = excluded.category,
       cost_kobo = excluded.cost_kobo, price_kobo = excluded.price_kobo, stock_qty = excluded.stock_qty,
-      low_stock_threshold = excluded.low_stock_threshold, supplier = excluded.supplier, active = excluded.active
+      low_stock_threshold = excluded.low_stock_threshold, supplier = excluded.supplier, active = excluded.active,
+      image_url = excluded.image_url
     RETURNING *
   `;
   return mapRow(rows[0]);
@@ -56,10 +63,17 @@ export async function updateProduct(orgId: string, id: string, input: ProductInp
     UPDATE products
     SET name = ${input.name}, sku = ${input.sku}, category = ${input.category},
         cost_kobo = ${input.costKobo}, price_kobo = ${input.priceKobo}, stock_qty = ${input.stockQty},
-        low_stock_threshold = ${input.lowStockThreshold}, supplier = ${input.supplier}, active = ${input.active}
+        low_stock_threshold = ${input.lowStockThreshold}, supplier = ${input.supplier}, active = ${input.active},
+        image_url = ${input.imageUrl}
     WHERE id = ${id} AND organization_id = ${orgId}
     RETURNING *
   `;
+  return rows[0] ? mapRow(rows[0]) : null;
+}
+
+export async function getProduct(orgId: string, id: string): Promise<Product | null> {
+  const sql = getSql();
+  const rows = await sql`SELECT * FROM products WHERE id = ${id} AND organization_id = ${orgId}`;
   return rows[0] ? mapRow(rows[0]) : null;
 }
 

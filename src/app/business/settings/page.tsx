@@ -14,9 +14,14 @@ import { AccountForm } from "@/components/settings/account-form";
 import { BusinessForm } from "@/components/settings/business-form";
 import { PasswordForm } from "@/components/settings/password-form";
 import { AvatarUpload } from "@/components/settings/avatar-upload";
+import { BillingPanel } from "@/components/settings/billing-panel";
+import { StorageUsagePanel } from "@/components/settings/storage-usage-panel";
+import { ThemeToggle } from "@/components/settings/theme-toggle";
+import { UpgradeSheet } from "@/components/settings/upgrade-sheet";
 import { useBusinessStore } from "@/lib/store";
 import { useToastStore } from "@/lib/toast";
-import { formatKobo, formatShortDate, initials } from "@/lib/format";
+import { initials } from "@/lib/format";
+import { FREE_TEAM_SEATS } from "@/lib/billing";
 import type { OrganizationMember } from "@/lib/types";
 
 type Tab = "business" | "users" | "account" | "infrastructure";
@@ -33,6 +38,7 @@ function Row({ label, value }: { label: string; value: string }) {
 export default function SettingsPage() {
   const profile = useBusinessStore((s) => s.data.profile);
   const infra = useBusinessStore((s) => s.data.infrastructure);
+  const mode = useBusinessStore((s) => s.mode);
   const user = useBusinessStore((s) => s.data.user);
   const members = useBusinessStore((s) => s.data.members);
   const addMember = useBusinessStore((s) => s.addMember);
@@ -44,12 +50,27 @@ export default function SettingsPage() {
   const setNotificationPref = useBusinessStore((s) => s.setNotificationPref);
   const showToast = useToastStore((s) => s.show);
 
-  const [tab, setTab] = useState<Tab>("business");
+  // Paystack redirects back to this page after checkout with
+  // ?billing=callback — land straight on the Plan tab so the person sees
+  // the confirmation rather than the Business tab they started from. Read
+  // via a lazy initializer (computed once for the initial render) rather
+  // than an effect, since this is a one-time check of the URL at mount,
+  // not something that needs to re-run when other state changes.
+  const [tab, setTab] = useState<Tab>(() =>
+    typeof window !== "undefined" && window.location.search.includes("billing=callback") ? "infrastructure" : "business",
+  );
   const [addingMember, setAddingMember] = useState(false);
   const [removingMember, setRemovingMember] = useState<OrganizationMember | null>(null);
   const [editingAccount, setEditingAccount] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+
+  // Free tier covers just the owner (demo mode has no real billing, so it
+  // always allows adding members freely). The authoritative check is
+  // server-side in `addMemberAction` — this is just so most people never
+  // hit the "discarded" round trip for a mutation that queues offline-first.
+  const canAddMember = mode !== "live" || members.length < FREE_TEAM_SEATS || infra.subscriptionStatus === "active";
 
   return (
     <div className="flex flex-col gap-5">
@@ -89,10 +110,19 @@ export default function SettingsPage() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-display text-sm font-semibold text-ink">Team members</h2>
-            <Button size="sm" onClick={() => setAddingMember(true)}>
+            <Button size="sm" onClick={() => (canAddMember ? setAddingMember(true) : setUpgrading(true))}>
               <Plus className="size-4" /> Add
             </Button>
           </div>
+          {!canAddMember ? (
+            <p className="mb-3 text-xs text-ink-muted">
+              The free plan covers just you —{" "}
+              <button type="button" onClick={() => setUpgrading(true)} className="font-medium text-primary">
+                upgrade
+              </button>{" "}
+              to add more team members.
+            </p>
+          ) : null}
           <div className="divide-y divide-border rounded-2xl border border-border">
             {members.map((m) => (
               <div key={m.id} className="flex items-center gap-3 px-4 py-3.5">
@@ -151,6 +181,12 @@ export default function SettingsPage() {
           </section>
 
           <section className="rounded-2xl border border-border p-4">
+            <h2 className="font-display text-sm font-semibold text-ink">Appearance</h2>
+            <p className="mt-1 mb-3 text-xs text-ink-muted">&ldquo;System&rdquo; follows your device&apos;s light/dark setting automatically.</p>
+            <ThemeToggle />
+          </section>
+
+          <section className="rounded-2xl border border-border p-4">
             <h2 className="font-display text-sm font-semibold text-ink">Notifications</h2>
             <div className="mt-1 divide-y divide-border">
               <Toggle
@@ -178,21 +214,19 @@ export default function SettingsPage() {
       ) : null}
 
       {tab === "infrastructure" ? (
-        <section className="rounded-2xl border border-border p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-sm font-semibold text-ink">Your plan</h2>
-            <span className="text-xs font-medium text-primary">{infra.planName}</span>
-          </div>
-          <dl className="mt-2 divide-y divide-border">
-            <Row label="Price" value={`${formatKobo(infra.priceKoboPerYear)}/year`} />
-            <Row label="Renewal" value={formatShortDate(infra.renewalDate)} />
-            <Row label="Storage" value={`${infra.storageUsedGb} GB / ${infra.storageLimitGb} GB`} />
-            <Row label="Database" value="Active" />
-            <Row label="Hosting" value="Active" />
-            <Row label="SSL" value="Active" />
-            <Row label="Business address" value={infra.domain} />
-          </dl>
-        </section>
+        <div className="flex flex-col gap-4">
+          <BillingPanel infra={infra} mode={mode} />
+          <StorageUsagePanel mode={mode} />
+          <section className="rounded-2xl border border-border p-4">
+            <h2 className="font-display text-sm font-semibold text-ink">Infrastructure status</h2>
+            <dl className="mt-2 divide-y divide-border">
+              <Row label="Database" value="Active" />
+              <Row label="Hosting" value="Active" />
+              <Row label="SSL" value="Active" />
+              <Row label="Business address" value={infra.domain || "—"} />
+            </dl>
+          </section>
+        </div>
       ) : null}
 
       <Sheet open={addingMember} onClose={() => setAddingMember(false)} title="Add team member">
@@ -239,6 +273,13 @@ export default function SettingsPage() {
           }}
         />
       </Sheet>
+
+      <UpgradeSheet
+        open={upgrading}
+        onClose={() => setUpgrading(false)}
+        reason="Add more team members to your account — the free plan covers just the owner."
+        mode={mode}
+      />
 
       <ConfirmDialog
         open={!!removingMember}

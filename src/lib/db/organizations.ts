@@ -23,6 +23,7 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     city: row.city as string,
     state: row.state as string,
     logoUrl: (row.logo_url as string) ?? null,
+    coverPhotoUrl: (row.cover_photo_url as string) ?? null,
     subdomain: row.subdomain as string,
     // Defensive fallbacks: if migration 003 hasn't been run yet, these three
     // columns simply won't be in the row (not an error, just missing keys),
@@ -32,6 +33,8 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     published: Boolean(row.published),
     tagline: (row.tagline as string) ?? "",
     themeColor: (row.theme_color as string) || "#0f6e5c",
+    customDomain: (row.custom_domain as string) ?? "",
+    customDomainVerified: Boolean(row.custom_domain_verified),
   };
 }
 
@@ -40,6 +43,12 @@ function mapInfra(row: Record<string, unknown>): Infrastructure {
     organizationId: row.organization_id as string,
     planName: row.plan_name as string,
     priceKoboPerYear: Number(row.price_kobo_per_year),
+    // Defensive fallbacks: rows created before migration 004 (or before it's
+    // been run) won't have these columns yet — same pattern as mapProfile's
+    // fallbacks after migration 003's crash.
+    priceKoboPerCycle: Number(row.price_kobo_per_cycle ?? row.price_kobo_per_year ?? 0),
+    billingCycle: ((row.billing_cycle as string) || "yearly") as Infrastructure["billingCycle"],
+    subscriptionStatus: ((row.subscription_status as string) || "inactive") as Infrastructure["subscriptionStatus"],
     renewalDate: String(row.renewal_date).slice(0, 10),
     storageUsedGb: Number(row.storage_used_gb),
     storageLimitGb: Number(row.storage_limit_gb),
@@ -103,6 +112,7 @@ export interface WebsiteSettingsPatch {
   tagline: string;
   themeColor: string;
   logoUrl: string | null;
+  coverPhotoUrl: string | null;
   published: boolean;
 }
 
@@ -111,7 +121,7 @@ export async function updateWebsiteSettings(orgId: string, patch: WebsiteSetting
   const rows = await sql`
     UPDATE business_profiles
     SET subdomain = ${patch.subdomain}, tagline = ${patch.tagline}, theme_color = ${patch.themeColor},
-        logo_url = ${patch.logoUrl}, published = ${patch.published}
+        logo_url = ${patch.logoUrl}, cover_photo_url = ${patch.coverPhotoUrl}, published = ${patch.published}
     WHERE organization_id = ${orgId}
     RETURNING *
   `;
@@ -166,11 +176,19 @@ export interface UpcomingRenewal {
 }
 
 /**
- * Organizations whose plan renews in exactly `daysAhead` days — used by the
- * renewal-reminder cron so each one gets exactly one email per cycle rather
- * than daily nagging every day inside a "within N days" window. The
- * trade-off: if the cron doesn't run on that exact day, that org's reminder
- * for this cycle is simply missed rather than caught up later.
+ * Organizations with an *active, paid* Website & Hosting subscription that
+ * renews in exactly `daysAhead` days — used by the renewal-reminder cron so
+ * each one gets exactly one email per cycle rather than daily nagging every
+ * day inside a "within N days" window. The trade-off: if the cron doesn't
+ * run on that exact day, that org's reminder for this cycle is simply
+ * missed rather than caught up later.
+ *
+ * Filtered to `subscription_status = 'active'` — every organization has an
+ * `infrastructure_accounts` row from signup (whether or not they ever
+ * subscribed to anything), so without this filter every business would get
+ * a "your plan renews for ₦50,000" email regardless of whether they
+ * actually have a subscription. Publishing on a *.jktl.com.ng subdomain is
+ * free and unrelated to this — see `updateWebsiteSettingsAction`.
  */
 export async function listUpcomingRenewals(daysAhead: number): Promise<UpcomingRenewal[]> {
   const sql = getSql();
@@ -180,6 +198,7 @@ export async function listUpcomingRenewals(daysAhead: number): Promise<UpcomingR
     JOIN business_profiles bp ON bp.organization_id = ia.organization_id
     JOIN organization_members om ON om.organization_id = ia.organization_id AND om.role = 'owner'
     WHERE ia.renewal_date = (CURRENT_DATE + (${daysAhead}::int * INTERVAL '1 day'))
+      AND ia.subscription_status = 'active'
       AND om.email <> ''
   `;
   return rows.map((row) => ({

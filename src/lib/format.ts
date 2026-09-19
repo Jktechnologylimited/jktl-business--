@@ -68,6 +68,11 @@ export function firstName(fullName: string): string {
   return fullName.trim().split(/\s+/)[0] ?? fullName;
 }
 
+/** Format a byte count as MB to one decimal place, e.g. 5_242_880 -> "5.0 MB". */
+export function formatMb(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function initials(fullName: string): string {
   const parts = fullName.trim().split(/\s+/);
   const first = parts[0]?.[0] ?? "";

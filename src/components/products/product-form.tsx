@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/app/field";
+import { ProductPhotoField } from "./product-photo-field";
 import type { NewProductInput } from "@/lib/store";
 import { koboToNaira, nairaToKobo } from "@/lib/format";
 import type { Product } from "@/lib/types";
@@ -28,6 +29,7 @@ export function ProductForm({
   const [threshold, setThreshold] = useState(initial ? String(initial.lowStockThreshold) : "5");
   const [supplier, setSupplier] = useState(initial?.supplier ?? "");
   const [active, setActive] = useState(initial?.active ?? true);
+  const [imageUrl, setImageUrl] = useState<string | null>(initial?.imageUrl ?? null);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,11 +43,15 @@ export function ProductForm({
       lowStockThreshold: Number(threshold) || 0,
       supplier,
       active,
+      imageUrl,
     });
   }
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
+      <Field label="Photo" htmlFor="pr-photo">
+        <ProductPhotoField value={imageUrl} onChange={setImageUrl} />
+      </Field>
       <Field label="Product name" htmlFor="pr-name">
         <Input id="pr-name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
       </Field>

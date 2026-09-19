@@ -24,10 +24,13 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     city: row.city as string,
     state: row.state as string,
     logoUrl: (row.logo_url as string) ?? null,
+    coverPhotoUrl: (row.cover_photo_url as string) ?? null,
     subdomain: row.subdomain as string,
     published: Boolean(row.published),
     tagline: (row.tagline as string) ?? "",
     themeColor: (row.theme_color as string) || "#0f6e5c",
+    customDomain: (row.custom_domain as string) ?? "",
+    customDomainVerified: Boolean(row.custom_domain_verified),
   };
 }
 
@@ -57,6 +60,7 @@ function mapProduct(row: Record<string, unknown>): Product {
     lowStockThreshold: Number(row.low_stock_threshold),
     supplier: row.supplier as string,
     active: row.active as boolean,
+    imageUrl: (row.image_url as string) ?? null,
   };
 }
 
@@ -95,4 +99,23 @@ export async function getOrganizationIdBySubdomain(subdomain: string): Promise<s
   const sql = getSql();
   const rows = await sql`SELECT organization_id FROM business_profiles WHERE subdomain = ${subdomain}`;
   return rows[0] ? (rows[0].organization_id as string) : null;
+}
+
+/**
+ * Resolves a verified custom domain (e.g. "www.glamhairstudio.com") back
+ * to the business's underlying *.jktl.com.ng subdomain, so middleware can
+ * rewrite to the exact same `/sites/<subdomain>` route it already uses for
+ * direct subdomain visits — a custom domain is an alternate address for
+ * the same site, not a separate page. Deliberately not filtered by
+ * `published` here, matching `getOrganizationIdBySubdomain` above: the
+ * page itself is what decides visibility, this is purely address
+ * resolution. Only ever called from middleware for a host that didn't
+ * already match `*.jktl.com.ng` or a reserved host.
+ */
+export async function getSubdomainByCustomDomain(host: string): Promise<string | null> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT subdomain FROM business_profiles WHERE custom_domain = ${host} AND custom_domain_verified = true
+  `;
+  return rows[0] ? (rows[0].subdomain as string) : null;
 }

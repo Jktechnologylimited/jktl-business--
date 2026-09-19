@@ -26,15 +26,32 @@ export function PublicBookingForm({
   themeColor,
   textColor,
   mode,
+  initialServiceId,
 }: {
   subdomain: string;
   services: Service[];
   themeColor: string;
   textColor: string;
   mode: "live" | "preview";
+  /** Set when the chat widget's "Book <service>" quick reply jumps the
+   * visitor down here with a service already chosen for them. */
+  initialServiceId?: string;
 }) {
   const now = new Date();
-  const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
+  const [serviceId, setServiceId] = useState(initialServiceId || services[0]?.id || "");
+
+  // The chat widget can change `initialServiceId` after this form has
+  // already mounted (it's a later click, not part of first render). Rather
+  // than syncing it via an effect (an extra render pass after the DOM
+  // already committed), this adjusts state directly during render when the
+  // prop has changed since the last render — the pattern React's own docs
+  // recommend for "adjusting state when a prop changes".
+  const [prevInitialServiceId, setPrevInitialServiceId] = useState(initialServiceId);
+  if (initialServiceId !== prevInitialServiceId) {
+    setPrevInitialServiceId(initialServiceId);
+    if (initialServiceId && services.some((s) => s.id === initialServiceId)) setServiceId(initialServiceId);
+  }
+
   const [date, setDate] = useState(toDateInput(now));
   const [time, setTime] = useState("10:00");
   const [name, setName] = useState("");

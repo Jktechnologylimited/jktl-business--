@@ -533,13 +533,67 @@ say — can be reserved with just an env var + redeploy, no code change.
 that owns the wildcard domain, or ask for it to be added to the hardcoded
 list directly.
 
+## Update: Stage 2 — the scripted chat widget
+
+Every published business site now has a floating chat bubble (bottom-right,
+themed in the business's brand color). It's a **scripted decision tree, not
+an LLM** — every line it says is computed live from the business's real
+services, products, and contact details already loaded on the page; nothing
+is generated or invented, and no network call happens when it "talks." A
+short typing-indicator pause before each reply is the only thing making it
+*feel* conversational — that was the brief ("feels like AI is chatting"
+achieved through UX, not through an actual model).
+
+**Files**: `src/components/public-site/chat-widget.tsx` (the widget itself)
+and small additions to `public-site-view.tsx` (renders it, live mode only)
+and `public-booking-form.tsx` (accepts a service pre-selected from chat).
+
+**What it can do** — a small hard-coded conversation tree with quick-reply
+buttons only (deliberately no free-text input, which is what keeps this
+honestly "scripted" instead of implying more than it is):
+- **Services & prices** — lists active services with price/duration, then
+  offers "Book <service>" for the first few, which jumps straight to the
+  booking form below with that service already selected.
+- **Products** — lists active products with price and a sold-out note.
+- **Book an appointment** — scrolls straight to the booking form.
+- **Where are you located?** — the profile's address, or an honest "we
+  haven't added one" if it's blank.
+- **Chat with a person** — opens the same WhatsApp link as the hero button;
+  falls back to a "Contact us" node (phone/email) if no WhatsApp number is
+  on file.
+
+Every node degrades honestly when data is missing (no services listed, no
+address, no phone) rather than making something up or dead-ending silently.
+
+**A design note for future maintenance**: the "book a specific service"
+hand-off works by lifting a `prefillServiceId` piece of state up into
+`PublicSiteView`, passed down to both the chat widget (which sets it) and
+the booking form (which reads it as `initialServiceId`). Two spots needed
+non-obvious React patterns to satisfy this codebase's
+`react-hooks/set-state-in-effect` lint rule (the same one that shaped the
+`AddToHomeScreenGuide` fix earlier): the widget's "say the greeting the
+first time it opens" logic lives in the launcher button's click handler
+rather than a `useEffect` reacting to `open`, and the booking form's
+`initialServiceId` prop sync uses React's documented "adjust state during
+render" pattern (comparing against a `prevInitialServiceId` piece of state)
+instead of an effect. Both avoid an extra render pass and are what the lint
+rule is actually steering toward — worth reusing this pattern rather than
+reaching for a plain `useEffect` next time a child needs to react to a
+prop change that isn't available at first render.
+
+**Known limitation**: like `PublicBookingForm`, the widget's `fixed`
+positioning means it isn't rendered at all in the settings page's embedded
+preview (it would float over the whole dashboard, not just the preview
+frame) — it only ever appears on the real, live public page.
+
 ## Next steps
 
-**Stage 2, deferred on purpose**: a scripted (non-AI) chat widget on the
-public site, plus a WhatsApp link/button — already partly here in the form
-of the WhatsApp button in the hero, but the actual scripted-conversation
-widget itself hasn't been started. Confirm Stage 1 works end-to-end
-against a real database and a real subdomain first.
+Nothing outstanding from the original "business website" request — both
+stages (the public site and the scripted chat widget with WhatsApp) are
+built. Worth using the real site for a while and seeing what businesses
+actually ask the chat widget that it can't answer yet (opening hours is
+the obvious gap — there's no hours field in the data model at all right
+now, salon or otherwise) before adding more nodes to the tree.
 
 Otherwise, nothing outstanding from the original spec. What's left is
 either optional infrastructure (connect Blob storage and/or the renewal
@@ -547,3 +601,507 @@ cron whenever you want them live — both are inert until their env vars are
 set, and Blob storage is now also where a new logo upload would go) or
 genuinely new scope (a second business vertical with real industry-
 specific fields) — not bugs or gaps in what's already built.
+
+## Update: "Website & Hosting" billing — real Paystack subscriptions
+
+**The business model**: JKTL Business itself (CRM, bookings, sales,
+inventory, invoices...) is free forever. The one thing that costs money is
+the public website (Stage 1/2 above) — hosting, database and storage for
+it — billed as a separate add-on. This turns the `infrastructure_accounts`
+table (which already existed from an earlier phase as a purely
+informational display — seeded at signup with `plan_name = 'Business
+Starter'`, `price_kobo_per_year = 5,000,000`, never actually charged, and
+not even rendered anywhere in the UI) into a real, Paystack-backed
+subscription that the app genuinely enforces.
+
+**Pricing** — four cycles, cheapest per-year when paid annually (the
+standard SaaS pattern, and it happens to land almost exactly on Bumpa's
+own live pricing, the closest real comparable):
+
+| Cycle | Price | Annualized |
+|---|---|---|
+| Monthly | ₦5,000 | ₦60,000/yr |
+| Quarterly | ₦14,500 | ₦58,000/yr |
+| Every 6 months | ₦27,000 | ₦54,000/yr |
+| Yearly | ₦50,000 | ₦50,000/yr |
+
+Defined once in `src/lib/billing.ts` (`BILLING_CYCLES`) — shared by the
+checkout action, the webhook, and the Settings UI, so the prices only ever
+live in one place.
+
+**What's gated**: only `published: true` on the website-settings save
+(`updateWebsiteSettingsAction` in `business-actions.ts`) — checked via
+`isSubscriptionActive(orgId)` in `src/lib/db/billing.ts`. Turning the
+Publish toggle off, or saving any other website setting (tagline, color,
+logo) while unpublished, stays free. Nothing else in the app checks this
+at all.
+
+**Schema** (`migrations/004_billing.sql`): extends
+`infrastructure_accounts` with `billing_cycle`, `subscription_status`
+(`inactive | active | past_due | canceled`), `price_kobo_per_cycle`, and
+the three Paystack identifiers (`paystack_customer_code`,
+`paystack_subscription_code`, `paystack_email_token`). Existing rows
+default to `subscription_status = 'inactive'` — nobody who signed up
+before this shipped had actually paid for anything, so nobody becomes
+silently gated or silently "active" for free; an already-published test
+site keeps working until its `renewal_date` lapses or the owner touches
+Publish again. Also adds `billing_plans` (caches the 4 Paystack Plan
+codes) and `paystack_webhook_events` (dedupes webhook redeliveries).
+
+**No manual Paystack dashboard setup for Plans**: `ensurePlanCode()` in
+`src/lib/db/billing.ts` creates the 4 Plan objects on Paystack the first
+time any of them is needed (checking Paystack itself by name first, in
+case the local cache was ever wiped), so there's nothing to configure by
+hand there — just the two API keys.
+
+**Checkout flow**: `startCheckoutAction(cycle)` → `ensurePlanCode` →
+Paystack `/transaction/initialize` with the org's id in `metadata` →
+returns a hosted `authorization_url` the browser redirects to. Paystack
+redirects back to `/business/settings?billing=callback&reference=...`,
+where `confirmCheckoutAction` verifies the transaction server-side and
+activates the subscription immediately (so the UI doesn't have to wait for
+the webhook). The Settings page auto-switches to the Plan tab when it
+detects that query param.
+
+**Webhook** (`src/app/api/webhooks/paystack/route.ts`) — the authoritative
+source for everything that happens without a browser open: recurring
+`charge.success` (renewals, matched by customer code since Paystack's own
+auto-charges carry no metadata), `subscription.create` (fills in the
+subscription code + authoritative renewal date), `invoice.payment_failed`
+(→ `past_due`, doesn't unpublish immediately — Paystack retries the charge
+on its own schedule), and `subscription.disable` / `subscription.not_renew`
+(→ `canceled`, unpublishes the site right away). Verifies
+`x-paystack-signature` (HMAC-SHA512 over the *raw* body) and dedupes by
+`(event, subject id)` against `paystack_webhook_events`, since Paystack
+retries on timeout. **You must add this URL in the Paystack dashboard**
+(Settings → API Keys & Webhooks): `https://business.<your-domain>/api/webhooks/paystack`,
+subscribed to at least those four events plus `charge.success`.
+
+**Safety net for missed webhooks**: the existing daily renewal-reminders
+cron now also calls `sweepLapsedWebsites()` — unpublishes any site whose
+subscription isn't active *and* whose `renewal_date` has actually passed,
+catching a dropped `subscription.disable` delivery. Never touches CRM data,
+only `business_profiles.published`.
+
+**New env vars** (see `.env.example`): `PAYSTACK_SECRET_KEY`,
+`PAYSTACK_PUBLIC_KEY` (the public key isn't actually used server-side yet —
+kept for a future client-side Paystack Inline integration if you ever want
+an in-page checkout instead of the current redirect-to-Paystack flow), and
+optionally `NEXT_PUBLIC_APP_URL` if the dashboard isn't simply
+`business.` + `NEXT_PUBLIC_ROOT_DOMAIN`.
+
+**Two lint patterns worth reusing** (this codebase's `react-hooks/
+set-state-in-effect` rule is strict — it flags a synchronous `setState`
+call sitting directly in an effect body, even one that's about to kick off
+an async fetch): (1) when the *initial* value of a piece of state depends
+on a one-time check of something only available in the browser (here,
+`window.location.search` right after a redirect), compute it via a lazy
+`useState(() => ...)` initializer instead of setting it from inside an
+effect — see `billing-panel.tsx`'s `confirming` state and
+`settings/page.tsx`'s `tab` state. (2) when an event handler needs to
+navigate the page (`window.location.href = ...`), the separate
+`react-hooks/immutability` rule flags mutating `window.location` directly
+in the handler ("modifying a variable defined outside a component") — the
+fix is to have the handler only set a `redirectUrl` state value, and do
+the actual `window.location.href = redirectUrl` assignment inside a
+`useEffect` that reacts to it (see `subscribe()` / the redirect effect in
+`billing-panel.tsx`).
+
+**Known limitation — not live-tested**: this sandbox has no network route
+to `api.paystack.co` (same restriction as `*.neon.tech`), so none of the
+Paystack API calls (`ensurePlanCode`, `initializeTransaction`,
+`verifyTransaction`, `getSubscriptionManageLink`, or the webhook's
+signature verification against a real payload) have actually run against
+Paystack. Everything is built strictly to Paystack's documented API shapes
+and verified type-clean/lint-clean/build-clean, but the first real
+checkout, the first real webhook delivery, and the first `next dev` request
+to `/business/settings` with real Paystack keys set are all genuinely
+untested — worth doing a full test-mode run-through (test API keys,
+subscribe, confirm the Plan tab flips to Active, then check the Paystack
+dashboard's webhook delivery log) before switching to live keys.
+
+## Update: publishing your site is free — billing no longer gates it
+
+Reversed the one enforcement decision from the update above, on your call:
+a *.jktl.com.ng subdomain costs nothing extra per business (one shared
+wildcard cert, one shared deployment — no per-tenant domain registration),
+so it shouldn't be behind a paywall. It never should have been the thing
+this subscription gated.
+
+**What changed**: `updateWebsiteSettingsAction` no longer calls
+`isSubscriptionActive` before allowing `published: true` — publishing (and
+everything else about the website: subdomain, tagline, logo, color) is
+unconditionally free now. The Website page's Publish toggle is never
+disabled and the "subscribe to publish" hint is gone. The Paystack webhook
+no longer unpublishes a site when a subscription is canceled
+(`handleSubscriptionCanceled` just records the status now), and the daily
+cron no longer runs a sweep to unpublish lapsed subscribers
+(`sweepLapsedWebsites` still exists in `src/lib/db/billing.ts` but isn't
+called from anywhere).
+
+Also fixed a related bug this surfaced: `listUpcomingRenewals` (the
+renewal-reminder email) was matching on `renewal_date` alone, so *every*
+business — including ones who never subscribed to anything — has an
+`infrastructure_accounts` row from signup with a real renewal_date, and
+would eventually get a "your plan renews for ₦50,000" email regardless.
+Added `AND ia.subscription_status = 'active'` so only actual subscribers
+get that email.
+
+**What this leaves**: the entire Paystack rail (checkout, webhook,
+Settings → Plan panel, the 4 auto-provisioned Plans) still works exactly
+as built and documented above — subscribing still charges a real card and
+tracks status accurately. It just doesn't unlock or restrict anything
+right now, which the code comments and the Plan tab's own copy now say
+plainly, so nobody reading the code later mistakes "subscription_status"
+for something actually enforced. `isSubscriptionActive` and
+`unpublishSite` in `src/lib/db/billing.ts` are unused but left in place —
+whatever gets built next that has a genuine per-business cost (a custom
+domain, storage past a free quota) can reuse them directly.
+
+## Next steps
+
+**Open question, worth deciding before anyone actually subscribes**: since
+publishing is free, what should the Website & Hosting plan actually unlock?
+The two candidates that fit the original "bill for real infra cost" idea:
+- **A custom domain** — letting a business point their own purchased
+  domain (e.g. `www.glamhairstudio.com`) at their JKTL site instead of a
+  subdomain. This has a genuine per-business cost (DNS verification,
+  issuing/renewing a dedicated SSL cert) and doesn't exist as a feature
+  yet — building it is real scope.
+- **Storage past a free quota** — Blob storage (logos, receipts, product
+  photos) is the one thing that scales with usage. Could gate "extra GB of
+  storage" behind the plan while leaving a generous free allowance for
+  everyone (the base64-in-Postgres fallback already covers a no-Blob-token
+  setup entirely for free, so this would specifically be about real Blob
+  storage beyond some limit).
+
+Neither is built. Everything else from before still stands: the live
+test-mode Paystack run-through (subscribe with test keys, confirm the Plan
+tab flips to Active, check the webhook delivery log) is worth doing once
+there's an actual reason to subscribe; the schools vertical stays deferred
+("when I'm ready I'll develop it"); CSV import was the top integrations
+recommendation but hasn't been requested as a build yet.
+
+## Update: the three real gates — team seats built, storage + custom domain scoped
+
+Settled what the subscription actually pays for: three things with a real
+per-business cost, rather than the free subdomain/hosting. **Team seats**
+is built now; storage and custom domain are scoped but not built pending
+two open decisions (see below).
+
+**Team seats** — the free tier is the owner alone (`FREE_TEAM_SEATS = 1` in
+`src/lib/billing.ts`); adding a 2nd+ team member needs an active
+subscription. Enforced in `addMemberAction`
+(`src/lib/actions/member-actions.ts`) via a new `countMembers()` in
+`src/lib/db/members.ts` plus `isSubscriptionActive()` — this is what makes
+`isSubscriptionActive` a real, used check again (it had gone dormant when
+website-publishing gating was removed above). The Settings → Users tab
+also checks this up front (`canAddMember` in `settings/page.tsx`): the
+"Add" button jumps to the Plan tab instead of opening the add-member sheet
+once at the limit, and a note explains why.
+
+**Note on how this interacts with the offline outbox**: adding a team
+member goes through the same optimistic local-update-then-sync pattern as
+every other mutation (`addMember` in `store.ts` → `enqueueSync` →
+`addMemberAction` once back online). So a business at the seat limit can
+still *try* to add someone while offline — the UI updates optimistically,
+and only once the queued mutation reaches the server does
+`addMemberAction` reject it. `processOutbox` (`src/lib/offline/sync.ts`)
+already handles a rejected mutation generically (drops it, shows "One
+change couldn't be saved to the server and was discarded"), so this
+doesn't crash or hang, but the toast doesn't say *why* it was rejected,
+and the phantom member stays visible in the list until the next full
+re-sync corrects it. The client-side `canAddMember` check above is what
+keeps this the rare path rather than the common one — same reasoning
+`updateWebsiteSettingsAction` uses for being a direct, non-outbox action
+instead (subdomain uniqueness has the same "needs a live check" shape).
+Worth remembering if a future gate has the same tension.
+
+**Storage and custom domain — not built yet, two decisions pending**:
+- **Storage free quota**: you said "50 or 100mb" — need one number. Once
+  picked, this needs real enforcement, which doesn't exist yet: nothing
+  currently updates `storage_used_gb` on an upload, so `persistImage` in
+  `src/lib/blob.ts` would need to start tracking bytes per organization,
+  and a check added before allowing a new upload past quota (logos,
+  receipts, product photos are the only real usage today).
+- **Custom domain**: a genuinely new feature, not a small gate — the
+  business would need a way to enter their own domain, prove they own it
+  (a DNS TXT record is the standard way), and `middleware.ts` would need a
+  second resolution path (host doesn't match `*.jktl.com.ng` → look up
+  `business_profiles` by a new `custom_domain` column instead of by
+  subdomain). The remaining question is whether the domain itself also
+  gets added to the Vercel project automatically via Vercel's API (needs a
+  Vercel API token + project ID from you) or manually by you in the Vercel
+  dashboard each time (matches how you already manage `jktl.com.ng`'s
+  wildcard — no new credential needed, but a manual step per business).
+
+## Update: storage quota + custom domain — both gates built and live
+
+Closed out the two open decisions from the update above and built both
+remaining gates. Nothing about website publishing changed — it's still
+free and ungated.
+
+**Storage quota — 50MB free per business, grounded in Neon's real
+pricing.** You'd said "im using neon so use that information for data"
+rather than picking a number blind, so: JKTL Business runs one shared
+Neon project across every tenant, and Neon's free tier is 512MB **total
+for the whole platform**, not per business — the paid tier is metered at
+$0.35/GB-month with no hard cap. 50MB per business
+(`storage_limit_bytes`, defaults to `52_428_800` bytes) is generous
+enough that almost no real salon hits it from normal use (a logo plus a
+season's worth of receipt photos), while keeping the platform's
+aggregate free-tier usage predictable — roughly 10 businesses' worth of
+headroom before any of them even need to pay, and paid usage past that
+costs cents, not naira, so the ₦5,000+/mo subscription price comfortably
+covers it.
+
+- **What's actually measured**: only image uploads — logos, staff
+  avatars, receipt photos — via a new `image_uploads` table (one row per
+  upload, exact byte size) and a running `storage_used_bytes` counter on
+  `infrastructure_accounts` (`migrations/005_storage_and_custom_domain.sql`).
+  Deliberately not full database-row accounting: plain CRM rows are
+  negligible next to photos even for a busy business, so this is a
+  "good enough" proxy rather than instrumenting every table.
+- **Enforcement** (`src/lib/db/storage.ts`, wired into `src/lib/blob.ts`):
+  `hasStorageQuota(orgId, size)` is checked *before* any upload happens
+  (Blob or inline fallback) — if the org is at quota, `persistImage` throws
+  a `StorageQuotaError` instead of storing anything, and an active
+  subscription lifts the quota entirely (no separate "paid quota" ceiling,
+  just free-vs-unlimited). Every action that uploads an image
+  (`setAvatarAction`, `createSaleAction`/`updateSalePaymentAction`'s
+  receipt photo, `updateWebsiteSettingsAction`'s logo) now passes
+  `organizationId` through and catches `StorageQuotaError` with the
+  upgrade message. `releaseImage` (renamed from `deleteImageIfBlob`)
+  subtracts the freed bytes back off the counter on replace/removal,
+  floored at 0.
+- **UI**: a new `StorageUsagePanel` (`src/components/settings/storage-usage-panel.tsx`)
+  in Settings → Plan, right under the billing panel — a progress bar plus
+  "X MB / 50 MB" fetched via a new read-only `getStorageUsageAction`. This
+  replaced the old static "Storage: 0.8 GB / 2 GB" row in the
+  pre-existing "Infrastructure status" section, which was never wired to
+  anything real.
+
+**Custom domain — manual DNS verification, no Vercel API.** You picked
+"Manual — you add it in Vercel yourself" explicitly, matching how you
+already manage `jktl.com.ng`'s own wildcard domain by hand. So JKTL
+Business only verifies the business controls the domain and remembers
+the mapping; actually adding the domain to the Vercel project (so Vercel
+issues its SSL certificate) is still a manual step you or the business
+does in the Vercel dashboard — no Vercel API token anywhere in this flow.
+
+- **Flow**: business enters a domain (e.g. `www.glamhairstudio.com`) →
+  `startCustomDomainVerificationAction` (requires an active subscription —
+  this is the one thing with a real ongoing cost, one more host for
+  middleware to resolve plus whatever SSL renewal costs you in Vercel)
+  generates a random token and returns a DNS TXT record to add
+  (`_jktl-verify.<domain>` → `jktl-domain-verify=<token>`) → business adds
+  it at their registrar → `verifyCustomDomainAction` resolves the TXT
+  record via Node's `dns/promises.resolveTxt` and marks it verified on a
+  match. A partial unique index on `business_profiles.custom_domain`
+  (`WHERE custom_domain <> ''`) stops two businesses claiming the same
+  domain.
+- **Routing**: `middleware.ts` now runs two checks — the existing
+  `*.jktl.com.ng` string match first (zero cost, virtually all traffic),
+  then, only for hosts that are neither that namespace nor localhost
+  (`isCandidateCustomDomain`), one DB lookup
+  (`getSubdomainByCustomDomain`) that resolves a verified custom domain
+  back to the business's own subdomain slug and rewrites to the exact
+  same `/sites/<subdomain>` route — a custom domain is an alternate
+  address for the same site, not a separate page.
+- **UI**: `CustomDomainField` (`src/components/website/custom-domain-field.tsx`)
+  on the Website settings page, right under the subdomain field —
+  handles all four states (not subscribed / no domain yet / pending
+  verification with instructions / verified), and reminds the business to
+  add the domain in Vercel once verified.
+
+Both features work in demo mode too (faked locally via the store, no real
+server calls or DB writes), same pattern as the billing panel.
+
+## Update: public website redesign, product photos, report charts, dark mode
+
+Four separate asks bundled into one round. Migration `006_website_v2.sql`
+adds `business_profiles.cover_photo_url` and `products.image_url` — both
+optional, both flow through the existing storage-quota machinery
+(`persistImage`/`releaseImage`/`StorageQuotaError`) exactly like a logo or
+receipt photo already did.
+
+**Public website — now a real landing page, not a single-column mobile
+list.** `src/components/public-site/public-site-view.tsx` was rewritten
+end to end:
+- **Nav bar**: sticky, business name/logo on the left, anchor links
+  (Services/Products/Pricing — whichever sections actually have content)
+  in the middle on wider screens, a "Book now" pill always on the right.
+- **Hero**: full-bleed cover photo (new `coverPhotoUrl` on
+  `BusinessProfile`, uploaded via `CoverPhotoField` — a 16:9 center-crop,
+  same client-crop-then-upload-on-save pattern as the logo) with a dark
+  gradient for text legibility; falls back to a brand-color gradient when
+  no photo is set, so it's never blank. Business name, tagline, location,
+  and three CTAs (Book, WhatsApp, Call).
+- **Products, as "mini ecommerce"**: per your call — a catalog to browse,
+  not a cart. Each product can now have a photo (`imageUrl`, uploaded via
+  `ProductPhotoField` in the product form, also shown as a thumbnail in
+  the internal Products list). An "Order" button opens WhatsApp with the
+  product name and price pre-filled (`waLink` in `src/lib/contact.ts` now
+  takes an optional `message` param) — no cart, no online payment, matches
+  how these businesses already close sales.
+- **Pricing section**: your ask was "a list of everything they will pay
+  for" — so this is a dedicated section, separate from the visual product
+  catalog above it, listing every active service and every active product
+  with its price in one place, grouped under "Services"/"Products"
+  sub-headings. Nothing hidden behind menu-hunting.
+- General visual pass to move it away from looking like the internal
+  dashboard's card grid: wider container (`max-w-6xl` vs. the dashboard's
+  mobile-first width), generous section padding, a colored eyebrow label
+  above each heading, alternating section backgrounds for rhythm. The
+  booking form and the scripted chat widget are unchanged, just restyled
+  to sit inside the new layout.
+
+**Charts on the Reports page** (`src/app/business/reports/page.tsx`):
+added the `recharts` dependency. A sales-vs-expenses bar chart
+(`salesTrendInRange` in `src/lib/selectors.ts` — bucketed by hour for
+"Today", by day for "This week"/"This month") sits above the existing stat
+tiles, and the booking-status counts are now also a donut chart next to
+the existing pill breakdown (kept both — the chart for the shape, the
+pills for the exact numbers). Chart colors reference the CSS color
+variables directly (`fill="var(--color-primary)"` etc.) rather than hex,
+so they automatically follow dark mode.
+
+**Dark mode — dashboard only, per your call.** `globals.css` now defines a
+dark palette two ways: under `@media (prefers-color-scheme: dark)` guarded
+by `:root:not([data-theme="light"])` for "System", and again under
+`:root[data-theme="dark"]` for an explicit choice. `layout.tsx` sets
+`data-theme` on `<html>` via a small blocking inline script (reads
+`localStorage`) before paint, so there's no flash of the wrong theme.
+`ThemeToggle` (Settings → Account → Appearance) is the only thing that
+writes that `localStorage` key. The public website is deliberately
+**exempted** — it always renders light, via a `.jktl-light` class on its
+own root element that re-declares the light color values; CSS custom
+properties resolve from the nearest ancestor that sets them, so this wins
+over both the media query and `[data-theme="dark"]` without any JS. A
+storefront a customer visits from a WhatsApp link shouldn't flip dark just
+because their phone is in dark mode at 9pm.
+
+## Update: "Upgrade" popup + wording pass
+
+Per your ask — tease the gated features and let people upgrade right from
+where they hit the gate, instead of sending them off to Settings → Plan
+and hoping they find their way back.
+
+**`UpgradeSheet`** (`src/components/settings/upgrade-sheet.tsx`, new) is
+the one shared popup for this. It takes a `reason` string (the one line
+that explains *why* this particular gate exists) and renders the same
+billing-cycle picker as the Plan tab — choosing a cycle starts a real
+Paystack checkout right there, same `startCheckoutAction` the Plan tab
+uses. There's exactly one place that knows how to start a checkout from a
+gate, not three copies of the same logic.
+
+Wired into all three real gates:
+- **Custom domain** (`custom-domain-field.tsx`) — not-subscribed state now
+  shows an "Upgrade" button instead of the old plain message.
+- **Team seats** (Settings → Users) — the "Add" button opens the sheet
+  directly when the free seat is used up, instead of just switching to the
+  Plan tab; the explanatory line under it also has an inline "upgrade"
+  link that opens the same sheet.
+- **Storage** (`storage-usage-panel.tsx`) — once the free 50MB is used up,
+  an "Upgrade for more storage" button appears under the usage bar.
+
+**Wording pass**: replaced "Subscribe"/"subscribing" with "Upgrade"/
+"upgrading" everywhere a person actually sees it as an instruction or
+action — the `StorageQuotaError` message, the team-seat and custom-domain
+gate error strings, the Plan tab's own description line, and the demo-mode
+toast on the Plan tab's cycle picker. Left alone on purpose: things that
+describe *state* rather than prompt an action — the "Not subscribed"
+status pill, `subscriptionStatus`/`subscription_status` (the actual
+Paystack/DB field name), and code comments — since renaming those wouldn't
+change anything a person sees and would just make the code harder to
+grep against Paystack's own docs.
+
+Verified with `tsc --noEmit`, `eslint .`, and a full production build —
+all clean.
+
+## Investigated: "the website new layout is not implemented"
+
+Checked this by re-reading the actual files, not by guessing: `src/app/
+sites/[subdomain]/page.tsx` (the real public site route, `force-dynamic`
+so it's never statically cached) and `src/app/business/website/page.tsx`
+(the dashboard's live preview) both still render the new
+`public-site-view.tsx` — the nav bar, hero, services grid, product
+catalog, and consolidated pricing section are all there in the file on
+disk. There's no old/duplicate version of this page anywhere in the
+project that could be shadowing it. So this isn't a missing or reverted
+feature.
+
+The far more likely explanation is the **same service-worker caching
+issue already root-caused earlier** (the `formatMb`/`ChunkLoadError`
+reports): `AppBootstrap`, which registers `/sw.js`, is mounted in the
+*root* layout, so its scope is the whole site — including `/sites/...`
+public pages, not just the `/business` dashboard. If a service worker was
+ever installed in your browser from before the production-only-registration
+fix, it's still running now regardless of that fix, and it's the same
+worker that can end up serving an old cached page. The fix already
+shipped in code doesn't retroactively un-register something the browser
+already installed.
+
+One-time fix, same as before: open DevTools → Application → Service
+Workers → **Unregister**, then Application → Storage → **Clear site
+data**, then hard-reload the tab. After that, this browser will only ever
+register the service worker in production, never in `next dev`, so this
+class of "my change isn't showing up" shouldn't recur. If you're viewing
+this on a phone (no easy DevTools), the equivalent is clearing site data/
+storage for the site from the browser's site-settings screen, or trying a
+fresh private/incognito tab, which never has a previously-installed
+worker.
+
+If that doesn't fix it: rebuild (`rm -rf .next && npm run build`, or just
+restart `npm run dev`) after extracting this latest zip over the old
+project folder, since a partial extraction (old files left in place
+alongside new ones) would look like the same symptom.
+
+## Fix: image upload crashing storage-quota tracking (migration 007)
+
+Real bug, found from your terminal log:
+
+```
+Error [NeonDbError]: index row requires 251456 bytes, maximum size is 8191
+    at async recordImageUpload (src/lib/db/storage.ts:46:3)
+```
+
+**Cause**: without `BLOB_READ_WRITE_TOKEN` configured, `persistImage`
+falls back to storing the image inline in Postgres as a full base64
+`data:` URL (by design — the app should work with zero setup). But
+migration 005 put a plain index on `image_uploads.url` to speed up
+lookups. That's fine for a short, real hosted URL, but a base64-encoded
+photo is easily 50–250KB, and Postgres flatly refuses to index anything
+over roughly 2.7KB in a standard btree — hence the crash, on *every*
+inline-stored image, not just this one upload.
+
+**Fix**: `migrations/007_fix_image_uploads_index.sql` drops that index.
+It was never actually needed — `releaseImageUsage` always filters by
+`organization_id` first (which has its own index), and one business has
+at most a handful of tracked images, so there's nothing to look up
+efficiently by `url` alone. No application code changed, `tsc`/`eslint`
+still clean.
+
+**You'll need to run `npm run db:migrate` again** to pick this up — it's
+additive (a new file, not a change to 005), so it's safe to run anytime,
+same as always.
+
+If you do eventually connect a real Vercel Blob store
+(`BLOB_READ_WRITE_TOKEN`), this whole class of issue goes away regardless
+— images get uploaded to Blob and only their short real URL gets recorded
+here, which was always fine to index. Inline storage is meant as a
+zero-setup fallback, not the long-term path for a business with real
+traffic.
+
+## Next steps
+
+All three billing gates (team seats, storage, custom domain), all four
+asks from the landing-page round (redesign, product photos, report
+charts, dark mode), and the Upgrade-popup/wording pass are built and live.
+Worth doing before relying on any of it: run `npm run db:migrate` again to
+pick up migration 007 above, the real test-mode Paystack run-through
+already noted earlier, a visual pass on an actual phone/desktop for the
+new public site, and the service-worker unregister step above if the new
+layout still isn't showing after this update (all of this was built and
+verified via `tsc`/`eslint`/a full production build, not by looking at it
+rendered — I have no way to screenshot it from here).

@@ -4,9 +4,11 @@
 /**
  * Normalizes a Nigerian phone number (however it was typed — with a leading
  * 0, a +234, spaces, dashes) into a wa.me link. Returns null when there's
- * nothing usable to link to.
+ * nothing usable to link to. An optional `message` is pre-filled into the
+ * chat (used by the product catalog's "Order via WhatsApp" buttons) — the
+ * visitor still has to hit send themselves, nothing here sends anything.
  */
-export function waLink(phone: string): string | null {
+export function waLink(phone: string, message?: string): string | null {
   const digits = phone.replace(/[^0-9]/g, "");
   if (!digits) return null;
   let national: string;
@@ -14,7 +16,8 @@ export function waLink(phone: string): string | null {
   else if (digits.startsWith("0")) national = digits.slice(1);
   else national = digits;
   if (national.length !== 10) return null; // not a recognizable NG mobile number
-  return `https://wa.me/234${national}`;
+  const base = `https://wa.me/234${national}`;
+  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }
 
 export function telLink(phone: string): string | null {

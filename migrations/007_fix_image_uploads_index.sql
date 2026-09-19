@@ -1,0 +1,15 @@
+-- Bug fix: `idx_image_uploads_url` (from migration 005) indexes the full
+-- `url` column, which is fine for a real hosted URL but breaks the moment
+-- an image is stored inline (no BLOB_READ_WRITE_TOKEN configured) — a
+-- base64 data: URL for a real photo is easily 50-250KB+, and Postgres
+-- can't index a value bigger than ~2.7KB in a standard btree ("index row
+-- requires N bytes, maximum size is 8191"). Every inline-stored photo
+-- upload (logo, cover photo, avatar, receipt, product photo) hit this.
+--
+-- The index was never actually load-bearing: `releaseImageUsage` (see
+-- src/lib/db/storage.ts) always filters by `organization_id` first, which
+-- has its own index (idx_image_uploads_org) — one business has at most a
+-- handful of tracked images, so filtering the rest by `url` in-memory
+-- costs nothing. Dropping it, not replacing it with something cleverer
+-- (like an index on a hash of the url), keeps this simple.
+DROP INDEX IF EXISTS idx_image_uploads_url;

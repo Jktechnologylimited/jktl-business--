@@ -49,10 +49,23 @@ export interface BusinessProfile {
   city: string;
   state: string;
   logoUrl: string | null;
+  /** A wide banner photo for the site's hero section. Null shows a plain
+   * brand-color hero instead — the site still looks intentional without
+   * one, just plainer. */
+  coverPhotoUrl: string | null;
   subdomain: string;
   published: boolean;
   tagline: string;
   themeColor: string;
+  /** A business's own domain (e.g. "www.glamhairstudio.com"), mapped onto
+   * their site instead of / in addition to their *.jktl.com.ng subdomain.
+   * Empty string when none is set. Requires an active subscription to set
+   * up — see `startCustomDomainVerificationAction`. */
+  customDomain: string;
+  /** True once ownership has been proven via the DNS TXT record — until
+   * then, `customDomain` is just a pending, unverified request and
+   * middleware won't route traffic for it. */
+  customDomainVerified: boolean;
 }
 
 export interface AppUser {
@@ -108,6 +121,9 @@ export interface Product {
   lowStockThreshold: number;
   supplier: string;
   active: boolean;
+  /** Shown on the public website's product catalog. Null falls back to a
+   * generic product icon there — a photo is optional, not required. */
+  imageUrl: string | null;
 }
 
 export interface Booking {
@@ -199,6 +215,17 @@ export interface Infrastructure {
   organizationId: string;
   planName: string;
   priceKoboPerYear: Kobo;
+  /** The amount actually charged per billing cycle (see `billingCycle`) —
+   * `priceKoboPerYear` above is kept as an annualized reference figure for
+   * the renewal-reminder email and any "per year" display. */
+  priceKoboPerCycle: Kobo;
+  billingCycle: "monthly" | "quarterly" | "biannually" | "yearly";
+  /** Whether the "Website & Hosting" add-on is currently paid for. Nothing
+   * in JKTL Business actually checks this yet — publishing a website on a
+   * *.jktl.com.ng subdomain is free, since it costs nothing extra per
+   * business. This is tracked for whenever a real paid add-on (a custom
+   * domain, storage past a free quota) needs to check it. */
+  subscriptionStatus: "inactive" | "active" | "past_due" | "canceled";
   renewalDate: string;
   storageUsedGb: number;
   storageLimitGb: number;

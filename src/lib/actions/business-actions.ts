@@ -2,7 +2,7 @@
 
 import { getBusinessProfile, isSubdomainAvailable, updateBusinessProfile, updateWebsiteSettings } from "@/lib/db/organizations";
 import { requireSession } from "@/lib/session";
-import { persistImage, deleteImageIfBlob } from "@/lib/blob";
+import { persistImage, releaseImage, StorageQuotaError } from "@/lib/blob";
 import { subdomainFormatError } from "@/lib/subdomain";
 import type { ActionResult } from "./types";
 import type { BusinessProfile } from "@/lib/types";
@@ -28,6 +28,8 @@ export interface WebsiteSettingsInput {
   /** A data URL for a newly-picked logo, an existing hosted URL to leave as
    * is, or null to remove the logo entirely. */
   logoUrl: string | null;
+  /** Same shape as `logoUrl`, for the website hero's banner photo. */
+  coverPhotoUrl: string | null;
   published: boolean;
 }
 
@@ -50,21 +52,31 @@ export async function updateWebsiteSettingsAction(input: WebsiteSettingsInput): 
     const available = await isSubdomainAvailable(subdomain, organizationId);
     if (!available) return { ok: false, error: "That address is already taken — please choose another." };
 
+    // Publishing on a *.jktl.com.ng subdomain is free, full stop — it costs
+    // nothing extra per business (one shared wildcard cert, one shared
+    // deployment), so there's no subscription check here. The logo upload
+    // just below is where the real gate is: storage past the free quota
+    // needs a subscription (see StorageQuotaError below), same as a 2nd+
+    // team seat does in `addMemberAction`.
     const previous = await getBusinessProfile(organizationId);
-    const logoUrl = (await persistImage(input.logoUrl, "logos")) ?? null;
+    const logoUrl = (await persistImage(input.logoUrl, "logos", organizationId)) ?? null;
+    const coverPhotoUrl = (await persistImage(input.coverPhotoUrl, "covers", organizationId)) ?? null;
 
     const profile = await updateWebsiteSettings(organizationId, {
       subdomain,
       tagline: input.tagline.trim(),
       themeColor: input.themeColor,
       logoUrl,
+      coverPhotoUrl,
       published: input.published,
     });
     if (!profile) return { ok: false, error: "Business profile not found." };
 
-    if (previous?.logoUrl && previous.logoUrl !== logoUrl) void deleteImageIfBlob(previous.logoUrl);
+    if (previous?.logoUrl && previous.logoUrl !== logoUrl) void releaseImage(previous.logoUrl, organizationId);
+    if (previous?.coverPhotoUrl && previous.coverPhotoUrl !== coverPhotoUrl) void releaseImage(previous.coverPhotoUrl, organizationId);
     return { ok: true, data: profile };
   } catch (err) {
+    if (err instanceof StorageQuotaError) return { ok: false, error: err.message };
     console.error(err);
     return { ok: false, error: "Couldn't save your website settings." };
   }

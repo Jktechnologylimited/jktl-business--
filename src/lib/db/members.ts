@@ -20,6 +20,15 @@ export async function listMembers(orgId: string): Promise<OrganizationMember[]> 
   return rows.map(mapRow);
 }
 
+/** Used to gate team seats — the free tier is the owner alone; a 2nd+
+ * member needs an active Website & Hosting subscription (see
+ * `addMemberAction`). */
+export async function countMembers(orgId: string): Promise<number> {
+  const sql = getSql();
+  const rows = await sql`SELECT count(*)::int AS count FROM organization_members WHERE organization_id = ${orgId}`;
+  return Number(rows[0]?.count ?? 0);
+}
+
 export interface MemberInput {
   name: string;
   email: string;

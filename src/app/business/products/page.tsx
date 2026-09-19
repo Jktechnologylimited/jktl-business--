@@ -62,6 +62,14 @@ export default function ProductsPage() {
             const low = p.stockQty <= p.lowStockThreshold;
             return (
               <div key={p.id} className="flex items-center gap-3 px-4 py-3.5">
+                {p.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- data URL or hosted URL, not a static asset
+                  <img src={p.imageUrl} alt="" className="size-10 shrink-0 rounded-lg border border-border object-cover" />
+                ) : (
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-strong text-ink-faint">
+                    <Package className="size-4" />
+                  </span>
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-ink">{p.name}</div>
                   <div className="truncate text-xs text-ink-muted">

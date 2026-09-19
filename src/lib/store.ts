@@ -14,6 +14,7 @@ import type {
   BusinessType,
   Customer,
   Expense,
+  Infrastructure,
   Invoice,
   InvoiceStatus,
   LineKind,
@@ -103,6 +104,7 @@ export interface NewProductInput {
   lowStockThreshold: number;
   supplier: string;
   active: boolean;
+  imageUrl: string | null;
 }
 
 export interface NewBookingInput {
@@ -261,6 +263,10 @@ interface BusinessStore {
    * canonical result (from the server in live mode, or constructed locally
    * in demo mode) rather than a partial patch to merge and re-queue. */
   setWebsiteProfile: (profile: BusinessProfile) => void;
+  /** Replaces the infrastructure/billing record — used by the Settings
+   * "Plan" tab right after a checkout is confirmed, so the new
+   * subscription status shows up immediately without a full re-sync. */
+  setInfrastructure: (infra: Infrastructure) => void;
 
   notificationPrefs: NotificationPrefs;
   setNotificationPref: (key: keyof NotificationPrefs, value: boolean) => void;
@@ -456,7 +462,7 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
     if (full) {
       get().enqueueSync("product.update", {
         id,
-        input: { name: full.name, sku: full.sku, category: full.category, costKobo: full.costKobo, priceKobo: full.priceKobo, stockQty: full.stockQty, lowStockThreshold: full.lowStockThreshold, supplier: full.supplier, active: full.active },
+        input: { name: full.name, sku: full.sku, category: full.category, costKobo: full.costKobo, priceKobo: full.priceKobo, stockQty: full.stockQty, lowStockThreshold: full.lowStockThreshold, supplier: full.supplier, active: full.active, imageUrl: full.imageUrl },
       });
     }
     get().persistCache();
@@ -691,6 +697,11 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
 
   setWebsiteProfile: (profile) => {
     set((state) => ({ data: { ...state.data, profile } }));
+    get().persistCache();
+  },
+
+  setInfrastructure: (infrastructure) => {
+    set((state) => ({ data: { ...state.data, infrastructure } }));
     get().persistCache();
   },
 

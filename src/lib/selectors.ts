@@ -1,4 +1,4 @@
-import { endOfDay, isSameDay, isToday, isWithinInterval, startOfDay, startOfMonth, startOfWeek } from "date-fns";
+import { differenceInCalendarDays, endOfDay, format, isSameDay, isToday, isWithinInterval, startOfDay, startOfMonth, startOfWeek } from "date-fns";
 import { STAFF } from "@/lib/mock";
 import type { Booking, Customer, Invoice, Product, Sale, Service, TenantData } from "@/lib/types";
 
@@ -73,6 +73,60 @@ export function topProductsInRange(
     .filter((row) => row.product)
     .sort((a, b) => b.quantity - a.quantity)
     .slice(0, limit);
+}
+
+export interface TrendPoint {
+  label: string;
+  salesKobo: number;
+  expensesKobo: number;
+}
+
+/**
+ * Sales vs. expenses bucketed across the selected range — by hour (8am–8pm,
+ * a reasonable business-hours window) for "today" since a single day has
+ * nothing to bucket by day, and by calendar day for "week"/"month". Feeds
+ * the Reports page's trend chart; kept as a selector (not inline in the
+ * page) so it's testable the same way every other report number here is.
+ */
+export function salesTrendInRange(sales: Sale[], expenses: TenantData["expenses"], range: ReportRange, now = new Date()): TrendPoint[] {
+  const interval = rangeInterval(range, now);
+
+  if (range === "today") {
+    const points: TrendPoint[] = Array.from({ length: 13 }, (_, i) => {
+      const hour = i + 8; // 8am .. 8pm
+      const label = hour === 12 ? "12pm" : hour > 12 ? `${hour - 12}pm` : `${hour}am`;
+      return { label, salesKobo: 0, expensesKobo: 0 };
+    });
+    for (const s of sales) {
+      if (!within(s.createdAt, interval)) continue;
+      const idx = new Date(s.createdAt).getHours() - 8;
+      if (points[idx]) points[idx].salesKobo += s.totalKobo;
+    }
+    for (const e of expenses) {
+      if (!within(e.date, interval)) continue;
+      const idx = new Date(e.date).getHours() - 8;
+      if (points[idx]) points[idx].expensesKobo += e.amountKobo;
+    }
+    return points;
+  }
+
+  const dayCount = differenceInCalendarDays(startOfDay(interval.end), startOfDay(interval.start)) + 1;
+  const points: TrendPoint[] = Array.from({ length: dayCount }, (_, i) => {
+    const d = new Date(interval.start);
+    d.setDate(d.getDate() + i);
+    return { label: format(d, "d MMM"), salesKobo: 0, expensesKobo: 0 };
+  });
+  for (const s of sales) {
+    if (!within(s.createdAt, interval)) continue;
+    const idx = differenceInCalendarDays(startOfDay(new Date(s.createdAt)), startOfDay(interval.start));
+    if (points[idx]) points[idx].salesKobo += s.totalKobo;
+  }
+  for (const e of expenses) {
+    if (!within(e.date, interval)) continue;
+    const idx = differenceInCalendarDays(startOfDay(new Date(e.date)), startOfDay(interval.start));
+    if (points[idx]) points[idx].expensesKobo += e.amountKobo;
+  }
+  return points;
 }
 
 export function customerName(customers: Customer[], id: string | null): string {

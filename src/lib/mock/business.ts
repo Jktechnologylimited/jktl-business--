@@ -26,10 +26,13 @@ export function demoProfile(): BusinessProfile {
     city: "Yenagoa",
     state: "Bayelsa",
     logoUrl: null,
+    coverPhotoUrl: null,
     subdomain: "glamhair",
     published: false,
     tagline: "Braids, wash & style, nails — walk-ins welcome.",
     themeColor: "#0f6e5c",
+    customDomain: "",
+    customDomainVerified: false,
   };
 }
 
@@ -62,8 +65,14 @@ export const STAFF = [
 export function demoInfrastructure(now = new Date()): Infrastructure {
   return {
     organizationId: ORG_ID,
-    planName: "Business Starter",
+    planName: "Website & Hosting — Yearly",
     priceKoboPerYear: 5_000_000,
+    priceKoboPerCycle: 5_000_000,
+    billingCycle: "yearly",
+    // Demo mode shows an already-active subscription so the "Plan" tab and
+    // website publishing both demonstrate the paid state without anyone
+    // needing a real Paystack checkout just to try the app out.
+    subscriptionStatus: "active",
     renewalDate: formatISO(addYears(now, 1), { representation: "date" }),
     storageUsedGb: 0.8,
     storageLimitGb: 2,

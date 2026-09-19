@@ -32,6 +32,49 @@ export function fileToSquareDataUrl(file: File, size = 256): Promise<string> {
 }
 
 /**
+ * Reads an image file, center-crops it to a fixed `width`x`height` box, and
+ * resolves a JPEG data URL — used for the website's wide hero/cover photo,
+ * where a square crop (see `fileToSquareDataUrl`) would be the wrong shape.
+ */
+export function fileToRectDataUrl(file: File, width: number, height: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Couldn't read that file."));
+    reader.onload = () => {
+      const img = new window.Image();
+      img.onerror = () => reject(new Error("That doesn't look like a valid image."));
+      img.onload = () => {
+        const targetRatio = width / height;
+        const srcRatio = img.width / img.height;
+        let sx = 0;
+        let sy = 0;
+        let sw = img.width;
+        let sh = img.height;
+        if (srcRatio > targetRatio) {
+          sw = img.height * targetRatio;
+          sx = (img.width - sw) / 2;
+        } else {
+          sh = img.width / targetRatio;
+          sy = (img.height - sh) / 2;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Image processing isn't available in this browser."));
+          return;
+        }
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
  * Reads an image file and downsizes it (preserving aspect ratio, no crop) so
  * its longest side is at most `maxDim`px, resolving a JPEG data URL. Used for
  * document-style photos — a receipt, say — where a square avatar-style crop

@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getSubdomainByCustomDomain } from "@/lib/db/public";
 
 /**
- * Wildcard-subdomain routing for published business sites:
- * businessname.jktl.com.ng -> internally rewritten to /sites/businessname.
+ * Two ways a request gets routed to a business's public site, both ending
+ * in the same rewrite to /sites/<subdomain>:
+ *   1. Wildcard subdomain: businessname.jktl.com.ng — pure string match,
+ *      zero extra cost, handled first (this is virtually all traffic).
+ *   2. Verified custom domain: www.glamhairstudio.com — a business's own
+ *      domain, mapped onto their site (see `src/lib/actions/domain-actions.ts`).
+ *      Requires one extra DB lookup, but only for hosts that are neither
+ *      *.jktl.com.ng nor localhost — see `isCandidateCustomDomain` — so the
+ *      platform's own traffic never pays for this.
  *
  * Everything else (the apex domain, www, app, and plain localhost during
  * development) passes straight through untouched — /login, /business/*,
@@ -45,14 +53,38 @@ function extractSubdomain(host: string): string | null {
   return sub;
 }
 
-export function middleware(request: NextRequest) {
-  const host = request.headers.get("host") || "";
-  const subdomain = extractSubdomain(host);
-  if (!subdomain) return NextResponse.next();
+/** A request host is only worth a custom-domain DB lookup when it's
+ * neither the platform's own domain (apex, any *.jktl.com.ng subdomain —
+ * reserved or tenant) nor a local-dev host. This is what keeps that
+ * lookup off the hot path for the platform's own traffic. */
+function isCandidateCustomDomain(hostname: string): boolean {
+  if (!hostname) return false;
+  if (hostname === ROOT_DOMAIN || hostname.endsWith(`.${ROOT_DOMAIN}`)) return false;
+  if (hostname === "localhost" || hostname.endsWith(".localhost")) return false;
+  return true;
+}
 
-  const url = request.nextUrl.clone();
-  url.pathname = `/sites/${subdomain}${request.nextUrl.pathname}`;
-  return NextResponse.rewrite(url);
+export async function middleware(request: NextRequest) {
+  const host = request.headers.get("host") || "";
+
+  const subdomain = extractSubdomain(host);
+  if (subdomain) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/sites/${subdomain}${request.nextUrl.pathname}`;
+    return NextResponse.rewrite(url);
+  }
+
+  const hostname = host.split(":")[0].toLowerCase();
+  if (isCandidateCustomDomain(hostname)) {
+    const mappedSubdomain = await getSubdomainByCustomDomain(hostname);
+    if (mappedSubdomain) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/sites/${mappedSubdomain}${request.nextUrl.pathname}`;
+      return NextResponse.rewrite(url);
+    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
