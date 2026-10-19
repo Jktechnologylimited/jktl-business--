@@ -1,4 +1,5 @@
 import { getSql } from "./client";
+import { getEntitlement } from "./entitlements";
 import { isoDate } from "./rows";
 import type { AppUser, BusinessProfile, BusinessType, Infrastructure, Organization } from "@/lib/types";
 
@@ -22,6 +23,8 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     address: row.address as string,
     city: row.city as string,
     state: row.state as string,
+    // Defensive fallback: rows created before migration 018 have no country.
+    countryCode: (row.country_code as string) || "NG",
     logoUrl: (row.logo_url as string) ?? null,
     coverPhotoUrl: (row.cover_photo_url as string) ?? null,
     subdomain: row.subdomain as string,
@@ -36,6 +39,15 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     customDomain: (row.custom_domain as string) ?? "",
     customDomainVerified: Boolean(row.custom_domain_verified),
     aboutText: (row.about_text as string) ?? "",
+    aboutLong: (row.about_long as string) ?? "",
+    galleryUrls: Array.isArray(row.gallery_urls) ? (row.gallery_urls as string[]) : [],
+    openingHours: Array.isArray(row.opening_hours) ? (row.opening_hours as Array<{ day: string; hours: string }>) : [],
+    serviceAreas: Array.isArray(row.service_areas) ? (row.service_areas as string[]) : [],
+    faqs: Array.isArray(row.faqs) ? (row.faqs as Array<{ question: string; answer: string }>) : [],
+    // The admin's profile read does not join the source prospect, so these are
+    // zero here; the public site read joins them in.
+    rating: Number(row.rating ?? 0),
+    reviewCount: Number(row.reviews ?? 0),
     instagramUrl: (row.instagram_url as string) ?? "",
     tiktokUrl: (row.tiktok_url as string) ?? "",
     facebookUrl: (row.facebook_url as string) ?? "",
@@ -62,6 +74,9 @@ function mapInfra(row: Record<string, unknown>): Infrastructure {
     hostingStatus: row.hosting_status as Infrastructure["hostingStatus"],
     sslStatus: row.ssl_status as Infrastructure["sslStatus"],
     domain: row.domain as string,
+    // Filled in by `getInfrastructure`, which can await the entitlement lookup.
+    // The row mapper is synchronous, so it cannot do that itself.
+    entitled: false,
   };
 }
 
@@ -89,13 +104,14 @@ export async function getBusinessProfile(orgId: string): Promise<BusinessProfile
 
 export async function updateBusinessProfile(
   orgId: string,
-  patch: Pick<BusinessProfile, "displayName" | "phone" | "email" | "address" | "city" | "state">,
+  patch: Pick<BusinessProfile, "displayName" | "phone" | "email" | "address" | "city" | "state" | "countryCode">,
 ): Promise<BusinessProfile | null> {
   const sql = getSql();
   const rows = await sql`
     UPDATE business_profiles
     SET display_name = ${patch.displayName}, phone = ${patch.phone}, email = ${patch.email},
-        address = ${patch.address}, city = ${patch.city}, state = ${patch.state}
+        address = ${patch.address}, city = ${patch.city}, state = ${patch.state},
+        country_code = ${patch.countryCode || "NG"}
     WHERE organization_id = ${orgId}
     RETURNING *
   `;
@@ -121,6 +137,7 @@ export interface WebsiteSettingsPatch {
   coverPhotoUrl: string | null;
   published: boolean;
   aboutText: string;
+  aboutLong?: string;
   instagramUrl: string;
   tiktokUrl: string;
   facebookUrl: string;
@@ -135,6 +152,7 @@ export async function updateWebsiteSettings(orgId: string, patch: WebsiteSetting
     SET subdomain = ${patch.subdomain}, tagline = ${patch.tagline}, theme_color = ${patch.themeColor},
         logo_url = ${patch.logoUrl}, cover_photo_url = ${patch.coverPhotoUrl}, published = ${patch.published},
         about_text = ${patch.aboutText}, instagram_url = ${patch.instagramUrl}, tiktok_url = ${patch.tiktokUrl},
+        about_long = COALESCE(${patch.aboutLong ?? null}, about_long),
         facebook_url = ${patch.facebookUrl}, snapchat_url = ${patch.snapchatUrl}, font_pair_id = ${patch.fontPairId}
     WHERE organization_id = ${orgId}
     RETURNING *
@@ -156,7 +174,13 @@ export async function getOwnerEmail(orgId: string): Promise<string> {
 export async function getInfrastructure(orgId: string): Promise<Infrastructure | null> {
   const sql = getSql();
   const rows = await sql`SELECT * FROM infrastructure_accounts WHERE organization_id = ${orgId}`;
-  return rows[0] ? mapInfra(rows[0]) : null;
+  if (!rows[0]) return null;
+  const infra = mapInfra(rows[0]);
+  // One extra query, only when the billing screen is opened. Receives the
+  // receptionist-contract answer as well as the legacy plan, so a clinic on the
+  // new subscription is never shown a gate it has already paid through.
+  infra.entitled = (await getEntitlement(orgId)).entitled;
+  return infra;
 }
 
 export async function getUser(userId: string): Promise<AppUser | null> {

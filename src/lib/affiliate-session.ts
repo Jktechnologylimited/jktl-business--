@@ -8,6 +8,14 @@ import type { AffiliateUser } from "@/lib/db/affiliate-auth";
 // this cookie to a /business/* or /admin/* request, and vice versa. Three
 // separate credentials, three separate cookies, no shared code path.
 const COOKIE_NAME = "jktl_affiliate_session";
+/**
+ * `/` rather than `/affiliates`, because the programme answers to two spellings.
+ * With the cookie scoped to `/affiliates`, a partner who signed in via
+ * `business.jktl.com.ng/affiliate/login` — the singular URL the marketing site
+ * links to — would arrive at the dashboard without their session attached, and
+ * be shown the public landing page while apparently signed in.
+ */
+const COOKIE_PATH = "/";
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days, seconds
 
 export async function startAffiliateSession(affiliateId: string): Promise<void> {
@@ -17,7 +25,7 @@ export async function startAffiliateSession(affiliateId: string): Promise<void> 
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/affiliates",
+    path: COOKIE_PATH,
     maxAge: COOKIE_MAX_AGE,
   });
 }

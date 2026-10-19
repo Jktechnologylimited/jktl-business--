@@ -8,7 +8,7 @@ import type { ActionResult } from "./types";
 import type { BusinessProfile } from "@/lib/types";
 
 export async function updateBusinessProfileAction(
-  patch: Pick<BusinessProfile, "displayName" | "phone" | "email" | "address" | "city" | "state">,
+  patch: Pick<BusinessProfile, "displayName" | "phone" | "email" | "address" | "city" | "state" | "countryCode">,
 ): Promise<ActionResult<BusinessProfile>> {
   try {
     const { organizationId } = await requireSession();

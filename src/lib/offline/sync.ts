@@ -6,7 +6,22 @@ import { useToastStore } from "@/lib/toast";
 
 let syncing = false;
 
-export type SyncListener = (pendingCount: number) => void;
+/**
+ * Sync state, as the UI needs it.
+ *
+ * `pending` — how many changes have not reached the server yet.
+ * `syncing` — whether a drain is happening right now.
+ *
+ * Both are deliberately exposed so the shell can show a quiet spinner while
+ * work is in flight without narrating it. Users get a loading state; they do
+ * not get a running commentary on the outbox.
+ */
+export interface SyncState {
+  pending: number;
+  syncing: boolean;
+}
+
+export type SyncListener = (state: SyncState) => void;
 const listeners = new Set<SyncListener>();
 
 export function onSyncProgress(listener: SyncListener): () => void {
@@ -15,8 +30,9 @@ export function onSyncProgress(listener: SyncListener): () => void {
 }
 
 async function notify() {
-  const count = await outboxCount();
-  listeners.forEach((l) => l(count));
+  const pending = await outboxCount();
+  const state: SyncState = { pending, syncing };
+  listeners.forEach((l) => l(state));
 }
 
 /**

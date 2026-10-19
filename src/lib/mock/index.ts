@@ -31,7 +31,7 @@ export function buildTenantData(now = new Date()): TenantData {
     testimonials: demoTestimonials(now),
     bookings: demoBookings(now),
     sales: demoSales(now),
-    saleItems: demoSaleItems(),
+    saleItems: demoSaleItems(now),
     expenses: demoExpenses(now),
     invoices: demoInvoices(now),
     invoiceItems: demoInvoiceItems(),

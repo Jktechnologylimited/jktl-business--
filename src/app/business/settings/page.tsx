@@ -14,6 +14,7 @@ import { BusinessForm } from "@/components/settings/business-form";
 import { PasswordForm } from "@/components/settings/password-form";
 import { AvatarUpload } from "@/components/settings/avatar-upload";
 import { BillingPanel } from "@/components/settings/billing-panel";
+import { SubscriptionBilling } from "@/components/settings/subscription-billing";
 import { StorageUsagePanel } from "@/components/settings/storage-usage-panel";
 import { NotificationsPanel } from "@/components/settings/notifications-panel";
 import { PaymentSettingsPanel } from "@/components/settings/payment-settings-panel";
@@ -69,7 +70,12 @@ export default function SettingsPage() {
   // always allows adding members freely). The authoritative check is
   // server-side in `addMemberAction` — this is just so most people never
   // hit the "discarded" round trip for a mutation that queues offline-first.
-  const canAddMember = mode !== "live" || members.length < FREE_TEAM_SEATS || infra.subscriptionStatus === "active";
+  // Team members beyond the free seats are included with the AI receptionist.
+  // A legacy plan counts too, so nobody paying today loses the ability to add
+  // somebody. `entitled` is computed server-side and carried on the store; the
+  // server enforces it regardless of what this previews.
+  const canAddMember =
+    mode !== "live" || members.length < FREE_TEAM_SEATS || infra.entitled;
 
   return (
     <div className="flex flex-col gap-5">
@@ -81,7 +87,7 @@ export default function SettingsPage() {
           { value: "payments", label: "Payments" },
           { value: "users", label: "Users" },
           { value: "account", label: "Account" },
-          { value: "infrastructure", label: "Plan" },
+          { value: "infrastructure", label: "Billing" },
         ]}
         value={tab}
         onChange={setTab}
@@ -194,7 +200,18 @@ export default function SettingsPage() {
 
       {tab === "infrastructure" ? (
         <div className="flex flex-col gap-4">
-          <BillingPanel infra={infra} mode={mode} />
+          <div className="flex flex-col gap-5">
+            <SubscriptionBilling demo={mode === "demo"} />
+            {/*
+              Only for a business still paying the retired Website & Hosting plan.
+              Everybody else sees the receptionist subscription alone — showing a
+              second, unbuyable plan beside it was the "why are there two bills"
+              confusion this change exists to remove.
+            */}
+            {infra.subscriptionStatus === "active" || infra.subscriptionStatus === "past_due" ? (
+              <BillingPanel infra={infra} mode={mode} />
+            ) : null}
+          </div>
           <StorageUsagePanel mode={mode} isSubscribed={infra.subscriptionStatus === "active" || infra.subscriptionStatus === "past_due"} />
           <section className="rounded-2xl border border-border p-4">
             <h2 className="font-display text-sm font-semibold text-ink">Infrastructure status</h2>

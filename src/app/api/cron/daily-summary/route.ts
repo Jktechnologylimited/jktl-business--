@@ -27,13 +27,22 @@ export async function GET(request: NextRequest) {
     const { start, end } = lagosYesterdayRangeUTC();
     const summaries = await listDailySummaries(start, end);
     const results = await Promise.allSettled(
-      summaries.map((s) =>
-        sendPush(s.organizationId, {
-          title: "Yesterday's numbers",
-          body: `${s.salesCount} sale${s.salesCount === 1 ? "" : "s"} · ${formatKobo(s.revenueKobo)} · ${s.bookingsCount} booking${s.bookingsCount === 1 ? "" : "s"}`,
+      summaries.map((s) => {
+        // Lead with whatever the owner needs to act on. "You are owed ₦X" is
+        // worth more at 6am than a tally of yesterday, and a business with a
+        // clean book gets the plain numbers instead of a scolding.
+        const parts: string[] = [];
+        if (s.todayBookings > 0) parts.push(`${s.todayBookings} booked today`);
+        parts.push(`${formatKobo(s.revenueKobo)} yesterday`);
+        if (s.overdueCount > 0) parts.push(`${formatKobo(s.owedKobo)} overdue`);
+        else if (s.owedKobo > 0) parts.push(`${formatKobo(s.owedKobo)} outstanding`);
+
+        return sendPush(s.organizationId, {
+          title: s.overdueCount > 0 ? "You're owed money" : "Your day ahead",
+          body: parts.join(" · "),
           url: "/business/reports",
-        }),
-      ),
+        });
+      }),
     );
     const sent = results.filter((r) => r.status === "fulfilled").length;
     return NextResponse.json({ checked: summaries.length, sent });

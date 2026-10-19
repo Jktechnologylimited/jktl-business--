@@ -161,11 +161,25 @@ export interface PublicInvoice {
   organizationId: string;
   number: string;
   status: InvoiceStatus;
+  issueDate: string;
   dueDate: string;
+  /** When the money actually landed, for the receipt line. */
+  paidAt: string | null;
+  subtotalKobo: number;
+  discountKobo: number;
   totalKobo: number;
+  notes: string;
+  customerName: string;
   customerEmail: string;
   businessName: string;
   businessLogoUrl: string | null;
+  /** Enough of the business's own details to make the document usable as an
+   * invoice rather than a payment widget. */
+  businessPhone: string;
+  businessEmail: string;
+  businessAddress: string;
+  businessCity: string;
+  businessState: string;
   items: Array<{ description: string; quantity: number; unitPriceKobo: number; totalKobo: number }>;
   /** True once the business has a working Paystack Subaccount — gates
    * whether the public page shows a "Pay now" button at all. */
@@ -188,9 +202,12 @@ export async function getPublicInvoice(invoiceId: string): Promise<PublicInvoice
   const sql = getSql();
   const rows = await sql`
     SELECT
-      i.id, i.organization_id, i.number, i.status, i.due_date, i.total_kobo,
+      i.id, i.organization_id, i.number, i.status, i.issue_date, i.due_date, i.paid_at,
+      i.subtotal_kobo, i.discount_kobo, i.total_kobo, i.notes,
       bp.display_name AS business_name, bp.logo_url AS business_logo_url,
-      c.email AS customer_email,
+      bp.phone AS business_phone, bp.email AS business_email,
+      bp.address AS business_address, bp.city AS business_city, bp.state AS business_state,
+      c.name AS customer_name, c.email AS customer_email,
       ps.settlement_bank_name, ps.settlement_account_number, ps.settlement_account_name, ps.paystack_subaccount_code
     FROM invoices i
     JOIN business_profiles bp ON bp.organization_id = i.organization_id
@@ -209,11 +226,22 @@ export async function getPublicInvoice(invoiceId: string): Promise<PublicInvoice
     organizationId: orgId,
     number: row.number as string,
     status: row.status as InvoiceStatus,
+    issueDate: String(row.issue_date).slice(0, 10),
     dueDate: String(row.due_date).slice(0, 10),
+    paidAt: row.paid_at ? isoDate(row.paid_at as string) : null,
+    subtotalKobo: kobo((row.subtotal_kobo as string) ?? 0),
+    discountKobo: kobo((row.discount_kobo as string) ?? 0),
     totalKobo: kobo(row.total_kobo as string),
+    notes: (row.notes as string) ?? "",
+    customerName: (row.customer_name as string) ?? "",
     customerEmail: (row.customer_email as string) ?? "",
     businessName: row.business_name as string,
     businessLogoUrl: (row.business_logo_url as string) ?? null,
+    businessPhone: (row.business_phone as string) ?? "",
+    businessEmail: (row.business_email as string) ?? "",
+    businessAddress: (row.business_address as string) ?? "",
+    businessCity: (row.business_city as string) ?? "",
+    businessState: (row.business_state as string) ?? "",
     items: itemRows.map((r) => ({
       description: r.description as string,
       quantity: Number(r.quantity),

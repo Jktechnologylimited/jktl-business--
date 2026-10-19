@@ -25,7 +25,7 @@ interface ChatMessage {
 interface ChatOption {
   label: string;
   next?: string;
-  action?: "whatsapp" | "scroll-book";
+  action?: "whatsapp" | "scroll-book" | "ai-chat";
   serviceId?: string;
 }
 
@@ -46,6 +46,7 @@ export function ChatWidget({
   themeColor,
   textColor,
   onSelectService,
+  aiChatUrl,
 }: {
   businessName: string;
   services: Service[];
@@ -58,6 +59,11 @@ export function ChatWidget({
   themeColor: string;
   textColor: string;
   onSelectService: (serviceId: string) => void;
+  /** Where the AI receptionist lives for this business, when they have it
+   * switched on. Offered as a root option so a visitor on the website gets
+   * the same agent a missed caller would — one tap, and it opens in a new tab
+   * so they don't lose the page they were reading. */
+  aiChatUrl?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -124,6 +130,7 @@ export function ChatWidget({
 
     // root
     const rootOptions: ChatOption[] = [];
+    if (aiChatUrl) rootOptions.push({ label: "Book with our AI assistant", action: "ai-chat" });
     if (services.length > 0) rootOptions.push({ label: "Services & prices", next: "services" });
     if (products.length > 0) rootOptions.push({ label: "Products", next: "products" });
     rootOptions.push({ label: "Book an appointment", action: "scroll-book" });
@@ -159,6 +166,15 @@ export function ChatWidget({
   function choose(option: ChatOption) {
     setMessages((prev) => [...prev, { id: crypto.randomUUID(), from: "user", text: option.label }]);
     setOptions([]);
+
+    if (option.action === "ai-chat") {
+      if (aiChatUrl) {
+        window.open(aiChatUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+      say("root");
+      return;
+    }
 
     if (option.action === "whatsapp") {
       if (wa) {

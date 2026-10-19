@@ -186,3 +186,16 @@ textarea {
     font-size: 0.9375rem;
   }
 }
+
+/* Printing an invoice or report should produce the document, not the app.
+   Navigation, buttons and interactive chrome are marked `print:hidden` in the
+   components themselves; this is the page-level guarantee that nothing else
+   leaks onto the paper. */
+@media print {
+  body {
+    background: #fff;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}

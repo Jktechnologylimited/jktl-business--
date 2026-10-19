@@ -66,6 +66,9 @@ export default function AffiliateLoginPage() {
         <Button type="submit" size="lg" className="mt-1 w-full" disabled={pending}>
           {pending ? "Signing in…" : "Sign in"}
         </Button>
+        <Link href="/affiliates/forgot-password" className="-mt-1 self-end text-xs font-medium text-primary">
+          Forgot your password?
+        </Link>
       </form>
       <p className="mt-6 text-center text-xs text-ink-muted">
         Don&apos;t have an affiliate account?{" "}

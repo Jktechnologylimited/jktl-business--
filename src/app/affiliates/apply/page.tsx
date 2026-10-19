@@ -50,10 +50,20 @@ export default function AffiliateApplyPage() {
         <CheckCircle2 className="mx-auto size-12 text-primary" />
         <h1 className="mt-5 font-display text-xl font-bold tracking-tight text-ink">Application sent</h1>
         <p className="mt-2 text-sm text-ink-muted">
-          We&apos;ll review it and let you know. Once approved, sign in with the email and password you just set to
-          get your referral link.
+          Applications are reviewed by hand, usually within 24–48 hours. We&apos;ll email you the moment you&apos;re
+          approved.
         </p>
-        <Link href="/affiliates/login" className="mt-6 text-sm font-medium text-primary">
+        {/*
+          The address is spelled out because it is the thing an approved partner
+          needs and is most likely to ask for — "where do I sign in?" — and
+          because `applying` and `signing in` are two different pages that look
+          identical to somebody who has only seen one of them.
+        */}
+        <p className="mt-4 text-xs text-ink-muted">
+          Then sign in at <span className="font-medium text-ink">business.jktl.com.ng/affiliates/login</span> with the
+          email and password you just set, and your referral link will be waiting.
+        </p>
+        <Link href="/affiliates/login" className="mt-5 text-sm font-medium text-primary">
           Go to sign in
         </Link>
       </div>
@@ -100,9 +110,9 @@ export default function AffiliateApplyPage() {
         </Button>
       </form>
       <p className="mt-6 text-center text-xs text-ink-muted">
-        Already applied?{" "}
+        Already applied, or already a partner?{" "}
         <Link href="/affiliates/login" className="font-medium text-primary">
-          Sign in
+          Sign in at business.jktl.com.ng/affiliates/login
         </Link>
       </p>
     </div>

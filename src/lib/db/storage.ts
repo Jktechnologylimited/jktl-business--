@@ -1,6 +1,6 @@
 import "server-only";
 import { getSql } from "./client";
-import { isSubscriptionActive } from "./billing";
+import { hasFullAccess } from "./entitlements";
 import { computeStorageOverageKobo } from "@/lib/billing";
 
 /**
@@ -41,7 +41,9 @@ export async function getStorageUsage(orgId: string): Promise<StorageUsage> {
 export async function hasStorageQuota(orgId: string, additionalBytes: number): Promise<boolean> {
   const usage = await getStorageUsage(orgId);
   if (usage.usedBytes + additionalBytes <= usage.limitBytes) return true;
-  return isSubscriptionActive(orgId);
+  // Storage beyond the free allowance is included with the AI receptionist
+  // subscription, not a separate plan — see entitlements.ts.
+  return hasFullAccess(orgId);
 }
 
 /** Records a newly-stored image (Blob-hosted or inline, either way costs

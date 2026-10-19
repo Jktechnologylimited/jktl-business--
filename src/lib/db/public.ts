@@ -23,6 +23,7 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     address: row.address as string,
     city: row.city as string,
     state: row.state as string,
+    countryCode: (row.country_code as string) || "NG",
     logoUrl: (row.logo_url as string) ?? null,
     coverPhotoUrl: (row.cover_photo_url as string) ?? null,
     subdomain: row.subdomain as string,
@@ -32,6 +33,15 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     customDomain: (row.custom_domain as string) ?? "",
     customDomainVerified: Boolean(row.custom_domain_verified),
     aboutText: (row.about_text as string) ?? "",
+    aboutLong: (row.about_long as string) ?? "",
+    galleryUrls: Array.isArray(row.gallery_urls) ? (row.gallery_urls as string[]) : [],
+    openingHours: Array.isArray(row.opening_hours) ? (row.opening_hours as Array<{ day: string; hours: string }>) : [],
+    serviceAreas: Array.isArray(row.service_areas) ? (row.service_areas as string[]) : [],
+    faqs: Array.isArray(row.faqs) ? (row.faqs as Array<{ question: string; answer: string }>) : [],
+    // Carried from the Google listing the site was generated from. Zero when
+    // there was no listing, and the trust bar then renders nothing.
+    rating: Number(row.rating ?? 0),
+    reviewCount: Number(row.reviews ?? 0),
     instagramUrl: (row.instagram_url as string) ?? "",
     tiktokUrl: (row.tiktok_url as string) ?? "",
     facebookUrl: (row.facebook_url as string) ?? "",

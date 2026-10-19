@@ -10,6 +10,8 @@ export interface NotificationPrefs {
   bookingNotifications: boolean;
   lowStockAlerts: boolean;
   invoicePaidAlerts: boolean;
+  invoiceSentAlerts: boolean;
+  payoutAlerts: boolean;
   dailySummary: boolean;
   /** Downtime notices and promotions broadcast from the JKTL command
    * center — a separate opt-out from the operational categories above, on
@@ -25,6 +27,8 @@ const DEFAULT_PREFS: NotificationPrefs = {
   bookingNotifications: true,
   lowStockAlerts: true,
   invoicePaidAlerts: true,
+  invoiceSentAlerts: true,
+  payoutAlerts: true,
   dailySummary: false,
   platformAnnouncements: true,
 };
@@ -36,6 +40,10 @@ function mapPrefs(row: Record<string, unknown> | undefined): NotificationPrefs {
     bookingNotifications: Boolean(row.booking_notifications),
     lowStockAlerts: Boolean(row.low_stock_alerts),
     invoicePaidAlerts: Boolean(row.invoice_paid_alerts),
+    // Defensive fallbacks: rows written before migration 019 have no value
+    // here, and the useful default is "on" for both.
+    invoiceSentAlerts: row.invoice_sent_alerts === undefined ? true : Boolean(row.invoice_sent_alerts),
+    payoutAlerts: row.payout_alerts === undefined ? true : Boolean(row.payout_alerts),
     dailySummary: Boolean(row.daily_summary),
     // Defensive fallback: rows created before migration 011 won't have this
     // column yet — default true, same as a brand-new row (see DEFAULT_PREFS).
@@ -105,6 +113,9 @@ export async function listSubscriptions(orgId: string): Promise<PushSubscription
 }
 
 export interface DailySummary {
+  owedKobo: number;
+  overdueCount: number;
+  todayBookings: number;
   organizationId: string;
   bookingsCount: number;
   salesCount: number;
@@ -127,7 +138,14 @@ export async function listDailySummaries(startIso: string, endIso: string): Prom
       (SELECT COUNT(*) FROM bookings b WHERE b.organization_id = np.organization_id AND b.created_at >= ${startIso} AND b.created_at < ${endIso}) AS bookings_count,
       (SELECT COUNT(*) FROM sales s WHERE s.organization_id = np.organization_id AND s.created_at >= ${startIso} AND s.created_at < ${endIso}) AS sales_count,
       (SELECT COALESCE(SUM(s2.total_kobo), 0) FROM sales s2 WHERE s2.organization_id = np.organization_id AND s2.created_at >= ${startIso} AND s2.created_at < ${endIso}) AS revenue_kobo,
-      (SELECT COUNT(*) FROM customers c WHERE c.organization_id = np.organization_id AND c.created_at >= ${startIso} AND c.created_at < ${endIso}) AS new_customers_count
+      (SELECT COUNT(*) FROM customers c WHERE c.organization_id = np.organization_id AND c.created_at >= ${startIso} AND c.created_at < ${endIso}) AS new_customers_count,
+      -- Everything unpaid, not just yesterday's. An owner reading a morning
+      -- summary wants to know what they are owed, not what was invoiced
+      -- yesterday.
+      (SELECT COALESCE(SUM(i.total_kobo), 0) FROM invoices i WHERE i.organization_id = np.organization_id AND i.status IN ('pending', 'overdue')) AS owed_kobo,
+      (SELECT COUNT(*) FROM invoices i2 WHERE i2.organization_id = np.organization_id AND i2.status IN ('pending', 'overdue') AND i2.due_date < CURRENT_DATE) AS overdue_count,
+      -- Booked but not yet served today, which is the day's actual worklist.
+      (SELECT COUNT(*) FROM bookings b2 WHERE b2.organization_id = np.organization_id AND b2.starts_at::date = (now() AT TIME ZONE 'Africa/Lagos')::date AND b2.status IN ('pending', 'confirmed')) AS today_bookings
     FROM notification_preferences np
     WHERE np.push_enabled = true AND np.daily_summary = true
   `;
@@ -137,6 +155,9 @@ export async function listDailySummaries(startIso: string, endIso: string): Prom
     salesCount: Number(r.sales_count ?? 0),
     revenueKobo: kobo((r.revenue_kobo as string) ?? 0),
     newCustomersCount: Number(r.new_customers_count ?? 0),
+    owedKobo: kobo((r.owed_kobo as string) ?? 0),
+    overdueCount: Number(r.overdue_count ?? 0),
+    todayBookings: Number(r.today_bookings ?? 0),
   }));
 }
 

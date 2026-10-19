@@ -11,6 +11,7 @@ import {
   recordWebhookEventOnce,
 } from "@/lib/db/billing";
 import { markInvoicePaidOnline } from "@/lib/db/invoices";
+import { activateReceptionistContract, applyContractPayment, applyWalletTopUp, saveContractCard } from "@/lib/ai/billing-fulfilment";
 import { finalizeInvoicePaid } from "@/lib/invoice-finalize";
 import { accrueCommissionForOrg } from "@/lib/db/affiliates";
 import { chargeStorageOverageForOrg } from "@/lib/db/storage-overage";
@@ -111,6 +112,32 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
     return;
   }
 
+  // A clinic topped up its AI receptionist communication wallet. Checked
+  // before the "no plan" early-return below for the same reason as invoice
+  // payments: a one-off charge for a subscription-less feature would
+  // otherwise be silently swallowed.
+  if (metadata.type === "wallet_topup") {
+    await handleWalletTopUp(data, metadata);
+    return;
+  }
+
+  // One month of the AI receptionist contract (₦108,333.33 for the first six,
+  // ₦59,000 after). Checked before the "no plan" early-return below for the
+  // same reason as invoice payments: a one-off charge for a subscription-less
+  // feature would otherwise be silently swallowed.
+  if (metadata.type === "receptionist_month") {
+    await handleContractMonth(data, metadata);
+    return;
+  }
+
+  // A contract started with an earlier build that charged the whole package
+  // as a single setup fee. Treated as month 1 so a checkout in flight when
+  // this shipped still lands correctly.
+  if (metadata.type === "receptionist_setup") {
+    await handleContractMonth({ ...data, metadata: { ...metadata, monthIndex: 1 } }, metadata);
+    return;
+  }
+
   if (!data.plan) return; // a one-off charge unrelated to a subscription plan
 
   const customer = asRecord(data.customer);
@@ -164,6 +191,105 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
   );
 }
 
+/** A clinic funded its AI receptionist communication wallet. The ledger's
+ * own `provider_ref` uniqueness is the real idempotency guard here (see
+ * `creditWallet`), so this is safe even if the webhook dedupe above fails
+ * open or the buyer's browser also confirms the payment on the callback
+ * page — the money is credited exactly once.
+ *
+ * The amount comes from `data.amount` (what Paystack actually collected),
+ * never from the metadata we sent, so a tampered initiate call cannot buy
+ * more credit than it paid for. */
+async function handleWalletTopUp(data: Record<string, unknown>, metadata: Record<string, unknown>) {
+  const organizationId = metadata.organizationId as string;
+  const reference = (data.reference as string) ?? "";
+  if (!organizationId || !reference) {
+    console.error("paystack webhook: wallet_topup charge with missing metadata", reference);
+    return;
+  }
+
+  await applyWalletTopUp({
+    organizationId,
+    amountKobo: Number(data.amount ?? 0),
+    reference,
+  });
+}
+
+/**
+ * One month of the AI receptionist contract was paid.
+ *
+ * The amount comes from `data.amount` (what Paystack actually collected),
+ * never from the metadata we sent, and `applyContractPayment` refuses to
+ * advance the schedule unless it covers the month being paid for — so a
+ * tampered initiate call cannot buy a month for ₦1.
+ *
+ * `monthIndex` in the metadata is a hint, not the authority: if it disagrees
+ * with the month the contract is expecting, the contract's own counter wins,
+ * which is what makes the money path safe against a redelivered webhook.
+ */
+async function handleContractMonth(data: Record<string, unknown>, metadata: Record<string, unknown>) {
+  const organizationId = metadata.organizationId as string;
+  const reference = (data.reference as string) ?? "";
+  if (!organizationId || !reference) {
+    console.error("paystack webhook: receptionist_month charge with missing metadata", reference);
+    return;
+  }
+
+  // Capture the reusable card first, so even a payment made by hand leaves the
+  // subscription able to renew itself next month.
+  const authorization = asRecord(data.authorization);
+  await saveContractCard(organizationId, {
+    authorizationCode: (authorization.authorization_code as string) ?? "",
+    reusable: authorization.reusable === true,
+    brand: (authorization.brand as string) ?? "",
+    last4: (authorization.last4 as string) ?? "",
+    expMonth: (authorization.exp_month as string) ?? "",
+    expYear: (authorization.exp_year as string) ?? "",
+  }).catch((err) => console.error("paystack webhook: saveContractCard failed", err));
+
+  const monthIndex = Number(metadata.monthIndex ?? 0);
+  const result = await applyContractPayment({
+    organizationId,
+    amountKobo: Number(data.amount ?? 0),
+    reference,
+    paidAt: data.paid_at ? new Date(data.paid_at as string) : new Date(),
+    monthIndex: monthIndex > 0 ? monthIndex : undefined,
+  });
+
+  if (result.applied) {
+    // The contract may have been created by this very charge (the checkout is
+    // often the first thing a clinic does), so make sure it exists and is
+    // activated — `activateReceptionistContract` is idempotent and also grants
+    // the bundled launch credit exactly once.
+    await activateReceptionistContract({ organizationId, startedAt: data.paid_at ? new Date(data.paid_at as string) : undefined, reference });
+    return;
+  }
+
+  if (result.reason === "not_started") {
+    // Nothing to attach the payment to yet: start the contract from this
+    // charge, then apply it against month 1.
+    await activateReceptionistContract({
+      organizationId,
+      startedAt: data.paid_at ? new Date(data.paid_at as string) : undefined,
+      reference,
+    });
+    await applyContractPayment({
+      organizationId,
+      amountKobo: Number(data.amount ?? 0),
+      reference,
+      paidAt: data.paid_at ? new Date(data.paid_at as string) : new Date(),
+      monthIndex: monthIndex > 0 ? monthIndex : 1,
+    });
+    return;
+  }
+
+  console.error(
+    `paystack webhook: receptionist_month for ${organizationId} not applied (${result.reason}${
+      result.reason === "underpaid" ? `, expected ${result.expectedKobo} kobo` : ""
+    })`,
+  );
+}
+
 /** A customer paid an invoice through the public `/pay/[id]` link. The
  * charge itself already split automatically at Paystack's end (see
  * initializeInvoicePayment) — all that's left here is recording it and
@@ -184,7 +310,12 @@ async function handleInvoicePaymentSuccess(data: Record<string, unknown>, metada
   });
   if (!invoice) return; // already paid, or the ids didn't match a real invoice
 
-  await finalizeInvoicePaid(organizationId, invoice);
+  // The reference goes on the customer's receipt, because that is what they
+  // quote if they ever have to query the payment.
+  await finalizeInvoicePaid(organizationId, invoice, {
+    method: "card",
+    reference: (data.reference as string) ?? "",
+  });
 }
 
 /** Fires once, right after the first successful charge on a plan creates

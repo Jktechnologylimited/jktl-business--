@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { Field } from "@/components/app/field";
 import type { BusinessProfilePatch } from "@/lib/store";
 import type { BusinessProfile } from "@/lib/types";
+import { AFRICAN_COUNTRIES } from "@/lib/prospects/jurisdictions";
 
 export function BusinessForm({
   initial,
@@ -21,11 +22,12 @@ export function BusinessForm({
   const [email, setEmail] = useState(initial.email);
   const [address, setAddress] = useState(initial.address);
   const [city, setCity] = useState(initial.city);
+  const [countryCode, setCountryCode] = useState(initial.countryCode || "NG");
   const [state, setState] = useState(initial.state);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    onSubmit({ displayName, phone, email, address, city, state });
+    onSubmit({ displayName, phone, email, address, city, state, countryCode });
   }
 
   return (
@@ -48,6 +50,19 @@ export function BusinessForm({
         </Field>
         <Field label="State" htmlFor="biz-state">
           <Input id="biz-state" value={state} onChange={(e) => setState(e.target.value)} />
+        </Field>
+        <Field
+          label="Country"
+          htmlFor="biz-country"
+          hint="Sets how phone numbers are read and formatted — callbacks, WhatsApp links and caller ID."
+        >
+          <Select id="biz-country" value={countryCode} onChange={(e) => setCountryCode(e.target.value)}>
+            {AFRICAN_COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name} (+{c.dialCode})
+              </option>
+            ))}
+          </Select>
         </Field>
       </div>
       <div className="mt-1 flex gap-3">

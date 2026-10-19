@@ -1,6 +1,6 @@
 import { getSql } from "./client";
 import { isoDate, kobo } from "./rows";
-import type { Booking, BookingStatus } from "@/lib/types";
+import type { Booking, BookingSource, BookingStatus } from "@/lib/types";
 
 function mapRow(row: Record<string, unknown>): Booking {
   return {
@@ -13,6 +13,9 @@ function mapRow(row: Record<string, unknown>): Booking {
     status: row.status as BookingStatus,
     notes: row.notes as string,
     priceKobo: kobo(row.price_kobo as string),
+    // Pre-migration-016 rows have no `source` column value; they were all
+    // created by staff, so that's the honest default.
+    source: (row.source as BookingSource) ?? "staff",
   };
 }
 
@@ -30,13 +33,16 @@ export interface BookingInput {
   status: BookingStatus;
   notes: string;
   priceKobo: number;
+  /** Defaults to 'staff' — only the AI receptionist and the public site
+   * need to say otherwise. */
+  source?: BookingSource;
 }
 
 export async function createBooking(orgId: string, id: string, input: BookingInput): Promise<Booking> {
   const sql = getSql();
   const rows = await sql`
-    INSERT INTO bookings (id, organization_id, customer_id, service_id, staff_id, starts_at, status, notes, price_kobo)
-    VALUES (${id}, ${orgId}, ${input.customerId}, ${input.serviceId}, ${input.staffId}, ${input.startsAt}, ${input.status}, ${input.notes}, ${input.priceKobo})
+    INSERT INTO bookings (id, organization_id, customer_id, service_id, staff_id, starts_at, status, notes, price_kobo, source)
+    VALUES (${id}, ${orgId}, ${input.customerId}, ${input.serviceId}, ${input.staffId}, ${input.startsAt}, ${input.status}, ${input.notes}, ${input.priceKobo}, ${input.source ?? "staff"})
     ON CONFLICT (id) DO UPDATE SET
       customer_id = excluded.customer_id, service_id = excluded.service_id, staff_id = excluded.staff_id,
       starts_at = excluded.starts_at, status = excluded.status, notes = excluded.notes, price_kobo = excluded.price_kobo
@@ -84,8 +90,8 @@ export async function createPublicBooking(orgId: string, id: string, input: Publ
       SELECT id, price_kobo FROM services WHERE id = ${input.serviceId} AND organization_id = ${orgId}
     ),
     new_booking AS (
-      INSERT INTO bookings (id, organization_id, customer_id, service_id, staff_id, starts_at, status, notes, price_kobo)
-      SELECT ${id}, ${orgId}, ${input.customerId}, svc.id, '', ${input.startsAt}, 'pending', ${input.notes}, svc.price_kobo
+      INSERT INTO bookings (id, organization_id, customer_id, service_id, staff_id, starts_at, status, notes, price_kobo, source)
+      SELECT ${id}, ${orgId}, ${input.customerId}, svc.id, '', ${input.startsAt}, 'pending', ${input.notes}, svc.price_kobo, 'public_site'
       FROM svc
       RETURNING *
     )

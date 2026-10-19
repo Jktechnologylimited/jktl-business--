@@ -1,7 +1,7 @@
 "use server";
 
 import * as db from "@/lib/db/members";
-import { isSubscriptionActive } from "@/lib/db/billing";
+import { ENTITLEMENT_PAST_DUE_MESSAGE, ENTITLEMENT_REQUIRED_MESSAGE, getEntitlement } from "@/lib/db/entitlements";
 import { requireSession } from "@/lib/session";
 import { FREE_TEAM_SEATS } from "@/lib/billing";
 import type { ActionResult } from "./types";
@@ -24,9 +24,17 @@ export async function addMemberAction(id: string, input: db.MemberInput): Promis
 
     const count = await db.countMembers(organizationId);
     if (count >= FREE_TEAM_SEATS) {
-      const active = await isSubscriptionActive(organizationId);
-      if (!active) {
-        return { ok: false, error: "Upgrade to Website & Hosting under Settings → Plan to add more team members." };
+      // Team members are included with the AI receptionist subscription — see
+      // entitlements.ts. The old message pointed at a plan that is no longer sold.
+      const entitlement = await getEntitlement(organizationId);
+      if (!entitlement.entitled) {
+        return {
+          ok: false,
+          error:
+            entitlement.contractStatus === "past_due"
+              ? ENTITLEMENT_PAST_DUE_MESSAGE
+              : ENTITLEMENT_REQUIRED_MESSAGE,
+        };
       }
     }
 

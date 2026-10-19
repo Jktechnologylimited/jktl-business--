@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusPill, type Tone } from "@/components/app/status-pill";
 import { useBusinessStore } from "@/lib/store";
 import { useToastStore } from "@/lib/toast";
 import { formatKobo, formatShortDate } from "@/lib/format";
-import { BILLING_CYCLES, annualizedKobo, type BillingCycle } from "@/lib/billing";
-import { startCheckoutAction, confirmCheckoutAction, getManageSubscriptionLinkAction } from "@/lib/actions/billing-actions";
+import { confirmCheckoutAction, getManageSubscriptionLinkAction } from "@/lib/actions/billing-actions";
 import type { Infrastructure } from "@/lib/types";
 
 function statusMeta(status: Infrastructure["subscriptionStatus"]): { label: string; tone: Tone } {
@@ -22,10 +22,6 @@ function statusMeta(status: Infrastructure["subscriptionStatus"]): { label: stri
     default:
       return { label: "Not subscribed", tone: "neutral" };
   }
-}
-
-function cycleUnit(cycle: BillingCycle): string {
-  return { monthly: "month", quarterly: "quarter", biannually: "6 months", yearly: "year" }[cycle];
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -60,9 +56,7 @@ export function BillingPanel({ infra, mode }: { infra: Infrastructure; mode: "de
     const params = new URLSearchParams(window.location.search);
     return params.get("billing") === "callback" && Boolean(params.get("reference") || params.get("trxref"));
   });
-  const [checkoutPending, setCheckoutPending] = useState<BillingCycle | null>(null);
   const [managePending, setManagePending] = useState(false);
-  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   const confirmedOnce = useRef(false);
 
   // Reacts to Paystack's redirect back to this page after checkout — reads
@@ -91,31 +85,10 @@ export function BillingPanel({ infra, mode }: { infra: Infrastructure; mode: "de
     });
   }, [mode, setInfrastructure, showToast]);
 
-  // Deferred navigation: `subscribe()` below only sets `redirectUrl`, and
-  // this effect performs the actual `window.location` mutation — keeps
-  // the click handler itself from mutating an object defined outside the
-  // component, per this codebase's stricter react-hooks/immutability rule.
-  useEffect(() => {
-    if (redirectUrl) window.location.href = redirectUrl;
-  }, [redirectUrl]);
 
   const hasSubscription = infra.subscriptionStatus === "active" || infra.subscriptionStatus === "past_due";
   const meta = statusMeta(infra.subscriptionStatus);
 
-  async function subscribe(cycle: BillingCycle) {
-    if (mode !== "live") {
-      showToast("Upgrading isn't available in demo mode — create a real account first.");
-      return;
-    }
-    setCheckoutPending(cycle);
-    const result = await startCheckoutAction(cycle);
-    setCheckoutPending(null);
-    if (!result.ok) {
-      showToast(result.error, "danger");
-      return;
-    }
-    setRedirectUrl(result.data.authorizationUrl);
-  }
 
   async function manage() {
     setManagePending(true);
@@ -134,16 +107,27 @@ export function BillingPanel({ infra, mode }: { infra: Infrastructure; mode: "de
         <h2 className="font-display text-sm font-semibold text-ink">Website &amp; hosting</h2>
         <StatusPill tone={meta.tone}>{confirming ? "Confirming…" : meta.label}</StatusPill>
       </div>
+      {/*
+        This used to open with "JKTL Business is free", which stopped being true
+        the moment the product became the AI receptionist at ₦650,000 + ₦59,000 a
+        month. A customer who bought on that pricing and then read this screen
+        would reasonably ask what they had paid for. The copy now says what this
+        section actually is — the add-on for a team, storage and a custom domain
+        — and points at where the main product lives.
+      */}
       <p className="text-xs text-ink-muted">
-        JKTL Business is free — publishing your website on a jktl.com.ng address doesn&apos;t need this. Upgrade to
-        add extra team members, more storage, or a custom domain of your own.
+        Extra team seats, more photo storage and a custom domain for your website. Your{" "}
+        <Link href="/business/receptionist" className="font-medium text-primary">
+          AI receptionist and business line
+        </Link>{" "}
+        are billed separately, on their own screen.
       </p>
 
       {hasSubscription ? (
         <>
           <dl className="divide-y divide-border">
             <Row label="Plan" value={infra.planName} />
-            <Row label="Price" value={`${formatKobo(infra.priceKoboPerCycle)} / ${cycleUnit(infra.billingCycle)}`} />
+            <Row label="Price" value={formatKobo(infra.priceKoboPerCycle)} />
             <Row label="Renews" value={formatShortDate(infra.renewalDate)} />
           </dl>
           {infra.subscriptionStatus === "past_due" ? (
@@ -155,21 +139,24 @@ export function BillingPanel({ infra, mode }: { infra: Infrastructure; mode: "de
           </Button>
         </>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
-          {BILLING_CYCLES.map((cycle) => (
-            <button
-              key={cycle.id}
-              type="button"
-              onClick={() => subscribe(cycle.id)}
-              disabled={checkoutPending !== null}
-              className="flex flex-col items-start gap-0.5 rounded-xl border border-border-strong p-3 text-left transition-colors hover:border-primary disabled:opacity-60"
-            >
-              <span className="text-xs font-medium text-ink-muted">{cycle.label}</span>
-              <span className="text-sm font-semibold text-ink">{formatKobo(cycle.priceKobo)}</span>
-              <span className="text-[11px] text-ink-faint">{formatKobo(annualizedKobo(cycle))}/yr equivalent</span>
-              {checkoutPending === cycle.id ? <Loader2 className="mt-1 size-3.5 animate-spin text-primary" /> : null}
-            </button>
-          ))}
+        /*
+         * No plans to buy here any more.
+         *
+         * Website & Hosting was sold in four cycles (₦5,000 monthly through
+         * ₦50,000 yearly) and gated team seats, a custom domain and extra
+         * storage. All of it is now included in the AI receptionist subscription,
+         * so this panel reports what is included and points at the one place to
+         * pay. Existing subscribers on the old plan keep it — the block above
+         * still shows their renewal and a manage link.
+         */
+        <div className="rounded-xl border border-border bg-surface px-3 py-2.5">
+          <p className="text-xs text-ink-muted">
+            Your website, hosting, team members and a custom domain are included in your AI receptionist subscription
+            — there is nothing extra to buy here.
+          </p>
+          <Link href="/business/receptionist" className="mt-2 inline-block text-xs font-medium text-primary">
+            Go to your AI receptionist subscription
+          </Link>
         </div>
       )}
     </section>

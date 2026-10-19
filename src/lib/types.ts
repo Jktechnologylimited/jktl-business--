@@ -14,6 +14,14 @@ export type BusinessType =
   | "photographer"
   | "videographer"
   | "content_creator"
+  // The three AI-receptionist verticals from the missed-call recovery
+  // blueprint. Each has its own clinical/triage pack in
+  // `src/lib/ai/industry-packs.ts` — the dashboard engine is shared, but
+  // what the agent is allowed to say (and when it must hand a call to a
+  // human) is vertical-specific.
+  | "mens_health"
+  | "aesthetics"
+  | "elderly_care"
   | "general";
 
 export type MemberRole = "owner" | "manager" | "staff";
@@ -54,6 +62,10 @@ export interface BusinessProfile {
   address: string;
   city: string;
   state: string;
+  /** ISO 3166-1 alpha-2. Drives phone normalisation for the missed-call
+   * pipeline and the callback SMS — every number in this product used to be
+   * treated as Nigerian, which is wrong in 53 other countries. */
+  countryCode: string;
   logoUrl: string | null;
   /** A wide banner photo for the site's hero section. Null shows a plain
    * brand-color hero instead — the site still looks intentional without
@@ -75,6 +87,21 @@ export interface BusinessProfile {
   /** A longer free-text description shown in the site's "About" section.
    * Empty string shows nothing — the section just doesn't render. */
   aboutText: string;
+  /** Long-form about, generated from the business's own listing. */
+  aboutLong: string;
+  /** Photographs from the business's Google listing. */
+  galleryUrls: string[];
+  /** Opening hours as published on the listing. */
+  openingHours: Array<{ day: string; hours: string }>;
+  /** Neighbourhoods served, from the listing. */
+  serviceAreas: string[];
+  /** [[question, answer]] rendered as the site's FAQ. */
+  faqs: Array<{ question: string; answer: string }>;
+  /** Google rating and review count carried from the listing the site was
+   * generated from. Zero when there was no listing, and the site's trust bar
+   * then renders nothing rather than "0 reviews". */
+  rating: number;
+  reviewCount: number;
   instagramUrl: string;
   tiktokUrl: string;
   facebookUrl: string;
@@ -155,7 +182,14 @@ export interface Booking {
   status: BookingStatus;
   notes: string;
   priceKobo: Kobo;
+  /** Who created it. Optional so mock/demo bookings and any row created
+   * before migration 016 read as "staff" — which is what they were.
+   * `ai_receptionist` is what makes "revenue recovered by the agent" a
+   * single indexed WHERE clause rather than a timestamp heuristic. */
+  source?: BookingSource;
 }
+
+export type BookingSource = "staff" | "public_site" | "ai_receptionist";
 
 export interface Sale {
   id: string;
@@ -275,6 +309,17 @@ export interface Infrastructure {
   hostingStatus: "active" | "pending";
   sslStatus: "active" | "pending";
   domain: string;
+  /**
+   * Whether this business has full access — team members beyond the free seats,
+   * a custom domain, storage past the free allowance.
+   *
+   * Derived from the AI receptionist subscription (or a legacy plan), not stored
+   * on this row. Present here so the UI can gate accurately: without it, a clinic
+   * paying ₦59,000 a month would see "add team member" disabled, which its own
+   * subscription includes. The server checks `getEntitlement` regardless, so this
+   * is a preview and never the enforcement.
+   */
+  entitled: boolean;
 }
 
 export interface TenantData {

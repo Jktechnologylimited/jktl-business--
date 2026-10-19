@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/app/page-header";
 import { StatTile } from "@/components/app/stat-tile";
 import { AdminBusinessTable } from "@/components/admin/business-table";
+import { IntegrationHealth } from "@/components/admin/integration-health";
 import { listBusinessesForAdmin, summarize } from "@/lib/db/admin";
 import { formatKobo, formatGb } from "@/lib/format";
 
@@ -25,6 +26,8 @@ export default async function AdminHomePage() {
         <StatTile label="Total storage used" value={formatGb(overview.totalStorageUsedBytes)} rule="danger" />
       </div>
       <StatTile label="Combined recorded revenue (all businesses)" value={formatKobo(overview.totalRevenueKobo)} />
+
+      <IntegrationHealth />
 
       <AdminBusinessTable businesses={businesses} />
     </div>

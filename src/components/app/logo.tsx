@@ -1,10 +1,18 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-export function JktlMark({ className }: { className?: string }) {
+/**
+ * The mark.
+ *
+ * `priority` because this is almost always the largest thing above the fold —
+ * the login page, the marketing shell, the affiliate portal all lead with it —
+ * so lazy-loading it defers the Largest Contentful Paint for no benefit. Next
+ * warns about exactly this when it detects the pattern.
+ */
+export function JktlMark({ className, priority = true }: { className?: string; priority?: boolean }) {
   return (
     <div className={cn("relative", className)} aria-hidden>
-      <Image src="/jktl-logo.png" alt="" fill className="object-contain" sizes="48px" />
+      <Image src="/jktl-logo.png" alt="" fill priority={priority} className="object-contain" sizes="48px" />
     </div>
   );
 }

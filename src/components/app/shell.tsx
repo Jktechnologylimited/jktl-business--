@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Banknote, CalendarClock, House, LayoutGrid, LifeBuoy, LogOut, RefreshCw, Settings, Users, WifiOff } from "lucide-react";
+import { Banknote, CalendarClock, House, LayoutGrid, LifeBuoy, LogOut, Loader2, Settings, Users, WifiOff } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { JktlMark } from "./logo";
 import { Avatar } from "./avatar";
@@ -33,7 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const user = useBusinessStore((s) => s.data.user);
   const online = useBusinessStore((s) => s.online);
   const mode = useBusinessStore((s) => s.mode);
-  const pendingSyncCount = useBusinessStore((s) => s.pendingSyncCount);
+  const syncing = useBusinessStore((s) => s.syncing);
   const logout = useBusinessStore((s) => s.logout);
 
   const moreHrefs = industry.nav.more.map((m) => m.href);
@@ -45,19 +45,27 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-paper lg:pl-60">
-      {!online ? (
-        <div className="flex items-center justify-center gap-2 bg-toast px-4 py-2 text-center text-xs font-medium text-white">
-          <WifiOff className="size-3.5" />
-          {mode === "live" && pendingSyncCount > 0
-            ? `You're offline — ${pendingSyncCount} change${pendingSyncCount > 1 ? "s" : ""} waiting to sync.`
-            : "You're offline — you can still browse. Changes will wait until you're back."}
-        </div>
-      ) : mode === "live" && pendingSyncCount > 0 ? (
-        <div className="flex items-center justify-center gap-2 bg-accent px-4 py-2 text-center text-xs font-medium text-white">
-          <RefreshCw className="size-3.5 animate-spin" />
-          {`Syncing ${pendingSyncCount} change${pendingSyncCount > 1 ? "s" : ""}…`}
-        </div>
-      ) : null}
+      {/*
+        Sync runs behind the scenes: while the outbox is draining the user sees a
+        small spinner, not a running commentary on how many changes are queued.
+        The two things that stay visible are the two that change what the user
+        should do next — go back online, or re-enter something that was rejected.
+      */}
+      <div aria-live="polite" className="pointer-events-none fixed right-4 top-3 z-40 flex flex-col items-end gap-2 print:hidden">
+        {mode === "live" && syncing ? (
+          <span className="flex items-center gap-2 rounded-full border border-border bg-paper px-3 py-1.5 text-[11px] font-medium text-ink-muted shadow-sm">
+            <Loader2 className="size-3.5 animate-spin text-primary" />
+            Saving…
+          </span>
+        ) : null}
+
+        {!online ? (
+          <span className="flex items-center gap-2 rounded-full border border-border bg-toast px-3 py-1.5 text-[11px] font-medium text-white shadow-sm">
+            <WifiOff className="size-3.5" />
+            Offline — we&apos;ll save this when you&apos;re back
+          </span>
+        ) : null}
+      </div>
 
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border bg-paper lg:flex print:hidden">

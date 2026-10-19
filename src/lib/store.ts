@@ -195,6 +195,9 @@ export interface BusinessProfilePatch {
   address: string;
   city: string;
   state: string;
+  /** ISO 3166-1 alpha-2. Optional so existing callers keep compiling; the
+   * profile defaults to NG when it's absent. */
+  countryCode?: string;
 }
 
 interface PendingSignup {
@@ -214,6 +217,8 @@ interface BusinessStore {
   online: boolean;
   mode: Mode;
   pendingSyncCount: number;
+  /** True while the outbox is draining. Drives the shell's saving spinner. */
+  syncing: boolean;
   data: TenantData;
   pendingSignup: PendingSignup | null;
 
@@ -294,6 +299,7 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
   online: true,
   mode: "demo",
   pendingSyncCount: 0,
+  syncing: false,
   data: buildTenantData(),
   pendingSignup: null,
 
@@ -317,7 +323,7 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
       },
     }));
 
-    onSyncProgress((count) => set({ pendingSyncCount: count }));
+    onSyncProgress((state) => set({ pendingSyncCount: state.pending, syncing: state.syncing }));
     outboxCount().then((count) => set({ pendingSyncCount: count }));
 
     if (session.mode === "live" && session.authenticated && session.organizationId) {

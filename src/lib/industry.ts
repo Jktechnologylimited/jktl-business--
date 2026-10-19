@@ -71,7 +71,9 @@ const salon: IndustryConfig = {
       { href: "/business/expenses", label: "Expenses", description: "Rent, power, staff and supplies", group: "Money" },
       { href: "/business/invoices", label: "Invoices", description: "Bills and outstanding payments", group: "Money" },
       { href: "/business/reports", label: "Reports", description: "Sales, bookings and stock", group: "Money" },
+      { href: "/business/analytics", label: "Analytics", description: "Trends, ageing, profit and health", group: "Money" },
       { href: "/business/website", label: "Website", description: "Your public site and online booking", group: "Grow your business" },
+      { href: "/business/receptionist", label: "AI receptionist", description: "Missed-call recovery, chat agent and comms wallet", group: "Grow your business" },
       { href: "/business/import", label: "Import data", description: "Bring in customers, services and products from a spreadsheet", group: "Grow your business" },
       { href: "/business/settings", label: "Settings", description: "Business, team and plan", group: "Account" },
       { href: "/business/help", label: "Help & guides", description: "How-tos and installing the app", group: "Account" },
@@ -99,6 +101,101 @@ function stub(id: BusinessType, label: string, bookingLabel: string, catalogLabe
   };
 }
 
+/**
+ * A full configuration for one of the three AI-receptionist verticals from
+ * the missed-call recovery blueprint. These are real configs rather than
+ * `stub()`s: each carries the service and product vocabulary its staff
+ * actually type, and each is paired with a matching clinical pack in
+ * `src/lib/ai/industry-packs.ts` — that pack, not this object, is what
+ * governs what the missed-call agent is allowed to say. Modules and nav stay
+ * the shared engine (plus the AI receptionist entry point), so adding a
+ * vertical is still one object, not a new codebase.
+ */
+function vertical(
+  id: BusinessType,
+  label: string,
+  overrides: Pick<
+    IndustryConfig,
+    | "tagline"
+    | "staffLabel"
+    | "staffLabelPlural"
+    | "bookingLabel"
+    | "bookingLabelPlural"
+    | "catalogLabel"
+    | "serviceCategories"
+    | "productCategories"
+  >,
+): IndustryConfig {
+  return { ...salon, id, label, productName: "JKTL Business", ...overrides };
+}
+
+/** Men's sexual, hormonal and fertility health — the "discretion" vertical.
+ * Every label here is written for a front desk that must never make a
+ * patient feel judged for calling. */
+const mensHealth = vertical("mens_health", "Men's health clinic", {
+  tagline: "Discreet, confidential care for men's vitality and hormonal health.",
+  staffLabel: "Clinician",
+  staffLabelPlural: "Clinicians",
+  bookingLabel: "Appointment",
+  bookingLabelPlural: "Appointments",
+  catalogLabel: "Services",
+  serviceCategories: [
+    "Consultation",
+    "Sexual health",
+    "Hormonal therapy",
+    "Lab & diagnostics",
+    "Fertility",
+    "Counselling",
+    "Follow-up",
+  ],
+  productCategories: ["Medication", "Supplements", "Devices", "Lab kits", "Wellness"],
+});
+
+/** Aesthetics, skin and body — the "beauty outcome" vertical. Consultation-led
+ * because injectables and lasers need a suitability check before a slot is
+ * promised. */
+const aesthetics = vertical("aesthetics", "Aesthetics & beauty clinic", {
+  tagline: "Skin, body and beauty treatments — booked in seconds, not hold music.",
+  staffLabel: "Practitioner",
+  staffLabelPlural: "Practitioners",
+  bookingLabel: "Appointment",
+  bookingLabelPlural: "Appointments",
+  catalogLabel: "Treatments",
+  serviceCategories: [
+    "Consultation",
+    "Facials & skin",
+    "Injectables",
+    "Laser & body",
+    "Lashes & brows",
+    "Hair removal",
+    "IV & wellness",
+    "Bridal",
+  ],
+  productCategories: ["Skincare", "Injectables", "Aftercare", "Devices", "Retail"],
+});
+
+/** Elderly and home care — the "trust" vertical. Visits rather than
+ * appointments, because half of what this desk schedules happens in the
+ * patient's home. */
+const elderlyCare = vertical("elderly_care", "Elderly & home care", {
+  tagline: "Trusted care for elderly patients — at home, or in clinic.",
+  staffLabel: "Caregiver",
+  staffLabelPlural: "Caregivers",
+  bookingLabel: "Visit",
+  bookingLabelPlural: "Visits",
+  catalogLabel: "Care services",
+  serviceCategories: [
+    "Home visit",
+    "Nursing care",
+    "Physiotherapy",
+    "Memory clinic",
+    "Chronic care",
+    "Companionship",
+    "Equipment rental",
+  ],
+  productCategories: ["Mobility aids", "Incontinence", "Nutrition", "Monitoring devices", "Medication"],
+});
+
 const registry: Record<BusinessType, IndustryConfig> = {
   salon,
   // Same salon engine as the other stubs below, for the same reason (see
@@ -119,6 +216,10 @@ const registry: Record<BusinessType, IndustryConfig> = {
   photographer: stub("photographer", "Photographer", "Booking", "Packages"),
   videographer: stub("videographer", "Videographer", "Booking", "Packages"),
   content_creator: stub("content_creator", "Content creator", "Booking", "Packages"),
+  // The three blueprint verticals above their own full configs.
+  mens_health: mensHealth,
+  aesthetics,
+  elderly_care: elderlyCare,
   general: stub("general", "General business", "Booking", "Catalogue"),
 };
 
@@ -142,6 +243,14 @@ export const BUSINESS_TYPE_GROUPS: BusinessTypeGroup[] = [
     options: [
       { id: "salon", label: "Hair salon", hint: "Bookings, services, hair and nails" },
       { id: "personal_care", label: "Personal care", hint: "Spa, barber, beauty" },
+    ],
+  },
+  {
+    category: "Health & wellness",
+    options: [
+      { id: "mens_health", label: "Men's health clinic", hint: "Discreet consultations, hormones, fertility" },
+      { id: "aesthetics", label: "Aesthetics & beauty clinic", hint: "Skin, injectables, laser, body" },
+      { id: "elderly_care", label: "Elderly & home care", hint: "Home visits, nursing, memory care" },
     ],
   },
   {

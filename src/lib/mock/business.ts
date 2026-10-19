@@ -25,6 +25,7 @@ export function demoProfile(): BusinessProfile {
     address: "14 Swali Road, Opolo",
     city: "Yenagoa",
     state: "Bayelsa",
+    countryCode: "NG",
     logoUrl: null,
     coverPhotoUrl: null,
     subdomain: "glamhair",
@@ -33,6 +34,25 @@ export function demoProfile(): BusinessProfile {
     themeColor: "#0f6e5c",
     customDomain: "",
     customDomainVerified: false,
+    aboutLong:
+      "Glam Hair Studio is a hair and beauty salon in Yenagoa, Bayelsa.\n\nWe have been trading for around 8 years, with a team of three stylists working out of a shop on the main road. Our Google listing carries 212 reviews at an average of 4.8 out of 5.\n\nThis page was built for us by JKTL Business. Booking, enquiries and questions are handled here so nothing gets missed — including when the phone rings and nobody can pick up.",
+    galleryUrls: [],
+    rating: 4.8,
+    reviewCount: 212,
+    openingHours: [
+      { day: "Monday", hours: "9:00 AM – 7:00 PM" },
+      { day: "Tuesday", hours: "9:00 AM – 7:00 PM" },
+      { day: "Wednesday", hours: "9:00 AM – 7:00 PM" },
+      { day: "Thursday", hours: "9:00 AM – 7:00 PM" },
+      { day: "Friday", hours: "9:00 AM – 8:00 PM" },
+      { day: "Saturday", hours: "8:00 AM – 8:00 PM" },
+    ],
+    serviceAreas: ["Yenagoa", "Opolo", "Kpansia", "Amarata"],
+    faqs: [
+      { question: "How do I book an appointment at Glam Hair Studio?", answer: "Use the booking form on this page and pick a time that suits you. You will get a confirmation straight away, and a reminder before your appointment." },
+      { question: "Where are you, and how do I reach you?", answer: "We are at 12 Mbiama-Yenagoa Road, Yenagoa. You can call us on 0803 123 4567." },
+      { question: "What are your opening hours?", answer: "We are open Monday to Friday, 9:00 AM – 7:00 PM. We are closed on Sunday." },
+    ],
     aboutText:
       "Glam Hair Studio has been Yenagoa's go-to for braids, silk presses and nails since 2019. We use quality products, keep appointments on time, and treat every client like family.",
     instagramUrl: "https://instagram.com/glamhairstudio",
@@ -86,6 +106,7 @@ export function demoInfrastructure(now = new Date()): Infrastructure {
     databaseStatus: "active",
     hostingStatus: "active",
     sslStatus: "active",
+    entitled: true,
     domain: "glamhair.jktl.com.ng",
   };
 }

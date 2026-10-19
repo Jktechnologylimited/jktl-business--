@@ -14,6 +14,8 @@ const DEMO_PREFS: NotificationPrefs = {
   bookingNotifications: true,
   lowStockAlerts: true,
   invoicePaidAlerts: true,
+  invoiceSentAlerts: true,
+  payoutAlerts: true,
   dailySummary: false,
   platformAnnouncements: true,
 };
@@ -21,7 +23,9 @@ const DEMO_PREFS: NotificationPrefs = {
 const CATEGORY_TOGGLES: Array<{ key: keyof Omit<NotificationPrefs, "pushEnabled">; label: string; description: string }> = [
   { key: "bookingNotifications", label: "New bookings", description: "Notify me when a booking comes in" },
   { key: "lowStockAlerts", label: "Low-stock alerts", description: "Notify me when a product drops to its threshold" },
-  { key: "invoicePaidAlerts", label: "Invoice paid", description: "Notify me when a customer pays an invoice" },
+  { key: "invoiceSentAlerts", label: "Invoice sent", description: "Confirm when a request for payment has gone out" },
+  { key: "invoicePaidAlerts", label: "Payment received", description: "The moment a customer pays an invoice — money arriving without you chasing it" },
+  { key: "payoutAlerts", label: "Setup tips & money advice", description: "Occasional prompts to finish setting up — like adding a card so you get paid while you sleep" },
   { key: "dailySummary", label: "Daily summary", description: "A morning recap of yesterday's numbers" },
   { key: "platformAnnouncements", label: "Platform updates", description: "Downtime notices and promotions from JKTL" },
 ];

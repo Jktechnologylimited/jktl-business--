@@ -3,7 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { resolveTxt } from "node:dns/promises";
 import { requireSession } from "@/lib/session";
-import { isSubscriptionActive } from "@/lib/db/billing";
+import { getEntitlement } from "@/lib/db/entitlements";
 import { isCustomDomainTaken, startCustomDomain, getPendingCustomDomain, markCustomDomainVerified, clearCustomDomain } from "@/lib/db/domain";
 import { customDomainFormatError, normalizeDomain, verificationRecordName, verificationRecordValue } from "@/lib/domain";
 import type { ActionResult } from "./types";
@@ -40,7 +40,8 @@ export async function startCustomDomainVerificationAction(domainInput: string): 
     const formatError = customDomainFormatError(domain, rootDomain);
     if (formatError) return { ok: false, error: formatError };
 
-    const active = await isSubscriptionActive(organizationId);
+    const entitlement = await getEntitlement(organizationId);
+    const active = entitlement.entitled;
     if (!active) return { ok: false, error: "Upgrade to Website & Hosting under Settings → Plan to add a custom domain." };
 
     const taken = await isCustomDomainTaken(domain, organizationId);

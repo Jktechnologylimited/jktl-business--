@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, MessageCircle, Phone, Mail, Clock, Package, CalendarCheck, Menu, X, Star, Quote } from "lucide-react";
+import { MapPin, MessageCircle, Phone, Mail, Clock, Package, CalendarCheck, Menu, X, Star, Quote, Sparkles } from "lucide-react";
 import { PublicBookingForm } from "./public-booking-form";
 import { ChatWidget } from "./chat-widget";
+import { SiteAiChat } from "./site-ai-chat";
+import { FaqSection, GallerySection, HoursLocationSection, TrustBar } from "./site-sections";
 import { InstagramIcon, TikTokIcon, FacebookIcon, SnapchatIcon } from "./social-icons";
 import { formatKobo, initials } from "@/lib/format";
 import { waLink, telLink, mailLink, textOnColor } from "@/lib/contact";
@@ -28,6 +30,19 @@ export interface PublicSiteProfile {
   facebookUrl: string;
   snapchatUrl: string;
   fontPairId: string;
+  /** Long-form about, from the generated site content. */
+  aboutLong?: string;
+  /** Photographs from the business's own Google listing. */
+  galleryUrls?: string[];
+  /** Opening hours as the listing publishes them. */
+  openingHours?: Array<{ day: string; hours: string }>;
+  /** Neighbourhoods served. */
+  serviceAreas?: string[];
+  /** Generated FAQ, answered only from facts the listing supports. */
+  faqs?: Array<{ question: string; answer: string }>;
+  /** Google rating and review count. Zero suppresses the trust bar entirely. */
+  rating?: number;
+  reviewCount?: number;
 }
 
 const fadeUp = {
@@ -52,6 +67,8 @@ export function PublicSiteView({
   testimonials,
   subdomain,
   mode,
+  aiAssistant,
+  previewNotice,
 }: {
   profile: PublicSiteProfile;
   services: Service[];
@@ -59,6 +76,13 @@ export function PublicSiteView({
   testimonials: Testimonial[];
   subdomain: string;
   mode: "live" | "preview";
+  /** Present when the business has the AI receptionist switched on. Drives the
+   * hero CTA and replaces the scripted chat widget with the real agent. */
+  aiAssistant?: { enabled: boolean; packLabel: string; greeting: string };
+  /** Set when this site was generated for a business that has not claimed it.
+   * Shown to everyone who visits, because an unclaimed site that looks like
+   * the clinic's real one is a misrepresentation waiting to happen. */
+  previewNotice?: string;
 }) {
   const themeColor = /^#[0-9a-fA-F]{6}$/.test(profile.themeColor) ? profile.themeColor : "#0f6e5c";
   const textColor = textOnColor(themeColor);
@@ -82,6 +106,7 @@ export function PublicSiteView({
   // already chosen.
   const [prefillServiceId, setPrefillServiceId] = useState<string | undefined>();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
 
   function bookService(id: string) {
     setPrefillServiceId(id);
@@ -103,6 +128,12 @@ export function PublicSiteView({
       className="jktl-light flex min-h-dvh flex-col bg-paper"
       style={{ "--font-display": fontPair.displayVar, "--font-body": fontPair.bodyVar } as React.CSSProperties}
     >
+      {previewNotice ? (
+        <div className="bg-accent-soft px-5 py-2.5 text-center text-[13px] text-ink sm:px-8">
+          <span className="font-semibold">Preview site.</span> {previewNotice}
+        </div>
+      ) : null}
+
       {/* Nav bar */}
       <nav className="sticky top-0 z-30 border-b border-border bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
@@ -215,12 +246,32 @@ export function PublicSiteView({
             ) : null}
 
             <div className="mt-6 flex flex-wrap items-center gap-2.5">
+              {aiAssistant?.enabled ? (
+                <motion.button
+                  type="button"
+                  onClick={() => setAiChatOpen(true)}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.96 }}
+                  style={{ backgroundColor: themeColor, color: textColor }}
+                  className="flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold shadow-lg"
+                >
+                  <Sparkles className="size-4" /> Ask our AI assistant
+                </motion.button>
+              ) : null}
               <motion.a
                 href="#book"
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                style={{ backgroundColor: themeColor, color: textColor }}
-                className="flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold shadow-lg"
+                style={
+                  aiAssistant?.enabled
+                    ? undefined
+                    : { backgroundColor: themeColor, color: textColor }
+                }
+                className={
+                  aiAssistant?.enabled
+                    ? "flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-ink shadow-lg"
+                    : "flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold shadow-lg"
+                }
               >
                 <CalendarCheck className="size-4" /> Book an appointment
               </motion.a>
@@ -242,11 +293,27 @@ export function PublicSiteView({
                 </a>
               ) : null}
             </div>
+
+            {aiAssistant?.enabled ? (
+              <p className="mt-3 flex items-center gap-1.5 text-xs text-white/85">
+                <Sparkles className="size-3.5" /> Answered in seconds by our AI assistant — day or night, no waiting on hold.
+              </p>
+            ) : null}
           </div>
         </motion.div>
       </header>
 
       <main className="flex flex-1 flex-col">
+        {/* Rating and coverage first: on a local business page this is the most
+            persuasive fact, and it is the one a competitor's template cannot
+            fake. Renders nothing when the listing has no reviews. */}
+        <TrustBar
+          rating={profile.reviewCount ?? 0}
+          reviewCount={profile.reviewCount ?? 0}
+          serviceAreas={profile.serviceAreas ?? []}
+          themeColor={themeColor}
+        />
+
         {activeServices.length > 0 ? (
           <section id="services" className="scroll-mt-14 border-b border-border px-5 py-14 sm:px-8 sm:py-20">
             <motion.div
@@ -473,6 +540,19 @@ export function PublicSiteView({
           </section>
         ) : null}
 
+        <GallerySection photos={profile.galleryUrls?.map((url) => ({ url, category: "" })) ?? []} businessName={profile.displayName || "our business"} />
+
+        <FaqSection faqs={profile.faqs ?? []} />
+
+        <HoursLocationSection
+          openingHours={profile.openingHours ?? []}
+          address={profile.address}
+          city={profile.city}
+          state={profile.state}
+          phone={profile.phone}
+          serviceAreas={profile.serviceAreas ?? []}
+        />
+
         <section id="book" className="scroll-mt-14 bg-surface px-5 py-14 sm:px-8 sm:py-20">
           <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
             <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: themeColor }}>
@@ -547,19 +627,40 @@ export function PublicSiteView({
         // just this component's box — fine on the real public page, but it
         // would float over the entire dashboard if rendered inside the
         // settings page's embedded preview, so it's live-only.
-        <ChatWidget
-          businessName={profile.displayName}
-          services={activeServices}
-          products={activeProducts}
-          phone={profile.phone}
-          email={profile.email}
-          address={profile.address}
-          city={profile.city}
-          state={profile.state}
-          themeColor={themeColor}
-          textColor={textColor}
-          onSelectService={setPrefillServiceId}
-        />
+        //
+        // Which chat a visitor gets depends on the business: the real AI
+        // assistant when the clinic has it switched on, and the scripted
+        // decision tree (over the same real service and price data) when it
+        // hasn't — so no business is left with a dead chat button.
+        aiAssistant?.enabled ? (
+          <SiteAiChat
+            subdomain={subdomain}
+            businessName={profile.displayName}
+            packLabel={aiAssistant.packLabel}
+            greeting={aiAssistant.greeting}
+            themeColor={themeColor}
+            textColor={textColor}
+            services={activeServices.map((s) => ({ id: s.id, name: s.name, priceKobo: s.priceKobo }))}
+            clinicPhone={profile.phone}
+            open={aiChatOpen}
+            onOpenChange={setAiChatOpen}
+            onSelectService={bookService}
+          />
+        ) : (
+          <ChatWidget
+            businessName={profile.displayName}
+            services={activeServices}
+            products={activeProducts}
+            phone={profile.phone}
+            email={profile.email}
+            address={profile.address}
+            city={profile.city}
+            state={profile.state}
+            themeColor={themeColor}
+            textColor={textColor}
+            onSelectService={setPrefillServiceId}
+          />
+        )
       ) : null}
     </div>
   );

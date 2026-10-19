@@ -101,6 +101,37 @@ export async function initializeTransaction(params: {
   return { authorizationUrl: data.authorization_url, reference: data.reference, accessCode: data.access_code };
 }
 
+/**
+ * One month of the AI receptionist contract, as a hosted checkout.
+ *
+ * The contract is billed monthly rather than upfront — six instalments of
+ * ₦108,333.33 covering the ₦650,000 package, then ₦59,000 from month 7 — so
+ * this is called once per month with the amount the schedule says is due.
+ * `monthIndex` travels in the metadata and is what the webhook uses to record
+ * the right month; the amount is passed in from
+ * `src/lib/ai/pricing.ts#amountForMonth` so the schedule stays in one place.
+ *
+ * Like the wallet top-up it is JKTL's own revenue: no plan, no subaccount.
+ */
+export async function initializeContractPayment(params: {
+  email: string;
+  amountKobo: number;
+  monthIndex: number;
+  callbackUrl: string;
+  organizationId: string;
+}): Promise<InitializeTransactionResult> {
+  const data = await paystackFetch<{ authorization_url: string; reference: string; access_code: string }>("/transaction/initialize", {
+    method: "POST",
+    body: JSON.stringify({
+      email: params.email,
+      amount: params.amountKobo,
+      callback_url: params.callbackUrl,
+      metadata: { type: "receptionist_month", organizationId: params.organizationId, monthIndex: params.monthIndex },
+    }),
+  });
+  return { authorizationUrl: data.authorization_url, reference: data.reference, accessCode: data.access_code };
+}
+
 export interface VerifyTransactionData {
   status: "success" | "failed" | "abandoned" | string;
   reference: string;
@@ -108,10 +139,48 @@ export interface VerifyTransactionData {
   paid_at: string | null;
   customer: { customer_code: string; email: string };
   metadata: Record<string, unknown> | null;
+  /** Present on a successful charge: the reusable card, when there is one.
+   * Declared rather than cast at the call site, because the receptionist's
+   * subscription depends on reading `reusable` correctly. */
+  authorization?: {
+    authorization_code?: string;
+    reusable?: boolean;
+    brand?: string;
+    last4?: string;
+    exp_month?: string;
+    exp_year?: string;
+  };
 }
 
 export async function verifyTransaction(reference: string): Promise<VerifyTransactionData> {
   return paystackFetch<VerifyTransactionData>(`/transaction/verify/${encodeURIComponent(reference)}`, { method: "GET" });
+}
+
+/**
+ * A one-off charge that funds a clinic's communication wallet — no plan (it
+ * doesn't recur) and no subaccount split (this is JKTL's own revenue, not
+ * money passing through to a business).
+ *
+ * `metadata.type = "wallet_topup"` is what the Paystack webhook uses to tell
+ * this apart from a subscription or an invoice payment; `metadata.reference`
+ * is the ledger's idempotency key, so a redelivered webhook credits once.
+ */
+export async function initializeWalletTopUp(params: {
+  email: string;
+  amountKobo: number;
+  callbackUrl: string;
+  organizationId: string;
+}): Promise<InitializeTransactionResult> {
+  const data = await paystackFetch<{ authorization_url: string; reference: string; access_code: string }>("/transaction/initialize", {
+    method: "POST",
+    body: JSON.stringify({
+      email: params.email,
+      amount: params.amountKobo,
+      callback_url: params.callbackUrl,
+      metadata: { type: "wallet_topup", organizationId: params.organizationId },
+    }),
+  });
+  return { authorizationUrl: data.authorization_url, reference: data.reference, accessCode: data.access_code };
 }
 
 /** Paystack's hosted "manage subscription" page — lets the owner update

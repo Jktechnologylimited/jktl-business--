@@ -2,6 +2,15 @@ import "server-only";
 import bcrypt from "bcryptjs";
 import { getSql } from "./client";
 import { kobo, isoDate } from "./rows";
+import { periodKeyFor } from "@/lib/ai/pricing";
+import { summariseEarnings, type AffiliateBalance } from "@/lib/affiliate-commission";
+import {
+  RECURRING_MONTHLY_KOBO,
+  SIGNUP_BONUS_KOBO,
+  SUBSCRIPTION_BONUS_KOBO,
+  commissionForPayment,
+  dueRecurringPeriods,
+} from "@/lib/affiliate-commission";
 
 /** Default commission rate for a newly created affiliate, in basis points
  * (2000 = 20%) — matches what was scoped for this feature: a recurring
@@ -30,6 +39,14 @@ export interface Affiliate {
   email: string;
   referralCode: string;
   commissionBps: number;
+  /** 'tiered' is the published programme; 'percentage' keeps the legacy model
+   * for an affiliate who was on it before. */
+  commissionModel: "tiered" | "percentage";
+  /** The published tiers. Per-affiliate so a partner can be on a negotiated deal. */
+  signupBonusKobo: number;
+  subscriptionBonusKobo: number;
+  recurringMonthlyKobo: number;
+  recurringMonthsCap: number;
   status: "pending" | "active" | "suspended";
   /** Freeform note from a self-serve application — how they plan to
    * promote JKTL, their social handles, etc. Empty for an affiliate the
@@ -59,6 +76,11 @@ function mapAffiliate(row: Record<string, unknown>): Affiliate {
     email: row.email as string,
     referralCode: row.referral_code as string,
     commissionBps: Number(row.commission_bps),
+    commissionModel: (row.commission_model as "tiered" | "percentage") ?? "tiered",
+    signupBonusKobo: Number(row.signup_bonus_kobo ?? SIGNUP_BONUS_KOBO),
+    subscriptionBonusKobo: Number(row.subscription_bonus_kobo ?? SUBSCRIPTION_BONUS_KOBO),
+    recurringMonthlyKobo: Number(row.recurring_monthly_kobo ?? RECURRING_MONTHLY_KOBO),
+    recurringMonthsCap: Number(row.recurring_months_cap ?? 0),
     status: (row.status as string) === "pending" ? "pending" : (row.status as string) === "suspended" ? "suspended" : "active",
     applicationNote: (row.application_note as string) ?? "",
     welcomeBonusClaimedAt: row.welcome_bonus_claimed_at ? isoDate(row.welcome_bonus_claimed_at as string) : null,
@@ -255,9 +277,17 @@ export async function listPendingApplications(): Promise<Affiliate[]> {
  * approving is just a status flip — no password to generate or share.
  * Scoped to `status = 'pending'` so this can't accidentally reactivate a
  * suspended affiliate through the wrong code path. */
-export async function approveAffiliateApplication(affiliateId: string): Promise<void> {
+export async function approveAffiliateApplication(affiliateId: string): Promise<Affiliate | null> {
   const sql = getSql();
-  await sql`UPDATE affiliates SET status = 'active' WHERE id = ${affiliateId} AND status = 'pending'`;
+  // RETURNING, not a bare UPDATE: the caller needs the person's details to tell
+  // them they were approved, and a double-click must not send a second email —
+  // the `status = 'pending'` guard means the second call returns nothing.
+  const rows = await sql`
+    UPDATE affiliates SET status = 'active'
+    WHERE id = ${affiliateId} AND status = 'pending'
+    RETURNING *
+  `;
+  return rows[0] ? mapAffiliate(rows[0]) : null;
 }
 
 /** Deletes the application outright rather than keeping a 'rejected'
@@ -265,9 +295,16 @@ export async function approveAffiliateApplication(affiliateId: string): Promise<
  * it frees up the email for a future application. Scoped to `status =
  * 'pending'` so this can never be used to delete a real, active affiliate
  * and its earnings history. */
-export async function rejectAffiliateApplication(affiliateId: string): Promise<void> {
+export async function rejectAffiliateApplication(affiliateId: string): Promise<{ name: string; email: string } | null> {
   const sql = getSql();
-  await sql`DELETE FROM affiliates WHERE id = ${affiliateId} AND status = 'pending'`;
+  // Read before deleting: the row is about to stop existing, and the applicant
+  // still deserves to be told. Silently deleting an application is the one
+  // response that is actually rude.
+  const rows = await sql`
+    DELETE FROM affiliates WHERE id = ${affiliateId} AND status = 'pending'
+    RETURNING name, email
+  `;
+  return rows[0] ? { name: (rows[0].name as string) ?? "", email: (rows[0].email as string) ?? "" } : null;
 }
 
 export interface AffiliateReferredBusiness {
@@ -301,36 +338,49 @@ export interface AffiliateEarning {
   businessName: string;
   sourceAmountKobo: number;
   commissionKobo: number;
-  /** True for the one-time welcome-bonus row (`source_amount_kobo = 0` is
-   * the signal — a real commission row is always > 0, guarded in
-   * `accrueCommissionForOrg`). The UI labels this row "Signup bonus"
-   * instead of ordinary commission. */
-  isBonus: boolean;
+  /**
+   * Which tier this row is: the ₦20,000 signup bonus, the ₦40,000 subscription
+   * bonus, or a month of the ₦3,500 recurring commission.
+   *
+   * This replaced an `isBonus` flag derived from `source_amount_kobo = 0`. That
+   * signal stopped meaning anything the moment the programme moved to flat tiers:
+   * the signup row *and* every recurring row carry zero as their source amount,
+   * so all of them rendered as "Signup bonus" and a partner's statement read as
+   * though they had been paid twenty times for one signup.
+   */
+  kind: "signup" | "subscription" | "recurring" | "welcome" | "commission";
+  /** Whether it is withdrawable yet — the signup bonus is held until the
+   * referral subscribes. */
+  status: "pending" | "available" | "paid";
+  /** 'YYYY-MM' for a recurring row, empty otherwise. */
+  periodKey: string;
   createdAt: string;
 }
 
 export async function listEarnings(affiliateId: string, limit = 50): Promise<AffiliateEarning[]> {
   const sql = getSql();
   const rows = await sql`
-    SELECT e.id, e.organization_id, e.source_amount_kobo, e.commission_kobo, e.created_at, bp.display_name
+    SELECT e.id, e.organization_id, e.source_amount_kobo, e.commission_kobo, e.created_at,
+           e.kind, e.status, e.period_key, bp.display_name
     FROM affiliate_earnings e
     JOIN business_profiles bp ON bp.organization_id = e.organization_id
     WHERE e.affiliate_id = ${affiliateId}
     ORDER BY e.created_at DESC
     LIMIT ${limit}
   `;
-  return rows.map((row) => {
-    const sourceAmountKobo = kobo(row.source_amount_kobo as string);
-    return {
-      id: row.id as string,
-      organizationId: row.organization_id as string,
-      businessName: row.display_name as string,
-      sourceAmountKobo,
-      commissionKobo: kobo(row.commission_kobo as string),
-      isBonus: sourceAmountKobo === 0,
-      createdAt: isoDate(row.created_at as string),
-    };
-  });
+  return rows.map((row) => ({
+    id: row.id as string,
+    organizationId: row.organization_id as string,
+    businessName: row.display_name as string,
+    sourceAmountKobo: kobo(row.source_amount_kobo as string),
+    commissionKobo: kobo(row.commission_kobo as string),
+    // Defensive defaults: rows written before migration 024 have no `kind`, and
+    // calling them 'commission' is honest — that is what they were.
+    kind: ((row.kind as string) ?? "commission") as AffiliateEarning["kind"],
+    status: ((row.status as string) ?? "available") as AffiliateEarning["status"],
+    periodKey: (row.period_key as string) ?? "",
+    createdAt: isoDate(row.created_at as string),
+  }));
 }
 
 export interface AffiliatePayout {
@@ -389,16 +439,35 @@ export async function saveAffiliateBankDetails(
   return mapAffiliate(rows[0]);
 }
 
-export async function getAffiliateBalance(affiliateId: string): Promise<{ totalEarnedKobo: number; totalPaidOutKobo: number; balanceKobo: number }> {
+/**
+ * The affiliate's balance, split by what is actually withdrawable.
+ *
+ * `pending` (the ₦20,000 signup bonus before the referral subscribes) is excluded
+ * from the balance on purpose. Treating everything earned as payable would let a
+ * partner withdraw the signup bonus the day a referral created an account —
+ * before that referral had paid anything — which pays out against free accounts.
+ */
+export async function getAffiliateBalance(affiliateId: string): Promise<AffiliateBalance> {
   const sql = getSql();
   const rows = await sql`
     SELECT
       (SELECT COALESCE(SUM(commission_kobo), 0) FROM affiliate_earnings WHERE affiliate_id = ${affiliateId}) AS total_earned_kobo,
-      (SELECT COALESCE(SUM(amount_kobo), 0) FROM affiliate_payouts WHERE affiliate_id = ${affiliateId}) AS total_paid_out_kobo
+      (SELECT COALESCE(SUM(amount_kobo), 0) FROM affiliate_payouts WHERE affiliate_id = ${affiliateId}) AS total_paid_out_kobo,
+      (SELECT COALESCE(SUM(commission_kobo), 0) FROM affiliate_earnings
+        WHERE affiliate_id = ${affiliateId} AND status = 'pending') AS pending_kobo,
+      (SELECT COALESCE(SUM(commission_kobo), 0) FROM affiliate_earnings
+        WHERE affiliate_id = ${affiliateId} AND status = 'available') AS available_kobo
   `;
-  const totalEarnedKobo = kobo(rows[0].total_earned_kobo as string);
-  const totalPaidOutKobo = kobo(rows[0].total_paid_out_kobo as string);
-  return { totalEarnedKobo, totalPaidOutKobo, balanceKobo: totalEarnedKobo - totalPaidOutKobo };
+  const row = rows[0] as Record<string, unknown>;
+  return summariseEarnings(
+    [
+      // The pure summariser owns the arithmetic; the SQL above exists so the two
+      // figures can be cross-checked rather than trusted blindly.
+      { kind: "commission", status: "pending", commissionKobo: kobo(row.pending_kobo as string) },
+      { kind: "commission", status: "available", commissionKobo: kobo(row.available_kobo as string) },
+    ],
+    kobo(row.total_paid_out_kobo as string),
+  ) as AffiliateBalance;
 }
 
 /**
@@ -415,26 +484,53 @@ export async function recordReferralIfValid(organizationId: string, referralCode
   const rows = await sql`SELECT id FROM affiliates WHERE referral_code = ${referralCode.toUpperCase()} AND status = 'active'`;
   const affiliate = rows[0];
   if (!affiliate) return;
-  await sql`
+  const inserted = await sql`
     INSERT INTO affiliate_referrals (affiliate_id, organization_id)
     VALUES (${affiliate.id}, ${organizationId})
     ON CONFLICT (organization_id) DO NOTHING
+    RETURNING id
   `;
+
+  // Only on the call that actually created the referral. A repeat — the same
+  // person returning via the link, a retried signup — must not write a second
+  // signup bonus.
+  if (inserted[0]) {
+    await recordSignupBonus(organizationId).catch((err) => console.error("recordSignupBonus failed:", err));
+  }
 }
 
 /**
- * Called from the Paystack webhook (the authoritative side of a
- * subscription charge — never from the optimistic checkout-callback path,
- * so a single real payment is never double-counted; see the webhook
- * route's comment). Best-effort and silent when there's no referral or
- * the affiliate has been suspended since — this must never be allowed to
- * break the billing webhook it's called from.
+ * Credits the partner programme's tiers for a real payment.
+ *
+ * Called from the Paystack webhook — the authoritative side of a subscription
+ * charge, never the optimistic checkout callback, so one payment is never counted
+ * twice. Best-effort and silent when there is no referral or the affiliate has
+ * been suspended since: this must never break the billing webhook it is called
+ * from.
+ *
+ * **First payment earns ₦40,000 and releases the ₦20,000 signup bonus. Every
+ * payment after that earns ₦3,500 for its own month.** The database enforces both
+ * halves of that: a unique index on (affiliate, business, kind) for the one-off
+ * tiers, and one on (affiliate, business, period_key) for the recurring tier. A
+ * redelivered webhook therefore inserts nothing and pays nothing, which is the
+ * only guarantee that survives two deliveries racing each other.
+ *
+ * `periodKey` rolls over at Lagos midnight, not UTC — a Lagos clinic charged at
+ * 00:30 local is still in the previous month by UTC reckoning, and that would
+ * credit the wrong month.
  */
-export async function accrueCommissionForOrg(organizationId: string, sourceAmountKobo: number, paystackReference: string): Promise<void> {
+export async function accrueCommissionForOrg(
+  organizationId: string,
+  sourceAmountKobo: number,
+  paystackReference: string,
+  at: Date = new Date(),
+): Promise<void> {
   if (!sourceAmountKobo || sourceAmountKobo <= 0) return;
   const sql = getSql();
+
   const rows = await sql`
-    SELECT r.affiliate_id, a.commission_bps
+    SELECT r.affiliate_id, a.commission_model,
+           a.signup_bonus_kobo, a.subscription_bonus_kobo, a.recurring_monthly_kobo, a.recurring_months_cap
     FROM affiliate_referrals r
     JOIN affiliates a ON a.id = r.affiliate_id
     WHERE r.organization_id = ${organizationId} AND a.status = 'active'
@@ -442,51 +538,161 @@ export async function accrueCommissionForOrg(organizationId: string, sourceAmoun
   const row = rows[0];
   if (!row) return;
 
-  const commissionKobo = Math.round((sourceAmountKobo * Number(row.commission_bps)) / 10000);
-  if (commissionKobo > 0) {
+  const affiliateId = row.affiliate_id as string;
+  const terms = {
+    signupBonusKobo: Number(row.signup_bonus_kobo ?? SIGNUP_BONUS_KOBO),
+    subscriptionBonusKobo: Number(row.subscription_bonus_kobo ?? SUBSCRIPTION_BONUS_KOBO),
+    recurringMonthlyKobo: Number(row.recurring_monthly_kobo ?? RECURRING_MONTHLY_KOBO),
+    recurringMonthsCap: Number(row.recurring_months_cap ?? 0),
+  };
+
+  // Is this their first real payment? Read from the ledger rather than from a
+  // counter, so a webhook replay cannot make the second payment look like the
+  // first and pay ₦40,000 twice.
+  const prior = await sql`
+    SELECT 1 FROM affiliate_earnings
+    WHERE affiliate_id = ${affiliateId} AND organization_id = ${organizationId} AND kind = 'subscription'
+    LIMIT 1
+  `;
+
+  const credited = commissionForPayment({
+    isFirstPayment: !prior[0],
+    periodKey: periodKeyFor(at),
+    paymentAmountKobo: sourceAmountKobo,
+    terms,
+  });
+
+  for (const entry of credited) {
+    if (entry.commissionKobo <= 0) continue;
     await sql`
-      INSERT INTO affiliate_earnings (affiliate_id, organization_id, source_amount_kobo, commission_kobo, paystack_reference)
-      VALUES (${row.affiliate_id}, ${organizationId}, ${sourceAmountKobo}, ${commissionKobo}, ${paystackReference})
+      INSERT INTO affiliate_earnings (
+        affiliate_id, organization_id, source_amount_kobo, commission_kobo,
+        paystack_reference, kind, status, period_key, note
+      )
+      VALUES (
+        ${affiliateId}, ${organizationId}, ${sourceAmountKobo}, ${entry.commissionKobo},
+        ${paystackReference}, ${entry.kind}, ${entry.status}, ${entry.periodKey}, ${entry.note}
+      )
+      ON CONFLICT DO NOTHING
     `;
   }
-
-  // The affiliate's referred business just made a real payment — if this
-  // affiliate hasn't already claimed their one-time welcome bonus, this is
-  // the moment it unlocks. Deliberately reached even if commissionKobo
-  // above was 0 (a 0% commission affiliate should still get the bonus).
-  await claimWelcomeBonusIfEligible(sql, row.affiliate_id as string, organizationId);
 }
 
 /**
- * Credits the ₦2,000 welcome bonus exactly once per affiliate, the first
- * time any business they referred actually pays. The UPDATE...RETURNING
- * guard is what makes this idempotent under concurrent webhook deliveries
- * (two referred businesses paying within moments of each other, or a
- * redelivered webhook): only the call that successfully flips
- * `welcome_bonus_claimed_at` from NULL to now() goes on to insert the
- * earnings row, so it can never be credited twice.
+ * Records the ₦20,000 signup bonus when a referred business creates an account.
+ *
+ * Written as **pending**, which is the whole point: it is shown to the partner
+ * immediately — they did the work, and hiding it would be its own kind of
+ * dishonesty — but it is not withdrawable until the referral actually subscribes,
+ * at which point `accrueCommissionForOrg` releases it. A fixed ₦20,000 for a bare
+ * signup is farmable: a hundred free accounts and ₦2m for nothing.
  */
-async function claimWelcomeBonusIfEligible(sql: ReturnType<typeof getSql>, affiliateId: string, organizationId: string): Promise<void> {
+export async function recordSignupBonus(organizationId: string): Promise<void> {
+  const sql = getSql();
   const rows = await sql`
-    UPDATE affiliates SET welcome_bonus_claimed_at = now()
-    WHERE id = ${affiliateId} AND welcome_bonus_claimed_at IS NULL
-    RETURNING id
+    SELECT r.affiliate_id, a.signup_bonus_kobo
+    FROM affiliate_referrals r
+    JOIN affiliates a ON a.id = r.affiliate_id
+    WHERE r.organization_id = ${organizationId} AND a.status = 'active'
   `;
-  if (!rows[0]) return;
+  const row = rows[0];
+  if (!row) return;
+
   await sql`
-    INSERT INTO affiliate_earnings (affiliate_id, organization_id, source_amount_kobo, commission_kobo, paystack_reference)
-    VALUES (${affiliateId}, ${organizationId}, 0, ${WELCOME_BONUS_KOBO}, 'welcome-bonus')
+    INSERT INTO affiliate_earnings (
+      affiliate_id, organization_id, source_amount_kobo, commission_kobo,
+      paystack_reference, kind, status, period_key, note
+    )
+    VALUES (
+      ${row.affiliate_id}, ${organizationId}, 0, ${Number(row.signup_bonus_kobo ?? SIGNUP_BONUS_KOBO)},
+      '', 'signup', 'pending', '', 'Signup bonus, held until they subscribe'
+    )
+    ON CONFLICT DO NOTHING
   `;
 }
 
-// ---- Payout requests ----
-//
-// An affiliate requests their full balance once a month (from the 21st
-// onward — see `isPayoutWindowOpen`) instead of the admin having to guess
-// when to check in on them. The admin still pays by manual bank transfer
-// and marks the request paid, or declines it — no automated Paystack
-// transfer, same "manual, tracked in command center" choice as the
-// original affiliate-program round.
+/**
+ * Credits any recurring months a referral is owed but has not been paid for.
+ *
+ * Runs from a cron so a partner is paid for a month even if no webhook arrived
+ * for it — a subscription renewing by a route we do not process, or a webhook
+ * that was lost. `dueRecurringPeriods` decides which months are outstanding and
+ * the unique index prevents a double credit, so this is safe to run daily.
+ */
+export async function accrueDueRecurringCommissions(at: Date = new Date()): Promise<{ credited: number; affiliates: number }> {
+  const sql = getSql();
+  const current = periodKeyFor(at);
+
+  const referrals = await sql`
+    SELECT r.affiliate_id, r.organization_id, r.created_at,
+           a.recurring_monthly_kobo, a.recurring_months_cap
+    FROM affiliate_referrals r
+    JOIN affiliates a ON a.id = r.affiliate_id
+    WHERE a.status = 'active'
+      AND a.commission_model = 'tiered'
+      AND a.recurring_monthly_kobo > 0
+      -- Only referrals that actually subscribe earn recurring commission; the
+      -- subscription row is the proof they did.
+      AND EXISTS (
+        SELECT 1 FROM affiliate_earnings e
+        WHERE e.affiliate_id = r.affiliate_id AND e.organization_id = r.organization_id
+          AND e.kind = 'subscription'
+      )
+  `;
+
+  let credited = 0;
+  const touched = new Set<string>();
+
+  for (const referral of referrals) {
+    const affiliateId = referral.affiliate_id as string;
+    const organizationId = referral.organization_id as string;
+
+    const paid = await sql`
+      SELECT period_key FROM affiliate_earnings
+      WHERE affiliate_id = ${affiliateId} AND organization_id = ${organizationId} AND kind = 'recurring'
+    `;
+    const paidPeriods = paid.map((p) => p.period_key as string);
+
+    // The subscription month itself, read from the earnings row rather than
+    // guessed — the recurring series starts the month after.
+    const first = await sql`
+      SELECT created_at FROM affiliate_earnings
+      WHERE affiliate_id = ${affiliateId} AND organization_id = ${organizationId} AND kind = 'subscription'
+      LIMIT 1
+    `;
+    const startedPeriod = first[0] ? periodKeyFor(new Date(first[0].created_at as string)) : periodKeyFor(new Date(referral.created_at as string));
+
+    const months = dueRecurringPeriods({
+      startedPeriod,
+      currentPeriod: current,
+      alreadyPaid: paidPeriods,
+      terms: {
+        signupBonusKobo: 0,
+        subscriptionBonusKobo: 0,
+        recurringMonthlyKobo: Number(referral.recurring_monthly_kobo ?? 0),
+        recurringMonthsCap: Number(referral.recurring_months_cap ?? 0),
+      },
+    });
+
+    for (const periodKey of months) {
+      await sql`
+        INSERT INTO affiliate_earnings (
+          affiliate_id, organization_id, source_amount_kobo, commission_kobo,
+          paystack_reference, kind, status, period_key, note
+        )
+        VALUES (
+          ${affiliateId}, ${organizationId}, 0, ${Number(referral.recurring_monthly_kobo ?? 0)},
+          '', 'recurring', 'available', ${periodKey}, ${`Recurring commission — ${periodKey}`}
+        )
+        ON CONFLICT DO NOTHING
+      `;
+      credited += 1;
+      touched.add(affiliateId);
+    }
+  }
+
+  return { credited, affiliates: touched.size };
+}
 
 export interface PayoutRequest {
   id: string;
