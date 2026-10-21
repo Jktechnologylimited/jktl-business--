@@ -1,5 +1,20 @@
 import type { BusinessType } from "@/lib/types";
 import type { ProspectInput, ProspectSource } from "./types";
+/**
+ * The language each market's listings are returned in.
+ *
+ * Duplicated from `src/lib/markets.ts` **on purpose**: this module is imported
+ * directly by Node's test runner, which cannot resolve the `@/` alias, so a
+ * runtime import of the market table would make every provider test fail to load.
+ * The duplication is small and `tests/prospects.test.mjs` asserts this table
+ * agrees with `MARKETS` — so the two can drift only if somebody deletes a test.
+ */
+export const SEARCH_LOCALES: Record<string, string> = {
+  NG: "en",
+  GH: "en",
+  CI: "fr",
+  SN: "fr",
+};
 
 /**
  * Lead importers: Apify, Outscraper, and a CSV fallback.
@@ -181,7 +196,17 @@ export function isApifyClosed(item: ApifyPlace): boolean {
   return item.permanentlyClosed === true || item.temporarilyClosed === true;
 }
 
-export function mapApifyPlace(item: ApifyPlace, query = "", source: ProspectSource = "apify"): ProspectInput | null {
+export function mapApifyPlace(
+  item: ApifyPlace,
+  query = "",
+  source: ProspectSource = "apify",
+  /** Used when the listing carries no country of its own. Passing the search's
+   * market matters: a Senegalese row with no `countryCode` defaulted to `NG`, and
+   * `decideOutreach` would then treat it under Nigeria's rule — which is
+   * `permitted` — when Senegal is `consent_required`. That is a compliance
+   * question, not a labelling one. */
+  defaultCountry = "NG",
+): ProspectInput | null {
   const businessName = firstString(item.title, item.name);
   if (!businessName) return null;
 
@@ -199,7 +224,7 @@ export function mapApifyPlace(item: ApifyPlace, query = "", source: ProspectSour
     address: firstString(item.address, item.fullAddress, item.street),
     city: str(item.city),
     state: str(item.state),
-    country: firstString(item.countryCode, item.country, "NG"),
+    country: firstString(item.countryCode, item.country, defaultCountry),
     website: firstString(item.website, item.site),
     rating: rating(item.totalScore ?? item.rating),
     reviews: num(item.reviewsCount ?? item.reviews),
@@ -215,6 +240,8 @@ export interface ApifyFetchParams {
   query: string;
   location: string;
   limit?: number;
+  /** Which market this search is for — see `searchLocale`. */
+  countryCode?: string;
   fetchImpl?: typeof fetch;
 }
 
@@ -240,7 +267,9 @@ export async function fetchApifyLeads(params: ApifyFetchParams): Promise<unknown
       searchStringsArray: [params.query],
       locationQuery: params.location,
       maxCrawledPlacesPerSearch: Math.min(Math.max(params.limit ?? 40, 1), 200),
-      language: "en",
+      // Was hardcoded "en", which returns English names for businesses in
+      // Abidjan and Dakar. See the note on `fetchOutscraperLeads`.
+      language: searchLocale(params.countryCode).language,
       skipClosedPlaces: true,
     }),
     cache: "no-store",
@@ -282,7 +311,14 @@ export interface OutscraperRow {
   business_status?: unknown;
 }
 
-export function mapOutscraperRow(row: OutscraperRow, query = "", source: ProspectSource = "outscraper"): ProspectInput | null {
+export function mapOutscraperRow(
+  row: OutscraperRow,
+  query = "",
+  source: ProspectSource = "outscraper",
+  /** See `mapApifyPlace` — a missing country must fall back to the market being
+   * searched, never silently to Nigeria. */
+  defaultCountry = "NG",
+): ProspectInput | null {
   const businessName = str(row.name);
   if (!businessName) return null;
   // Outscraper marks closed businesses in `business_status`.
@@ -301,7 +337,7 @@ export function mapOutscraperRow(row: OutscraperRow, query = "", source: Prospec
     address: firstString(row.full_address, row.address),
     city: str(row.city),
     state: str(row.state),
-    country: firstString(row.country_code, row.country, "NG"),
+    country: firstString(row.country_code, row.country, defaultCountry),
     website: firstString(row.site, row.website),
     rating: rating(row.rating),
     reviews: num(row.reviews ?? row.reviews_count),
@@ -316,18 +352,38 @@ export interface OutscraperFetchParams {
   query: string;
   location: string;
   limit?: number;
+  /** Which market this search is for. Decides the `region` and `language`
+   * parameters — see the note below. */
+  countryCode?: string;
   fetchImpl?: typeof fetch;
 }
 
-/** Outscraper's Google Maps search. `async=false` makes it a single blocking
- * request, matching the Apify path. */
+/** The region/language pair for a market. Falls back to Nigeria, which is the
+ * home market and where most searches run. */
+export function searchLocale(countryCode: string | undefined): { region: string; language: string } {
+  const region = (countryCode ?? "NG").toUpperCase();
+  return { region, language: SEARCH_LOCALES[region] ?? "en" };
+}
+
+/**
+ * Outscraper's Google Maps search. `async=false` makes it a single blocking
+ * request, matching the Apify path.
+ *
+ * **`region` and `language` follow the market.** Both were hardcoded to
+ * `region=NG&language=en`, which was right when Nigeria was the only market and
+ * wrong the moment Ghana, Côte d'Ivoire and Senegal were added: searching
+ * "aesthetic clinic, Abidjan" with a Nigerian region biases the results towards
+ * Nigeria, and English labels are no use for a Francophone market. Rather than
+ * trusting the bias to be small, the two parameters come from the market table.
+ */
 export async function fetchOutscraperLeads(params: OutscraperFetchParams): Promise<OutscraperRow[]> {
   const doFetch = params.fetchImpl ?? fetch;
   const query = `${params.query}, ${params.location}`;
+  const { region, language } = searchLocale(params.countryCode);
   const url = `https://api.app.outscraper.com/maps/search-v3?query=${encodeURIComponent(query)}&limit=${Math.min(
     Math.max(params.limit ?? 40, 1),
     200,
-  )}&language=en&async=false&region=NG`;
+  )}&language=${language}&async=false&region=${region}`;
 
   const res = await doFetch(url, {
     headers: { "X-API-KEY": params.apiKey },

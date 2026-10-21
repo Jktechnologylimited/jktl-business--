@@ -31,7 +31,11 @@ import {
   mapApifyPlace,
   mapCsvRecord,
   mapOutscraperRow,
+  SEARCH_LOCALES,
+  searchLocale,
 } from "../src/lib/prospects/providers.ts";
+
+import { MARKETS } from "../src/lib/markets.ts";
 
 import { buildSiteSeed, previewNotice, suggestSubdomain } from "../src/lib/prospects/site-builder.ts";
 
@@ -548,6 +552,55 @@ test("the preview notice says what the site is", () => {
 /* ------------------------------------------------------------------ */
 /* Outreach email                                                      */
 /* ------------------------------------------------------------------ */
+
+test("the search language table cannot drift from the market table", () => {
+  // `SEARCH_LOCALES` is duplicated into providers.ts because that module is
+  // imported by this test runner, which cannot resolve the "@/" alias. This test
+  // is what stops the copy and `MARKETS` disagreeing.
+  for (const market of MARKETS) {
+    assert.equal(
+      SEARCH_LOCALES[market.countryCode],
+      market.primaryLanguage,
+      `${market.countryCode} should search in ${market.primaryLanguage}`,
+    );
+  }
+  // Every market has an entry — a missing one would silently search in English.
+  for (const market of MARKETS) {
+    assert.ok(SEARCH_LOCALES[market.countryCode], `${market.countryCode} is missing from SEARCH_LOCALES`);
+  }
+});
+
+test("locale follows the market, falling back to Nigeria", () => {
+  assert.deepEqual(searchLocale("CI"), { region: "CI", language: "fr" });
+  assert.deepEqual(searchLocale("sn"), { region: "SN", language: "fr" }, "case-insensitive");
+  assert.deepEqual(searchLocale("GH"), { region: "GH", language: "en" });
+  assert.deepEqual(searchLocale(undefined), { region: "NG", language: "en" });
+  assert.deepEqual(searchLocale("ZZ"), { region: "ZZ", language: "en" }, "unknown market still searches, in English");
+});
+
+test("a listing with no country falls back to the market searched, never to Nigeria", () => {
+  // This is a compliance question, not a labelling one: `decideOutreach` reads
+  // this country, and a Senegalese row silently marked "NG" would be emailed
+  // under Nigeria's `permitted` rule when Senegal requires consent.
+  const senegal = mapOutscraperRow({ name: "Clinique Dakar" }, "", "outscraper", "SN");
+  assert.equal(senegal.country, "SN");
+
+  const ivory = mapApifyPlace({ title: "Spa Abidjan" }, "", "apify", "CI");
+  assert.equal(ivory.country, "CI");
+
+  // An explicit country on the listing still wins.
+  const explicit = mapOutscraperRow({ name: "Accra Clinic", country_code: "GH" }, "", "outscraper", "SN");
+  assert.equal(explicit.country, "GH", "the listing's own country is authoritative");
+
+  // And the default is still Nigeria when nothing is passed, which is the home
+  // market and what every existing caller expects.
+  assert.equal(mapOutscraperRow({ name: "Yenagoa Clinic" }).country, "NG");
+});
+
+test("a closed business is skipped by both providers", () => {
+  assert.equal(mapOutscraperRow({ name: "Gone", business_status: "CLOSED_PERMANENTLY" }), null);
+  assert.ok(mapOutscraperRow({ name: "Open", business_status: "OPERATIONAL" }));
+});
 
 test("the subject carries both business names, theirs first", () => {
   const subject = renderSubject(DEFAULT_SUBJECT_TEMPLATE, { theirBusiness: "Vitalis Men's Health", myBusiness: "JKTL Business" });

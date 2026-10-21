@@ -41,6 +41,7 @@ import {
 import { auditWebsite, isQualifiedLead, scoreWebsite } from "@/lib/prospects/audit";
 import { decideOutreach, normalizeCountryCode } from "@/lib/prospects/jurisdictions";
 import { dedupeLeads, fetchApifyLeads, fetchOutscraperLeads, inferNiche, mapApifyPlace, mapCsvRecord, mapOutscraperRow } from "@/lib/prospects/providers";
+import { getMarket } from "@/lib/markets";
 import { buildOneSite } from "@/lib/prospects/build-site";
 import { isMessagingConfigured, purchaseNumber, releaseNumber, searchAvailableNumbers } from "@/lib/twilio";
 import { composeOutreachEmail, sourceNoteFor, unsubscribeUrlFor } from "@/lib/prospects/outreach";
@@ -91,6 +92,15 @@ export interface ImportLeadsInput {
    * Recorded so conversion can be reported per area rather than per ad-hoc
    * search string. */
   searchArea?: string;
+  /**
+   * The market this search is for: NG, GH, CI or SN.
+   *
+   * Decides the search's region and language, and what a listing with no country
+   * of its own is treated as. Both matter: the region biases Google's results,
+   * and the country decides which marketing rule applies to the lead — Nigeria is
+   * `permitted`, Côte d'Ivoire and Senegal are `consent_required`.
+   */
+  countryCode?: string;
 }
 
 export interface ImportLeadsResult {
@@ -116,6 +126,13 @@ export async function importLeadsAction(input: ImportLeadsInput): Promise<Action
     // area × niche matrix across days, not from one enormous scrape. 200 is
     // roughly the most that reliably returns inside the provider timeout.
     const limit = Math.min(Math.max(Math.round(input.limit) || 40, 1), 200);
+
+    // One of the four markets, or Nigeria by default. Never an arbitrary string:
+    // this value decides which marketing rule applies to every lead it produces.
+    const countryCode = (input.countryCode ?? "NG").toUpperCase();
+    if (!getMarket(countryCode)) {
+      return { ok: false, error: `${countryCode} is not a market we operate in. Add it in AFRICA-ROLLOUT.md first.` };
+    }
     const niche = inferNiche(query, query) || "";
 
     runId = await startRun({ source: input.source, niche, query, location, adminUserId: admin.id });
@@ -134,9 +151,9 @@ export async function importLeadsAction(input: ImportLeadsInput): Promise<Action
         await finishRun(runId, { status: "failed", error: "APIFY_TOKEN is not configured." });
         return { ok: false, error: "APIFY_TOKEN is not configured. Add it to the environment, or import a CSV instead." };
       }
-      const items = await fetchApifyLeads({ token, query, location, limit });
+      const items = await fetchApifyLeads({ token, query, location, limit, countryCode });
       inputs = items
-        .map((item) => mapApifyPlace(item as never, query))
+        .map((item) => mapApifyPlace(item as never, query, "apify", countryCode))
         .filter((row): row is ProspectInput => row !== null);
     } else {
       const apiKey = process.env.OUTSCRAPER_API_KEY;
@@ -144,9 +161,9 @@ export async function importLeadsAction(input: ImportLeadsInput): Promise<Action
         await finishRun(runId, { status: "failed", error: "OUTSCRAPER_API_KEY is not configured." });
         return { ok: false, error: "OUTSCRAPER_API_KEY is not configured. Add it to the environment, or import a CSV instead." };
       }
-      const rows = await fetchOutscraperLeads({ apiKey, query, location, limit });
+      const rows = await fetchOutscraperLeads({ apiKey, query, location, limit, countryCode });
       inputs = rows
-        .map((row) => mapOutscraperRow(row, query))
+        .map((row) => mapOutscraperRow(row, query, "outscraper", countryCode))
         .filter((row): row is ProspectInput => row !== null);
     }
 

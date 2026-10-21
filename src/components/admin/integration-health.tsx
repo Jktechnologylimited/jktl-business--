@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
-import { getIntegrationHealth, missingIntegrationCount } from "@/lib/integration-health";
+import { getIntegrationHealth, getTwilioSendingMode, missingIntegrationCount } from "@/lib/integration-health";
 
 /**
  * Which platform credentials are in place.
@@ -13,6 +13,7 @@ import { getIntegrationHealth, missingIntegrationCount } from "@/lib/integration
 export function IntegrationHealth() {
   const statuses = getIntegrationHealth();
   const missing = missingIntegrationCount(statuses);
+  const sms = getTwilioSendingMode();
 
   return (
     <section className="rounded-2xl border border-border bg-paper p-4">
@@ -33,6 +34,17 @@ export function IntegrationHealth() {
         Deployment credentials. Customers never see this — a business cannot fix a missing key, so telling them about
         one only makes them think the product is broken.
       </p>
+
+      <div className="mt-3 rounded-xl border border-border bg-surface px-3 py-2.5">
+        <p className="text-xs font-medium text-ink">
+          Outgoing texts send from:{" "}
+          <span className={sms.mode === "none" ? "text-danger" : "text-ink"}>
+            {sms.mode === "none" ? "nothing configured" : sms.sender}
+          </span>
+          {sms.mode === "alphanumeric" ? " (alphanumeric sender ID)" : sms.mode === "number" ? " (Twilio number)" : ""}
+        </p>
+        <p className="mt-1 text-[11px] leading-snug text-ink-muted">{sms.note}</p>
+      </div>
 
       <ul className="mt-3 divide-y divide-border">
         {statuses.map((status) => (

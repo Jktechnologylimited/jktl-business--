@@ -1,0 +1,522 @@
+/**
+ * Admin reporting.
+ *
+ * Cross-tenant figures for one page: how the business is growing, what it is
+ * earning, whether the receptionist is actually recovering calls, what the
+ * affiliate programme is costing, and whether the lead engine is producing
+ * anything worth emailing.
+ *
+ * Pure and dependency-free, so the arithmetic behind the numbers an operator acts
+ * on is unit tested. Two rules run through all of it:
+ *
+ *  1. **Never show a number that cannot be trusted.** A rate with no denominator
+ *     is `null`, not `0` — "0% conversion" and "nobody has applied yet" are
+ *     different facts, and reporting them the same way is how a dashboard teaches
+ *     an operator to ignore it.
+ *  2. **Separate what is earned from what is collected.** Contract value booked
+ *     is not money in the bank. A clinic in month one of six has promised
+ *     ₦650,000 and paid ₦108,333; mixing them produces a chart that flatters.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Shapes                                                                     */
+/* -------------------------------------------------------------------------- */
+
+export interface InsightBusiness {
+  /** 'YYYY-MM-DD' the organization was created. */
+  createdAt: string;
+  published: boolean;
+  subscriptionStatus: string;
+  isProspect: boolean;
+  /** Country of the business profile, for the market split. */
+  countryCode: string;
+}
+
+export interface InsightContract {
+  status: "pending" | "active" | "past_due" | "cancelled";
+  chargesPaid: number;
+  setupMonths: number;
+  /** Total collected on this contract, in kobo. */
+  collectedKobo: number;
+  /** What the remaining schedule is worth if it runs to term. */
+  outstandingKobo: number;
+  startedAt: string | null;
+}
+
+export interface InsightCalls {
+  total: number;
+  textsSent: number;
+  /** Calls where the caller opened the chat link. */
+  chatsOpened: number;
+  /** Bookings attributed to an intercepted call. */
+  bookings: number;
+  /** Revenue attributed to those bookings, in kobo. */
+  recoveredKobo: number;
+}
+
+export interface InsightAffiliates {
+  applications: number;
+  approved: number;
+  referrals: number;
+  /** Referrals that have at least one commission row — i.e. actually converted. */
+  convertedReferrals: number;
+  /** Commission credited, in kobo. */
+  earnedKobo: number;
+  /** Credited but not yet withdrawable (the held signup bonus). */
+  pendingKobo: number;
+  /** Paid out, in kobo. */
+  paidOutKobo: number;
+}
+
+export interface InsightProspects {
+  total: number;
+  qualified: number;
+  /** Sites generated for prospects. */
+  sitesBuilt: number;
+  /** Outreach emails sent. */
+  emailsSent: number;
+  /** Leads blocked by a country rule. */
+  blocked: number;
+  /** Leads excluded because they are already customers. */
+  excluded: number;
+  /** Emails that passed validation and can be sent to. */
+  sendableEmails: number;
+}
+
+export interface InsightWallet {
+  /** Communication-wallet balances across all businesses, in kobo. */
+  totalBalanceKobo: number;
+  /** Businesses whose wallet cannot cover next month's line rental. */
+  emptyWallets: number;
+}
+
+export interface AdminInsightInput {
+  businesses: InsightBusiness[];
+  contracts: InsightContract[];
+  calls: InsightCalls;
+  affiliates: InsightAffiliates;
+  prospects: InsightProspects;
+  wallet: InsightWallet;
+  now?: Date;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/** A percentage, or null when there is no denominator. Never 0-for-unknown. */
+export function rate(numerator: number, denominator: number): number | null {
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return null;
+  return Math.round((numerator / denominator) * 1000) / 10;
+}
+
+function monthKey(iso: string): string {
+  return (iso ?? "").slice(0, 7);
+}
+
+/** The last `count` months ending at `now`, oldest first, as 'YYYY-MM'. */
+export function recentMonths(now: Date, count: number): string[] {
+  const out: string[] = [];
+  const cursor = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  for (let i = count - 1; i >= 0; i -= 1) {
+    const d = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() - i, 1));
+    out.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
+  }
+  return out;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Growth                                                                     */
+/* -------------------------------------------------------------------------- */
+
+export interface GrowthPoint {
+  month: string;
+  signups: number;
+  cumulative: number;
+}
+
+export interface GrowthSummary {
+  /** Real customers, excluding prospect tenants generated by the lead engine. */
+  totalBusinesses: number;
+  /** Prospect sites, which are tenants but not customers. */
+  prospects: number;
+  published: number;
+  signupsThisMonth: number;
+  signupsLastMonth: number;
+  /** Percent change month on month, or null when last month had none. */
+  monthOnMonthPct: number | null;
+  /** Signups per month for the last `months`, oldest first. */
+  series: GrowthPoint[];
+}
+
+/**
+ * Business growth.
+ *
+ * **Prospect tenants are excluded from the customer count.** The lead engine
+ * creates a real organization for every generated site, so counting them would
+ * make the business look like it is growing by hundreds a week when it has not
+ * acquired a customer — the single most misleading number a dashboard could show.
+ */
+export function growthSummary(businesses: InsightBusiness[], now: Date, months = 6): GrowthSummary {
+  const real = businesses.filter((b) => !b.isProspect);
+  const prospects = businesses.length - real.length;
+
+  const keys = recentMonths(now, months);
+  const counts = new Map(keys.map((k) => [k, 0]));
+  for (const business of real) {
+    const key = monthKey(business.createdAt);
+    if (counts.has(key)) counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  // Cumulative starts from everything before the window, so the final point is
+  // the true total rather than just the window's sum.
+  const before = real.filter((b) => monthKey(b.createdAt) < keys[0]).length;
+  let running = before;
+  const series: GrowthPoint[] = keys.map((month) => {
+    const signups = counts.get(month) ?? 0;
+    running += signups;
+    return { month, signups, cumulative: running };
+  });
+
+  const thisMonth = series[series.length - 1]?.signups ?? 0;
+  const lastMonth = series[series.length - 2]?.signups ?? 0;
+
+  return {
+    totalBusinesses: real.length,
+    prospects,
+    published: real.filter((b) => b.published).length,
+    signupsThisMonth: thisMonth,
+    signupsLastMonth: lastMonth,
+    monthOnMonthPct: lastMonth > 0 ? Math.round(((thisMonth - lastMonth) / lastMonth) * 1000) / 10 : null,
+    series,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Revenue                                                                    */
+/* -------------------------------------------------------------------------- */
+
+export interface RevenueSummary {
+  /** Money actually collected on receptionist contracts, in kobo. */
+  collectedKobo: number;
+  /** Contract value still to come from contracts that are running. */
+  outstandingKobo: number;
+  /** Monthly recurring revenue once every paying contract is on the platform
+   * tier, in kobo. Derived from active contracts only. */
+  mrrKobo: number;
+  /** MRR × 12. */
+  arrKobo: number;
+  /** Contracts by status. */
+  active: number;
+  pastDue: number;
+  cancelled: number;
+  pending: number;
+  /** Average collected per active contract — falls as new contracts start. */
+  averageCollectedKobo: number;
+  /** Percent of started contracts that have ever paid. */
+  payingRatePct: number | null;
+}
+
+export const PLATFORM_MONTHLY_KOBO = 5_900_000;
+
+export function revenueSummary(contracts: InsightContract[]): RevenueSummary {
+  const active = contracts.filter((c) => c.status === "active");
+  const pastDue = contracts.filter((c) => c.status === "past_due");
+  const cancelled = contracts.filter((c) => c.status === "cancelled");
+  const pending = contracts.filter((c) => c.status === "pending");
+
+  const collectedKobo = contracts.reduce((sum, c) => sum + Math.max(0, c.collectedKobo), 0);
+  const outstandingKobo = contracts
+    .filter((c) => c.status === "active" || c.status === "past_due")
+    .reduce((sum, c) => sum + Math.max(0, c.outstandingKobo), 0);
+
+  // Only contracts that are actually being billed contribute recurring revenue.
+  // A pending contract is a promise; a past-due one is being chased.
+  const paying = active.length + pastDue.length;
+  const mrrKobo = paying * PLATFORM_MONTHLY_KOBO;
+
+  const started = contracts.filter((c) => c.startedAt).length;
+
+  return {
+    collectedKobo,
+    outstandingKobo,
+    mrrKobo,
+    arrKobo: mrrKobo * 12,
+    active: active.length,
+    pastDue: pastDue.length,
+    cancelled: cancelled.length,
+    pending: pending.length,
+    averageCollectedKobo: paying > 0 ? Math.round(collectedKobo / paying) : 0,
+    payingRatePct: rate(paying, started),
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* The receptionist                                                           */
+/* -------------------------------------------------------------------------- */
+
+export interface ReceptionistSummary {
+  total: number;
+  textsSent: number;
+  chatsOpened: number;
+  bookings: number;
+  recoveredKobo: number;
+  /** Of intercepted calls, how many got a text. Should be ~100%; below it means
+   * a wallet ran dry or Twilio rejected a message. */
+  textCoveragePct: number | null;
+  /** Of calls that got a text, how many opened the chat. */
+  openRatePct: number | null;
+  /** Of chats opened, how many became a booking — the number that matters. */
+  chatToBookingPct: number | null;
+  /** Of all intercepted calls, how many became a booking. */
+  callToBookingPct: number | null;
+  /** Average value of a recovered booking. */
+  averageRecoveredKobo: number;
+  /** What this would be worth over a year at the current rate, in kobo. */
+  annualisedRecoveredKobo: number;
+}
+
+/**
+ * How well the receptionist is doing its one job.
+ *
+ * The funnel is stated as three rates rather than one, because they fail for
+ * different reasons and the fix is different: no text means a wallet or a Twilio
+ * problem; no chat opened means the text copy or the link; no booking means the
+ * assistant or the clinic's service list.
+ */
+export function receptionistSummary(calls: InsightCalls): ReceptionistSummary {
+  const textCoveragePct = rate(calls.textsSent, calls.total);
+  const openRatePct = rate(calls.chatsOpened, calls.textsSent);
+  const chatToBookingPct = rate(calls.bookings, calls.chatsOpened);
+  const callToBookingPct = rate(calls.bookings, calls.total);
+
+  return {
+    ...calls,
+    textCoveragePct,
+    openRatePct,
+    chatToBookingPct,
+    callToBookingPct,
+    averageRecoveredKobo: calls.bookings > 0 ? Math.round(calls.recoveredKobo / calls.bookings) : 0,
+    annualisedRecoveredKobo: calls.recoveredKobo * 12,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Affiliates                                                                 */
+/* -------------------------------------------------------------------------- */
+
+export interface AffiliateSummary {
+  applications: number;
+  approved: number;
+  /** Percent of applications approved. */
+  approvalRatePct: number | null;
+  referrals: number;
+  convertedReferrals: number;
+  /** Percent of referrals that converted. */
+  referralConversionPct: number | null;
+  earnedKobo: number;
+  pendingKobo: number;
+  paidOutKobo: number;
+  /** Owed but not yet paid: earned minus paid out. */
+  owedKobo: number;
+  /** Average commission per converted referral. */
+  averagePerReferralKobo: number;
+  /** What the recurring tier costs per month across converted referrals. */
+  monthlyRunRateKobo: number;
+}
+
+export const AFFILIATE_RECURRING_KOBO = 350_000;
+
+export function affiliateSummary(a: InsightAffiliates): AffiliateSummary {
+  const converted = a.convertedReferrals;
+  return {
+    ...a,
+    approvalRatePct: rate(a.approved, a.applications),
+    referralConversionPct: rate(converted, a.referrals),
+    owedKobo: Math.max(0, a.earnedKobo - a.paidOutKobo),
+    averagePerReferralKobo: converted > 0 ? Math.round(a.earnedKobo / converted) : 0,
+    monthlyRunRateKobo: converted * AFFILIATE_RECURRING_KOBO,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* The lead engine                                                            */
+/* -------------------------------------------------------------------------- */
+
+export interface ProspectSummary extends InsightProspects {
+  total: number;
+  qualified: number;
+  /** Percent of leads that passed the website audit. */
+  qualificationRatePct: number | null;
+  sitesBuilt: number;
+  /** Percent of qualified leads that got a site. */
+  siteCoveragePct: number | null;
+  emailsSent: number;
+  /** Percent of leads with a sendable email address. */
+  sendableRatePct: number | null;
+  blocked: number;
+  excluded: number;
+  /** How many outreach emails it takes per converted referral, at current rates.
+   * Null until something has converted — a cost-per-lead with no conversions is
+   * an invented number. */
+  emailsPerConversion: number | null;
+}
+
+/**
+ * The lead engine.
+ *
+ * `emailsPerConversion` is the honest efficiency measure, and it deliberately
+ * refuses to guess: with zero conversions there is no ratio, and printing
+ * "0 emails per conversion" would read as catastrophe rather than "not yet".
+ */
+export function prospectSummary(p: InsightProspects, convertedReferrals: number): ProspectSummary {
+  return {
+    ...p,
+    qualificationRatePct: rate(p.qualified, p.total),
+    siteCoveragePct: rate(p.sitesBuilt, p.qualified),
+    sendableRatePct: rate(p.sendableEmails, p.total),
+    emailsPerConversion: convertedReferrals > 0 && p.emailsSent > 0 ? Math.round(p.emailsSent / convertedReferrals) : null,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Markets                                                                    */
+/* -------------------------------------------------------------------------- */
+
+export interface MarketSplit {
+  countryCode: string;
+  businesses: number;
+  /** Percent of all real businesses. */
+  sharePct: number;
+}
+
+export function marketSplit(businesses: InsightBusiness[]): MarketSplit[] {
+  const real = businesses.filter((b) => !b.isProspect);
+  const counts = new Map<string, number>();
+  for (const business of real) {
+    const code = (business.countryCode || "NG").toUpperCase();
+    counts.set(code, (counts.get(code) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([countryCode, count]) => ({ countryCode, businesses: count, sharePct: rate(count, real.length) ?? 0 }))
+    .sort((a, b) => b.businesses - a.businesses);
+}
+
+/* -------------------------------------------------------------------------- */
+/* The headline strip                                                         */
+/* -------------------------------------------------------------------------- */
+
+export interface Headline {
+  label: string;
+  value: string;
+  /** One line of context — a rate, a comparison, or the denominator. */
+  sub: string;
+  tone: "primary" | "info" | "accent" | "danger";
+}
+
+/**
+ * The five numbers worth putting at the top.
+ *
+ * Chosen for what an operator would act on tomorrow, not for what is easy to
+ * compute: money collected, calls rescued, and the health of the two engines that
+ * feed the business.
+ */
+export function headlines(input: {
+  revenue: RevenueSummary;
+  receptionist: ReceptionistSummary;
+  growth: GrowthSummary;
+  affiliates: AffiliateSummary;
+  prospects: ProspectSummary;
+  formatKobo: (kobo: number) => string;
+}): Headline[] {
+  const { revenue, receptionist, growth, affiliates, prospects, formatKobo } = input;
+
+  return [
+    {
+      label: "Collected",
+      value: formatKobo(revenue.collectedKobo),
+      sub:
+        revenue.payingRatePct === null
+          ? "No contracts started yet"
+          : `${formatKobo(revenue.outstandingKobo)} still to come from ${revenue.active + revenue.pastDue} running contract${
+              revenue.active + revenue.pastDue === 1 ? "" : "s"
+            }`,
+      tone: "primary",
+    },
+    {
+      label: "Calls rescued",
+      value: receptionist.total.toLocaleString(),
+      sub:
+        receptionist.callToBookingPct === null
+          ? "No calls yet"
+          : `${receptionist.bookings} became bookings (${receptionist.callToBookingPct}%) · ${formatKobo(
+              receptionist.recoveredKobo,
+            )} attributed`,
+      tone: "info",
+    },
+    {
+      label: "Businesses",
+      value: growth.totalBusinesses.toLocaleString(),
+      sub:
+        growth.monthOnMonthPct === null
+          ? `${growth.signupsThisMonth} this month`
+          : `${growth.signupsThisMonth} this month (${growth.monthOnMonthPct > 0 ? "+" : ""}${growth.monthOnMonthPct}%)`,
+      tone: "accent",
+    },
+    {
+      label: "Partner commission",
+      value: formatKobo(affiliates.earnedKobo),
+      sub:
+        affiliates.convertedReferrals === 0
+          ? `${affiliates.approved} partner${affiliates.approved === 1 ? "" : "s"} approved, nothing converted yet`
+          : `${formatKobo(affiliates.owedKobo)} owed · ${formatKobo(affiliates.monthlyRunRateKobo)}/month recurring`,
+      tone: "accent",
+    },
+    {
+      label: "Leads qualified",
+      value: prospects.qualified.toLocaleString(),
+      sub:
+        prospects.qualificationRatePct === null
+          ? "Nothing imported yet"
+          : `${prospects.qualificationRatePct}% of ${prospects.total} · ${prospects.sitesBuilt} site${
+              prospects.sitesBuilt === 1 ? "" : "s"
+            } built`,
+      tone: prospects.qualified > 0 ? "primary" : "danger",
+    },
+  ];
+}
+
+/* -------------------------------------------------------------------------- */
+/* Everything together                                                        */
+/* -------------------------------------------------------------------------- */
+
+export interface AdminInsights {
+  growth: GrowthSummary;
+  revenue: RevenueSummary;
+  receptionist: ReceptionistSummary;
+  affiliates: AffiliateSummary;
+  prospects: ProspectSummary;
+  markets: MarketSplit[];
+  wallet: InsightWallet;
+  headlines: Headline[];
+}
+
+export function buildInsights(input: AdminInsightInput, formatKobo: (kobo: number) => string): AdminInsights {
+  const now = input.now ?? new Date();
+  const growth = growthSummary(input.businesses, now);
+  const revenue = revenueSummary(input.contracts);
+  const receptionist = receptionistSummary(input.calls);
+  const affiliates = affiliateSummary(input.affiliates);
+  const prospects = prospectSummary(input.prospects, input.affiliates.convertedReferrals);
+
+  return {
+    growth,
+    revenue,
+    receptionist,
+    affiliates,
+    prospects,
+    markets: marketSplit(input.businesses),
+    wallet: input.wallet,
+    headlines: headlines({ revenue, receptionist, growth, affiliates, prospects, formatKobo }),
+  };
+}

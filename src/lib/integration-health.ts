@@ -97,3 +97,49 @@ export function getIntegrationHealth(): IntegrationStatus[] {
 export function missingIntegrationCount(statuses = getIntegrationHealth()): number {
   return statuses.filter((s) => !s.configured).length;
 }
+
+/**
+ * Which "from" address outgoing texts use.
+ *
+ * Two modes, and the difference is operational rather than cosmetic:
+ *
+ *   **Alphanumeric sender ID** ("JKTL") — what a clinic wants on a patient's
+ *   phone. It must be **registered per country** with Twilio (Trust Hub), which
+ *   takes documents and time, and Nigeria in particular requires it before the ID
+ *   can be used at all. It also cannot receive replies.
+ *
+ *   **A Twilio number** — works immediately, everywhere, including a trial
+ *   account, and can receive replies. The right choice to start with, and the
+ *   only choice in a country where the sender ID is not approved yet.
+ *
+ * Reported here because the failure is invisible from the outside: messages either
+ * go out or they do not, and the reason is a registration the code cannot see.
+ */
+export function getTwilioSendingMode(): {
+  mode: "alphanumeric" | "number" | "none";
+  sender: string;
+  note: string;
+} {
+  const senderId = process.env.TWILIO_SENDER_ID?.trim() ?? "";
+  const number = process.env.TWILIO_DEFAULT_NUMBER?.trim() ?? "";
+
+  if (senderId) {
+    return {
+      mode: "alphanumeric",
+      sender: senderId,
+      note: "Requires per-country registration with Twilio (Trust Hub). Until it is approved, messages may be rejected or arrive from a number instead.",
+    };
+  }
+  if (number) {
+    return {
+      mode: "number",
+      sender: number,
+      note: "Sending from a Twilio number. Works immediately and can receive replies — the right choice until the sender ID is registered.",
+    };
+  }
+  return {
+    mode: "none",
+    sender: "",
+    note: "No sender configured. Set TWILIO_DEFAULT_NUMBER to a purchased Twilio number, or TWILIO_SENDER_ID once registered.",
+  };
+}

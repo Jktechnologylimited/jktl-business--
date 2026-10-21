@@ -274,7 +274,42 @@ at once.
 
 ---
 
-## 6. Deliberate limitations
+## 6. The admin reporting page
+
+`/admin/insights` — five headline numbers, then the detail behind each. The
+arithmetic lives in `src/lib/admin-insights.ts` (pure, 21 tests) and the queries in
+`src/lib/db/admin-insights.ts`.
+
+Two rules make the numbers trustworthy:
+
+**A rate with no denominator is `null`, not `0`.** "0% conversion" and "nobody has
+applied yet" are different facts, and showing them identically teaches an operator
+to ignore the page.
+
+**Prospect tenants are excluded from the customer count.** The lead engine creates a
+real organization for every generated site, so counting them would claim hundreds of
+customers acquired in a week where the business acquired none.
+
+**Collected vs outstanding are separate.** Collected is derived from the schedule
+(`amountForMonth(1..charges_paid)`), not from a stored total, so the dashboard cannot
+disagree with the contract screen — both read the same function. Outstanding counts
+only the remaining setup months of a live contract: after month six the contract is
+month-to-month, so there is nothing "still to come".
+
+The receptionist funnel is reported as **three** rates, because they fail for
+different reasons and the fix is different:
+
+| Rate | What a miss means |
+|---|---|
+| Got a text | A wallet ran dry, or Twilio rejected the message |
+| Opened the chat | The message copy or the link |
+| Became a booking | The assistant, or the clinic's service list |
+
+Deliberately *not* shown: the receptionist's answer rate (we only ever see missed
+calls, so it cannot be computed) and the lead engine's cost per acquisition (nothing
+has converted, so the ratio would be invented).
+
+## 7. Deliberate limitations
 
 - **Only card payments auto-charge.** A clinic that pays by bank transfer gets
   the reminder, not the debit. Bank-transfer collection needs either a Paystack

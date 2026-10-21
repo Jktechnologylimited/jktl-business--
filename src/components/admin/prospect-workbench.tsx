@@ -110,6 +110,16 @@ export function ProspectWorkbench({
   const [source, setSource] = useState<"apify" | "outscraper" | "csv">("apify");
   const [query, setQuery] = useState("men's health clinic");
   const [location, setLocation] = useState("");
+  /**
+   * Which market the search is for.
+   *
+   * Not cosmetic: it sets the search's region and language, and it decides which
+   * marketing rule each lead falls under — Nigeria is `permitted`, Côte d'Ivoire
+   * and Senegal are `consent_required`. Leaving it implicit meant every search
+   * was pinned to Nigeria, which both biased Google's results towards Lagos and
+   * mislabelled Francophone leads as Nigerian.
+   */
+  const [countryCode, setCountryCode] = useState("NG");
   const [limit, setLimit] = useState("40");
   const [csv, setCsv] = useState("");
 
@@ -317,8 +327,21 @@ export function ProspectWorkbench({
           <Field label="Niche" htmlFor="query">
             <Input id="query" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="men's health clinic" />
           </Field>
+          <Field label="Market" htmlFor="market">
+            <Select id="market" value={countryCode} onChange={(e) => setCountryCode(e.target.value)}>
+              <option value="NG">Nigeria (NGN)</option>
+              <option value="GH">Ghana (GHS)</option>
+              <option value="CI">Côte d&apos;Ivoire (XOF)</option>
+              <option value="SN">Senegal (XOF)</option>
+            </Select>
+          </Field>
           <Field label="Where" htmlFor="location">
-            <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Yenagoa, Bayelsa" />
+            <Input
+              id="location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder={countryCode === "NG" ? "Lekki Phase 1, Lagos" : countryCode === "GH" ? "East Legon, Accra" : countryCode === "CI" ? "Cocody, Abidjan" : "Almadies, Dakar"}
+            />
           </Field>
           <Field label="Max results" htmlFor="limit">
             <Input id="limit" inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value)} />
@@ -340,7 +363,7 @@ export function ProspectWorkbench({
             onClick={() =>
               run(
                 "import",
-                () => importLeadsAction({ source, query, location, limit: Number(limit) || 40, csv }),
+                () => importLeadsAction({ source, query, location, limit: Number(limit) || 40, csv, countryCode }),
                 (data: { detail: string }) => data.detail,
               )
             }
