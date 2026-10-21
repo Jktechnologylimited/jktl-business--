@@ -237,7 +237,70 @@ the run.
 
 ---
 
-## 4. The daily cron
+## 4. The daily cron — and the hosting limit that shaped it
+
+**Vercel's Hobby plan allows two cron jobs per project, each running once a day.**
+A schedule more frequent than daily fails the deployment outright ("This cron
+expression would run more than once per day"), and timing is only accurate to the
+hour — `0 7 * * *` fires somewhere between 07:00 and 07:59 UTC. There are no
+retries and no failure alerts on any plan.
+
+That matters because the app used to declare **five** cron jobs, one of them every
+five minutes (`*/5 * * * *`). It could not have deployed on Hobby at all.
+
+Everything now runs from **one** job — `/api/cron/daily` — which calls
+`runDailySweep()` in `src/lib/cron/daily-sweep.ts`:
+
+| # | Step | Why here |
+|---|---|---|
+| 1 | Subscription collection | Money in, first, so anything still outstanding afterwards is a real exception |
+| 2 | Line rentals | Same wallet, same reason |
+| 3 | Affiliate commissions | Money owed to partners |
+| 4 | Reminders (wallets, due fees) | Only reaches what collection could not settle |
+| 5 | Setup nudges | One per business per run |
+| 6 | Plan renewal reminders | Seven days ahead, exact match |
+| 7 | Morning summary | The 06:00 push, now at 07:00 |
+| 8 | Prune reset tokens | Housekeeping |
+| 9 | Site generation | The slow one — last, with whatever budget is left |
+
+Design consequences:
+
+- **Order is deliberate.** Money first, housekeeping last. If the function is
+  killed at its wall-clock limit, the steps that already ran stay done, and the
+  one that gets lost is site generation — the only step that can wait a day.
+- **Every step is isolated.** A failing Twilio does not stop commission accrual,
+  and the error is reported per step rather than thrown. With no cron retries and
+  no alerts on any plan, that returned summary is the only signal there is.
+- **Every step is idempotent.** It has to be: runs can be 23 or 25 hours apart, the
+  window is a whole hour, and a deploy can re-trigger a run. Subscription months,
+  line rentals, commissions and tokens are all guarded by unique keys.
+- **There is an internal budget** (`CRON_BUDGET_MS`, default 35s) so the sweep
+  returns a report instead of being killed mid-write.
+
+**`/admin/insights` has a "Run now" button** that presses the same button the cron
+presses and lists each step's outcome. That matters because waiting a day to find
+out whether a step works is not practical, and nothing else would tell you a step
+had failed.
+
+The per-feature routes are still there and still work — useful for debugging one
+step or for pointing an external scheduler at it. They are simply no longer
+scheduled.
+
+### Outgrowing Hobby
+
+Two options, in order of cost:
+
+1. **Vercel Pro** (~$20/mo) — 40 cron jobs, per-minute schedules, minute-accurate
+   timing. Still no retries and no failure alerts.
+2. **An external scheduler** calling `/api/cron/daily` with
+   `Authorization: Bearer $CRON_SECRET` — keeps the function on Vercel, gives any
+   frequency, real timezones, retries and failure alerts, on the Hobby plan.
+
+Until one of those, **site generation is one batch a day** — a few dozen sites,
+not the ~1,700/day the earlier five-minute schedule implied. At 600 target sites
+that is roughly two to three weeks of daily runs, or pressing "Run now" a few times.
+
+## 4b. What the cron does
 
 `/api/cron/receptionist`, daily at 07:00 UTC, authenticated with `CRON_SECRET`:
 

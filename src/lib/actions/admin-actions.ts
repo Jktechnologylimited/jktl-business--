@@ -25,6 +25,7 @@ import {
 } from "@/lib/db/affiliates";
 import { firstYearValueKobo } from "@/lib/affiliate-commission";
 import { sendAffiliateApprovedEmail, sendAffiliateDeclinedEmail } from "@/lib/email";
+import { runDailySweep } from "@/lib/cron/daily-sweep";
 import type { AdminBroadcast } from "@/lib/db/admin";
 import type { ActionResult } from "./types";
 
@@ -266,5 +267,35 @@ export async function declinePayoutRequestAction(requestId: string): Promise<Act
   } catch (err) {
     console.error(err);
     return { ok: false, error: "Couldn't decline that payout request." };
+  }
+}
+
+/**
+ * Runs the daily sweep now, from the admin.
+ *
+ * The Vercel Hobby plan runs a cron once a day and cannot promise *when* inside
+ * the hour. That is fine for money — it is a daily schedule either way — but it is
+ * miserable when you have just imported 400 leads and want to know whether site
+ * generation works. This lets an operator press the same button the cron presses.
+ *
+ * Runs in a server action, which has the same wall-clock limit as the cron route,
+ * so it uses the same internal budget and reports the same per-step outcomes
+ * rather than a spinner that may be killed.
+ */
+export async function runDailySweepNowAction(): Promise<ActionResult<{ steps: Array<{ name: string; ok: boolean; detail: string; ms: number }>; truncated: boolean }>> {
+  try {
+    await requireAdminSession();
+    const result = await runDailySweep();
+    revalidatePath("/admin/insights");
+    return {
+      ok: true,
+      data: {
+        steps: result.steps.map((s) => ({ name: s.name, ok: s.ok, detail: s.detail, ms: s.ms })),
+        truncated: result.truncated,
+      },
+    };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't run the daily job." };
   }
 }

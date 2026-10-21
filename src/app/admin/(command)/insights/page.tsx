@@ -4,6 +4,7 @@ import { loadInsightInput } from "@/lib/db/admin-insights";
 import { buildInsights } from "@/lib/admin-insights";
 import { formatKobo } from "@/lib/format";
 import { IntegrationHealth } from "@/components/admin/integration-health";
+import { RunDailySweep } from "@/components/admin/run-daily-sweep";
 
 export const dynamic = "force-dynamic";
 
@@ -217,6 +218,8 @@ export default async function AdminInsightsPage() {
           </p>
         </section>
       ) : null}
+
+      <RunDailySweep />
 
       <IntegrationHealth />
     </div>

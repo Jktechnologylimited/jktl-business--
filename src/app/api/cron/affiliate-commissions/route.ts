@@ -3,6 +3,17 @@ import { accrueDueRecurringCommissions } from "@/lib/db/affiliates";
 import { pruneAffiliatePasswordResets } from "@/lib/db/affiliate-auth";
 
 /**
+ * NO LONGER SCHEDULED — see `/api/cron/daily`.
+ *
+ * Vercel's Hobby plan allows only two cron jobs per project and each may run once
+ * a day, so every job was consolidated into the daily sweep. This route is kept
+ * because it is genuinely useful: trigger one step by hand while debugging, or
+ * point an external scheduler at it once you outgrow Hobby. Its logic is the same
+ * code the sweep calls.
+ */
+
+
+/**
  * Credits the recurring ₦3,500 a month each active referral is owed.
  *
  * Separate from the Paystack webhook, which credits a month at the moment a

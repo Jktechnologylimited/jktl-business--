@@ -10,6 +10,17 @@ import { amountForMonth, DEFAULT_CONTRACT_TERMS } from "@/lib/ai/pricing";
 import { formatKobo } from "@/lib/format";
 
 /**
+ * NO LONGER SCHEDULED — see `/api/cron/daily`.
+ *
+ * Vercel's Hobby plan allows only two cron jobs per project and each may run once
+ * a day, so every job was consolidated into the daily sweep. This route is kept
+ * because it is genuinely useful: trigger one step by hand while debugging, or
+ * point an external scheduler at it once you outgrow Hobby. Its logic is the same
+ * code the sweep calls.
+ */
+
+
+/**
  * Daily operational sweep for the AI receptionist. Three jobs:
  *
  *   1. **Collect the subscription.** Every contract with a card on file that

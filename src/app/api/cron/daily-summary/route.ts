@@ -5,6 +5,17 @@ import { formatKobo } from "@/lib/format";
 import { lagosYesterdayRangeUTC } from "@/lib/timezone";
 
 /**
+ * NO LONGER SCHEDULED — see `/api/cron/daily`.
+ *
+ * Vercel's Hobby plan allows only two cron jobs per project and each may run once
+ * a day, so every job was consolidated into the daily sweep. This route is kept
+ * because it is genuinely useful: trigger one step by hand while debugging, or
+ * point an external scheduler at it once you outgrow Hobby. Its logic is the same
+ * code the sweep calls.
+ */
+
+
+/**
  * Triggered by Vercel Cron (see `vercel.json`) once a day. Same
  * `CRON_SECRET`-gated pattern as `/api/cron/renewal-reminders` — refuses
  * to run at all if the secret isn't configured, and requires Vercel's own
