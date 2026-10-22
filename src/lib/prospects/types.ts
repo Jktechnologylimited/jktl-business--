@@ -113,6 +113,13 @@ export interface Prospect {
   /** The scraped listing, as returned by the provider. Parsed into site content
    * by `enrichmentFromRaw`. */
   enrichment?: Record<string, unknown>;
+  /** True for a business that already bought a website or business email from
+   * JKTL — it skips the audit and the site generator. */
+  existingClient?: boolean;
+  /** The business email we provisioned for them, if any. */
+  businessEmail?: string;
+  /** Set once a platform account has been created for them. */
+  accountOrganizationId?: string | null;
   address: string;
   city: string;
   state: string;

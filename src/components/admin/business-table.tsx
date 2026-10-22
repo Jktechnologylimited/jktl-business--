@@ -10,6 +10,7 @@ import { formatKobo, formatGb, formatRelativeDay } from "@/lib/format";
 import { getIndustry } from "@/lib/industry";
 import type { AdminBusinessRow } from "@/lib/db/admin";
 import type { BusinessType } from "@/lib/types";
+import { BusinessRowActions } from "./business-row-actions";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "jktl.com.ng";
 const ALL = "all";
@@ -80,6 +81,21 @@ export function AdminBusinessTable({ businesses }: { businesses: AdminBusinessRo
                     <td className="px-4 py-3">
                       <div className="font-medium text-ink">{b.displayName || b.organizationName}</div>
                       <div className="text-xs text-ink-muted">{b.subdomain}.{ROOT_DOMAIN}</div>
+                      <div className="mt-1 flex flex-col gap-0.5 text-[11px] text-ink-faint">
+                        {b.ownerEmail || b.email ? (
+                          <a href={`mailto:${b.ownerEmail || b.email}`} className="hover:text-primary hover:underline">
+                            {b.ownerEmail || b.email}
+                            {b.ownerEmail && b.email && b.ownerEmail !== b.email ? ` (public: ${b.email})` : ""}
+                          </a>
+                        ) : (
+                          <span className="text-danger">No email on file</span>
+                        )}
+                        {b.phone ? (
+                          <a href={`tel:${b.phone}`} className="hover:text-primary hover:underline">{b.phone}</a>
+                        ) : (
+                          <span>No phone on file</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-ink-muted">{getIndustry(b.businessType as BusinessType).label}</td>
                     <td className="px-4 py-3">
@@ -101,16 +117,22 @@ export function AdminBusinessTable({ businesses }: { businesses: AdminBusinessRo
                     <td className="px-4 py-3 text-ink-muted">{b.lastActiveAt ? formatRelativeDay(b.lastActiveAt) : "Never"}</td>
                     <td className="px-4 py-3 text-ink-muted">{formatRelativeDay(b.createdAt)}</td>
                     <td className="px-4 py-3">
-                      {b.published ? (
-                        <a
-                          href={siteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                        >
-                          View site <ExternalLink className="size-3" />
-                        </a>
-                      ) : null}
+                      <div className="flex flex-col gap-1.5">
+                        {b.published ? (
+                          <a
+                            href={siteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            View site <ExternalLink className="size-3" />
+                          </a>
+                        ) : null}
+                        <BusinessRowActions
+                          organizationId={b.organizationId}
+                          businessName={b.displayName || b.organizationName}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

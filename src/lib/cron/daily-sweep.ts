@@ -6,13 +6,25 @@ import { getContract, listContractsDue, listLowBalanceWallets } from "@/lib/db/r
 import { getBusinessProfile, getOwnerEmail, listUpcomingRenewals } from "@/lib/db/organizations";
 import { listDailySummaries } from "@/lib/db/push";
 import { sendPush } from "@/lib/push";
-import { sendRenewalReminderEmail, sendReceptionistOpsEmail } from "@/lib/email";
+import { sendProspectOutreachEmail, sendRenewalReminderEmail, sendReceptionistOpsEmail } from "@/lib/email";
 import { formatKobo } from "@/lib/format";
 import { lagosYesterdayRangeUTC } from "@/lib/timezone";
 import { accrueDueRecurringCommissions } from "@/lib/db/affiliates";
 import { pruneAffiliatePasswordResets } from "@/lib/db/affiliate-auth";
 import { advanceSiteBuildJob, getRunningSiteBuildJob } from "@/lib/prospects/site-batch";
 import { amountForMonth, DEFAULT_CONTRACT_TERMS } from "@/lib/ai/pricing";
+import {
+  advanceSequence,
+  countSentToday,
+  countryRuleMap,
+  getOutreachSettings,
+  listDueSequenceSends,
+  recordBlockedReason,
+  recordSequenceOutreach,
+} from "@/lib/db/prospects";
+import { dueStep, nextOutreachAt, renderStep } from "@/lib/prospects/sequence";
+import { decideOutreach } from "@/lib/prospects/jurisdictions";
+import { unsubscribeUrlFor } from "@/lib/prospects/outreach";
 
 /**
  * Everything the platform has to do on its own, in one run.
@@ -63,6 +75,16 @@ export interface DailySweepResult {
 /** Default budget. Vercel Hobby caps a function at 60s; leaving headroom means we
  * return a report rather than being killed mid-write. */
 const DEFAULT_BUDGET_MS = 45_000;
+
+/** The public origin, for the site link and the unsubscribe link in a sequence
+ * email. Same resolution order as the admin send path; local so the cron does
+ * not depend on a Server Action module (and its `revalidatePath`). */
+function appOrigin(): string {
+  const explicit = process.env.NEXT_PUBLIC_APP_URL;
+  if (explicit) return explicit.replace(/\/+$/, "");
+  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "jktl.com.ng";
+  return `https://${root}`;
+}
 
 export async function runDailySweep(budgetMs = DEFAULT_BUDGET_MS): Promise<DailySweepResult> {
   const startedAt = new Date();
@@ -239,6 +261,145 @@ export async function runDailySweep(budgetMs = DEFAULT_BUDGET_MS): Promise<Daily
   await step("prune-reset-tokens", async () => {
     const pruned = await pruneAffiliatePasswordResets(7);
     return `${pruned} expired token(s) removed`;
+  });
+
+  /* ---------------------------------------------------------------------- */
+  /* 5b. The staged outreach sequence                                       */
+  /* ---------------------------------------------------------------------- */
+
+  /**
+   * One sequence step per prospect, capped, before the slow site build.
+   *
+   * **Why this runs here and not in the admin action.** A four-step sequence
+   * spread over three weeks only works if something sends step two without a
+   * human remembering to, and the daily sweep is the only thing that runs on its
+   * own.
+   *
+   * Three limits, all deliberate:
+   *
+   *   - **The daily send cap is shared with the manual send.** `countSentToday`
+   *     counts every send in the last 24 hours, so the sequence and the admin
+   *     cannot together exceed the cap that keeps the sending domain alive.
+   *   - **The batch is bounded by the remaining cap**, so the limit is the cap
+   *     rather than whatever happens to be due.
+   *   - **The clock is checked inside the loop.** Serverless functions are killed
+   *     at a limit, and a sweep killed mid-loop loses the rest silently; stopping
+   *     early leaves those prospects due tomorrow instead.
+   *
+   * One prospect cannot take the run down: every iteration is wrapped, and a
+   * failure is counted and reported rather than rethrown. The jurisdiction gate
+   * is enforced here exactly as it is in `sendOutreachAction`, with the refusal
+   * recorded on the prospect — this is the guard that keeps the company out of
+   * trouble, so it is not optional for automated sends.
+   */
+  await step("outreach-sequences", async () => {
+    const settings = await getOutreachSettings();
+    const sentSoFar = await countSentToday();
+    const budget = Math.max(0, settings.dailySendCap - sentSoFar);
+    if (budget === 0) return `daily cap of ${settings.dailySendCap} already reached`;
+
+    const now = new Date();
+    const candidates = await listDueSequenceSends(budget);
+    if (candidates.length === 0) return "nothing due";
+
+    // Loaded once rather than per prospect: a country rule lookup per row would
+    // be forty round trips for a forty-row batch.
+    const rules = await countryRuleMap();
+    const origin = appOrigin();
+
+    let sent = 0;
+    let skipped = 0;
+    let blocked = 0;
+    let failed = 0;
+    const problems: string[] = [];
+
+    for (const prospect of candidates) {
+      if (sent >= budget) break;
+      if (remaining() < 5_000) break;
+
+      try {
+        const stepKey = dueStep({
+          currentStepKey: prospect.currentStepKey,
+          lastSentAt: prospect.lastSentAt,
+          now,
+          replied: prospect.status === "replied",
+          unsubscribed: prospect.suppressed || prospect.status === "suppressed",
+          converted: prospect.status === "converted",
+        });
+        // Not actually due yet (a row scheduled early, or already finished): the
+        // query is a coarse filter, the pure rule is the decision.
+        if (!stepKey) {
+          skipped += 1;
+          continue;
+        }
+
+        const decision = decideOutreach({
+          country: prospect.country,
+          consentAt: prospect.consentAt,
+          overrideRule: rules[(prospect.country || "").toUpperCase()],
+        });
+        if (!decision.allowed) {
+          blocked += 1;
+          await recordBlockedReason(prospect.id, decision.reason);
+          continue;
+        }
+
+        const email = renderStep(stepKey, {
+          businessName: prospect.businessName,
+          city: prospect.city,
+          siteUrl: `${origin}/sites/${prospect.siteSubdomain}`,
+          myBusiness: settings.senderBusinessName,
+          unsubscribeUrl: unsubscribeUrlFor(origin, prospect.unsubscribeToken),
+        });
+        if (!email) {
+          skipped += 1;
+          continue;
+        }
+
+        const result = await sendProspectOutreachEmail({
+          to: prospect.email,
+          subject: email.subject,
+          html: email.html,
+          text: email.text,
+          replyTo: settings.replyTo || undefined,
+        });
+
+        if (result.ok) {
+          await recordSequenceOutreach({
+            prospectId: prospect.id,
+            toEmail: prospect.email,
+            subject: email.subject,
+            body: email.text,
+            stepKey,
+            status: "sent",
+          });
+          // Null on the final step, which is what takes the prospect out of the
+          // due query for good without a second "finished" flag.
+          await advanceSequence(prospect.id, stepKey, nextOutreachAt(stepKey, now));
+          sent += 1;
+        } else {
+          failed += 1;
+          problems.push(`${prospect.businessName}: ${result.error}`);
+          // Recorded with step_key '' so this failure does not consume the
+          // unique slot and retire the step for a transient provider error.
+          await recordSequenceOutreach({
+            prospectId: prospect.id,
+            toEmail: prospect.email,
+            subject: email.subject,
+            body: email.text,
+            stepKey,
+            status: "failed",
+            error: result.error,
+          });
+        }
+      } catch (err) {
+        failed += 1;
+        problems.push(`${prospect.businessName}: ${err instanceof Error ? err.message.slice(0, 120) : "failed"}`);
+      }
+    }
+
+    const detail = `${sent} sent, ${blocked} blocked by country rule, ${failed} failed, ${skipped} not due`;
+    return problems.length ? `${detail} — first: ${problems[0]}` : detail;
   });
 
   /* ---------------------------------------------------------------------- */

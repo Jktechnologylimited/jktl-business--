@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
       setError(result.error);
       return;
     }
-    router.push("/admin");
+    router.push(result.data.path);
   }
 
   return (

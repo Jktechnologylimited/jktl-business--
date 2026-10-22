@@ -16,6 +16,7 @@ import type {
   WebsiteStatus,
 } from "@/lib/prospects/types";
 import { resolveSettings } from "@/lib/prospects/outreach";
+import { firstStepKey } from "@/lib/prospects/sequence";
 import { enrichmentFromRaw } from "@/lib/prospects/enrichment";
 
 /**
@@ -49,6 +50,9 @@ function mapProspect(row: Record<string, unknown>): Prospect {
     email: (row.email as string) ?? "",
     emailStatus: (row.email_status as Prospect["emailStatus"]) ?? "unknown",
     enrichment: (row.enrichment as Record<string, unknown>) ?? {},
+    existingClient: Boolean(row.existing_client),
+    businessEmail: (row.business_email as string) ?? "",
+    accountOrganizationId: (row.account_organization_id as string) ?? null,
     address: (row.address as string) ?? "",
     city: (row.city as string) ?? "",
     state: (row.state as string) ?? "",
@@ -636,4 +640,293 @@ export async function getProspectStats(): Promise<ProspectStats> {
     blockedByCountry: Number(row.blocked_by_country ?? 0),
     needsConsent: Number(row.needs_consent ?? 0),
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Outreach sequences                                                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A prospect due for its next sequence step, with the two facts the pure
+ * sequence logic needs that are not part of `Prospect`: which step was last
+ * sent, and when.
+ *
+ * Returned alongside the ordinary prospect rather than instead of it, so the
+ * caller can still run the jurisdiction decision, the audit copy and the site
+ * link without a second query per row.
+ */
+export interface SequenceCandidate extends Prospect {
+  /** The last step sent. "" means the prospect was enrolled but never sent to. */
+  currentStepKey: string;
+  /** When the last step went out — the anchor `dueStep` measures the wait from. */
+  lastSentAt: string | null;
+  nextOutreachAt: string | null;
+}
+
+/**
+ * Starts the sequence for the prospects that qualify.
+ *
+ * **Why this is a guarded UPDATE rather than a loop.** Enrolment is the one
+ * moment a lead becomes eligible for four emails, and the guards are the whole
+ * point of it:
+ *
+ *   - `sequence_step = '' AND sequence_started_at IS NULL` — enrolling twice must
+ *     not restart a sequence that is halfway through, which would send the intro
+ *     again to somebody who already got it.
+ *   - a sendable email — a hard bounce is a mark against the sending domain, not
+ *     a wasted email. "Unknown" is allowed, because a lead should not be
+ *     discarded for not having been checked yet; only "invalid" is refused.
+ *   - a site — every step refers back to a website that exists. A prospect with
+ *     no site yet is enrolled by the next run after its site is built, and
+ *     emailing it before that would link to a 404 under JKTL's name.
+ *
+ * Returns how many were enrolled, so the cron report says something useful.
+ */
+export async function enrolInSequence(prospectIds: string[]): Promise<number> {
+  const ids = Array.from(new Set(prospectIds.filter((id) => typeof id === "string" && id.length > 0)));
+  if (ids.length === 0) return 0;
+  const sql = getSql();
+  const rows = await sql`
+    UPDATE prospects SET
+      sequence_step = ${firstStepKey},
+      sequence_started_at = now(),
+      -- Due immediately: the intro is the email that could have gone out today.
+      next_outreach_at = now(),
+      updated_at = now()
+    WHERE id = ANY(${ids}::uuid[])
+      AND sequence_step = ''
+      AND sequence_started_at IS NULL
+      AND suppressed = false
+      AND email <> ''
+      AND email_status <> 'invalid'
+      AND site_subdomain <> ''
+      AND existing_client = false
+      AND status IN ('qualified', 'site_built')
+    RETURNING id
+  `;
+  return rows.length;
+}
+
+/**
+ * The send queue: prospects whose next step is due now.
+ *
+ * Ordered by `next_outreach_at` so the lead that has waited longest goes first —
+ * a sequence that sends in insertion order systematically starves the oldest
+ * leads whenever the daily cap is hit. `LIMIT` is applied here rather than in
+ * the caller because the cap is the thing that keeps the sending domain alive:
+ * the cron must never even load more rows than it is allowed to send.
+ *
+ * Replied, converted and unsubscribed prospects are excluded in SQL as well as
+ * in `dueStep`. Both matter: this query decides whose turn it is, and the pure
+ * function decides whether the next step is actually due. Belt and braces on the
+ * one condition that must never be wrong — emailing somebody who opted out.
+ */
+export async function listDueSequenceSends(limit = 25): Promise<SequenceCandidate[]> {
+  const sql = getSql();
+  const bounded = Math.min(Math.max(Math.round(limit) || 1, 1), 500);
+  const rows = await sql`
+    SELECT p.*, o.sent_at AS last_sent_at
+    FROM prospects p
+    LEFT JOIN LATERAL (
+      SELECT sent_at FROM prospect_outreach
+      WHERE prospect_id = p.id AND status = 'sent'
+      ORDER BY sent_at DESC
+      LIMIT 1
+    ) o ON true
+    WHERE p.next_outreach_at IS NOT NULL
+      AND p.next_outreach_at <= now()
+      AND p.suppressed = false
+      AND p.email <> ''
+      AND p.email_status <> 'invalid'
+      AND p.status NOT IN ('replied', 'converted', 'suppressed', 'rejected')
+      -- Existing JKTL clients have their own onboarding email. Sending them
+      -- "I built you a website" when they paid us for one would be the most
+      -- damaging email this system could produce.
+      AND p.existing_client = false
+    ORDER BY p.next_outreach_at ASC
+    LIMIT ${bounded}
+  `;
+  return rows.map((row) => ({
+    ...mapProspect(row),
+    currentStepKey: (row.sequence_step as string) ?? "",
+    lastSentAt: row.last_sent_at ? isoDate(row.last_sent_at as string) : null,
+    nextOutreachAt: row.next_outreach_at ? isoDate(row.next_outreach_at as string) : null,
+  }));
+}
+
+/**
+ * Records that a step went out and schedules the next one.
+ *
+ * `nextSlowAt` is null for the final step, and that null is meaningful: it is
+ * what removes the prospect from `listDueSequenceSends` for good, without a
+ * second "finished" flag that could disagree with `sequence_step`.
+ *
+ * The step is written after the send, not before, so a crash between the two
+ * costs at most one duplicate attempt — which the unique index on
+ * (prospect_id, step_key) then blocks — rather than skipping a step silently.
+ */
+export async function advanceSequence(
+  prospectId: string,
+  stepKey: string,
+  nextSlowAt: Date | string | null,
+): Promise<void> {
+  const sql = getSql();
+  await sql`
+    UPDATE prospects SET
+      sequence_step = ${stepKey},
+      next_outreach_at = ${nextSlowAt}::timestamptz,
+      updated_at = now()
+    WHERE id = ${prospectId}
+  `;
+}
+
+/**
+ * Writes the `prospect_outreach` row for a sequence send, stamped with the step.
+ *
+ * Separate from `recordOutreach` rather than a widened signature because the
+ * one-off send and the sequence differ in one way that matters: the step key is
+ * what the unique index uses to prevent the same step being sent twice, and the
+ * one-off path must keep writing `''` so its rows never collide with each other.
+ *
+ * **A failed send deliberately writes `''`.** The row is kept for the audit
+ * trail, but it must not claim the (prospect_id, step_key) slot — otherwise one
+ * Resend outage would permanently retire that step for that prospect, and the
+ * sequence would stall on a transient error.
+ *
+ * Returns false when the unique index rejected the row, which can only happen if
+ * two runs raced on the same step. The caller has already sent by then, so that
+ * is bookkeeping rather than an error: the alternative is an exception that stops
+ * the prospect advancing and makes the next run send the same step again, every
+ * day, forever.
+ */
+export async function recordSequenceOutreach(input: {
+  prospectId: string;
+  toEmail: string;
+  subject: string;
+  body: string;
+  stepKey: string;
+  status: "sent" | "failed";
+  error?: string;
+}): Promise<boolean> {
+  const sql = getSql();
+  const stepKey = input.status === "sent" ? input.stepKey : "";
+  const rows = await sql`
+    INSERT INTO prospect_outreach (prospect_id, to_email, subject, body, status, error, step_key)
+    VALUES (${input.prospectId}, ${input.toEmail}, ${input.subject}, ${input.body}, ${input.status}, ${input.error ?? ""}, ${stepKey})
+    ON CONFLICT DO NOTHING
+    RETURNING id
+  `;
+  if (input.status === "sent") {
+    // Same transition the one-off send makes: contacted, but never demote a
+    // business that has already replied or converted.
+    await sql`
+      UPDATE prospects SET
+        status = CASE WHEN status IN ('converted', 'replied') THEN status ELSE 'contacted' END,
+        updated_at = now()
+      WHERE id = ${input.prospectId}
+    `;
+  }
+  return Boolean(rows[0]);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Existing JKTL clients                                                      */
+/* -------------------------------------------------------------------------- */
+
+export interface ExistingClient {
+  id: string;
+  businessName: string;
+  email: string;
+  businessEmail: string;
+  website: string;
+  city: string;
+  niche: string;
+  accountOrganizationId: string | null;
+  invitedAt: string | null;
+}
+
+/** Businesses that already bought a website or business email from JKTL. */
+export async function listExistingClients(limit = 200): Promise<ExistingClient[]> {
+  const sql = getSql();
+  // Migration 028 columns. On a database that has not run it, the page shows an
+  // empty list rather than a 500 — the correct answer is "there are none yet".
+  const rows = await sql`
+    SELECT id, business_name, email, business_email, website, city, niche,
+           account_organization_id, invited_at
+    FROM prospects
+    WHERE existing_client = true
+    ORDER BY (account_organization_id IS NULL) DESC, created_at DESC
+    LIMIT ${limit}
+  `.catch((err) => {
+    console.error("listExistingClients: query failed (has migration 028 run?):", err);
+    return [] as Record<string, unknown>[];
+  });
+  return rows.map((row) => ({
+    id: row.id as string,
+    businessName: (row.business_name as string) ?? "",
+    email: (row.email as string) ?? "",
+    businessEmail: (row.business_email as string) ?? "",
+    website: (row.website as string) ?? "",
+    city: (row.city as string) ?? "",
+    niche: (row.niche as string) ?? "general",
+    accountOrganizationId: (row.account_organization_id as string) ?? null,
+    invitedAt: row.invited_at ? new Date(row.invited_at as string).toISOString() : null,
+  }));
+}
+
+/**
+ * Claims the right to onboard a client — **before** the account is created.
+ *
+ * The order matters. Creating the organization first and claiming afterwards
+ * leaves an orphan tenant behind when the claim loses a race: a real organization,
+ * a real billing record, no prospect pointing at it, and no way to tell it was a
+ * duplicate. So `invited_at` doubles as a lock: the invite is claimed first, the
+ * account is created only by the call that won, and a failure releases the claim
+ * so the next attempt can try again.
+ */
+export async function claimInvite(prospectId: string): Promise<boolean> {
+  const sql = getSql();
+  const rows = await sql`
+    UPDATE prospects SET invited_at = now(), updated_at = now()
+    WHERE id = ${prospectId} AND account_organization_id IS NULL AND invited_at IS NULL
+    RETURNING id
+  `;
+  return Boolean(rows[0]);
+}
+
+/** Records the created account against the lead once `signup` has succeeded. */
+export async function attachClientAccount(prospectId: string, organizationId: string, userId: string): Promise<void> {
+  const sql = getSql();
+  await sql`
+    UPDATE prospects SET
+      account_organization_id = ${organizationId},
+      account_user_id = ${userId},
+      status = 'converted',
+      updated_at = now()
+    WHERE id = ${prospectId}
+  `;
+}
+
+/** Gives the claim back when account creation failed, so the lead can be retried
+ * instead of being stuck looking invited forever. */
+export async function releaseInvite(prospectId: string): Promise<void> {
+  const sql = getSql();
+  await sql`
+    UPDATE prospects SET invited_at = NULL, updated_at = now()
+    WHERE id = ${prospectId} AND account_organization_id IS NULL
+  `;
+}
+
+/** Marks a lead as an existing JKTL client, so it skips the audit and the site
+ * generator and gets the onboarding email instead of the cold sequence. */
+export async function markAsExistingClient(prospectId: string, businessEmail = ""): Promise<void> {
+  const sql = getSql();
+  await sql`
+    UPDATE prospects SET
+      existing_client = true,
+      business_email = COALESCE(NULLIF(${businessEmail}, ''), business_email),
+      status = 'qualified',
+      updated_at = now()
+    WHERE id = ${prospectId}
+  `;
 }

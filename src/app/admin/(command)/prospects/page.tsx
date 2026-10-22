@@ -1,3 +1,4 @@
+import { guardAdminPage } from "@/lib/admin-page-guard";
 import { ProspectWorkbench } from "@/components/admin/prospect-workbench";
 import { getOutreachSettings, getProspectStats, listCountryRules, listProspects, listRuns } from "@/lib/db/prospects";
 
@@ -13,6 +14,10 @@ export const dynamic = "force-dynamic";
  * server action is a public HTTP endpoint regardless of what renders it.
  */
 export default async function AdminProspectsPage() {
+  // Enforced here, not only in the navigation: a redirect on the layout is a
+  // convenience, and this is the check that holds if the URL is typed directly.
+  await guardAdminPage("run_lead_engine");
+
   const [prospects, stats, settings, runs, countries] = await Promise.all([
     listProspects({ limit: 200 }),
     getProspectStats(),

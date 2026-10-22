@@ -46,6 +46,13 @@ export interface AdminBusinessRow {
    * signal, not a peek at the record itself. Null if they've never
    * recorded either. */
   lastActiveAt: string | null;
+  /** The business's own contact details, from its profile. */
+  email: string;
+  phone: string;
+  /** The owner's account — who actually signs in, and who a password reset goes
+   * to. A business's profile email and its owner's login can differ. */
+  ownerName: string;
+  ownerEmail: string;
 }
 
 function mapRow(row: Record<string, unknown>): AdminBusinessRow {
@@ -60,6 +67,10 @@ function mapRow(row: Record<string, unknown>): AdminBusinessRow {
     published: Boolean(row.published),
     customDomain: (row.custom_domain as string) ?? "",
     customDomainVerified: Boolean(row.custom_domain_verified),
+    email: (row.email as string) ?? "",
+    phone: (row.phone as string) ?? "",
+    ownerName: (row.owner_name as string) ?? "",
+    ownerEmail: (row.owner_email as string) ?? "",
     planName: (row.plan_name as string) ?? "",
     subscriptionStatus: ((row.subscription_status as string) || "inactive") as AdminBusinessRow["subscriptionStatus"],
     billingCycle: (row.billing_cycle as string) || "yearly",
@@ -91,6 +102,12 @@ export async function listBusinessesForAdmin(): Promise<AdminBusinessRow[]> {
       bp.published,
       bp.custom_domain,
       bp.custom_domain_verified,
+      COALESCE(bp.email, '') AS email,
+      COALESCE(bp.phone, '') AS phone,
+      COALESCE((SELECT m.name FROM organization_members m
+                WHERE m.organization_id = o.id AND m.role = 'owner' LIMIT 1), '') AS owner_name,
+      COALESCE((SELECT m.email FROM organization_members m
+                WHERE m.organization_id = o.id AND m.role = 'owner' LIMIT 1), '') AS owner_email,
       ia.plan_name,
       ia.subscription_status,
       ia.billing_cycle,
@@ -180,4 +197,36 @@ export async function listBroadcasts(): Promise<AdminBroadcast[]> {
   const sql = getSql();
   const rows = await sql`SELECT * FROM admin_broadcasts ORDER BY created_at DESC LIMIT 50`;
   return rows.map(mapBroadcast);
+}
+
+/**
+ * The owner's user id for a business — who a password reset is issued to.
+ *
+ * The owner is the account that signs in; the business profile's email may be a
+ * different, public-facing address. Resetting the profile address would produce a
+ * link that cannot log in.
+ */
+export async function getBusinessOwnerUserId(organizationId: string): Promise<string | null> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT u.id
+    FROM organization_members m
+    JOIN users u ON u.email = m.email
+    WHERE m.organization_id = ${organizationId} AND m.role = 'owner'
+    LIMIT 1
+  `;
+  return (rows[0]?.id as string) ?? null;
+}
+
+/**
+ * Deletes a business and everything in it.
+ *
+ * Every tenant table carries `ON DELETE CASCADE` from `organizations`, so this one
+ * statement removes the customers, bookings, sales, invoices, wallet and contract.
+ * That is exactly why the caller must confirm the business name: there is no undo,
+ * and a mis-click on a list of similar-looking clinics is unrecoverable.
+ */
+export async function deleteBusinessAccount(organizationId: string): Promise<void> {
+  const sql = getSql();
+  await sql`DELETE FROM organizations WHERE id = ${organizationId}`;
 }

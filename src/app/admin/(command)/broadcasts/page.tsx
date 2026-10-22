@@ -1,3 +1,4 @@
+import { guardAdminPage } from "@/lib/admin-page-guard";
 import { PageHeader } from "@/components/app/page-header";
 import { BroadcastForm } from "@/components/admin/broadcast-form";
 import { listBroadcasts } from "@/lib/db/admin";
@@ -5,6 +6,10 @@ import { listBroadcasts } from "@/lib/db/admin";
 export const dynamic = "force-dynamic";
 
 export default async function AdminBroadcastsPage() {
+  // Enforced here, not only in the navigation: a redirect on the layout is a
+  // convenience, and this is the check that holds if the URL is typed directly.
+  await guardAdminPage("send_broadcasts");
+
   const history = await listBroadcasts();
 
   return (

@@ -1,3 +1,4 @@
+import { guardAdminPage } from "@/lib/admin-page-guard";
 import { PageHeader } from "@/components/app/page-header";
 import { StatTile } from "@/components/app/stat-tile";
 import { AdminBusinessTable } from "@/components/admin/business-table";
@@ -8,6 +9,10 @@ import { formatKobo, formatGb } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export default async function AdminHomePage() {
+  // Enforced here, not only in the navigation: a redirect on the layout is a
+  // convenience, and this is the check that holds if the URL is typed directly.
+  await guardAdminPage("view_businesses");
+
   const businesses = await listBusinessesForAdmin();
   const overview = summarize(businesses);
 

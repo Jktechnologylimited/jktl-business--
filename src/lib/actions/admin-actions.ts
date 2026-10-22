@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { verifyAdminLogin } from "@/lib/db/admin-auth";
-import { startAdminSession, endAdminSession, requireAdminSession } from "@/lib/admin-session";
+import { startAdminSession, endAdminSession, requireAdminCapability } from "@/lib/admin-session";
 import { listBroadcastSubscriptions } from "@/lib/db/push";
 import { sendBroadcastPush } from "@/lib/push";
 import { recordBroadcast, listBroadcasts } from "@/lib/db/admin";
@@ -23,9 +23,25 @@ import {
   type PendingPayoutRequest,
   PAYOUT_REQUEST_DAY,
 } from "@/lib/db/affiliates";
+import {
+  ADMIN_EMAIL_TAKEN,
+  countEnabledOwners,
+  createAdminUser,
+  deleteAdminUser,
+  listAdminTeam,
+  setAdminPassword,
+  setAdminDisabled,
+  type AdminTeamMember,
+} from "@/lib/db/admin-auth";
+import type { AdminUser } from "@/lib/db/admin-auth";
+import type { AdminRole } from "@/lib/admin-permissions";
 import { firstYearValueKobo } from "@/lib/affiliate-commission";
 import { sendAffiliateApprovedEmail, sendAffiliateDeclinedEmail } from "@/lib/email";
 import { runDailySweep } from "@/lib/cron/daily-sweep";
+import { getSql } from "@/lib/db/client";
+import { deleteBusinessAccount, getBusinessOwnerUserId } from "@/lib/db/admin";
+import { createPasswordResetToken } from "@/lib/db/auth";
+import { sendPasswordResetEmail } from "@/lib/email";
 import type { AdminBroadcast } from "@/lib/db/admin";
 import type { ActionResult } from "./types";
 
@@ -37,12 +53,20 @@ function appOrigin(): string {
   return `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || "jktl.com.ng"}`;
 }
 
-export async function adminLoginAction(email: string, password: string): Promise<ActionResult<null>> {
+/**
+ * Signs an admin in and tells the caller **where to go next**.
+ *
+ * It used to return nothing, and the login page pushed everyone to `/admin` —
+ * which requires "view businesses". An affiliate manager or analyst therefore
+ * landed on a page their role cannot open. `/admin/insights` is the one page all
+ * three roles share, so it is the safe landing for everyone.
+ */
+export async function adminLoginAction(email: string, password: string): Promise<ActionResult<{ path: string }>> {
   try {
     const admin = await verifyAdminLogin(email, password);
     if (!admin) return { ok: false, error: "That email and password don't match a command-center account." };
     await startAdminSession(admin.id);
-    return { ok: true, data: null };
+    return { ok: true, data: { path: "/admin/insights" } };
   } catch (err) {
     console.error(err);
     return { ok: false, error: "Couldn't sign in right now. Please try again." };
@@ -73,7 +97,7 @@ export async function sendBroadcastAction(input: {
   url: string;
 }): Promise<ActionResult<AdminBroadcast>> {
   try {
-    const admin = await requireAdminSession();
+    const admin = await requireAdminCapability("send_broadcasts");
     if (!input.title.trim() || !input.body.trim()) {
       return { ok: false, error: "Title and message are both required." };
     }
@@ -101,7 +125,7 @@ export async function sendBroadcastAction(input: {
 
 export async function listBroadcastsAction(): Promise<ActionResult<AdminBroadcast[]>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("send_broadcasts");
     return { ok: true, data: await listBroadcasts() };
   } catch (err) {
     console.error(err);
@@ -111,7 +135,7 @@ export async function listBroadcastsAction(): Promise<ActionResult<AdminBroadcas
 
 export async function listAffiliatesAction(): Promise<ActionResult<AffiliateStats[]>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("manage_affiliates");
     return { ok: true, data: await listAffiliatesWithStats() };
   } catch (err) {
     console.error(err);
@@ -126,7 +150,7 @@ export async function createAffiliateAction(input: {
   commissionBps: number;
 }): Promise<ActionResult<AffiliateStats>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("manage_affiliates");
     if (!input.name.trim() || !input.email.trim()) return { ok: false, error: "Name and email are both required." };
     if (input.password.length < 6) return { ok: false, error: "Password must be at least 6 characters." };
     if (!Number.isFinite(input.commissionBps) || input.commissionBps < 0 || input.commissionBps > 10000) {
@@ -145,7 +169,7 @@ export async function createAffiliateAction(input: {
 
 export async function setAffiliateStatusAction(affiliateId: string, status: "active" | "suspended"): Promise<ActionResult<null>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("manage_affiliates");
     await setAffiliateStatus(affiliateId, status);
     return { ok: true, data: null };
   } catch (err) {
@@ -159,7 +183,7 @@ export async function setAffiliateStatusAction(affiliateId: string, status: "act
  * status flip to 'active'; nothing to generate or share with them. */
 export async function approveAffiliateApplicationAction(affiliateId: string): Promise<ActionResult<null>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("manage_affiliates");
     const affiliate = await approveAffiliateApplication(affiliateId);
     // `null` means it was not pending — already approved, or never existed.
     // Returning success without emailing is right: the first approval already
@@ -205,7 +229,7 @@ export async function approveAffiliateApplicationAction(affiliateId: string): Pr
  * approved). */
 export async function rejectAffiliateApplicationAction(affiliateId: string): Promise<ActionResult<null>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("manage_affiliates");
     const applicant = await rejectAffiliateApplication(affiliateId);
     if (!applicant) return { ok: true, data: null };
 
@@ -225,7 +249,7 @@ export async function rejectAffiliateApplicationAction(affiliateId: string): Pro
 
 export async function recordAffiliatePayoutAction(affiliateId: string, amountKobo: number, note: string): Promise<ActionResult<AffiliatePayout>> {
   try {
-    const admin = await requireAdminSession();
+    const admin = await requireAdminCapability("record_payouts");
     if (!Number.isFinite(amountKobo) || amountKobo <= 0) return { ok: false, error: "Enter a valid payout amount." };
     const payout = await recordPayout(affiliateId, admin.id, amountKobo, note.trim());
     return { ok: true, data: payout };
@@ -237,7 +261,7 @@ export async function recordAffiliatePayoutAction(affiliateId: string, amountKob
 
 export async function listPendingPayoutRequestsAction(): Promise<ActionResult<PendingPayoutRequest[]>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("record_payouts");
     return { ok: true, data: await listPendingPayoutRequests() };
   } catch (err) {
     console.error(err);
@@ -250,7 +274,7 @@ export async function listPendingPayoutRequestsAction(): Promise<ActionResult<Pe
  * request resolved. */
 export async function markPayoutRequestPaidAction(requestId: string, note: string): Promise<ActionResult<AffiliatePayout>> {
   try {
-    const admin = await requireAdminSession();
+    const admin = await requireAdminCapability("record_payouts");
     const payout = await markPayoutRequestPaid(requestId, admin.id, note.trim());
     return { ok: true, data: payout };
   } catch (err) {
@@ -261,7 +285,7 @@ export async function markPayoutRequestPaidAction(requestId: string, note: strin
 
 export async function declinePayoutRequestAction(requestId: string): Promise<ActionResult<null>> {
   try {
-    const admin = await requireAdminSession();
+    const admin = await requireAdminCapability("record_payouts");
     await declinePayoutRequest(requestId, admin.id);
     return { ok: true, data: null };
   } catch (err) {
@@ -284,7 +308,7 @@ export async function declinePayoutRequestAction(requestId: string): Promise<Act
  */
 export async function runDailySweepNowAction(): Promise<ActionResult<{ steps: Array<{ name: string; ok: boolean; detail: string; ms: number }>; truncated: boolean }>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_daily_job");
     const result = await runDailySweep();
     revalidatePath("/admin/insights");
     return {
@@ -297,5 +321,194 @@ export async function runDailySweepNowAction(): Promise<ActionResult<{ steps: Ar
   } catch (err) {
     console.error(err);
     return { ok: false, error: "Couldn't run the daily job." };
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Team accounts                                                              */
+/* -------------------------------------------------------------------------- */
+
+/** Everyone with a command-centre account. Owner-only: see who else has access
+ * is itself privileged information. */
+export async function listAdminTeamAction(): Promise<ActionResult<AdminTeamMember[]>> {
+  try {
+    await requireAdminCapability("manage_team");
+    return { ok: true, data: await listAdminTeam() };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't load the team." };
+  }
+}
+
+/**
+ * Creates a colleague's account.
+ *
+ * Owner-only, because an account that can create accounts is an account that can
+ * create an owner. The password is chosen here and shown once; it is deliberately
+ * not emailed.
+ */
+export async function createAdminTeamMemberAction(input: {
+  name: string;
+  email: string;
+  password: string;
+  role: AdminRole;
+}): Promise<ActionResult<AdminUser>> {
+  try {
+    const acting = await requireAdminCapability("manage_team");
+    if (!input.name.trim()) return { ok: false, error: "Enter their name." };
+    if (!input.email.includes("@")) return { ok: false, error: "Enter a valid email address." };
+    if (input.password.length < 8) return { ok: false, error: "Use a password of at least 8 characters." };
+
+    const created = await createAdminUser({
+      name: input.name,
+      email: input.email,
+      password: input.password,
+      role: input.role,
+      createdBy: acting.id,
+    });
+    revalidatePath("/admin/team");
+    return { ok: true, data: created };
+  } catch (err) {
+    if (err instanceof Error && err.message === ADMIN_EMAIL_TAKEN) {
+      return { ok: false, error: "There's already an admin account with that email." };
+    }
+    console.error(err);
+    return { ok: false, error: "Couldn't create that account." };
+  }
+}
+
+/**
+ * Switches an account off (or back on).
+ *
+ * Refuses two things, both of which make the command centre unrecoverable: an
+ * owner disabling themselves, and disabling the last enabled owner.
+ */
+export async function setAdminDisabledAction(adminUserId: string, disabled: boolean): Promise<ActionResult<null>> {
+  try {
+    const acting = await requireAdminCapability("manage_team");
+    if (adminUserId === acting.id && disabled) {
+      return { ok: false, error: "You can't disable your own account." };
+    }
+    if (disabled && (await countEnabledOwners()) <= 1) {
+      const team = await listAdminTeam();
+      const target = team.find((member) => member.id === adminUserId);
+      if (target?.role === "owner" && !target.disabledAt) {
+        return { ok: false, error: "That's the last owner. Promote someone else first, or you'd lock yourself out." };
+      }
+    }
+
+    await setAdminDisabled(adminUserId, disabled, acting.id);
+    revalidatePath("/admin/team");
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't change that account." };
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Business accounts                                                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Sends a password-reset link to a business's owner.
+ *
+ * The support case this exists for: "I can't log in" on a phone call, where an
+ * admin could previously only say "use the forgot password page" — which fails
+ * whenever the owner no longer controls the email on file, or never set one.
+ *
+ * Owner-only. It is a credential action against somebody else's account, so it
+ * must not be something an affiliate manager can do. It never *shows* the admin a
+ * password — it emails a one-time link to the owner, so the reset happens between
+ * the owner and their own inbox.
+ */
+export async function resetBusinessPasswordAction(organizationId: string): Promise<ActionResult<{ email: string }>> {
+  try {
+    await requireAdminCapability("view_businesses");
+
+    const ownerId = await getBusinessOwnerUserId(organizationId);
+    if (!ownerId) {
+      return { ok: false, error: "That business has no owner account to reset. Check its team list." };
+    }
+
+    const sql = getSql();
+    const rows = await sql`SELECT name, email FROM users WHERE id = ${ownerId}`;
+    const owner = rows[0];
+    if (!owner?.email) return { ok: false, error: "That owner has no email address on file." };
+
+    const token = await createPasswordResetToken(ownerId);
+    const resetUrl = `${appOrigin()}/reset-password?token=${encodeURIComponent(token)}`;
+    await sendPasswordResetEmail({
+      to: owner.email as string,
+      name: (owner.name as string) ?? "",
+      resetUrl,
+    });
+
+    return { ok: true, data: { email: owner.email as string } };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't send that reset link." };
+  }
+}
+
+/**
+ * Deletes a business account and everything in it.
+ *
+ * **Irreversible.** Every tenant table cascades from `organizations`, so this takes
+ * the customers, bookings, sales, invoices, wallet and contract with it. The
+ * confirmation is the business's own name typed back, because a list of similarly
+ * named clinics is exactly where a mis-click happens, and there is no undo.
+ */
+export async function deleteBusinessAccountAction(
+  organizationId: string,
+  confirmName: string,
+): Promise<ActionResult<null>> {
+  try {
+    await requireAdminCapability("view_businesses");
+
+    const sql = getSql();
+    const rows = await sql`SELECT name FROM organizations WHERE id = ${organizationId}`;
+    const actual = (rows[0]?.name as string) ?? "";
+    if (!actual) return { ok: false, error: "That business no longer exists." };
+
+    if (confirmName.trim().toLowerCase() !== actual.trim().toLowerCase()) {
+      return { ok: false, error: `Type the business name exactly to confirm: "${actual}".` };
+    }
+
+    await deleteBusinessAccount(organizationId);
+    revalidatePath("/admin");
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't delete that business." };
+  }
+}
+
+/** Sets a new password for a teammate and signs them out everywhere. Owner-only. */
+export async function resetAdminPasswordAction(adminUserId: string, password: string): Promise<ActionResult<null>> {
+  try {
+    const acting = await requireAdminCapability("manage_team");
+    if (password.length < 8) return { ok: false, error: "Use a password of at least 8 characters." };
+    await setAdminPassword(adminUserId, password, acting.id);
+    revalidatePath("/admin/team");
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't reset that password." };
+  }
+}
+
+/** Deletes a teammate's account. Owner-only, with the same lockout guards as
+ * disabling — deleting the last owner is not recoverable from inside the app. */
+export async function deleteAdminAccountAction(adminUserId: string): Promise<ActionResult<null>> {
+  try {
+    const acting = await requireAdminCapability("manage_team");
+    if (adminUserId === acting.id) return { ok: false, error: "You can't delete your own account." };
+    await deleteAdminUser(adminUserId, acting.id);
+    revalidatePath("/admin/team");
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't delete that account." };
   }
 }

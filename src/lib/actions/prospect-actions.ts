@@ -42,6 +42,11 @@ import { auditWebsite, isQualifiedLead, scoreWebsite } from "@/lib/prospects/aud
 import { decideOutreach, normalizeCountryCode } from "@/lib/prospects/jurisdictions";
 import { dedupeLeads, fetchApifyLeads, fetchOutscraperLeads, inferNiche, mapApifyPlace, mapCsvRecord, mapOutscraperRow } from "@/lib/prospects/providers";
 import { getMarket } from "@/lib/markets";
+import { signup } from "@/lib/db/auth";
+import { createPasswordResetToken } from "@/lib/db/auth";
+import { attachClientAccount, claimInvite, listExistingClients, markAsExistingClient, releaseInvite, type ExistingClient } from "@/lib/db/prospects";
+import { clientInviteHtml, clientInviteSubject, clientInviteText } from "@/lib/prospects/client-invite";
+import { requireAdminCapability } from "@/lib/admin-session";
 import { buildOneSite } from "@/lib/prospects/build-site";
 import { isMessagingConfigured, purchaseNumber, releaseNumber, searchAvailableNumbers } from "@/lib/twilio";
 import { composeOutreachEmail, sourceNoteFor, unsubscribeUrlFor } from "@/lib/prospects/outreach";
@@ -905,5 +910,109 @@ export async function unsubscribeProspectAction(token: string): Promise<ActionRe
   } catch (err) {
     console.error(err);
     return { ok: false, error: "Could not process that request." };
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Existing JKTL clients                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Creates a platform account for a business that already bought a website or
+ * business email from JKTL, and emails them an invite.
+ *
+ * The account is created with a random password nobody knows, and the invite link
+ * is a standard password-reset token — so there is no password to transmit and no
+ * second auth path to maintain. The client sets their own password from the link.
+ *
+ * Order, and why: the invite is **claimed first** (`claimInvite`), the account is
+ * created only by the call that won, and a failure releases the claim. Creating
+ * first and claiming after leaves an orphan organization when two admins work the
+ * same list, and an orphan tenant has a billing record and no owner.
+ */
+export async function createAccountForClientAction(prospectId: string): Promise<ActionResult<{ email: string }>> {
+  try {
+    await requireAdminCapability("run_lead_engine");
+
+    const prospect = await getProspect(prospectId);
+    if (!prospect) return { ok: false, error: "That lead no longer exists." };
+    if (prospect.accountOrganizationId) return { ok: false, error: "That business already has an account." };
+
+    const to = (prospect.businessEmail || prospect.email).trim().toLowerCase();
+    if (!to.includes("@")) return { ok: false, error: "That business has no email address to invite." };
+
+    if (!(await claimInvite(prospectId))) {
+      return { ok: false, error: "An invite for that business is already being sent. Give it a moment and reload." };
+    }
+
+    try {
+      // A password nobody will ever use: the invite link is the only way in.
+      const placeholder = crypto.randomUUID();
+      const { userId, organizationId } = await signup({
+        name: prospect.businessName,
+        email: to,
+        password: placeholder,
+        businessName: prospect.businessName,
+        businessType: (prospect.niche || "general") as import("@/lib/types").BusinessType,
+      });
+
+      const token = await createPasswordResetToken(userId);
+      await attachClientAccount(prospectId, organizationId, userId);
+
+      const settings = await getOutreachSettings();
+      const context = {
+        businessName: prospect.businessName,
+        myBusiness: settings.senderBusinessName,
+        inviteUrl: `${appOrigin()}/reset-password?token=${encodeURIComponent(token)}`,
+        expiresInDays: 7,
+        businessEmail: prospect.businessEmail ?? "",
+        customWebsite: prospect.website,
+      };
+
+      await sendProspectOutreachEmail({
+        to,
+        subject: clientInviteSubject(context),
+        text: clientInviteText(context),
+        html: clientInviteHtml(context),
+      });
+
+      revalidatePath("/admin/clients");
+      return { ok: true, data: { email: to } };
+    } catch (err) {
+      // Give the claim back so the lead can be retried rather than sitting there
+      // looking invited forever.
+      await releaseInvite(prospectId).catch(() => undefined);
+      throw err;
+    }
+  } catch (err) {
+    console.error(err);
+    const message = err instanceof Error && /already|exists|duplicate/i.test(err.message)
+      ? "There's already a platform account with that email address."
+      : "Couldn't create that account.";
+    return { ok: false, error: message };
+  }
+}
+
+/** Marks a lead as an existing JKTL client so it skips the audit and the site
+ * generator, and receives the onboarding email instead of the cold sequence. */
+export async function markAsExistingClientAction(prospectId: string, businessEmail: string): Promise<ActionResult<null>> {
+  try {
+    await requireAdminCapability("run_lead_engine");
+    await markAsExistingClient(prospectId, businessEmail.trim());
+    revalidatePath("/admin/clients");
+    return { ok: true, data: null };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't mark that lead." };
+  }
+}
+
+export async function listExistingClientsAction(): Promise<ActionResult<ExistingClient[]>> {
+  try {
+    await requireAdminCapability("run_lead_engine");
+    return { ok: true, data: await listExistingClients() };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: "Couldn't load the client list." };
   }
 }

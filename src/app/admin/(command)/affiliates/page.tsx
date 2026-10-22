@@ -1,3 +1,4 @@
+import { guardAdminPage } from "@/lib/admin-page-guard";
 import { PageHeader } from "@/components/app/page-header";
 import { AffiliateManager } from "@/components/admin/affiliate-manager";
 import { listAffiliatesWithStats, listPendingPayoutRequests } from "@/lib/db/affiliates";
@@ -16,6 +17,10 @@ function appOrigin(): string {
 }
 
 export default async function AdminAffiliatesPage() {
+  // Enforced here, not only in the navigation: a redirect on the layout is a
+  // convenience, and this is the check that holds if the URL is typed directly.
+  await guardAdminPage("manage_affiliates");
+
   const [affiliates, payoutRequests] = await Promise.all([listAffiliatesWithStats(), listPendingPayoutRequests()]);
 
   return (

@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createAdminSession, destroyAdminSession, validateAdminSession } from "@/lib/db/admin-auth";
 import type { AdminUser } from "@/lib/db/admin-auth";
+import { ROLE_LABEL, can, type AdminCapability } from "@/lib/admin-permissions";
 
 // Deliberately a different cookie name from the business session
 // ("jktl_session") AND scoped to the /admin path — the browser will never
@@ -44,4 +45,26 @@ export async function requireAdminSession(): Promise<AdminUser> {
   const admin = await getAdminSession();
   if (!admin) throw new Error("Not signed in as admin.");
   return admin;
+}
+
+/**
+ * Requires an admin whose role allows this capability.
+ *
+ * Every state-changing admin action calls one of these, not just the page it sits
+ * on. Hiding a button is a UI courtesy; this is the check that actually stops an
+ * analyst recording a payout by posting to the action directly.
+ */
+export async function requireAdminCapability(capability: AdminCapability): Promise<AdminUser> {
+  const admin = await requireAdminSession();
+  if (!can(admin.role, capability)) {
+    throw new Error(`Your role (${ROLE_LABEL[admin.role]}) cannot ${capability.replace(/_/g, " ")}.`);
+  }
+  return admin;
+}
+
+/** True when the signed-in admin lacks a capability — for rendering, not for
+ * enforcement. */
+export function lacks(admin: AdminUser | null, capability: AdminCapability): boolean {
+  if (!admin) return true;
+  return !can(admin.role, capability);
 }
