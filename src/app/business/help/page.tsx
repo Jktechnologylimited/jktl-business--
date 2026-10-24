@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useMemo, useState } from "react";
 import { LifeBuoy, MessageCircle } from "lucide-react";
@@ -18,14 +19,19 @@ export default function HelpPage() {
   const industry = useCurrentIndustry();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>(ALL);
-  const supportLink = waLink(SUPPORT_PHONE, "Hi JKTL Business, I need some help with my account.");
+  const supportLink = waLink(
+    SUPPORT_PHONE,
+    "Hi JKTL Business, I need some help with my account.",
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return GUIDES.filter((g) => {
       if (category !== ALL && g.category !== category) return false;
       if (!q) return true;
-      const haystack = [g.question, ...g.answer, ...(g.keywords ?? [])].join(" ").toLowerCase();
+      const haystack = [g.question, ...g.answer, ...(g.keywords ?? [])]
+        .join(" ")
+        .toLowerCase();
       return haystack.includes(q);
     });
   }, [query, category]);
@@ -37,14 +43,19 @@ export default function HelpPage() {
       list.push(g);
       byCategory.set(g.category, list);
     }
-    return GUIDE_CATEGORIES.filter((c) => byCategory.has(c.id)).map((c) => ({ ...c, items: byCategory.get(c.id)! }));
+    return GUIDE_CATEGORIES.filter((c) => byCategory.has(c.id)).map((c) => ({
+      ...c,
+      items: byCategory.get(c.id)!,
+    }));
   }, [filtered]);
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeader title="Help & guides" />
       <p className="-mt-2 text-sm text-ink-muted">
-        Answers to common questions about running {industry.productName} — tap any question to open it up.
+        <T>Answers to common questions about running </T>
+        {industry.productName}
+        <T>— tap any question to open it up.</T>
       </p>
 
       {supportLink ? (
@@ -58,16 +69,27 @@ export default function HelpPage() {
             <MessageCircle className="size-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-ink">Need more help? Chat with support</span>
-            <span className="block text-xs text-ink-muted">Message us on WhatsApp — we usually reply quickly</span>
+            <span className="block text-sm font-semibold text-ink">
+              <T>Need more help? Chat with support</T>
+            </span>
+            <span className="block text-xs text-ink-muted">
+              <T>Message us on WhatsApp — we usually reply quickly</T>
+            </span>
           </span>
         </a>
       ) : null}
 
-      <SearchInput value={query} onChange={setQuery} placeholder={'Search guides — e.g. "partial payment"'} />
+      <SearchInput
+        value={query}
+        onChange={setQuery}
+        placeholder={'Search guides — e.g. "partial payment"'}
+      />
 
       <FilterTabs
-        options={[{ value: ALL, label: "All" }, ...GUIDE_CATEGORIES.map((c) => ({ value: c.id, label: c.label }))]}
+        options={[
+          { value: ALL, label: "All" },
+          ...GUIDE_CATEGORIES.map((c) => ({ value: c.id, label: c.label })),
+        ]}
         value={category}
         onChange={setCategory}
       />
@@ -75,13 +97,19 @@ export default function HelpPage() {
       {grouped.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-16 text-center">
           <LifeBuoy className="size-6 text-ink-faint" />
-          <p className="text-sm text-ink-muted">No guides match &quot;{query}&quot;.</p>
+          <p className="text-sm text-ink-muted">
+            <T>No guides match &quot;</T>
+            {query}
+            <T>&quot;.</T>
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-7">
           {grouped.map((group) => (
             <section key={group.id} className="flex flex-col gap-2.5">
-              <h2 className="font-display text-sm font-semibold text-ink">{group.label}</h2>
+              <h2 className="font-display text-sm font-semibold text-ink">
+                {group.label}
+              </h2>
               <div className="flex flex-col gap-2.5">
                 {group.items.map((item) =>
                   item.custom === "add-to-home-screen" ? (
@@ -92,7 +120,11 @@ export default function HelpPage() {
                       </div>
                     </GuideBubble>
                   ) : (
-                    <GuideBubble key={item.id} question={item.question} answer={item.answer} />
+                    <GuideBubble
+                      key={item.id}
+                      question={item.question}
+                      answer={item.answer}
+                    />
                   ),
                 )}
               </div>

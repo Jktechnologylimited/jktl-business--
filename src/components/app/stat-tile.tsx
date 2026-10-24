@@ -1,3 +1,4 @@
+import { T } from "@/components/i18n/LanguageProvider";
 import { cn } from "@/lib/utils";
 
 const ruleClasses = {
@@ -19,9 +20,15 @@ export function StatTile({
   rule?: keyof typeof ruleClasses;
 }) {
   return (
-    <div className={cn("rounded-2xl border-l-4 bg-surface p-4", ruleClasses[rule])}>
-      <div className="text-[13px] font-medium text-ink-muted">{label}</div>
-      <div className="mt-1.5 font-display text-2xl font-bold tracking-tight text-ink">{value}</div>
+    <div
+      className={cn("rounded-2xl border-l-4 bg-surface p-4", ruleClasses[rule])}
+    >
+      <div className="text-[13px] font-medium text-ink-muted">
+        <T>{label}</T>
+      </div>
+      <div className="mt-1.5 font-display text-2xl font-bold tracking-tight text-ink">
+        {value}
+      </div>
       {sub ? <div className="mt-0.5 text-xs text-ink-muted">{sub}</div> : null}
     </div>
   );

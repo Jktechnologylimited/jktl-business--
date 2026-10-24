@@ -1,3 +1,4 @@
+import { T } from "@/components/i18n/LanguageProvider";
 import type { ReactNode } from "react";
 
 export function Field({
@@ -14,10 +15,14 @@ export function Field({
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={htmlFor} className="text-sm font-medium text-ink">
-        {label}
+        <T>{label}</T>
       </label>
       {children}
-      {hint ? <p className="text-xs text-ink-muted">{hint}</p> : null}
+      {hint ? (
+        <p className="text-xs text-ink-muted">
+          <T>{hint}</T>
+        </p>
+      ) : null}
     </div>
   );
 }

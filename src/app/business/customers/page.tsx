@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -30,7 +31,9 @@ export default function CustomersPage() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return customers;
-    return customers.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q));
+    return customers.filter(
+      (c) => c.name.toLowerCase().includes(q) || c.phone.includes(q),
+    );
   }, [customers, query]);
 
   if (loading) {
@@ -48,40 +51,68 @@ export default function CustomersPage() {
         title="Customers"
         action={
           <Button size="sm" onClick={() => setAdding(true)}>
-            <Plus className="size-4" /> Add
+            <Plus className="size-4" />
+            <T>Add</T>
           </Button>
         }
       />
 
-      {customers.length > 0 ? <SearchInput value={query} onChange={setQuery} placeholder="Search by name or phone" /> : null}
+      {customers.length > 0 ? (
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Search by name or phone"
+        />
+      ) : null}
 
       {customers.length === 0 ? (
         <EmptyState
           icon={<Users className="size-6 text-primary-strong" />}
           title="No customers yet"
           description="Add your first customer to start building your salon's customer history."
-          action={<Button onClick={() => setAdding(true)}>Add customer</Button>}
+          action={
+            <Button onClick={() => setAdding(true)}>
+              <T>Add customer</T>
+            </Button>
+          }
         />
       ) : filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-ink-muted">No customers match &quot;{query}&quot;.</p>
+        <p className="py-8 text-center text-sm text-ink-muted">
+          <T>No customers match &quot;</T>
+          {query}
+          <T>&quot;.</T>
+        </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border">
           {filtered.map((c) => (
-            <Link key={c.id} href={`/business/customers/${c.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface">
+            <Link
+              key={c.id}
+              href={`/business/customers/${c.id}`}
+              className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface"
+            >
               <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent-strong">
                 {initials(c.name)}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium text-ink">{c.name}</div>
+                <div className="truncate text-sm font-medium text-ink">
+                  {c.name}
+                </div>
                 <div className="truncate text-xs text-ink-muted">{c.phone}</div>
               </div>
-              <div className="shrink-0 text-xs text-ink-faint">Since {formatShortDate(c.createdAt)}</div>
+              <div className="shrink-0 text-xs text-ink-faint">
+                <T>Since </T>
+                {formatShortDate(c.createdAt)}
+              </div>
             </Link>
           ))}
         </div>
       )}
 
-      <Sheet open={adding} onClose={() => setAdding(false)} title="Add customer">
+      <Sheet
+        open={adding}
+        onClose={() => setAdding(false)}
+        title="Add customer"
+      >
         <CustomerForm
           onCancel={() => setAdding(false)}
           onSubmit={(input) => {

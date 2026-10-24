@@ -1,6 +1,6 @@
 .gallery {
-  background: #f8f7f4;
-  color: #17221f;
+  background: #FDFCF8;
+  color: #060E2A;
   min-height: 80vh;
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -36,7 +36,7 @@
   gap: 16px;
   max-width: 600px;
   margin: 40px auto 0;
-  border-bottom: 1px solid #202d26;
+  border-bottom: 1px solid #112055;
   text-align: left;
 }
 .search span {
@@ -49,7 +49,7 @@
   width: 100%;
   font: inherit;
   font-size: 16px;
-  color: #17221f;
+  color: #060E2A;
   outline-offset: 5px;
 }
 .filters {
@@ -101,7 +101,7 @@
   border-radius: 8px;
   overflow: hidden;
   background: #e6e3d9;
-  box-shadow: 0 12px 30px #17221f12;
+  box-shadow: 0 12px 30px #060E2A12;
   color: inherit;
 }
 .thumbnail > img {
@@ -178,9 +178,9 @@
   flex: 1;
 }
 .actions a:last-child {
-  background: #192d25;
+  background: #060E2A;
   color: white;
-  border-color: #192d25;
+  border-color: #060E2A;
 }
 .actions a:hover {
   border-color: #9a7836;

@@ -1,3 +1,4 @@
+import { T } from "@/components/i18n/LanguageProvider";
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { getSql } from "@/lib/db/client";
@@ -10,14 +11,16 @@ export default async function WebsiteMetricsPage() {
     return (
       <section className="space-y-4">
         <h1 className="font-display text-2xl">
-          Website & landing-page metrics
+          <T>Website & landing-page metrics</T>
         </h1>
         <p>
-          Metrics are available for published websites on a real account. Demo
-          previews never generate traffic metrics.
+          <T>
+            Metrics are available for published websites on a real account. Demo
+            previews never generate traffic metrics.
+          </T>
         </p>
         <Link href="/business/website" className="text-primary underline">
-          Back to websites
+          <T>Back to websites</T>
         </Link>
       </section>
     );
@@ -36,18 +39,24 @@ export default async function WebsiteMetricsPage() {
   return (
     <section className="space-y-6">
       <Link href="/business/website" className="text-sm text-primary underline">
-        ← Website settings
+        <T>← Website settings</T>
       </Link>
-      <h1 className="font-display text-3xl">Website & landing-page metrics</h1>
+      <h1 className="font-display text-3xl">
+        <T>Website & landing-page metrics</T>
+      </h1>
       <p className="text-sm text-ink-muted">
-        Last 30 days. Events are attributed to the template published at the
-        time. Views are page loads, not unique people. Previews and demo
-        activity are excluded.
+        <T>
+          Last 30 days. Events are attributed to the template published at the
+          time. Views are page loads, not unique people. Previews and demo
+          activity are excluded.
+        </T>
       </p>
       {unavailable ? (
         <p role="alert">
-          Metrics are being prepared. Please try again after deployment
-          completes.
+          <T>
+            Metrics are being prepared. Please try again after deployment
+            completes.
+          </T>
         </p>
       ) : (
         <>
@@ -69,8 +78,10 @@ export default async function WebsiteMetricsPage() {
           </div>
           {!rows.length ? (
             <p>
-              No measured traffic yet. Publish a template and share its website
-              address to start collecting events.
+              <T>
+                No measured traffic yet. Publish a template and share its
+                website address to start collecting events.
+              </T>
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -124,10 +135,12 @@ export default async function WebsiteMetricsPage() {
         </>
       )}
       <p className="text-xs text-ink-muted">
-        No visitor names, emails, cookies or persistent visitor IDs are
-        collected. Ad blockers, bots and blocked requests affect measurements. A
-        booking is counted only after the existing booking flow saves it
-        successfully.
+        <T>
+          No visitor names, emails, cookies or persistent visitor IDs are
+          collected. Ad blockers, bots and blocked requests affect measurements.
+          A booking is counted only after the existing booking flow saves it
+          successfully.
+        </T>
       </p>
     </section>
   );

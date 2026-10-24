@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -26,14 +27,22 @@ export default function CustomerDetailPage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const customer = data.customers.find((c) => c.id === params.id);
-  const history = useMemo(() => (customer ? customerHistory(data, customer.id) : []), [data, customer]);
+  const history = useMemo(
+    () => (customer ? customerHistory(data, customer.id) : []),
+    [data, customer],
+  );
 
   if (!customer) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <p className="text-sm text-ink-muted">This customer no longer exists.</p>
-        <Link href="/business/customers" className="text-sm font-medium text-primary">
-          Back to customers
+        <p className="text-sm text-ink-muted">
+          <T>This customer no longer exists.</T>
+        </p>
+        <Link
+          href="/business/customers"
+          className="text-sm font-medium text-primary"
+        >
+          <T>Back to customers</T>
         </Link>
       </div>
     );
@@ -41,8 +50,12 @@ export default function CustomerDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/business/customers" className="flex w-fit items-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink">
-        <ArrowLeft className="size-4" /> Customers
+      <Link
+        href="/business/customers"
+        className="flex w-fit items-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink"
+      >
+        <ArrowLeft className="size-4" />
+        <T>Customers</T>
       </Link>
 
       <div className="flex items-start gap-4">
@@ -50,7 +63,9 @@ export default function CustomerDetailPage() {
           {initials(customer.name)}
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-xl font-bold tracking-tight text-ink">{customer.name}</h1>
+          <h1 className="font-display text-xl font-bold tracking-tight text-ink">
+            {customer.name}
+          </h1>
           <div className="mt-1 flex flex-col gap-0.5 text-sm text-ink-muted">
             <span className="flex items-center gap-1.5">
               <Phone className="size-3.5" /> {customer.phone}
@@ -63,10 +78,20 @@ export default function CustomerDetailPage() {
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="icon" onClick={() => setEditing(true)} aria-label="Edit">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setEditing(true)}
+            aria-label="Edit"
+          >
             <Pencil className="size-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={() => setConfirmingDelete(true)} aria-label="Delete">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setConfirmingDelete(true)}
+            aria-label="Delete"
+          >
             <Trash2 className="size-4 text-danger" />
           </Button>
         </div>
@@ -74,27 +99,44 @@ export default function CustomerDetailPage() {
 
       {customer.notes ? (
         <div className="rounded-2xl bg-surface p-4 text-sm text-ink">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">Notes</div>
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+            <T>Notes</T>
+          </div>
           {customer.notes}
         </div>
       ) : null}
 
       <section>
-        <h2 className="mb-3 font-display text-base font-semibold text-ink">Visit history</h2>
+        <h2 className="mb-3 font-display text-base font-semibold text-ink">
+          <T>Visit history</T>
+        </h2>
         {history.length === 0 ? (
-          <p className="text-sm text-ink-muted">No bookings or sales recorded yet.</p>
+          <p className="text-sm text-ink-muted">
+            <T>No bookings or sales recorded yet.</T>
+          </p>
         ) : (
           <div className="divide-y divide-border rounded-2xl border border-border">
             {history.map((item) => (
-              <div key={`${item.kind}-${item.id}`} className="flex items-center justify-between px-4 py-3">
+              <div
+                key={`${item.kind}-${item.id}`}
+                className="flex items-center justify-between px-4 py-3"
+              >
                 <div>
-                  <div className="text-sm font-medium text-ink">{item.label}</div>
-                  <div className="text-xs text-ink-muted">{formatShortDate(item.at)}</div>
+                  <div className="text-sm font-medium text-ink">
+                    {item.label}
+                  </div>
+                  <div className="text-xs text-ink-muted">
+                    {formatShortDate(item.at)}
+                  </div>
                 </div>
                 {item.kind === "booking" ? (
-                  <StatusPill tone={bookingStatusMeta(item.status).tone}>{bookingStatusMeta(item.status).label}</StatusPill>
+                  <StatusPill tone={bookingStatusMeta(item.status).tone}>
+                    {bookingStatusMeta(item.status).label}
+                  </StatusPill>
                 ) : (
-                  <span className="text-sm font-semibold text-ink">{formatKobo(item.totalKobo)}</span>
+                  <span className="text-sm font-semibold text-ink">
+                    {formatKobo(item.totalKobo)}
+                  </span>
                 )}
               </div>
             ))}
@@ -102,7 +144,11 @@ export default function CustomerDetailPage() {
         )}
       </section>
 
-      <Sheet open={editing} onClose={() => setEditing(false)} title="Edit customer">
+      <Sheet
+        open={editing}
+        onClose={() => setEditing(false)}
+        title="Edit customer"
+      >
         <CustomerForm
           initial={customer}
           submitLabel="Save changes"

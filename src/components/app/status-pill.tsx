@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { T } from "@/components/i18n/LanguageProvider";
 import { cn } from "@/lib/utils";
 import type { BookingStatus, InvoiceStatus, PaymentStatus } from "@/lib/types";
 
@@ -11,10 +13,21 @@ const toneClasses: Record<Tone, string> = {
   neutral: "bg-surface-strong text-ink-muted",
 };
 
-export function StatusPill({ tone, children }: { tone: Tone; children: string }) {
+export function StatusPill({
+  tone,
+  children,
+}: {
+  tone: Tone;
+  children: ReactNode;
+}) {
   return (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium", toneClasses[tone])}>
-      {children}
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
+        toneClasses[tone],
+      )}
+    >
+      {typeof children === "string" ? <T>{children}</T> : children}
     </span>
   );
 }

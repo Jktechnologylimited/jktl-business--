@@ -1,5 +1,12 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 import { useCallback, useEffect, useState } from "react";
+import {
+  getWebsiteTemplate,
+  templateEditorPath,
+} from "@/lib/website-templates";
+import { pendingTemplate } from "@/lib/template-selection";
+import Link from "next/link";
 import { useBusinessStore } from "@/lib/store";
 import { WebsitePricing } from "@/components/pricing/WebsitePricing";
 import {
@@ -23,6 +30,15 @@ type Data = Extract<
 >["data"];
 export function WebsitePlanBilling() {
   const mode = useBusinessStore((s) => s.mode);
+  const selectedTemplateId = useBusinessStore(
+    (s) => s.data.profile.websiteTemplateId,
+  );
+  const existing =
+    getWebsiteTemplate(pendingTemplate()) ||
+    getWebsiteTemplate(selectedTemplateId);
+  const continuePath = existing
+    ? templateEditorPath(existing.id)
+    : "/business/website";
   const hydrated = useBusinessStore((s) => s.hydrated);
   const setInfrastructure = useBusinessStore((s) => s.setInfrastructure);
   const [data, setData] = useState<Data | null>(null),
@@ -90,6 +106,10 @@ export function WebsitePlanBilling() {
     <div>
       <WebsitePricing
         insideBusiness
+        startHref={continuePath}
+        startLabel={
+          existing ? "Continue editing your website" : "Back to your website"
+        }
         selectedPlanId={selected.planId}
         onSelectPlan={(planId, interval) => {
           setSelected({ planId, interval });
@@ -100,13 +120,30 @@ export function WebsitePlanBilling() {
         id="website-checkout"
         className="mx-auto mb-10 max-w-4xl rounded-2xl border border-border bg-paper p-6"
       >
+        {existing && (
+          <div className="mb-5 rounded-xl border border-border p-4">
+            <p className="text-sm">
+              <T>Your selected design stays with you: </T>
+              <strong>{existing.name}</strong>
+              <T>. Upgrading changes your plan, not your website.</T>
+            </p>
+            <Link
+              href={continuePath}
+              className="mt-2 inline-block text-sm text-primary underline"
+            >
+              <T>Continue editing your website →</T>
+            </Link>
+          </div>
+        )}
         <h2 className="font-display text-2xl font-semibold">
-          Your website subscription
+          <T>Your website subscription</T>
         </h2>
         {mode !== "live" ? (
           <p className="mt-3 text-sm">
-            Demo mode — explore plans here. Payments, renewals and refund
-            requests require a real owner account.
+            <T>
+              Demo mode — explore plans here. Payments, renewals and refund
+              requests require a real owner account.
+            </T>
           </p>
         ) : (
           <>
@@ -124,16 +161,21 @@ export function WebsitePlanBilling() {
               </p>
             )}
             {!data && !error && (
-              <p className="mt-3">Loading your billing details…</p>
+              <p className="mt-3">
+                <T>Loading your billing details…</T>
+              </p>
             )}
             {data?.pending && (
               <div className="my-4 rounded-xl border border-border p-4">
                 <p className="text-sm">
-                  An existing checkout is waiting for confirmation. No second
-                  payment will be started.
+                  <T>
+                    An existing checkout is waiting for confirmation. No second
+                    payment will be started.
+                  </T>
                 </p>
                 <p className="mt-2 break-all text-xs">
-                  Reference: {String(data.pending.reference)}
+                  <T>Reference: </T>
+                  {String(data.pending.reference)}
                 </p>
                 <div className="mt-3 flex gap-4">
                   {Boolean(data.pending.authorization_url) && (
@@ -141,7 +183,7 @@ export function WebsitePlanBilling() {
                       className="text-sm underline"
                       href={String(data.pending.authorization_url)}
                     >
-                      Resume secure checkout
+                      <T>Resume secure checkout</T>
                     </a>
                   )}
                   <button
@@ -157,7 +199,7 @@ export function WebsitePlanBilling() {
                       )
                     }
                   >
-                    Check payment status
+                    <T>Check payment status</T>
                   </button>
                 </div>
               </div>
@@ -181,13 +223,15 @@ export function WebsitePlanBilling() {
                 </p>
                 {sub.status === "past_due" && (
                   <p className="text-sm text-danger">
-                    Your payment failed. Update your card using Manage payment
-                    method. No second subscription will be created.
+                    <T>
+                      Your payment failed. Update your card using Manage payment
+                      method. No second subscription will be created.
+                    </T>
                   </p>
                 )}
                 {Boolean(sub.cancel_at_period_end) && (
                   <p className="text-sm">
-                    Automatic renewal is off.{" "}
+                    <T>Automatic renewal is off.</T>{" "}
                     {sub.next_plan_id
                       ? `Next choice: ${sub.next_plan_id}. Return after the paid period ends to confirm any new paid plan.`
                       : "Your site continues on Free after the paid period."}
@@ -205,7 +249,7 @@ export function WebsitePlanBilling() {
                       }, "Opening Paystack…")
                     }
                   >
-                    Manage payment method
+                    <T>Manage payment method</T>
                   </button>
                   {!sub.cancel_at_period_end && (
                     <button
@@ -224,7 +268,7 @@ export function WebsitePlanBilling() {
                           );
                       }}
                     >
-                      Cancel renewal
+                      <T>Cancel renewal</T>
                     </button>
                   )}
                 </div>
@@ -241,7 +285,7 @@ export function WebsitePlanBilling() {
                   {selected.interval === "yearly"
                     ? "for one year"
                     : "for one month"}{" "}
-                  · NGN
+                  <T>· NGN</T>
                 </p>
                 <p className="text-sm">
                   {selected.interval === "yearly"
@@ -249,9 +293,11 @@ export function WebsitePlanBilling() {
                     : "Monthly billing at the amount above."}
                 </p>
                 <p className="mt-3 text-sm">
-                  Current paid capabilities: custom domain connection, branding
-                  removal, website SEO and analytics, finite included image
-                  storage and{" "}
+                  <T>
+                    Current paid capabilities: custom domain connection,
+                    branding removal, website SEO and analytics, finite included
+                    image storage and
+                  </T>{" "}
                   {selected.planId === "starter"
                     ? 2
                     : selected.planId === "growth"
@@ -259,34 +305,42 @@ export function WebsitePlanBilling() {
                       : selected.planId === "business"
                         ? 10
                         : 25}{" "}
-                  collaborators including the owner. Existing business tools
-                  remain available. Features marked ¹ in the comparison are not
-                  yet available and are not activated by payment.
+                  <T>
+                    collaborators including the owner. Existing business tools
+                    remain available. Features marked ¹ in the comparison are
+                    not yet available and are not activated by payment.
+                  </T>
                 </p>
                 <p className="mt-3 text-sm">
-                  14-day money-back guarantee on your first website-plan
-                  payment. Domain registration, email, usage charges and
-                  separate custom projects are excluded.{" "}
+                  <T>
+                    14-day money-back guarantee on your first website-plan
+                    payment. Domain registration, email, usage charges and
+                    separate custom projects are excluded.
+                  </T>{" "}
                   <a
                     href="https://jktl.com.ng/terms#website-guarantee"
                     className="underline"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Read refund terms
+                    <T>Read refund terms</T>
                   </a>
                   .
                 </p>
                 {running ? (
                   <>
                     <p className="mt-3 text-sm">
-                      Your current paid period remains unchanged. Scheduling
-                      stops its automatic renewal. After{" "}
+                      <T>
+                        Your current paid period remains unchanged. Scheduling
+                        stops its automatic renewal. After
+                      </T>{" "}
                       {new Date(String(sub.period_end)).toLocaleDateString(
                         "en-NG",
                       )}
-                      , return here to confirm and pay for the new plan. No
-                      charge or prorated credit is made now.
+                      <T>
+                        , return here to confirm and pay for the new plan. No
+                        charge or prorated credit is made now.
+                      </T>
                     </p>
                     <button
                       className="mt-4 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white"
@@ -307,7 +361,7 @@ export function WebsitePlanBilling() {
                           );
                       }}
                     >
-                      Schedule plan change
+                      <T>Schedule plan change</T>
                     </button>
                   </>
                 ) : (
@@ -320,19 +374,23 @@ export function WebsitePlanBilling() {
                         className="mt-1"
                       />
                       <span>
-                        I authorise {priceNGN(quote.amountKobo)} now and
-                        automatic {selected.interval} renewal at the same price
-                        until cancelled. I have reviewed the current
-                        capabilities, included image storage limit (Starter 1
-                        GB, Growth 5 GB, Business 15 GB, Elite 30 GB; uploads
-                        stop at the limit), and{" "}
+                        <T>I authorise </T>
+                        {priceNGN(quote.amountKobo)}
+                        <T>now and automatic </T>
+                        {selected.interval}
+                        <T>
+                          renewal at the same price until cancelled. I have
+                          reviewed the current capabilities, included image
+                          storage limit (Starter 1 GB, Growth 5 GB, Business 15
+                          GB, Elite 30 GB; uploads stop at the limit), and
+                        </T>{" "}
                         <a
                           href="https://jktl.com.ng/terms"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="underline"
                         >
-                          terms
+                          <T>terms</T>
                         </a>
                         .
                       </span>
@@ -365,20 +423,32 @@ export function WebsitePlanBilling() {
             )}
             {selected.planId === "free" && (
               <p className="mt-4 text-sm">
-                Free needs no payment. If you have a paid plan, cancel its
-                renewal above; your site and core tools remain available.
+                <T>
+                  Free needs no payment. If you have a paid plan, cancel its
+                  renewal above; your site and core tools remain available.
+                </T>
               </p>
             )}
             {Boolean(data?.payments.length) && (
               <div className="mt-6 overflow-auto">
-                <h3 className="mb-3 font-semibold">Website payment history</h3>
+                <h3 className="mb-3 font-semibold">
+                  <T>Website payment history</T>
+                </h3>
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr>
-                      <th className="p-2">Paid</th>
-                      <th>Plan</th>
-                      <th>Amount</th>
-                      <th>Reference</th>
+                      <th className="p-2">
+                        <T>Paid</T>
+                      </th>
+                      <th>
+                        <T>Plan</T>
+                      </th>
+                      <th>
+                        <T>Amount</T>
+                      </th>
+                      <th>
+                        <T>Reference</T>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -406,23 +476,30 @@ export function WebsitePlanBilling() {
               </div>
             )}
             <div className="mt-6 border-t border-border pt-5">
-              <h3 className="font-semibold">14-day money-back guarantee</h3>
+              <h3 className="font-semibold">
+                <T>14-day money-back guarantee</T>
+              </h3>
               {data?.refund ? (
                 <p className="mt-2 text-sm">
-                  Refund request: <strong>{String(data.refund.status)}</strong>.
-                  Your request is saved for the JKTL billing team. Contact
-                  info@jktl.com.ng with your payment reference for updates.
+                  <T>Refund request: </T>
+                  <strong>{String(data.refund.status)}</strong>
+                  <T>
+                    . Your request is saved for the JKTL billing team. Contact
+                    info@jktl.com.ng with your payment reference for updates.
+                  </T>
                 </p>
               ) : (
                 <>
                   <p className="mt-2 text-sm">
-                    Request a full refund of your first website-plan payment
-                    within 14 days of payment. The billing team processes
-                    eligible refunds to your original payment method. Provider
-                    processing times apply.
+                    <T>
+                      Request a full refund of your first website-plan payment
+                      within 14 days of payment. The billing team processes
+                      eligible refunds to your original payment method. Provider
+                      processing times apply.
+                    </T>
                   </p>
                   <label className="mt-3 block text-sm">
-                    Reason for refund
+                    <T>Reason for refund</T>
                     <textarea
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
@@ -443,7 +520,7 @@ export function WebsitePlanBilling() {
                       )
                     }
                   >
-                    Request guarantee refund
+                    <T>Request guarantee refund</T>
                   </button>
                 </>
               )}

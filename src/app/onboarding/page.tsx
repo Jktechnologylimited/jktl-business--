@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -12,11 +13,19 @@ import { WelcomeNote } from "@/components/onboarding/welcome-note";
 import { useBusinessStore } from "@/lib/store";
 import { BUSINESS_TYPE_GROUPS, getIndustry } from "@/lib/industry";
 import { cn } from "@/lib/utils";
-import { pendingTemplate, templateBusinessType } from "@/lib/template-selection";
+import {
+  pendingTemplate,
+  templateBusinessType,
+} from "@/lib/template-selection";
 import { templateEditorPath } from "@/lib/website-templates";
 import type { BusinessType } from "@/lib/types";
 
-const STEPS = ["Business type", "Business details", "First service", "Finish"] as const;
+const STEPS = [
+  "Business type",
+  "Business details",
+  "First service",
+  "Finish",
+] as const;
 
 function OnboardingForm() {
   const router = useRouter();
@@ -28,7 +37,11 @@ function OnboardingForm() {
   const completeOnboarding = useBusinessStore((s) => s.completeOnboarding);
 
   const [step, setStep] = useState(0);
-  const [businessType, setBusinessType] = useState<BusinessType>(pendingSignup && params.get("template") ? templateBusinessType(params.get("template")!) : profile.businessType);
+  const [businessType, setBusinessType] = useState<BusinessType>(
+    pendingSignup && params.get("template")
+      ? templateBusinessType(params.get("template")!)
+      : profile.businessType,
+  );
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [phone, setPhone] = useState(profile.phone);
   const [city, setCity] = useState(profile.city);
@@ -67,23 +80,37 @@ function OnboardingForm() {
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 py-8">
       <div className="flex items-center gap-2">
         <JktlMark className="size-8" />
-        <span className="font-display text-sm font-semibold text-ink">Set up your business</span>
+        <span className="font-display text-sm font-semibold text-ink">
+          <T>Set up your business</T>
+        </span>
       </div>
 
       <ol className="mt-6 flex gap-2">
         {STEPS.map((label, i) => (
-          <li key={label} className={cn("h-1.5 flex-1 rounded-full", i <= step ? "bg-primary" : "bg-surface-strong")} />
+          <li
+            key={label}
+            className={cn(
+              "h-1.5 flex-1 rounded-full",
+              i <= step ? "bg-primary" : "bg-surface-strong",
+            )}
+          />
         ))}
       </ol>
 
       {step === 0 ? (
         <div className="mt-8 flex-1">
-          <h1 className="font-display text-xl font-bold tracking-tight text-ink">What kind of business is this?</h1>
-          <p className="mt-1.5 text-sm text-ink-muted">This sets up the right modules and terms for you.</p>
+          <h1 className="font-display text-xl font-bold tracking-tight text-ink">
+            <T>What kind of business is this?</T>
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-muted">
+            <T>This sets up the right modules and terms for you.</T>
+          </p>
           <div className="mt-6 flex flex-col gap-5">
             {BUSINESS_TYPE_GROUPS.map((group) => (
               <div key={group.category}>
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">{group.category}</div>
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                  {group.category}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   {group.options.map((opt) => (
                     <button
@@ -92,38 +119,71 @@ function OnboardingForm() {
                       onClick={() => setBusinessType(opt.id)}
                       className={cn(
                         "rounded-2xl border p-3.5 text-left transition-colors",
-                        businessType === opt.id ? "border-primary bg-primary-soft" : "border-border-strong hover:bg-surface",
+                        businessType === opt.id
+                          ? "border-primary bg-primary-soft"
+                          : "border-border-strong hover:bg-surface",
                       )}
                     >
-                      <div className="text-sm font-semibold text-ink">{opt.label}</div>
-                      <div className="mt-0.5 text-xs text-ink-muted">{opt.hint}</div>
+                      <div className="text-sm font-semibold text-ink">
+                        {opt.label}
+                      </div>
+                      <div className="mt-0.5 text-xs text-ink-muted">
+                        {opt.hint}
+                      </div>
                     </button>
                   ))}
                 </div>
               </div>
             ))}
           </div>
-          {accountError ? <p className="mt-4 text-sm text-danger">{accountError}</p> : null}
+          {accountError ? (
+            <p className="mt-4 text-sm text-danger">{accountError}</p>
+          ) : null}
         </div>
       ) : null}
 
       {step === 1 ? (
         <div className="mt-8 flex-1">
-          <h1 className="font-display text-xl font-bold tracking-tight text-ink">Tell us about {industry.label.toLowerCase()}</h1>
-          <p className="mt-1.5 text-sm text-ink-muted">You can change this anytime in Settings.</p>
+          <h1 className="font-display text-xl font-bold tracking-tight text-ink">
+            <T>Tell us about </T>
+            {industry.label.toLowerCase()}
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-muted">
+            <T>You can change this anytime in Settings.</T>
+          </p>
           <div className="mt-6 flex flex-col gap-4">
             <Field label="Business name" htmlFor="displayName">
-              <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+              <Input
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                required
+              />
             </Field>
             <Field label="Phone" htmlFor="phone">
-              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+              <Input
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="City" htmlFor="city">
-                <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} required />
+                <Input
+                  id="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                />
               </Field>
               <Field label="State" htmlFor="state">
-                <Input id="state" value={state} onChange={(e) => setState(e.target.value)} required />
+                <Input
+                  id="state"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  required
+                />
               </Field>
             </div>
           </div>
@@ -132,14 +192,23 @@ function OnboardingForm() {
 
       {step === 2 ? (
         <div className="mt-8 flex-1">
-          <h1 className="font-display text-xl font-bold tracking-tight text-ink">Add your first {industry.catalogLabel.toLowerCase().replace(/s$/, "")}</h1>
+          <h1 className="font-display text-xl font-bold tracking-tight text-ink">
+            <T>Add your first </T>
+            {industry.catalogLabel.toLowerCase().replace(/s$/, "")}
+          </h1>
           <p className="mt-1.5 text-sm text-ink-muted">
-            {industry.productName} already comes with sample {industry.catalogLabel.toLowerCase()} so you can see how
-            it works — add one of your own now, or skip and do it later from the menu.
+            {industry.productName}
+            <T>already comes with sample </T>
+            {industry.catalogLabel.toLowerCase()}
+            <T>
+              so you can see how it works — add one of your own now, or skip and
+              do it later from the menu.
+            </T>
           </p>
           {addedService ? (
             <div className="mt-6 flex items-center gap-2 rounded-2xl bg-primary-soft px-4 py-3 text-sm font-medium text-primary-strong">
-              <Check className="size-4" /> Added — you can add more anytime from Services.
+              <Check className="size-4" />
+              <T>Added — you can add more anytime from Services.</T>
             </div>
           ) : (
             <div className="mt-6">
@@ -162,10 +231,16 @@ function OnboardingForm() {
           <div className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
             <Check className="size-7" />
           </div>
-          <h1 className="mt-5 font-display text-xl font-bold tracking-tight text-ink">You&apos;re all set, {displayName || "there"}</h1>
+          <h1 className="mt-5 font-display text-xl font-bold tracking-tight text-ink">
+            <T>You&apos;re all set, </T>
+            {displayName || "there"}
+          </h1>
           <p className="mt-2 max-w-xs text-sm text-ink-muted">
-            {industry.productName} is ready with sample {industry.bookingLabelPlural.toLowerCase()}, customers and
-            {" "}{industry.catalogLabel.toLowerCase()} so you can see it in action. Add more anytime from the menu.
+            {industry.productName}
+            <T>is ready with sample </T>
+            {industry.bookingLabelPlural.toLowerCase()}
+            <T>, customers and</T> {industry.catalogLabel.toLowerCase()}
+            <T>so you can see it in action. Add more anytime from the menu.</T>
           </p>
           <WelcomeNote businessName={displayName} />
         </div>
@@ -174,8 +249,13 @@ function OnboardingForm() {
       {!(step === 2 && !addedService) ? (
         <div className="mt-8 flex gap-3">
           {step > 0 ? (
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setStep((s) => s - 1)}>
-              Back
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setStep((s) => s - 1)}
+            >
+              <T>Back</T>
             </Button>
           ) : null}
           {step < 3 ? (
@@ -183,13 +263,15 @@ function OnboardingForm() {
               type="button"
               className="flex-1"
               disabled={creatingAccount}
-              onClick={() => (step === 0 ? continueFromBusinessType() : setStep((s) => s + 1))}
+              onClick={() =>
+                step === 0 ? continueFromBusinessType() : setStep((s) => s + 1)
+              }
             >
               {step === 0 && creatingAccount ? "Creating account…" : "Continue"}
             </Button>
           ) : (
             <Button type="button" className="flex-1" onClick={finish}>
-              Go to dashboard
+              <T>Go to dashboard</T>
             </Button>
           )}
         </div>
@@ -198,4 +280,16 @@ function OnboardingForm() {
   );
 }
 
-export default function OnboardingPage(){return <Suspense fallback={<div className="p-6">Loading setup…</div>}><OnboardingForm/></Suspense>;}
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-6">
+          <T>Loading setup…</T>
+        </div>
+      }
+    >
+      <OnboardingForm />
+    </Suspense>
+  );
+}

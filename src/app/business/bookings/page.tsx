@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useMemo, useState } from "react";
 import { isSameDay } from "date-fns";
@@ -38,14 +39,22 @@ export default function BookingsPage() {
     const byTab = data.bookings.filter((b) => {
       const t = new Date(b.startsAt);
       if (tab === "today") return isSameDay(t, now);
-      if (tab === "upcoming") return t.getTime() > now.getTime() && !isSameDay(t, now);
-      if (tab === "past") return t.getTime() < now.getTime() && !isSameDay(t, now);
+      if (tab === "upcoming")
+        return t.getTime() > now.getTime() && !isSameDay(t, now);
+      if (tab === "past")
+        return t.getTime() < now.getTime() && !isSameDay(t, now);
       return true;
     });
     const q = query.trim().toLowerCase();
-    const byQuery = q ? byTab.filter((b) => customerName(data.customers, b.customerId).toLowerCase().includes(q)) : byTab;
+    const byQuery = q
+      ? byTab.filter((b) =>
+          customerName(data.customers, b.customerId).toLowerCase().includes(q),
+        )
+      : byTab;
     return byQuery.sort((a, b) =>
-      tab === "past" ? new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime() : new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+      tab === "past"
+        ? new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime()
+        : new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
     );
   }, [data.bookings, data.customers, tab, query]);
 
@@ -55,7 +64,8 @@ export default function BookingsPage() {
         title="Bookings"
         action={
           <Button size="sm" onClick={() => setAdding(true)}>
-            <Plus className="size-4" /> New
+            <Plus className="size-4" />
+            <T>New</T>
           </Button>
         }
       />
@@ -72,7 +82,11 @@ export default function BookingsPage() {
             value={tab}
             onChange={setTab}
           />
-          <SearchInput value={query} onChange={setQuery} placeholder="Search by customer" />
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder="Search by customer"
+          />
         </>
       ) : null}
 
@@ -81,25 +95,39 @@ export default function BookingsPage() {
           icon={<CalendarClock className="size-6 text-primary-strong" />}
           title="No bookings yet"
           description="Create your first booking to start filling up the calendar."
-          action={<Button onClick={() => setAdding(true)}>New booking</Button>}
+          action={
+            <Button onClick={() => setAdding(true)}>
+              <T>New booking</T>
+            </Button>
+          }
         />
       ) : filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-ink-muted">Nothing here.</p>
+        <p className="py-8 text-center text-sm text-ink-muted">
+          <T>Nothing here.</T>
+        </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border">
           {filtered.map((b) => {
             const meta = bookingStatusMeta(b.status);
-            const canComplete = b.status === "pending" || b.status === "confirmed";
+            const canComplete =
+              b.status === "pending" || b.status === "confirmed";
             return (
               <div key={b.id} className="flex items-center gap-3 px-4 py-3.5">
                 <div className="w-20 shrink-0 text-xs font-medium text-ink-muted">
-                  {tab === "all" || tab === "upcoming" || tab === "past" ? formatShortDate(b.startsAt) : null}
-                  <div className="text-sm font-semibold tabular-nums text-ink">{formatTime(b.startsAt)}</div>
+                  {tab === "all" || tab === "upcoming" || tab === "past"
+                    ? formatShortDate(b.startsAt)
+                    : null}
+                  <div className="text-sm font-semibold tabular-nums text-ink">
+                    {formatTime(b.startsAt)}
+                  </div>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-ink">{customerName(data.customers, b.customerId)}</div>
+                  <div className="truncate text-sm font-medium text-ink">
+                    {customerName(data.customers, b.customerId)}
+                  </div>
                   <div className="truncate text-xs text-ink-muted">
-                    {serviceName(data.services, b.serviceId)} · {staffName(b.staffId)}
+                    {serviceName(data.services, b.serviceId)} ·{" "}
+                    {staffName(b.staffId)}
                   </div>
                 </div>
                 <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
@@ -116,10 +144,18 @@ export default function BookingsPage() {
                       <Check className="size-4" />
                     </button>
                   ) : null}
-                  <button onClick={() => setEditing(b)} className="flex size-8 items-center justify-center rounded-lg text-ink-muted hover:bg-surface" aria-label="Edit">
+                  <button
+                    onClick={() => setEditing(b)}
+                    className="flex size-8 items-center justify-center rounded-lg text-ink-muted hover:bg-surface"
+                    aria-label="Edit"
+                  >
                     <Pencil className="size-4" />
                   </button>
-                  <button onClick={() => setDeleting(b)} className="flex size-8 items-center justify-center rounded-lg text-danger hover:bg-danger-soft" aria-label="Delete">
+                  <button
+                    onClick={() => setDeleting(b)}
+                    className="flex size-8 items-center justify-center rounded-lg text-danger hover:bg-danger-soft"
+                    aria-label="Delete"
+                  >
                     <Trash2 className="size-4" />
                   </button>
                 </div>
@@ -142,7 +178,11 @@ export default function BookingsPage() {
         />
       </Sheet>
 
-      <Sheet open={!!editing} onClose={() => setEditing(null)} title="Edit booking">
+      <Sheet
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title="Edit booking"
+      >
         {editing ? (
           <BookingForm
             initial={editing}

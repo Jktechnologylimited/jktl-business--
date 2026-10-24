@@ -1,3 +1,4 @@
+import { LanguageSwitcher } from "@/components/i18n/LanguageProvider";
 import type { Metadata } from "next";
 import { WebsitePricing } from "@/components/pricing/WebsitePricing";
 export const metadata: Metadata = {
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <div style={{ paddingTop: 72 }}>
+      <div className="mb-4 flex justify-end px-5">
+        <LanguageSwitcher />
+      </div>
       <WebsitePricing />
     </div>
   );

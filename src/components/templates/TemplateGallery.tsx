@@ -1,4 +1,6 @@
 "use client";
+import { T, useLanguage } from "@/components/i18n/LanguageProvider";
+import Link from "next/link";
 import { useState } from "react";
 import {
   websiteTemplates,
@@ -13,6 +15,7 @@ export function TemplateGallery({
   insideBusiness?: boolean;
   initialType?: "all" | "website" | "landing" | "blank";
 }) {
+  const { t } = useLanguage();
   const [type, setType] = useState(initialType);
   const [limit, setLimit] = useState(24);
   const Heading = insideBusiness || initialType === "landing" ? "h2" : "h1";
@@ -34,15 +37,19 @@ export function TemplateGallery({
   return (
     <section className={styles.gallery}>
       <div className={styles.heading}>
-        <p>Designed for your next chapter</p>
+        <p>
+          <T>Designed for your next chapter</T>
+        </p>
         <Heading>
-          Pick a 2026 website or landing-page template
+          <T>Pick a 2026 website or landing-page template</T>
           <br />
-          that feels like your business.
+          <T>that feels like your business.</T>
         </Heading>
         <p>
-          200 industry designs, plus blank starting points. Preview a design,
-          then make it yours in JKTL Business.
+          <T>
+            200 industry designs, plus blank starting points. Preview a design,
+            then make it yours in JKTL Business.
+          </T>
         </p>
         <label className={styles.search}>
           <span aria-hidden="true">⌕</span>
@@ -50,7 +57,7 @@ export function TemplateGallery({
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search templates…"
+            placeholder={t("Search templates…")}
             aria-label="Search website templates"
           />
         </label>
@@ -66,10 +73,18 @@ export function TemplateGallery({
               setLimit(24);
             }}
           >
-            <option value="all">All templates</option>
-            <option value="website">Websites</option>
-            <option value="landing">Landing pages</option>
-            <option value="blank">Blank templates</option>
+            <option value="all">
+              <T>All templates</T>
+            </option>
+            <option value="website">
+              <T>Websites</T>
+            </option>
+            <option value="landing">
+              <T>Landing pages</T>
+            </option>
+            <option value="blank">
+              <T>Blank templates</T>
+            </option>
           </select>
         </label>
         <label>
@@ -80,7 +95,9 @@ export function TemplateGallery({
             onChange={(e) => setCategory(e.target.value)}
           >
             {categories.map((c) => (
-              <option key={c}>{c}</option>
+              <option key={c} value={c}>
+                <T>{c}</T>
+              </option>
             ))}
           </select>
         </label>
@@ -102,7 +119,7 @@ export function TemplateGallery({
       <div className={styles.grid}>
         {filtered.slice(0, limit).map((template) => (
           <article key={template.id} className={styles.card}>
-            <a
+            <Link
               href={`/templates/${template.id}`}
               aria-label={`View ${template.name} template`}
               className={styles.thumbnail}
@@ -124,7 +141,7 @@ export function TemplateGallery({
                 }}
               />
               <span className={styles.previewLabel}>Live preview ↗</span>
-            </a>
+            </Link>
             <div className={styles.cardTitle}>
               <div>
                 <h2>{template.name}</h2>
@@ -139,8 +156,8 @@ export function TemplateGallery({
               </span>
             </div>
             <div className={styles.actions}>
-              <a href={`/templates/${template.id}`}>View</a>
-              <a
+              <Link href={`/templates/${template.id}`}>View</Link>
+              <Link
                 href={
                   insideBusiness
                     ? templateEditorPath(template.id)
@@ -148,7 +165,7 @@ export function TemplateGallery({
                 }
               >
                 Edit <span aria-hidden="true">↗</span>
-              </a>
+              </Link>
             </div>
           </article>
         ))}

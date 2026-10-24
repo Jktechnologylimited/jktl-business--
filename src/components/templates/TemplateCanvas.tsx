@@ -39,8 +39,8 @@ export function TemplateCanvas({
               padding: 10,
               borderRadius: 8,
               border: "1px solid #aab9ae",
-              background: device === value ? "#173e2b" : "white",
-              color: device === value ? "white" : "#173e2b",
+              background: device === value ? "#112055" : "white",
+              color: device === value ? "white" : "#112055",
             }}
           >
             {value === "desktop" ? (
@@ -56,7 +56,7 @@ export function TemplateCanvas({
           overflow: "auto",
           display: "flex",
           justifyContent: device === "mobile" ? "center" : "flex-start",
-          background: "#e8eee8",
+          background: "#F9F7F0",
           padding: 12,
         }}
       >

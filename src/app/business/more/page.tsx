@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import Link from "next/link";
 import { useCurrentIndustry } from "@/lib/store";
@@ -18,10 +19,14 @@ export default function MorePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-bold tracking-tight text-ink">More</h1>
+      <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
+        <T>More</T>
+      </h1>
       {groups.map((group) => (
         <div key={group.name} className="flex flex-col gap-2.5">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">{group.name}</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+            {group.name}
+          </h2>
           <div className="divide-y divide-border rounded-2xl border border-border">
             {group.items.map((item) => (
               <Link
@@ -30,8 +35,12 @@ export default function MorePage() {
                 className="flex items-center justify-between px-4 py-3.5 hover:bg-surface"
               >
                 <div>
-                  <div className="text-sm font-medium text-ink">{item.label}</div>
-                  <div className="text-xs text-ink-muted">{item.description}</div>
+                  <div className="text-sm font-medium text-ink">
+                    <T>{item.label}</T>
+                  </div>
+                  <div className="text-xs text-ink-muted">
+                    <T>{item.description}</T>
+                  </div>
                 </div>
               </Link>
             ))}

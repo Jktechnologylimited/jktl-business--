@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useMemo, useState } from "react";
 import { Package, Pencil, Plus, Trash2 } from "lucide-react";
@@ -31,7 +32,10 @@ export default function ProductsPage() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return products;
-    return products.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q),
+    );
   }, [products, query]);
 
   return (
@@ -40,22 +44,37 @@ export default function ProductsPage() {
         title="Products"
         action={
           <Button size="sm" onClick={() => setAdding(true)}>
-            <Plus className="size-4" /> Add
+            <Plus className="size-4" />
+            <T>Add</T>
           </Button>
         }
       />
 
-      {products.length > 0 ? <SearchInput value={query} onChange={setQuery} placeholder="Search by name or SKU" /> : null}
+      {products.length > 0 ? (
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Search by name or SKU"
+        />
+      ) : null}
 
       {products.length === 0 ? (
         <EmptyState
           icon={<Package className="size-6 text-primary-strong" />}
           title="No products yet"
           description="Add retail products to sell and track alongside your services."
-          action={<Button onClick={() => setAdding(true)}>Add product</Button>}
+          action={
+            <Button onClick={() => setAdding(true)}>
+              <T>Add product</T>
+            </Button>
+          }
         />
       ) : filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-ink-muted">No products match &quot;{query}&quot;.</p>
+        <p className="py-8 text-center text-sm text-ink-muted">
+          <T>No products match &quot;</T>
+          {query}
+          <T>&quot;.</T>
+        </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border">
           {filtered.map((p) => {
@@ -64,25 +83,46 @@ export default function ProductsPage() {
               <div key={p.id} className="flex items-center gap-3 px-4 py-3.5">
                 {p.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- data URL or hosted URL, not a static asset
-                  <img src={p.imageUrl} alt="" className="size-10 shrink-0 rounded-lg border border-border object-cover" />
+                  <img
+                    src={p.imageUrl}
+                    alt=""
+                    className="size-10 shrink-0 rounded-lg border border-border object-cover"
+                  />
                 ) : (
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-strong text-ink-faint">
                     <Package className="size-4" />
                   </span>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-ink">{p.name}</div>
+                  <div className="truncate text-sm font-medium text-ink">
+                    {p.name}
+                  </div>
                   <div className="truncate text-xs text-ink-muted">
-                    {p.sku} · {p.category} · {p.stockQty} in stock
+                    {p.sku} · {p.category} · {p.stockQty}
+                    <T>in stock</T>
                   </div>
                 </div>
-                {low ? <StatusPill tone="danger">Low stock</StatusPill> : null}
-                <div className="shrink-0 text-sm font-semibold text-ink">{formatKobo(p.priceKobo)}</div>
+                {low ? (
+                  <StatusPill tone="danger">
+                    <T>Low stock</T>
+                  </StatusPill>
+                ) : null}
+                <div className="shrink-0 text-sm font-semibold text-ink">
+                  {formatKobo(p.priceKobo)}
+                </div>
                 <div className="flex shrink-0 gap-1">
-                  <button onClick={() => setEditing(p)} className="flex size-8 items-center justify-center rounded-lg text-ink-muted hover:bg-surface" aria-label="Edit">
+                  <button
+                    onClick={() => setEditing(p)}
+                    className="flex size-8 items-center justify-center rounded-lg text-ink-muted hover:bg-surface"
+                    aria-label="Edit"
+                  >
                     <Pencil className="size-4" />
                   </button>
-                  <button onClick={() => setDeleting(p)} className="flex size-8 items-center justify-center rounded-lg text-danger hover:bg-danger-soft" aria-label="Delete">
+                  <button
+                    onClick={() => setDeleting(p)}
+                    className="flex size-8 items-center justify-center rounded-lg text-danger hover:bg-danger-soft"
+                    aria-label="Delete"
+                  >
                     <Trash2 className="size-4" />
                   </button>
                 </div>
@@ -104,7 +144,11 @@ export default function ProductsPage() {
         />
       </Sheet>
 
-      <Sheet open={!!editing} onClose={() => setEditing(null)} title="Edit product">
+      <Sheet
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title="Edit product"
+      >
         {editing ? (
           <ProductForm
             initial={editing}

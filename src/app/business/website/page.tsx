@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 import Link from "next/link";
 import { useState } from "react";
 import { TemplateGallery } from "@/components/templates/TemplateGallery";
@@ -54,17 +55,21 @@ export default function WebsitePage() {
     <div className="space-y-7">
       <div className="flex flex-wrap justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl">Websites & landing pages</h1>
+          <h1 className="font-display text-3xl">
+            <T>Websites & landing pages</T>
+          </h1>
           <p className="mt-2 text-sm text-ink-muted">
-            Choose a 2026 design, start blank, edit your content and measure
-            published results.
+            <T>
+              Choose a 2026 design, start blank, edit your content and measure
+              published results.
+            </T>
           </p>
         </div>
         <Link
           className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary"
           href="/business/website/metrics"
         >
-          View website metrics →
+          <T>View website metrics →</T>
         </Link>
       </div>
       <section className="rounded-xl border border-border bg-surface p-5">
@@ -89,17 +94,17 @@ export default function WebsitePage() {
             className="underline"
             href="/business/website/template?template=blank-landing"
           >
-            Start a blank landing page →
+            <T>Start a blank landing page →</T>
           </Link>
         </div>
       </section>
       <details className="rounded-xl border border-border bg-surface p-5">
         <summary className="cursor-pointer font-semibold">
-          Website address, business logo & custom domain
+          <T>Website address, business logo & custom domain</T>
         </summary>
         <div className="mt-5 space-y-5">
           <label className="block text-sm">
-            JKTL website address
+            <T>JKTL website address</T>
             <input
               className="mt-2 block w-full rounded-lg border border-border bg-paper p-3"
               value={subdomain}

@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useState } from "react";
 import { Pencil, Plus, Scissors, Sparkles, Trash2 } from "lucide-react";
@@ -27,8 +28,14 @@ export default function ServicesPage() {
   const [editing, setEditing] = useState<Service | null>(null);
   const [deleting, setDeleting] = useState<Service | null>(null);
 
-  const tabs = [{ value: "all", label: "All" }, ...industry.serviceCategories.map((c) => ({ value: c, label: c }))];
-  const filtered = category === "all" ? services : services.filter((s) => s.category === category);
+  const tabs = [
+    { value: "all", label: "All" },
+    ...industry.serviceCategories.map((c) => ({ value: c, label: c })),
+  ];
+  const filtered =
+    category === "all"
+      ? services
+      : services.filter((s) => s.category === category);
 
   return (
     <div className="flex flex-col gap-5">
@@ -36,29 +43,42 @@ export default function ServicesPage() {
         title="Services"
         action={
           <Button size="sm" onClick={() => setAdding(true)}>
-            <Plus className="size-4" /> Add
+            <Plus className="size-4" />
+            <T>Add</T>
           </Button>
         }
       />
 
-      {services.length > 0 ? <FilterTabs options={tabs} value={category} onChange={setCategory} /> : null}
+      {services.length > 0 ? (
+        <FilterTabs options={tabs} value={category} onChange={setCategory} />
+      ) : null}
 
       {services.length === 0 ? (
         <EmptyState
           icon={<Sparkles className="size-6 text-primary-strong" />}
           title="No services yet"
           description="Add the services you offer so you can book and sell them."
-          action={<Button onClick={() => setAdding(true)}>Add service</Button>}
+          action={
+            <Button onClick={() => setAdding(true)}>
+              <T>Add service</T>
+            </Button>
+          }
         />
       ) : filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-ink-muted">No services in this category yet.</p>
+        <p className="py-8 text-center text-sm text-ink-muted">
+          <T>No services in this category yet.</T>
+        </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border">
           {filtered.map((s) => (
             <div key={s.id} className="flex items-center gap-3 px-4 py-3.5">
               {s.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- data URL or hosted URL, not a static asset
-                <img src={s.imageUrl} alt="" className="size-10 shrink-0 rounded-lg border border-border object-cover" />
+                <img
+                  src={s.imageUrl}
+                  alt=""
+                  className="size-10 shrink-0 rounded-lg border border-border object-cover"
+                />
               ) : (
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-strong text-ink-faint">
                   <Scissors className="size-4" />
@@ -66,21 +86,36 @@ export default function ServicesPage() {
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-medium text-ink">{s.name}</span>
+                  <span className="truncate text-sm font-medium text-ink">
+                    {s.name}
+                  </span>
                   {!s.active ? (
-                    <span className="rounded-full bg-surface-strong px-2 py-0.5 text-[11px] font-medium text-ink-muted">Inactive</span>
+                    <span className="rounded-full bg-surface-strong px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+                      <T>Inactive</T>
+                    </span>
                   ) : null}
                 </div>
                 <div className="text-xs text-ink-muted">
-                  {s.category} · {s.durationMin} min
+                  {s.category} · {s.durationMin}
+                  <T>min</T>
                 </div>
               </div>
-              <div className="shrink-0 text-sm font-semibold text-ink">{formatKobo(s.priceKobo)}</div>
+              <div className="shrink-0 text-sm font-semibold text-ink">
+                {formatKobo(s.priceKobo)}
+              </div>
               <div className="flex shrink-0 gap-1">
-                <button onClick={() => setEditing(s)} className="flex size-8 items-center justify-center rounded-lg text-ink-muted hover:bg-surface" aria-label="Edit">
+                <button
+                  onClick={() => setEditing(s)}
+                  className="flex size-8 items-center justify-center rounded-lg text-ink-muted hover:bg-surface"
+                  aria-label="Edit"
+                >
                   <Pencil className="size-4" />
                 </button>
-                <button onClick={() => setDeleting(s)} className="flex size-8 items-center justify-center rounded-lg text-danger hover:bg-danger-soft" aria-label="Delete">
+                <button
+                  onClick={() => setDeleting(s)}
+                  className="flex size-8 items-center justify-center rounded-lg text-danger hover:bg-danger-soft"
+                  aria-label="Delete"
+                >
                   <Trash2 className="size-4" />
                 </button>
               </div>
@@ -101,7 +136,11 @@ export default function ServicesPage() {
         />
       </Sheet>
 
-      <Sheet open={!!editing} onClose={() => setEditing(null)} title="Edit service">
+      <Sheet
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title="Edit service"
+      >
         {editing ? (
           <ServiceForm
             initial={editing}

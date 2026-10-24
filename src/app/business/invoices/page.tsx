@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -27,18 +28,28 @@ export default function InvoicesPage() {
   const [adding, setAdding] = useState(false);
 
   const sorted = useMemo(
-    () => [...data.invoices].sort((a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime()),
+    () =>
+      [...data.invoices].sort(
+        (a, b) =>
+          new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime(),
+      ),
     [data.invoices],
   );
-  const filtered = tab === "all" ? sorted : sorted.filter((i) => i.status === tab);
+  const filtered =
+    tab === "all" ? sorted : sorted.filter((i) => i.status === tab);
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Invoices"
         action={
-          <Button size="sm" onClick={() => setAdding(true)} disabled={data.customers.length === 0}>
-            <Plus className="size-4" /> Create
+          <Button
+            size="sm"
+            onClick={() => setAdding(true)}
+            disabled={data.customers.length === 0}
+          >
+            <Plus className="size-4" />
+            <T>Create</T>
           </Button>
         }
       />
@@ -63,34 +74,53 @@ export default function InvoicesPage() {
           title="No invoices yet"
           description="Create an invoice for a customer to track what they owe you."
           action={
-            <Button onClick={() => setAdding(true)} disabled={data.customers.length === 0}>
-              Create invoice
+            <Button
+              onClick={() => setAdding(true)}
+              disabled={data.customers.length === 0}
+            >
+              <T>Create invoice</T>
             </Button>
           }
         />
       ) : filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-ink-muted">Nothing here.</p>
+        <p className="py-8 text-center text-sm text-ink-muted">
+          <T>Nothing here.</T>
+        </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border">
           {filtered.map((inv) => {
             const meta = invoiceStatusMeta(inv.status);
             return (
-              <Link key={inv.id} href={`/business/invoices/${inv.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface">
+              <Link
+                key={inv.id}
+                href={`/business/invoices/${inv.id}`}
+                className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-ink">
-                    {inv.number} · {customerName(data.customers, inv.customerId)}
+                    {inv.number} ·{" "}
+                    {customerName(data.customers, inv.customerId)}
                   </div>
-                  <div className="text-xs text-ink-muted">Due {formatShortDate(inv.dueDate)}</div>
+                  <div className="text-xs text-ink-muted">
+                    <T>Due </T>
+                    {formatShortDate(inv.dueDate)}
+                  </div>
                 </div>
                 <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
-                <div className="w-24 shrink-0 text-right text-sm font-semibold text-ink">{formatKobo(inv.totalKobo)}</div>
+                <div className="w-24 shrink-0 text-right text-sm font-semibold text-ink">
+                  {formatKobo(inv.totalKobo)}
+                </div>
               </Link>
             );
           })}
         </div>
       )}
 
-      <Sheet open={adding} onClose={() => setAdding(false)} title="Create invoice">
+      <Sheet
+        open={adding}
+        onClose={() => setAdding(false)}
+        title="Create invoice"
+      >
         <InvoiceForm
           customers={data.customers}
           onCancel={() => setAdding(false)}

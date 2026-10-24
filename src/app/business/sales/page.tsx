@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -24,13 +25,19 @@ export default function SalesPage() {
   const [adding, setAdding] = useState(false);
 
   const sorted = useMemo(
-    () => [...data.sales].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    () =>
+      [...data.sales].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
     [data.sales],
   );
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return sorted;
-    return sorted.filter((s) => customerName(data.customers, s.customerId).toLowerCase().includes(q));
+    return sorted.filter((s) =>
+      customerName(data.customers, s.customerId).toLowerCase().includes(q),
+    );
   }, [sorted, data.customers, query]);
 
   return (
@@ -39,36 +46,60 @@ export default function SalesPage() {
         title="Sales"
         action={
           <Button size="sm" onClick={() => setAdding(true)}>
-            <Plus className="size-4" /> New sale
+            <Plus className="size-4" />
+            <T>New sale</T>
           </Button>
         }
       />
 
-      {data.sales.length > 0 ? <SearchInput value={query} onChange={setQuery} placeholder="Search by customer" /> : null}
+      {data.sales.length > 0 ? (
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Search by customer"
+        />
+      ) : null}
 
       {data.sales.length === 0 ? (
         <EmptyState
           icon={<Banknote className="size-6 text-primary-strong" />}
           title="No sales recorded yet"
           description="Record your first sale to start tracking revenue."
-          action={<Button onClick={() => setAdding(true)}>Record sale</Button>}
+          action={
+            <Button onClick={() => setAdding(true)}>
+              <T>Record sale</T>
+            </Button>
+          }
         />
       ) : filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-ink-muted">No sales match &quot;{query}&quot;.</p>
+        <p className="py-8 text-center text-sm text-ink-muted">
+          <T>No sales match &quot;</T>
+          {query}
+          <T>&quot;.</T>
+        </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border">
           {filtered.map((s) => {
             const meta = paymentStatusMeta(s.paymentStatus);
             return (
-              <Link key={s.id} href={`/business/sales/${s.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface">
+              <Link
+                key={s.id}
+                href={`/business/sales/${s.id}`}
+                className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface"
+              >
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-ink">{customerName(data.customers, s.customerId)}</div>
+                  <div className="truncate text-sm font-medium text-ink">
+                    {customerName(data.customers, s.customerId)}
+                  </div>
                   <div className="text-xs text-ink-muted">
-                    {formatShortDate(s.createdAt)}, {formatTime(s.createdAt)} · {s.paymentMethod.toUpperCase()}
+                    {formatShortDate(s.createdAt)}, {formatTime(s.createdAt)} ·{" "}
+                    {s.paymentMethod.toUpperCase()}
                   </div>
                 </div>
                 <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
-                <div className="w-24 shrink-0 text-right text-sm font-semibold text-ink">{formatKobo(s.totalKobo)}</div>
+                <div className="w-24 shrink-0 text-right text-sm font-semibold text-ink">
+                  {formatKobo(s.totalKobo)}
+                </div>
               </Link>
             );
           })}

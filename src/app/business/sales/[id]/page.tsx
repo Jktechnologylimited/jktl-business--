@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
@@ -26,9 +27,14 @@ export default function SaleDetailPage() {
   if (!sale) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <p className="text-sm text-ink-muted">This sale no longer exists.</p>
-        <Link href="/business/sales" className="text-sm font-medium text-primary">
-          Back to sales
+        <p className="text-sm text-ink-muted">
+          <T>This sale no longer exists.</T>
+        </p>
+        <Link
+          href="/business/sales"
+          className="text-sm font-medium text-primary"
+        >
+          <T>Back to sales</T>
         </Link>
       </div>
     );
@@ -43,7 +49,9 @@ export default function SaleDetailPage() {
       `${data.profile.displayName}`,
       `Sale — ${formatShortDate(s.createdAt)}, ${formatTime(s.createdAt)}`,
       `Customer: ${customerName(data.customers, s.customerId)}`,
-      ...items.map((i) => `${i.name} x${i.quantity} — ${formatKobo(i.totalKobo)}`),
+      ...items.map(
+        (i) => `${i.name} x${i.quantity} — ${formatKobo(i.totalKobo)}`,
+      ),
       `Total: ${formatKobo(s.totalKobo)}`,
       `Paid: ${formatKobo(s.amountPaidKobo)}${balanceKobo > 0 ? ` (balance ${formatKobo(balanceKobo)})` : ""}`,
       `Status: ${meta.label}`,
@@ -59,17 +67,24 @@ export default function SaleDetailPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <Link href="/business/sales" className="flex items-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink">
-          <ArrowLeft className="size-4" /> Sales
+        <Link
+          href="/business/sales"
+          className="flex items-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink"
+        >
+          <ArrowLeft className="size-4" />
+          <T>Sales</T>
         </Link>
       </div>
 
       <div className="rounded-2xl border border-border p-5">
         <div className="flex items-start justify-between">
           <div>
-            <div className="font-display text-lg font-bold text-ink">{customerName(data.customers, sale.customerId)}</div>
+            <div className="font-display text-lg font-bold text-ink">
+              {customerName(data.customers, sale.customerId)}
+            </div>
             <div className="text-xs text-ink-muted">
-              {formatShortDate(sale.createdAt)}, {formatTime(sale.createdAt)} · {sale.paymentMethod.toUpperCase()}
+              {formatShortDate(sale.createdAt)}, {formatTime(sale.createdAt)} ·{" "}
+              {sale.paymentMethod.toUpperCase()}
             </div>
           </div>
           <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
@@ -77,52 +92,75 @@ export default function SaleDetailPage() {
 
         <div className="mt-5 divide-y divide-border border-y border-border">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between py-2.5 text-sm">
+            <div
+              key={item.id}
+              className="flex items-center justify-between py-2.5 text-sm"
+            >
               <div>
                 <div className="text-ink">{item.name}</div>
                 <div className="text-xs text-ink-muted">
                   {item.quantity} × {formatKobo(item.unitPriceKobo)}
                 </div>
               </div>
-              <div className="font-medium text-ink">{formatKobo(item.totalKobo)}</div>
+              <div className="font-medium text-ink">
+                {formatKobo(item.totalKobo)}
+              </div>
             </div>
           ))}
         </div>
 
         <div className="mt-4 flex flex-col items-end gap-1 text-sm">
           <div className="flex w-48 justify-between text-ink-muted">
-            <span>Subtotal</span>
+            <span>
+              <T>Subtotal</T>
+            </span>
             <span>{formatKobo(sale.subtotalKobo)}</span>
           </div>
           {sale.discountKobo > 0 ? (
             <div className="flex w-48 justify-between text-ink-muted">
-              <span>Discount</span>
+              <span>
+                <T>Discount</T>
+              </span>
               <span>-{formatKobo(sale.discountKobo)}</span>
             </div>
           ) : null}
           <div className="flex w-48 justify-between border-t border-border pt-1 font-display text-base font-bold text-ink">
-            <span>Total</span>
+            <span>
+              <T>Total</T>
+            </span>
             <span>{formatKobo(sale.totalKobo)}</span>
           </div>
           <div className="flex w-48 justify-between text-ink-muted">
-            <span>Paid</span>
+            <span>
+              <T>Paid</T>
+            </span>
             <span>{formatKobo(sale.amountPaidKobo)}</span>
           </div>
           {balanceKobo > 0 ? (
             <div className="flex w-48 justify-between font-medium text-danger">
-              <span>Balance</span>
+              <span>
+                <T>Balance</T>
+              </span>
               <span>{formatKobo(balanceKobo)}</span>
             </div>
           ) : null}
         </div>
 
-        {sale.notes ? <p className="mt-4 text-sm text-ink-muted">{sale.notes}</p> : null}
+        {sale.notes ? (
+          <p className="mt-4 text-sm text-ink-muted">{sale.notes}</p>
+        ) : null}
 
         {sale.receiptPhotoUrl ? (
           <div className="mt-4">
-            <div className="mb-1.5 text-xs font-medium text-ink-muted">Receipt photo</div>
+            <div className="mb-1.5 text-xs font-medium text-ink-muted">
+              <T>Receipt photo</T>
+            </div>
             {/* eslint-disable-next-line @next/next/no-img-element -- data URL, not a static asset */}
-            <img src={sale.receiptPhotoUrl} alt="Receipt" className="max-h-72 w-full rounded-xl border border-border object-contain bg-surface" />
+            <img
+              src={sale.receiptPhotoUrl}
+              alt="Receipt"
+              className="max-h-72 w-full rounded-xl border border-border object-contain bg-surface"
+            />
           </div>
         ) : null}
       </div>
@@ -130,26 +168,43 @@ export default function SaleDetailPage() {
       <div className="flex flex-wrap gap-2">
         {sale.paymentStatus !== "paid" ? (
           <Button size="sm" onClick={() => setUpdatingPayment(true)}>
-            <Receipt className="size-4" /> Update payment
+            <Receipt className="size-4" />
+            <T>Update payment</T>
           </Button>
         ) : (
-          <Button size="sm" variant="outline" onClick={() => setUpdatingPayment(true)}>
-            <Receipt className="size-4" /> {sale.receiptPhotoUrl ? "Replace receipt photo" : "Add receipt photo"}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setUpdatingPayment(true)}
+          >
+            <Receipt className="size-4" />{" "}
+            {sale.receiptPhotoUrl
+              ? "Replace receipt photo"
+              : "Add receipt photo"}
           </Button>
         )}
         <Button size="sm" variant="outline" onClick={copySummary}>
-          <Share2 className="size-4" /> Copy summary
+          <Share2 className="size-4" />
+          <T>Copy summary</T>
         </Button>
       </div>
 
-      <Sheet open={updatingPayment} onClose={() => setUpdatingPayment(false)} title="Update payment">
+      <Sheet
+        open={updatingPayment}
+        onClose={() => setUpdatingPayment(false)}
+        title="Update payment"
+      >
         <UpdatePaymentForm
           sale={sale}
           onCancel={() => setUpdatingPayment(false)}
           onSubmit={(patch) => {
             updateSalePayment(sale.id, patch);
             setUpdatingPayment(false);
-            showToast(patch.paymentStatus === "paid" ? "Marked as fully paid" : "Payment updated");
+            showToast(
+              patch.paymentStatus === "paid"
+                ? "Marked as fully paid"
+                : "Payment updated",
+            );
           }}
         />
       </Sheet>

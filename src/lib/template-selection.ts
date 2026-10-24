@@ -34,3 +34,49 @@ export function templateBusinessType(id: string): BusinessType {
   };
   return mapped[getWebsiteTemplate(id)?.sourceId || id] || "general";
 }
+
+/** Session-only draft for leaving the editor to change a plan. Never publishes. */
+export function readTemplateSessionDraft(
+  organizationId: string,
+  templateId: string,
+  revision: number,
+): unknown | null {
+  if (typeof window === "undefined" || !getWebsiteTemplate(templateId))
+    return null;
+  try {
+    const value = JSON.parse(
+      window.sessionStorage.getItem(
+        `jktl.website-draft:${organizationId}:${templateId}`,
+      ) || "null",
+    );
+    if (
+      !value ||
+      value.revision !== revision ||
+      Date.now() - value.updatedAt > 24 * 60 * 60 * 1000
+    )
+      return null;
+    return value.document || null;
+  } catch {
+    return null;
+  }
+}
+export function rememberTemplateSessionDraft(
+  organizationId: string,
+  templateId: string,
+  revision: number,
+  document: unknown,
+) {
+  if (typeof window === "undefined" || !getWebsiteTemplate(templateId)) return;
+  try {
+    const serialized = JSON.stringify({
+      revision,
+      updatedAt: Date.now(),
+      document,
+    });
+    if (serialized.length <= 75000)
+      window.sessionStorage.setItem(
+        `jktl.website-draft:${organizationId}:${templateId}`,
+        serialized,
+      );
+  } catch {}
+}

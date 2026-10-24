@@ -1,6 +1,6 @@
 .shell {
-  background: #ecefeb;
-  color: #14221b;
+  background: #F9F7F0;
+  color: #060E2A;
   min-height: 100dvh;
   font-family: Arial, sans-serif;
 }
@@ -10,7 +10,7 @@
   gap: 20px;
   padding: 12px 24px;
   background: white;
-  border-bottom: 1px solid #dce2dc;
+  border-bottom: 1px solid #E8E1D0;
   min-height: 74px;
   flex-wrap: wrap;
 }
@@ -26,13 +26,13 @@
 }
 .name small {
   display: block;
-  color: #69746b;
+  color: #5b6472;
   font-size: 11px;
   margin-top: 4px;
 }
 .devices {
   display: flex;
-  border: 1px solid #d4ddd5;
+  border: 1px solid #e8e1d0;
   border-radius: 10px;
   padding: 3px;
   gap: 3px;
@@ -45,21 +45,21 @@
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #5c685e;
+  color: #5b6472;
   cursor: pointer;
 }
 .devices button[aria-pressed="true"] {
-  background: #173e2b;
+  background: #112055;
   color: white;
 }
 .devices button:focus-visible,
 .toolbar a:focus-visible {
-  outline: 3px solid #ccaa38;
+  outline: 3px solid #C9A84C;
   outline-offset: 3px;
 }
 .toolbar .edit {
   padding: 13px 20px;
-  background: #173e2b;
+  background: #112055;
   color: white;
   border-radius: 30px;
   white-space: nowrap;
@@ -86,8 +86,8 @@
   width: 390px;
   max-width: 100%;
   border-radius: 24px;
-  border: 7px solid #21382a;
-  box-shadow: 0 12px 35px #173e2b20;
+  border: 7px solid #060E2A;
+  box-shadow: 0 12px 35px #11205520;
 }
 @media (max-width: 600px) {
   .toolbar {

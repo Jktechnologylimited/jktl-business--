@@ -1,11 +1,18 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function BusinessError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function BusinessError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   const router = useRouter();
 
   useEffect(() => {
@@ -18,16 +25,23 @@ export default function BusinessError({ error, reset }: { error: Error & { diges
         <AlertTriangle className="size-6" />
       </div>
       <div>
-        <h1 className="font-display text-lg font-semibold text-ink">This page hit a snag</h1>
+        <h1 className="font-display text-lg font-semibold text-ink">
+          <T>This page hit a snag</T>
+        </h1>
         <p className="mt-1.5 max-w-xs text-sm text-ink-muted">
-          Something went wrong loading this section. Your data is safe — try again, or head back to the dashboard.
+          <T>
+            Something went wrong loading this section. Your data is safe — try
+            again, or head back to the dashboard.
+          </T>
         </p>
       </div>
       <div className="flex gap-3">
         <Button variant="outline" onClick={() => router.push("/business")}>
-          Go to dashboard
+          <T>Go to dashboard</T>
         </Button>
-        <Button onClick={reset}>Try again</Button>
+        <Button onClick={reset}>
+          <T>Try again</T>
+        </Button>
       </div>
     </div>
   );

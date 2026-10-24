@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { PageHeader } from "@/components/app/page-header";
 import { ImportCard } from "@/components/import/import-card";
@@ -30,8 +31,11 @@ export default function ImportDataPage() {
     <div className="flex flex-col gap-5">
       <PageHeader title="Import data" />
       <p className="-mt-2 text-sm text-ink-muted">
-        Download a template, fill it in with your existing records, then upload it here. Works from Excel, Google Sheets, or an export
-        from wherever your data lives now.
+        <T>
+          Download a template, fill it in with your existing records, then
+          upload it here. Works from Excel, Google Sheets, or an export from
+          wherever your data lives now.
+        </T>
       </p>
 
       <ImportCard

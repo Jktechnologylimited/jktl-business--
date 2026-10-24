@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -6,7 +7,12 @@ import { StatTile } from "@/components/app/stat-tile";
 import { StatusPill, bookingStatusMeta } from "@/components/app/status-pill";
 import { DashboardSkeleton } from "@/components/app/skeleton";
 import { useBusinessStore } from "@/lib/store";
-import { formatKobo, formatLongDate, formatTime, firstName } from "@/lib/format";
+import {
+  formatKobo,
+  formatLongDate,
+  formatTime,
+  firstName,
+} from "@/lib/format";
 import {
   customerName,
   outstandingInvoices,
@@ -45,39 +51,65 @@ export default function DashboardPage() {
   const customerCount = todaysCustomerCount(data.bookings, data.sales, now);
   const outstandingTotal = outstandingTotalKobo(data.invoices);
   const outstandingCount = outstandingInvoices(data.invoices).length;
-  const popular = popularServicesToday(data.bookings, data.services, now).slice(0, 4);
+  const popular = popularServicesToday(data.bookings, data.services, now).slice(
+    0,
+    4,
+  );
   const activity = recentActivity(data, 6);
 
   return (
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
-          {greeting(now.getHours())}, {firstName(data.user.name)}
+          <T>{greeting(now.getHours())}</T>, {firstName(data.user.name)}
         </h1>
         <p className="mt-0.5 text-sm text-ink-muted">{formatLongDate(now)}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="Today's sales" value={formatKobo(salesTotal)} rule="primary" />
-        <StatTile label="Bookings today" value={String(today.length)} rule="info" />
-        <StatTile label="Customers today" value={String(customerCount)} rule="accent" />
+        <StatTile
+          label="Today's sales"
+          value={formatKobo(salesTotal)}
+          rule="primary"
+        />
+        <StatTile
+          label="Bookings today"
+          value={String(today.length)}
+          rule="info"
+        />
+        <StatTile
+          label="Customers today"
+          value={String(customerCount)}
+          rule="accent"
+        />
         <StatTile
           label="Outstanding"
           value={formatKobo(outstandingTotal)}
-          sub={outstandingCount ? `${outstandingCount} invoice${outstandingCount > 1 ? "s" : ""}` : undefined}
+          sub={
+            outstandingCount
+              ? `${outstandingCount} invoice${outstandingCount > 1 ? "s" : ""}`
+              : undefined
+          }
           rule="danger"
         />
       </div>
 
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-base font-semibold text-ink">Today&apos;s bookings</h2>
-          <Link href="/business/bookings" className="text-sm font-medium text-primary">
-            See all
+          <h2 className="font-display text-base font-semibold text-ink">
+            <T>Today&apos;s bookings</T>
+          </h2>
+          <Link
+            href="/business/bookings"
+            className="text-sm font-medium text-primary"
+          >
+            <T>See all</T>
           </Link>
         </div>
         {today.length === 0 ? (
-          <p className="text-sm text-ink-muted">No bookings today yet.</p>
+          <p className="text-sm text-ink-muted">
+            <T>No bookings today yet.</T>
+          </p>
         ) : (
           <div className="divide-y divide-border rounded-2xl border border-border">
             {today.slice(0, 6).map((b) => {
@@ -92,7 +124,8 @@ export default function DashboardPage() {
                       {customerName(data.customers, b.customerId)}
                     </div>
                     <div className="truncate text-xs text-ink-muted">
-                      {serviceName(data.services, b.serviceId)} · {staffName(b.staffId)}
+                      {serviceName(data.services, b.serviceId)} ·{" "}
+                      {staffName(b.staffId)}
                     </div>
                   </div>
                   <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
@@ -105,9 +138,13 @@ export default function DashboardPage() {
 
       <div className="grid gap-8 lg:grid-cols-2">
         <section>
-          <h2 className="mb-3 font-display text-base font-semibold text-ink">Upcoming bookings</h2>
+          <h2 className="mb-3 font-display text-base font-semibold text-ink">
+            <T>Upcoming bookings</T>
+          </h2>
           {upcoming.length === 0 ? (
-            <p className="text-sm text-ink-muted">Nothing booked beyond today yet.</p>
+            <p className="text-sm text-ink-muted">
+              <T>Nothing booked beyond today yet.</T>
+            </p>
           ) : (
             <div className="divide-y divide-border rounded-2xl border border-border">
               {upcoming.map((b) => (
@@ -116,10 +153,13 @@ export default function DashboardPage() {
                     <div className="truncate text-sm font-medium text-ink">
                       {customerName(data.customers, b.customerId)}
                     </div>
-                    <div className="truncate text-xs text-ink-muted">{serviceName(data.services, b.serviceId)}</div>
+                    <div className="truncate text-xs text-ink-muted">
+                      {serviceName(data.services, b.serviceId)}
+                    </div>
                   </div>
                   <div className="shrink-0 text-xs font-medium text-ink-muted">
-                    {formatLongDate(b.startsAt).split(",")[0]}, {formatTime(b.startsAt)}
+                    {formatLongDate(b.startsAt).split(",")[0]},{" "}
+                    {formatTime(b.startsAt)}
                   </div>
                 </div>
               ))}
@@ -128,16 +168,27 @@ export default function DashboardPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 font-display text-base font-semibold text-ink">Popular today</h2>
+          <h2 className="mb-3 font-display text-base font-semibold text-ink">
+            <T>Popular today</T>
+          </h2>
           {popular.length === 0 ? (
-            <p className="text-sm text-ink-muted">No bookings yet to rank.</p>
+            <p className="text-sm text-ink-muted">
+              <T>No bookings yet to rank.</T>
+            </p>
           ) : (
             <div className="divide-y divide-border rounded-2xl border border-border">
               {popular.map(({ service, count }) => (
-                <div key={service.id} className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm font-medium text-ink">{service.name}</span>
+                <div
+                  key={service.id}
+                  className="flex items-center justify-between px-4 py-3"
+                >
+                  <span className="text-sm font-medium text-ink">
+                    {service.name}
+                  </span>
                   <span className="text-xs font-medium text-ink-muted">
-                    {count} booking{count > 1 ? "s" : ""}
+                    {count}
+                    <T>booking</T>
+                    {count > 1 ? "s" : ""}
                   </span>
                 </div>
               ))}
@@ -147,15 +198,24 @@ export default function DashboardPage() {
       </div>
 
       <section>
-        <h2 className="mb-3 font-display text-base font-semibold text-ink">Recent activity</h2>
+        <h2 className="mb-3 font-display text-base font-semibold text-ink">
+          <T>Recent activity</T>
+        </h2>
         <div className="divide-y divide-border rounded-2xl border border-border">
           {activity.map((item) => (
-            <div key={`${item.kind}-${item.id}`} className="flex items-center justify-between px-4 py-3">
+            <div
+              key={`${item.kind}-${item.id}`}
+              className="flex items-center justify-between px-4 py-3"
+            >
               <span className="text-sm text-ink">{item.label}</span>
               {"amountKobo" in item ? (
-                <span className="text-sm font-semibold tabular-nums text-ink">{formatKobo(item.amountKobo)}</span>
+                <span className="text-sm font-semibold tabular-nums text-ink">
+                  {formatKobo(item.amountKobo)}
+                </span>
               ) : (
-                <StatusPill tone={bookingStatusMeta(item.status).tone}>{bookingStatusMeta(item.status).label}</StatusPill>
+                <StatusPill tone={bookingStatusMeta(item.status).tone}>
+                  {bookingStatusMeta(item.status).label}
+                </StatusPill>
               )}
             </div>
           ))}

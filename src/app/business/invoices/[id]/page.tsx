@@ -1,9 +1,18 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Mail, MessageCircle, Printer, Share2, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Mail,
+  MessageCircle,
+  Printer,
+  Share2,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { StatusPill, invoiceStatusMeta } from "@/components/app/status-pill";
@@ -31,9 +40,14 @@ export default function InvoiceDetailPage() {
   if (!invoice) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <p className="text-sm text-ink-muted">This invoice no longer exists.</p>
-        <Link href="/business/invoices" className="text-sm font-medium text-primary">
-          Back to invoices
+        <p className="text-sm text-ink-muted">
+          <T>This invoice no longer exists.</T>
+        </p>
+        <Link
+          href="/business/invoices"
+          className="text-sm font-medium text-primary"
+        >
+          <T>Back to invoices</T>
         </Link>
       </div>
     );
@@ -50,7 +64,10 @@ export default function InvoiceDetailPage() {
   function shareViaWhatsApp() {
     const message = `Hi${customer?.name ? ` ${customer.name}` : ""}, here's invoice ${inv.number} from ${data.profile.displayName} for ${formatKobo(inv.totalKobo)}. You can pay online here: ${paymentLink()}`;
     const phone = customer?.phone ? toWhatsAppNumber(customer.phone) : "";
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+    window.open(
+      `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+      "_blank",
+    );
   }
 
   async function copyPaymentLink() {
@@ -68,7 +85,9 @@ export default function InvoiceDetailPage() {
       `Invoice ${inv.number}`,
       `To: ${customerName(data.customers, inv.customerId)}`,
       `Due: ${formatShortDate(inv.dueDate)}`,
-      ...items.map((i) => `${i.description} x${i.quantity} — ${formatKobo(i.totalKobo)}`),
+      ...items.map(
+        (i) => `${i.description} x${i.quantity} — ${formatKobo(i.totalKobo)}`,
+      ),
       `Total: ${formatKobo(inv.totalKobo)}`,
       `Status: ${meta.label}`,
     ];
@@ -83,10 +102,18 @@ export default function InvoiceDetailPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between print:hidden">
-        <Link href="/business/invoices" className="flex items-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink">
-          <ArrowLeft className="size-4" /> Invoices
+        <Link
+          href="/business/invoices"
+          className="flex items-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink"
+        >
+          <ArrowLeft className="size-4" />
+          <T>Invoices</T>
         </Link>
-        <button onClick={() => setConfirmingDelete(true)} className="flex size-8 items-center justify-center rounded-lg text-danger hover:bg-danger-soft" aria-label="Delete">
+        <button
+          onClick={() => setConfirmingDelete(true)}
+          className="flex size-8 items-center justify-center rounded-lg text-danger hover:bg-danger-soft"
+          aria-label="Delete"
+        >
           <Trash2 className="size-4" />
         </button>
       </div>
@@ -94,8 +121,12 @@ export default function InvoiceDetailPage() {
       <div className="rounded-2xl border border-border p-5">
         <div className="flex items-start justify-between">
           <div>
-            <div className="font-display text-lg font-bold text-ink">{data.profile.displayName}</div>
-            <div className="text-xs text-ink-muted">{data.profile.address}, {data.profile.city}</div>
+            <div className="font-display text-lg font-bold text-ink">
+              {data.profile.displayName}
+            </div>
+            <div className="text-xs text-ink-muted">
+              {data.profile.address}, {data.profile.city}
+            </div>
             <div className="text-xs text-ink-muted">{data.profile.phone}</div>
           </div>
           <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
@@ -103,80 +134,124 @@ export default function InvoiceDetailPage() {
 
         <div className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4 text-sm">
           <div>
-            <div className="text-xs text-ink-faint">Invoice</div>
+            <div className="text-xs text-ink-faint">
+              <T>Invoice</T>
+            </div>
             <div className="font-medium text-ink">{invoice.number}</div>
           </div>
           <div>
-            <div className="text-xs text-ink-faint">Bill to</div>
-            <div className="font-medium text-ink">{customer?.name ?? "Unknown"}</div>
+            <div className="text-xs text-ink-faint">
+              <T>Bill to</T>
+            </div>
+            <div className="font-medium text-ink">
+              {customer?.name ?? "Unknown"}
+            </div>
           </div>
           <div>
-            <div className="text-xs text-ink-faint">Issued</div>
-            <div className="font-medium text-ink">{formatShortDate(invoice.issueDate)}</div>
+            <div className="text-xs text-ink-faint">
+              <T>Issued</T>
+            </div>
+            <div className="font-medium text-ink">
+              {formatShortDate(invoice.issueDate)}
+            </div>
           </div>
           <div>
-            <div className="text-xs text-ink-faint">Due</div>
-            <div className="font-medium text-ink">{formatShortDate(invoice.dueDate)}</div>
+            <div className="text-xs text-ink-faint">
+              <T>Due</T>
+            </div>
+            <div className="font-medium text-ink">
+              {formatShortDate(invoice.dueDate)}
+            </div>
           </div>
         </div>
 
         <div className="mt-5 divide-y divide-border border-y border-border">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between py-2.5 text-sm">
+            <div
+              key={item.id}
+              className="flex items-center justify-between py-2.5 text-sm"
+            >
               <div>
                 <div className="text-ink">{item.description}</div>
                 <div className="text-xs text-ink-muted">
                   {item.quantity} × {formatKobo(item.unitPriceKobo)}
                 </div>
               </div>
-              <div className="font-medium text-ink">{formatKobo(item.totalKobo)}</div>
+              <div className="font-medium text-ink">
+                {formatKobo(item.totalKobo)}
+              </div>
             </div>
           ))}
         </div>
 
         <div className="mt-4 flex flex-col items-end gap-1 text-sm">
           <div className="flex w-40 justify-between text-ink-muted">
-            <span>Subtotal</span>
+            <span>
+              <T>Subtotal</T>
+            </span>
             <span>{formatKobo(invoice.subtotalKobo)}</span>
           </div>
           {invoice.discountKobo > 0 ? (
             <div className="flex w-40 justify-between text-ink-muted">
-              <span>Discount</span>
+              <span>
+                <T>Discount</T>
+              </span>
               <span>-{formatKobo(invoice.discountKobo)}</span>
             </div>
           ) : null}
           <div className="flex w-40 justify-between border-t border-border pt-1 font-display text-base font-bold text-ink">
-            <span>Total</span>
+            <span>
+              <T>Total</T>
+            </span>
             <span>{formatKobo(invoice.totalKobo)}</span>
           </div>
         </div>
 
-        {invoice.notes ? <p className="mt-4 text-sm text-ink-muted">{invoice.notes}</p> : null}
+        {invoice.notes ? (
+          <p className="mt-4 text-sm text-ink-muted">{invoice.notes}</p>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap gap-2 print:hidden">
         {invoice.status !== "paid" ? (
-          <Button size="sm" onClick={() => { updateInvoiceStatus(invoice.id, "paid"); showToast("Marked as paid"); }}>
-            Mark as paid
+          <Button
+            size="sm"
+            onClick={() => {
+              updateInvoiceStatus(invoice.id, "paid");
+              showToast("Marked as paid");
+            }}
+          >
+            <T>Mark as paid</T>
           </Button>
         ) : (
-          <Button size="sm" variant="outline" onClick={() => { updateInvoiceStatus(invoice.id, "pending"); showToast("Marked as pending"); }}>
-            Mark as pending
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              updateInvoiceStatus(invoice.id, "pending");
+              showToast("Marked as pending");
+            }}
+          >
+            <T>Mark as pending</T>
           </Button>
         )}
         <Button size="sm" variant="outline" onClick={() => window.print()}>
-          <Printer className="size-4" /> Print / Download
+          <Printer className="size-4" />
+          <T>Print / Download</T>
         </Button>
         <Button size="sm" variant="outline" onClick={copySummary}>
-          <Share2 className="size-4" /> Copy summary
+          <Share2 className="size-4" />
+          <T>Copy summary</T>
         </Button>
         {mode === "live" && invoice.status !== "paid" ? (
           <>
             <Button size="sm" variant="outline" onClick={shareViaWhatsApp}>
-              <MessageCircle className="size-4" /> Share payment link
+              <MessageCircle className="size-4" />
+              <T>Share payment link</T>
             </Button>
             <Button size="sm" variant="outline" onClick={copyPaymentLink}>
-              <Share2 className="size-4" /> Copy payment link
+              <Share2 className="size-4" />
+              <T>Copy payment link</T>
             </Button>
           </>
         ) : null}
@@ -189,11 +264,18 @@ export default function InvoiceDetailPage() {
               setSendingEmail(true);
               const result = await sendInvoiceEmailAction(invoice.id);
               setSendingEmail(false);
-              showToast(result.ok ? "Invoice emailed to customer" : result.error, result.ok ? "default" : "danger");
+              showToast(
+                result.ok ? "Invoice emailed to customer" : result.error,
+                result.ok ? "default" : "danger",
+              );
             }}
           >
-            {sendingEmail ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
-            Email invoice
+            {sendingEmail ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Mail className="size-4" />
+            )}
+            <T>Email invoice</T>
           </Button>
         ) : null}
       </div>

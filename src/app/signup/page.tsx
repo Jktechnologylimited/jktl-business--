@@ -1,4 +1,5 @@
 "use client";
+import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -48,42 +49,51 @@ function SignupForm() {
   }
   return (
     <div className={`jktl-light ${styles.page}`}>
-      <header className={styles.topbar}>
+      <header className={styles.topbar} style={{ flexWrap: "wrap", gap: 16 }}>
         <a href="https://jktl.com.ng" className={styles.brand}>
           <Image src="/jktl-logo.png" alt="" width={38} height={38} priority />
-          JKTL Business
+          <T>JKTL Business</T>
         </a>
         <p className={styles.signin}>
-          <span>Already have an account?</span>
-          <Link href={signIn}>Log in</Link>
+          <span>
+            <T>Already have an account?</T>
+          </span>
+          <Link href={signIn}>
+            <T>Log in</T>
+          </Link>
         </p>
+        <LanguageSwitcher />
       </header>
       <main className={styles.layout}>
         <section className={styles.story} aria-label="Build with JKTL">
-          <p className={styles.eyebrow}>A place for your next big idea</p>
+          <p className={styles.eyebrow}>
+            <T>A place for your next big idea</T>
+          </p>
           <h2>
-            Your business.
+            <T>Your business.</T>
             <br />
-            Your vision.
+            <T>Your vision.</T>
             <br />
-            Your next chapter.
+            <T>Your next chapter.</T>
           </h2>
           <p>
-            Bring your business online with a website that feels like you—and
-            the tools to help it grow.
+            <T>
+              Bring your business online with a website that feels like you—and
+              the tools to help it grow.
+            </T>
           </p>
           <div className={styles.benefits}>
             <span>
               <Globe size={12} />
-              Website builder
+              <T>Website builder</T>
             </span>
             <span>
               <Layers size={12} />
-              200 designs
+              <T>200 designs</T>
             </span>
             <span>
               <BriefcaseBusiness size={12} />
-              Business tools
+              <T>Business tools</T>
             </span>
           </div>
           <div className={styles.showcase} aria-label="Example website design">
@@ -95,19 +105,24 @@ function SignupForm() {
               </div>
               <div className={styles.sample}>
                 <p className={styles.sampleNav}>
-                  Your brand.<span>HOME · ABOUT · CONTACT</span>
+                  <T>Your brand.</T>
+                  <span>
+                    <T>HOME · ABOUT · CONTACT</T>
+                  </span>
                 </p>
                 <h3>
-                  Make room for
+                  <T>Make room for</T>
                   <br />
-                  what comes next.
+                  <T>what comes next.</T>
                 </h3>
                 <p>
-                  A little inspiration. A fresh perspective. A space that is
-                  entirely yours.
+                  <T>
+                    A little inspiration. A fresh perspective. A space that is
+                    entirely yours.
+                  </T>
                 </p>
                 <span className={styles.sampleButton}>
-                  Explore the possibilities
+                  <T>Explore the possibilities</T>
                 </span>
                 <div className={styles.art} aria-hidden="true">
                   <span />
@@ -117,27 +132,38 @@ function SignupForm() {
               </div>
             </div>
             <p className={styles.caption}>
-              Built around your business.
-              <span>Start with a template. Make it your own.</span>
+              <T>Built around your business.</T>
+              <span>
+                <T>Start with a template. Make it your own.</T>
+              </span>
             </p>
           </div>
         </section>
         <section className={styles.card} aria-labelledby="signup-heading">
-          <p className={styles.eyebrow}>Let’s get you started</p>
-          <h1 id="signup-heading">Create your free account</h1>
+          <p className={styles.eyebrow}>
+            <T>Let’s get you started</T>
+          </p>
+          <h1 id="signup-heading">
+            <T>Create your free account</T>
+          </h1>
           <p className={styles.subhead}>
-            Your next chapter starts here.
+            <T>Your next chapter starts here.</T>
             <br />
-            Start for free. No credit card required.
+            <T>Start for free. No credit card required.</T>
           </p>
           {selected && (
             <div className={styles.selected}>
               <CheckCircle2 size={21} />
               <div>
-                <strong>Selected template: {selected.name}</strong>
+                <strong>
+                  <T>Selected template: </T>
+                  {selected.name}
+                </strong>
                 <p>
-                  Your selected template is ready. It will open after account
-                  setup.
+                  <T>
+                    Your selected template is ready. It will open after account
+                    setup.
+                  </T>
                 </p>
               </div>
             </div>
@@ -145,7 +171,9 @@ function SignupForm() {
           <form onSubmit={submit} className={styles.form}>
             <div className={styles.names}>
               <label className={styles.field} htmlFor="name">
-                <span>Your name</span>
+                <span>
+                  <T>Your name</T>
+                </span>
                 <Input
                   className={styles.input}
                   id="name"
@@ -158,7 +186,9 @@ function SignupForm() {
                 />
               </label>
               <label className={styles.field} htmlFor="businessName">
-                <span>Business name</span>
+                <span>
+                  <T>Business name</T>
+                </span>
                 <Input
                   className={styles.input}
                   id="businessName"
@@ -172,7 +202,9 @@ function SignupForm() {
               </label>
             </div>
             <label className={styles.field} htmlFor="email">
-              <span>Email address</span>
+              <span>
+                <T>Email address</T>
+              </span>
               <Input
                 className={styles.input}
                 id="email"
@@ -187,7 +219,7 @@ function SignupForm() {
             </label>
             <div className={styles.field}>
               <label className={styles.passwordLabel} htmlFor="password">
-                Password
+                <T>Password</T>
               </label>
               <PasswordInput
                 className={styles.input}
@@ -201,45 +233,48 @@ function SignupForm() {
                 aria-describedby="password-hint"
               />
               <p id="password-hint" className={styles.passwordHint}>
-                Use at least 6 characters.
+                <T>Use at least 6 characters.</T>
               </p>
             </div>
             <button type="submit" className={styles.submit} disabled={pending}>
-              {pending ? "Opening your workspace…" : "Get started free"}
+              <T>{pending ? "Opening your workspace…" : "Start for free"}</T>
               <ArrowRight size={16} aria-hidden="true" />
             </button>
           </form>
           <p className={styles.agreement}>
-            * By signing up, you agree to our{" "}
+            <T>* By signing up, you agree to our</T>{" "}
             <a
               href="https://jktl.com.ng/terms"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Terms of Use
+              <T>Terms of Use</T>
             </a>{" "}
-            and acknowledge you’ve read our{" "}
+            <T>and acknowledge you’ve read our</T>{" "}
             <a
               href="https://jktl.com.ng/privacy"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Privacy Policy
+              <T>Privacy Policy</T>
             </a>
             .
           </p>
           <p className={styles.reassurance}>
-            <LockKeyhole size={12} aria-hidden="true" /> No credit card required
-            to get started
+            <LockKeyhole size={12} aria-hidden="true" />
+            <T>No credit card required to get started</T>
           </p>
           <p className={styles.bottom}>
-            Already part of JKTL? <Link href={signIn}>Sign in</Link>
+            <T>Already part of JKTL? </T>
+            <Link href={signIn}>
+              <T>Sign in</T>
+            </Link>
           </p>
         </section>
       </main>
       <footer className={styles.footer}>
-        © {new Date().getFullYear()} JK Technology Limited. Built for your next
-        chapter.
+        © {new Date().getFullYear()}
+        <T>JK Technology Limited. Built for your next chapter.</T>
       </footer>
     </div>
   );
@@ -248,8 +283,8 @@ export default function SignupPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-dvh flex items-center justify-center bg-[#f8f7f2] text-[#163a2c]">
-          Loading your workspace…
+        <div className="min-h-dvh flex items-center justify-center bg-[#f8f7f2] text-[#060E2A]">
+          <T>Loading your workspace…</T>
         </div>
       }
     >

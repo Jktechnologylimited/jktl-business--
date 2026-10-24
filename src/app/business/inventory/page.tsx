@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useMemo, useState } from "react";
 import { Boxes } from "lucide-react";
@@ -33,7 +34,11 @@ export default function InventoryPage() {
   const [adjusting, setAdjusting] = useState<Product | null>(null);
 
   const sortedMovements = useMemo(
-    () => [...movements].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    () =>
+      [...movements].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
     [movements],
   );
 
@@ -70,20 +75,34 @@ export default function InventoryPage() {
             return (
               <div key={p.id} className="flex items-center gap-3 px-4 py-3.5">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-ink">{p.name}</div>
+                  <div className="truncate text-sm font-medium text-ink">
+                    {p.name}
+                  </div>
                   <div className="text-xs text-ink-muted">{p.category}</div>
                 </div>
-                {low ? <StatusPill tone="danger">Low</StatusPill> : null}
-                <div className="w-16 shrink-0 text-right text-sm font-semibold text-ink">{p.stockQty}</div>
-                <Button size="sm" variant="outline" onClick={() => setAdjusting(p)}>
-                  Adjust
+                {low ? (
+                  <StatusPill tone="danger">
+                    <T>Low</T>
+                  </StatusPill>
+                ) : null}
+                <div className="w-16 shrink-0 text-right text-sm font-semibold text-ink">
+                  {p.stockQty}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setAdjusting(p)}
+                >
+                  <T>Adjust</T>
                 </Button>
               </div>
             );
           })}
         </div>
       ) : sortedMovements.length === 0 ? (
-        <p className="py-8 text-center text-sm text-ink-muted">No stock movements yet.</p>
+        <p className="py-8 text-center text-sm text-ink-muted">
+          <T>No stock movements yet.</T>
+        </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border">
           {sortedMovements.map((m) => {
@@ -91,23 +110,33 @@ export default function InventoryPage() {
             return (
               <div key={m.id} className="flex items-center gap-3 px-4 py-3.5">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-ink">{product?.name ?? "Unknown product"}</div>
+                  <div className="truncate text-sm font-medium text-ink">
+                    {product?.name ?? "Unknown product"}
+                  </div>
                   <div className="truncate text-xs text-ink-muted">
                     {m.reason} · {formatShortDate(m.createdAt)}
                   </div>
                 </div>
-                <div className={`shrink-0 text-sm font-semibold ${m.quantity >= 0 ? "text-primary" : "text-danger"}`}>
+                <div
+                  className={`shrink-0 text-sm font-semibold ${m.quantity >= 0 ? "text-primary" : "text-danger"}`}
+                >
                   {m.quantity >= 0 ? "+" : ""}
                   {m.quantity}
                 </div>
-                <div className="w-16 shrink-0 text-right text-xs text-ink-muted">{MOVEMENT_LABEL[m.type] ?? m.type}</div>
+                <div className="w-16 shrink-0 text-right text-xs text-ink-muted">
+                  {MOVEMENT_LABEL[m.type] ?? m.type}
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      <Sheet open={!!adjusting} onClose={() => setAdjusting(null)} title="Adjust stock">
+      <Sheet
+        open={!!adjusting}
+        onClose={() => setAdjusting(null)}
+        title="Adjust stock"
+      >
         {adjusting ? (
           <AdjustStockForm
             product={adjusting}

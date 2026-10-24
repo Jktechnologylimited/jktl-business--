@@ -1,3 +1,4 @@
+import { T } from "@/components/i18n/LanguageProvider";
 import Link from "next/link";
 import { TemplateGallery } from "@/components/templates/TemplateGallery";
 export default function BusinessTemplatesPage() {
@@ -7,7 +8,7 @@ export default function BusinessTemplatesPage() {
         href="/business/website"
         className="block mb-5 text-sm text-primary"
       >
-        ← Website settings
+        <T>← Website settings</T>
       </Link>
       <TemplateGallery insideBusiness />
     </div>

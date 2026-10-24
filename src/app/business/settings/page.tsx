@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
@@ -46,7 +47,9 @@ export default function SettingsPage() {
   const addMember = useBusinessStore((s) => s.addMember);
   const removeMember = useBusinessStore((s) => s.removeMember);
   const updateAccount = useBusinessStore((s) => s.updateAccount);
-  const updateBusinessProfile = useBusinessStore((s) => s.updateBusinessProfile);
+  const updateBusinessProfile = useBusinessStore(
+    (s) => s.updateBusinessProfile,
+  );
   const setAvatar = useBusinessStore((s) => s.setAvatar);
   const showToast = useToastStore((s) => s.show);
 
@@ -57,10 +60,14 @@ export default function SettingsPage() {
   // than an effect, since this is a one-time check of the URL at mount,
   // not something that needs to re-run when other state changes.
   const [tab, setTab] = useState<Tab>(() =>
-    typeof window !== "undefined" && window.location.search.includes("billing=callback") ? "infrastructure" : "business",
+    typeof window !== "undefined" &&
+    window.location.search.includes("billing=callback")
+      ? "infrastructure"
+      : "business",
   );
   const [addingMember, setAddingMember] = useState(false);
-  const [removingMember, setRemovingMember] = useState<OrganizationMember | null>(null);
+  const [removingMember, setRemovingMember] =
+    useState<OrganizationMember | null>(null);
   const [editingAccount, setEditingAccount] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -75,7 +82,10 @@ export default function SettingsPage() {
   // somebody. `entitled` is computed server-side and carried on the store; the
   // server enforces it regardless of what this previews.
   const canAddMember =
-    mode !== "live" || (infra.websiteTeamSeats ? members.length < infra.websiteTeamSeats : members.length < FREE_TEAM_SEATS || infra.entitled);
+    mode !== "live" ||
+    (infra.websiteTeamSeats
+      ? members.length < infra.websiteTeamSeats
+      : members.length < FREE_TEAM_SEATS || infra.entitled);
 
   return (
     <div className="flex flex-col gap-5">
@@ -96,39 +106,76 @@ export default function SettingsPage() {
       {tab === "business" ? (
         <section className="rounded-2xl border border-border p-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-sm font-semibold text-ink">Business</h2>
-            <button className="text-sm font-medium text-primary" onClick={() => setEditingBusiness(true)}>
-              Edit
+            <h2 className="font-display text-sm font-semibold text-ink">
+              <T>Business</T>
+            </h2>
+            <button
+              className="text-sm font-medium text-primary"
+              onClick={() => setEditingBusiness(true)}
+            >
+              <T>Edit</T>
             </button>
           </div>
           <dl className="mt-2 divide-y divide-border">
             <Row label="Name" value={profile.displayName} />
-            <Row label="Type" value={profile.businessType[0].toUpperCase() + profile.businessType.slice(1)} />
+            <Row
+              label="Type"
+              value={
+                profile.businessType[0].toUpperCase() +
+                profile.businessType.slice(1)
+              }
+            />
             <Row label="Phone" value={profile.phone || "—"} />
             <Row label="Email" value={profile.email || "—"} />
-            <Row label="Address" value={profile.address ? `${profile.address}, ${profile.city}, ${profile.state}` : "—"} />
+            <Row
+              label="Address"
+              value={
+                profile.address
+                  ? `${profile.address}, ${profile.city}, ${profile.state}`
+                  : "—"
+              }
+            />
           </dl>
-          <p className="mt-3 text-xs text-ink-muted">Business type and logo upload are set at signup and aren&apos;t editable here yet.</p>
+          <p className="mt-3 text-xs text-ink-muted">
+            <T>
+              Business type and logo upload are set at signup and aren&apos;t
+              editable here yet.
+            </T>
+          </p>
         </section>
       ) : null}
 
-      {tab === "payments" ? <PaymentSettingsPanel mode={mode === "live" ? "live" : "demo"} /> : null}
+      {tab === "payments" ? (
+        <PaymentSettingsPanel mode={mode === "live" ? "live" : "demo"} />
+      ) : null}
 
       {tab === "users" ? (
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-display text-sm font-semibold text-ink">Team members</h2>
-            <Button size="sm" onClick={() => (canAddMember ? setAddingMember(true) : setUpgrading(true))}>
-              <Plus className="size-4" /> Add
+            <h2 className="font-display text-sm font-semibold text-ink">
+              <T>Team members</T>
+            </h2>
+            <Button
+              size="sm"
+              onClick={() =>
+                canAddMember ? setAddingMember(true) : setUpgrading(true)
+              }
+            >
+              <Plus className="size-4" />
+              <T>Add</T>
             </Button>
           </div>
           {!canAddMember ? (
             <p className="mb-3 text-xs text-ink-muted">
-              The free plan covers just you —{" "}
-              <button type="button" onClick={() => setUpgrading(true)} className="font-medium text-primary">
-                upgrade
+              <T>The free plan covers just you —</T>{" "}
+              <button
+                type="button"
+                onClick={() => setUpgrading(true)}
+                className="font-medium text-primary"
+              >
+                <T>upgrade</T>
               </button>{" "}
-              to add more team members.
+              <T>to add more team members.</T>
             </p>
           ) : null}
           <div className="divide-y divide-border rounded-2xl border border-border">
@@ -138,8 +185,12 @@ export default function SettingsPage() {
                   {initials(m.name)}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-ink">{m.name}</div>
-                  <div className="truncate text-xs text-ink-muted">{m.title}</div>
+                  <div className="truncate text-sm font-medium text-ink">
+                    {m.name}
+                  </div>
+                  <div className="truncate text-xs text-ink-muted">
+                    {m.title}
+                  </div>
                 </div>
                 <StatusPill tone={m.role === "owner" ? "primary" : "neutral"}>
                   {m.role[0].toUpperCase() + m.role.slice(1)}
@@ -163,13 +214,22 @@ export default function SettingsPage() {
         <div className="flex flex-col gap-5">
           <section className="rounded-2xl border border-border p-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-sm font-semibold text-ink">Profile</h2>
-              <button className="text-sm font-medium text-primary" onClick={() => setEditingAccount(true)}>
-                Edit
+              <h2 className="font-display text-sm font-semibold text-ink">
+                <T>Profile</T>
+              </h2>
+              <button
+                className="text-sm font-medium text-primary"
+                onClick={() => setEditingAccount(true)}
+              >
+                <T>Edit</T>
               </button>
             </div>
             <div className="mt-3">
-              <AvatarUpload name={user.name} src={user.avatarUrl} onChange={setAvatar} />
+              <AvatarUpload
+                name={user.name}
+                src={user.avatarUrl}
+                onChange={setAvatar}
+              />
             </div>
             <dl className="mt-4 divide-y divide-border border-t border-border pt-1">
               <Row label="Name" value={user.name} />
@@ -180,17 +240,29 @@ export default function SettingsPage() {
 
           <section className="rounded-2xl border border-border p-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-sm font-semibold text-ink">Password</h2>
-              <button className="text-sm font-medium text-primary" onClick={() => setChangingPassword(true)}>
-                Change
+              <h2 className="font-display text-sm font-semibold text-ink">
+                <T>Password</T>
+              </h2>
+              <button
+                className="text-sm font-medium text-primary"
+                onClick={() => setChangingPassword(true)}
+              >
+                <T>Change</T>
               </button>
             </div>
             <p className="mt-1 text-sm text-ink-muted">••••••••</p>
           </section>
 
           <section className="rounded-2xl border border-border p-4">
-            <h2 className="font-display text-sm font-semibold text-ink">Appearance</h2>
-            <p className="mt-1 mb-3 text-xs text-ink-muted">&ldquo;System&rdquo; follows your device&apos;s light/dark setting automatically.</p>
+            <h2 className="font-display text-sm font-semibold text-ink">
+              <T>Appearance</T>
+            </h2>
+            <p className="mt-1 mb-3 text-xs text-ink-muted">
+              <T>
+                &ldquo;System&rdquo; follows your device&apos;s light/dark
+                setting automatically.
+              </T>
+            </p>
             <ThemeToggle />
           </section>
 
@@ -200,7 +272,24 @@ export default function SettingsPage() {
 
       {tab === "infrastructure" ? (
         <div className="flex flex-col gap-4">
-          <section className="rounded-2xl border border-border p-5"><h2 className="font-display text-lg font-semibold">Website plans & digital essentials</h2><p className="mt-2 text-sm text-ink-muted">Start with a free website. Compare monthly and yearly plans, or discuss domains, business email and add-ons separately. Your existing subscription and tools stay unchanged.</p><a href="/business/plans" className="mt-3 inline-block font-medium text-primary">Compare website plans →</a></section>
+          <section className="rounded-2xl border border-border p-5">
+            <h2 className="font-display text-lg font-semibold">
+              <T>Website plans & digital essentials</T>
+            </h2>
+            <p className="mt-2 text-sm text-ink-muted">
+              <T>
+                Start with a free website. Compare monthly and yearly plans, or
+                discuss domains, business email and add-ons separately. Your
+                existing subscription and tools stay unchanged.
+              </T>
+            </p>
+            <a
+              href="/business/plans"
+              className="mt-3 inline-block font-medium text-primary"
+            >
+              <T>Compare website plans →</T>
+            </a>
+          </section>
           <div className="flex flex-col gap-5">
             <SubscriptionBilling demo={mode === "demo"} />
             {/*
@@ -209,13 +298,22 @@ export default function SettingsPage() {
               second, unbuyable plan beside it was the "why are there two bills"
               confusion this change exists to remove.
             */}
-            {infra.subscriptionStatus === "active" || infra.subscriptionStatus === "past_due" ? (
+            {infra.subscriptionStatus === "active" ||
+            infra.subscriptionStatus === "past_due" ? (
               <BillingPanel infra={infra} mode={mode} />
             ) : null}
           </div>
-          <StorageUsagePanel mode={mode} isSubscribed={infra.subscriptionStatus === "active" || infra.subscriptionStatus === "past_due"} />
+          <StorageUsagePanel
+            mode={mode}
+            isSubscribed={
+              infra.subscriptionStatus === "active" ||
+              infra.subscriptionStatus === "past_due"
+            }
+          />
           <section className="rounded-2xl border border-border p-4">
-            <h2 className="font-display text-sm font-semibold text-ink">Infrastructure status</h2>
+            <h2 className="font-display text-sm font-semibold text-ink">
+              <T>Infrastructure status</T>
+            </h2>
             <dl className="mt-2 divide-y divide-border">
               <Row label="Database" value="Active" />
               <Row label="Hosting" value="Active" />
@@ -226,7 +324,11 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
-      <Sheet open={addingMember} onClose={() => setAddingMember(false)} title="Add team member">
+      <Sheet
+        open={addingMember}
+        onClose={() => setAddingMember(false)}
+        title="Add team member"
+      >
         <MemberForm
           onCancel={() => setAddingMember(false)}
           onSubmit={(input) => {
@@ -237,7 +339,11 @@ export default function SettingsPage() {
         />
       </Sheet>
 
-      <Sheet open={editingBusiness} onClose={() => setEditingBusiness(false)} title="Edit business">
+      <Sheet
+        open={editingBusiness}
+        onClose={() => setEditingBusiness(false)}
+        title="Edit business"
+      >
         <BusinessForm
           initial={profile}
           onCancel={() => setEditingBusiness(false)}
@@ -249,7 +355,11 @@ export default function SettingsPage() {
         />
       </Sheet>
 
-      <Sheet open={editingAccount} onClose={() => setEditingAccount(false)} title="Edit profile">
+      <Sheet
+        open={editingAccount}
+        onClose={() => setEditingAccount(false)}
+        title="Edit profile"
+      >
         <AccountForm
           initial={user}
           onCancel={() => setEditingAccount(false)}
@@ -261,7 +371,11 @@ export default function SettingsPage() {
         />
       </Sheet>
 
-      <Sheet open={changingPassword} onClose={() => setChangingPassword(false)} title="Change password">
+      <Sheet
+        open={changingPassword}
+        onClose={() => setChangingPassword(false)}
+        title="Change password"
+      >
         <PasswordForm
           onCancel={() => setChangingPassword(false)}
           onSubmit={() => {

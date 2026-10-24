@@ -34,7 +34,7 @@ The current local execution process has neither database nor Paystack credential
 
 The homepage places the hook and Start for free button before a locally served, generated editorial image of a smiling African entrepreneur and colleagues. The image is illustrative brand photography, not a testimonial, employee portrait or customer endorsement. Original asset: `public/brand/entrepreneur-studio.png`.
 
-Four concrete steps cover templates → free account and editing → publishing → optional domain/email/paid plan. Eight example template cards move using Framer Motion, pause on hover/focus or button click, and respect reduced-motion settings. Existing business tools, product pages, template rendering, desktop/mobile toggles and genuine-review rules remain in place.
+Four concrete steps cover templates → free account and editing → publishing → optional domain/email/paid plan. The Main pricing page places eight example template cards immediately after its foundation section. They move using Framer Motion, pause on hover/focus or button click, and respect reduced-motion settings. Existing business tools, product pages, template rendering, desktop/mobile toggles and genuine-review rules remain in place.
 
 ## Validation
 

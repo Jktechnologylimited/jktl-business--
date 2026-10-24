@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { T } from "@/components/i18n/LanguageProvider";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   getWebsiteTemplate,
@@ -8,7 +9,12 @@ import {
   templateLoginPath,
   type WebsiteDocument,
 } from "@/lib/website-templates";
-import { clearPendingTemplate } from "@/lib/template-selection";
+import {
+  clearPendingTemplate,
+  rememberTemplate,
+  readTemplateSessionDraft,
+  rememberTemplateSessionDraft,
+} from "@/lib/template-selection";
 import { useBusinessStore } from "@/lib/store";
 import { saveWebsiteTemplateAction } from "@/lib/actions/website-template-actions";
 import type { BusinessProfile } from "@/lib/types";
@@ -29,6 +35,16 @@ export function TemplateEditor({
     getWebsiteTemplate(profile.websiteTemplateId) ||
     getWebsiteTemplate("law-firm")!;
   const [content, setContent] = useState<WebsiteDocument>(() => {
+    const draft = readTemplateSessionDraft(
+      profile.organizationId,
+      template.id,
+      profile.websiteRevision || 0,
+    );
+    if (draft) {
+      try {
+        return parseWebsiteDocument(draft);
+      } catch {}
+    }
     if (profile.websiteTemplateId === template.id && profile.websiteDocument) {
       try {
         return parseWebsiteDocument(profile.websiteDocument);
@@ -41,6 +57,17 @@ export function TemplateEditor({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  useEffect(() => {
+    rememberTemplate(template.id);
+  }, [template.id]);
+  useEffect(() => {
+    rememberTemplateSessionDraft(
+      profile.organizationId,
+      template.id,
+      revision,
+      content,
+    );
+  }, [profile.organizationId, template.id, revision, content]);
   const update = <K extends keyof WebsiteDocument>(
     key: K,
     value: WebsiteDocument[K],
@@ -51,13 +78,17 @@ export function TemplateEditor({
   if (mode === "live" && !initialProfile)
     return (
       <div className="rounded-xl border border-border p-6">
-        <h1 className="font-display text-2xl">Sign in to edit this website</h1>
-        <p className="mt-3">Your template selection is preserved.</p>
+        <h1 className="font-display text-2xl">
+          <T>Sign in to edit this website</T>
+        </h1>
+        <p className="mt-3">
+          <T>Your template selection is preserved.</T>
+        </p>
         <Link
           className="mt-4 inline-block text-primary underline"
           href={templateLoginPath(template.id)}
         >
-          Sign in →
+          <T>Sign in →</T>
         </Link>
       </div>
     );
@@ -127,7 +158,7 @@ export function TemplateEditor({
     max = 1000,
   ) => (
     <label key={key} className="block text-sm text-ink">
-      {label}
+      <T>{label}</T>
       {large ? (
         <textarea
           className={field}
@@ -148,29 +179,38 @@ export function TemplateEditor({
   );
   return (
     <div className="space-y-6">
+      <div className="mb-4 flex justify-end">
+        <Link href="/business/plans" className="text-sm text-primary underline">
+          <T>Website plans — keep this design →</T>
+        </Link>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <Link
             href="/business/website"
             className="text-xs text-primary underline"
           >
-            ← Website settings
+            <T>← Website settings</T>
           </Link>
           <h1 className="mt-2 font-display text-2xl text-ink">
-            {template.name} · Website editor
+            {template.name}
+            <T>· Website editor</T>
           </h1>
         </div>
         <Link
           href="/business/templates"
           className="rounded-lg border border-border px-4 py-2 text-sm"
         >
-          Choose another template
+          <T>Choose another template</T>
         </Link>
       </div>
       <p className="rounded-xl border border-border bg-surface p-4 text-sm text-ink-muted">
-        This template is loaded as an unsaved draft. Review the starter copy and
-        images before publishing. Saving changes an existing live site only when
-        “Publish website” is enabled. Business records are not replaced.
+        <T>
+          This template is loaded as an unsaved draft. Review the starter copy
+          and images before publishing. Saving changes an existing live site
+          only when “Publish website” is enabled. Business records are not
+          replaced.
+        </T>
       </p>
       <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-5">
@@ -179,7 +219,7 @@ export function TemplateEditor({
             className="rounded-xl border border-border bg-surface p-5"
           >
             <summary className="cursor-pointer font-semibold">
-              Identity & hero
+              <T>Identity & hero</T>
             </summary>
             <div className="mt-5 space-y-4">
               {text("brandName", "Website name", false, 120)}
@@ -198,11 +238,13 @@ export function TemplateEditor({
                   )
                 }
               >
-                Use bundled template artwork
+                <T>Use bundled template artwork</T>
               </button>
               <p className="text-xs text-ink-muted">
-                Use an image you have permission to publish. Images that cannot
-                load fall back to the bundled artwork.
+                <T>
+                  Use an image you have permission to publish. Images that
+                  cannot load fall back to the bundled artwork.
+                </T>
               </p>
               <div className="flex gap-4 flex-wrap">
                 {(["accent", "paper", "ink"] as const).map((key) => (
@@ -225,7 +267,7 @@ export function TemplateEditor({
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
             <summary className="cursor-pointer font-semibold">
-              About your business
+              <T>About your business</T>
             </summary>
             <div className="mt-5 space-y-4">
               {text("aboutTitle", "About heading", false, 200)}
@@ -234,7 +276,7 @@ export function TemplateEditor({
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
             <summary className="cursor-pointer font-semibold">
-              Services, programmes or collections
+              <T>Services, programmes or collections</T>
             </summary>
             <div className="mt-5 space-y-5">
               {text("offeringsTitle", "Section heading", false, 160)}
@@ -244,10 +286,11 @@ export function TemplateEditor({
                   className="space-y-3 border-t border-border pt-4"
                 >
                   <legend className="text-xs text-ink-muted">
-                    Item {i + 1}
+                    <T>Item </T>
+                    {i + 1}
                   </legend>
                   <label className="block text-sm">
-                    Title
+                    <T>Title</T>
                     <input
                       className={field}
                       value={item.title}
@@ -263,7 +306,7 @@ export function TemplateEditor({
                     />
                   </label>
                   <label className="block text-sm">
-                    Description
+                    <T>Description</T>
                     <textarea
                       className={field}
                       value={item.description}
@@ -288,7 +331,7 @@ export function TemplateEditor({
                         )
                       }
                     >
-                      Remove item
+                      <T>Remove item</T>
                     </button>
                   )}
                 </fieldset>
@@ -306,13 +349,15 @@ export function TemplateEditor({
                     ])
                   }
                 >
-                  Add item
+                  <T>Add item</T>
                 </button>
               )}
             </div>
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
-            <summary className="cursor-pointer font-semibold">Gallery</summary>
+            <summary className="cursor-pointer font-semibold">
+              <T>Gallery</T>
+            </summary>
             <div className="mt-5 space-y-5">
               {text("galleryTitle", "Gallery heading", false, 160)}
               {content.gallery.map((item, i) => (
@@ -320,9 +365,12 @@ export function TemplateEditor({
                   key={i}
                   className="space-y-3 border-t border-border pt-4"
                 >
-                  <legend className="text-xs">Image {i + 1}</legend>
+                  <legend className="text-xs">
+                    <T>Image </T>
+                    {i + 1}
+                  </legend>
                   <label className="block text-sm">
-                    HTTPS image URL
+                    <T>HTTPS image URL</T>
                     <input
                       className={field}
                       value={item.src}
@@ -338,7 +386,7 @@ export function TemplateEditor({
                     />
                   </label>
                   <label className="block text-sm">
-                    Caption & accessible description
+                    <T>Caption & accessible description</T>
                     <input
                       className={field}
                       value={item.alt}
@@ -363,7 +411,7 @@ export function TemplateEditor({
                         )
                       }
                     >
-                      Remove image
+                      <T>Remove image</T>
                     </button>
                   )}
                 </fieldset>
@@ -381,20 +429,20 @@ export function TemplateEditor({
                     ])
                   }
                 >
-                  Add image
+                  <T>Add image</T>
                 </button>
               )}
             </div>
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
             <summary className="cursor-pointer font-semibold">
-              Your approach
+              <T>Your approach</T>
             </summary>
             <div className="mt-5 space-y-4">
               {text("featureTitle", "Heading", false, 240)}
               {text("featureText", "Description", true, 2000)}
               <label className="block text-sm">
-                Steps (one per line)
+                <T>Steps (one per line)</T>
                 <textarea
                   className={field}
                   rows={5}
@@ -411,7 +459,7 @@ export function TemplateEditor({
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
             <summary className="cursor-pointer font-semibold">
-              Frequently asked questions
+              <T>Frequently asked questions</T>
             </summary>
             <div className="mt-5 space-y-5">
               {text("faqTitle", "Section heading", false, 160)}
@@ -421,7 +469,7 @@ export function TemplateEditor({
                   className="space-y-3 border-t border-border pt-4"
                 >
                   <label className="block text-sm">
-                    Question
+                    <T>Question</T>
                     <input
                       className={field}
                       value={item.question}
@@ -437,7 +485,7 @@ export function TemplateEditor({
                     />
                   </label>
                   <label className="block text-sm">
-                    Answer
+                    <T>Answer</T>
                     <textarea
                       className={field}
                       value={item.answer}
@@ -462,7 +510,7 @@ export function TemplateEditor({
                         )
                       }
                     >
-                      Remove question
+                      <T>Remove question</T>
                     </button>
                   )}
                 </fieldset>
@@ -477,26 +525,28 @@ export function TemplateEditor({
                     ])
                   }
                 >
-                  Add question
+                  <T>Add question</T>
                 </button>
               )}
             </div>
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
             <summary className="cursor-pointer font-semibold">
-              Contact section
+              <T>Contact section</T>
             </summary>
             <div className="mt-5 space-y-4">
               {text("contactTitle", "Contact heading", false, 240)}
               {text("contactText", "Contact introduction", true, 2000)}
               <p className="text-xs text-ink-muted">
-                Email, phone and address come from your existing business
-                profile.{" "}
+                <T>
+                  Email, phone and address come from your existing business
+                  profile.
+                </T>{" "}
                 <Link
                   href="/business/settings"
                   className="underline text-primary"
                 >
-                  Update your business details
+                  <T>Update your business details</T>
                 </Link>
                 .
               </p>
@@ -504,11 +554,11 @@ export function TemplateEditor({
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
             <summary className="cursor-pointer font-semibold">
-              Logo, service areas & SEO
+              <T>Logo, service areas & SEO</T>
             </summary>
             <div className="mt-5 space-y-4">
               <label className="block text-sm">
-                Logo HTTPS URL
+                <T>Logo HTTPS URL</T>
                 <input
                   className={field}
                   value={content.logoUrl || ""}
@@ -517,11 +567,13 @@ export function TemplateEditor({
                 />
               </label>
               <p className="text-xs text-ink-muted">
-                Your business logo is used when no template logo is set.
-                Otherwise a monogram is shown.
+                <T>
+                  Your business logo is used when no template logo is set.
+                  Otherwise a monogram is shown.
+                </T>
               </p>
               <label className="block text-sm">
-                Service areas (one city or region per line)
+                <T>Service areas (one city or region per line)</T>
                 <textarea
                   className={field}
                   rows={4}
@@ -535,7 +587,7 @@ export function TemplateEditor({
                 />
               </label>
               <label className="block text-sm">
-                Search title
+                <T>Search title</T>
                 <input
                   className={field}
                   value={content.seoTitle || ""}
@@ -544,7 +596,7 @@ export function TemplateEditor({
                 />
               </label>
               <label className="block text-sm">
-                Search description
+                <T>Search description</T>
                 <textarea
                   className={field}
                   value={content.seoDescription || ""}
@@ -556,7 +608,7 @@ export function TemplateEditor({
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
             <summary className="cursor-pointer font-semibold">
-              Social icons
+              <T>Social icons</T>
             </summary>
             <div className="mt-5 space-y-4">
               {(content.socials || []).map((item, i) => (
@@ -608,7 +660,7 @@ export function TemplateEditor({
                       )
                     }
                   >
-                    Remove social link
+                    <T>Remove social link</T>
                   </button>
                 </div>
               ))}
@@ -622,22 +674,26 @@ export function TemplateEditor({
                     ])
                   }
                 >
-                  Add social icon
+                  <T>Add social icon</T>
                 </button>
               )}
             </div>
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
-            <summary className="cursor-pointer font-semibold">Reviews</summary>
+            <summary className="cursor-pointer font-semibold">
+              <T>Reviews</T>
+            </summary>
             <p className="mt-3 text-xs text-ink-muted">
-              Publish only genuine feedback you have permission to use. Sample
-              reviews in the preview are never saved automatically.
+              <T>
+                Publish only genuine feedback you have permission to use. Sample
+                reviews in the preview are never saved automatically.
+              </T>
             </p>
             <div className="mt-5 space-y-4">
               {(content.reviews || []).map((review, i) => (
                 <fieldset key={i} className="space-y-2">
                   <label className="block text-sm">
-                    Customer name
+                    <T>Customer name</T>
                     <input
                       className={field}
                       value={review.name}
@@ -653,7 +709,7 @@ export function TemplateEditor({
                     />
                   </label>
                   <label className="block text-sm">
-                    Review
+                    <T>Review</T>
                     <textarea
                       className={field}
                       value={review.quote}
@@ -669,7 +725,7 @@ export function TemplateEditor({
                     />
                   </label>
                   <label className="block text-sm">
-                    Rating
+                    <T>Rating</T>
                     <select
                       className={field}
                       value={review.rating}
@@ -686,7 +742,8 @@ export function TemplateEditor({
                     >
                       {[1, 2, 3, 4, 5].map((n) => (
                         <option key={n} value={n}>
-                          {n} stars
+                          {n}
+                          <T>stars</T>
                         </option>
                       ))}
                     </select>
@@ -700,7 +757,7 @@ export function TemplateEditor({
                       )
                     }
                   >
-                    Remove review
+                    <T>Remove review</T>
                   </button>
                 </fieldset>
               ))}
@@ -714,7 +771,7 @@ export function TemplateEditor({
                     ])
                   }
                 >
-                  Add genuine review
+                  <T>Add genuine review</T>
                 </button>
               )}
             </div>
@@ -727,11 +784,13 @@ export function TemplateEditor({
               className="mt-1"
             />
             <span className="text-sm">
-              Publish website
+              <T>Publish website</T>
               <span className="block mt-1 text-xs text-ink-muted">
-                When enabled, saving makes this design and content visible on
-                your existing website address. Turn it off to save without
-                publishing.
+                <T>
+                  When enabled, saving makes this design and content visible on
+                  your existing website address. Turn it off to save without
+                  publishing.
+                </T>
               </span>
             </span>
           </label>
@@ -761,7 +820,9 @@ export function TemplateEditor({
         </div>
         <section className="min-w-0">
           <div className="xl:sticky xl:top-5">
-            <h2 className="font-semibold mb-3">Live preview</h2>
+            <h2 className="font-semibold mb-3">
+              <T>Live preview</T>
+            </h2>
             <div className="overflow-hidden rounded-xl border border-border">
               <TemplateCanvas
                 template={template}
@@ -770,8 +831,10 @@ export function TemplateEditor({
               />
             </div>
             <p className="mt-3 text-xs text-ink-muted">
-              The same layout and saved content render on your published site.
-              No template is published until you save.
+              <T>
+                The same layout and saved content render on your published site.
+                No template is published until you save.
+              </T>
             </p>
           </div>
         </section>

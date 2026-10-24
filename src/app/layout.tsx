@@ -1,3 +1,4 @@
+import { LanguageProvider } from "@/components/i18n/LanguageProvider";
 import type { Metadata, Viewport } from "next";
 import { jetBrainsMono, ALL_SITE_FONT_VARIABLES } from "@/lib/fonts";
 import { AppBootstrap } from "@/components/app/app-bootstrap";
@@ -6,7 +7,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "JKTL Business",
-  description: "Manage your customers, sales, bookings, inventory and invoices — all in one place.",
+  description:
+    "Manage your customers, sales, bookings, inventory and invoices — all in one place.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -36,7 +38,11 @@ export const viewport: Viewport = {
 // globals.css handles that case on its own, with no JS involved.
 const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("jktl-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     // suppressHydrationWarning: the theme script above intentionally sets
     // `data-theme` on this element from localStorage before React
@@ -44,14 +50,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // the server can't read the browser's localStorage) and the first
     // client paint legitimately differ on this one attribute. This tells
     // React that's expected here, rather than treating it as a bug.
-    <html lang="en" className={`${jetBrainsMono.variable} ${ALL_SITE_FONT_VARIABLES}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${jetBrainsMono.variable} ${ALL_SITE_FONT_VARIABLES}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="font-body antialiased">
-        <AppBootstrap />
-        {children}
-        <Toaster />
+        <LanguageProvider>
+          <AppBootstrap />
+          {children}
+          <Toaster />
+        </LanguageProvider>
       </body>
     </html>
   );

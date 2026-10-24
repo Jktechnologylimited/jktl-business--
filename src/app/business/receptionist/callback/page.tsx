@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -23,10 +24,14 @@ import { reconcilePaymentAction } from "@/lib/actions/receptionist-actions";
 export default function ReceptionistCallbackPage() {
   const router = useRouter();
   const [reference] = useState<string | null>(() =>
-    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("reference"),
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("reference"),
   );
   const [state, setState] = useState<"working" | "done" | "failed">("working");
-  const [message, setMessage] = useState("Confirming your payment with Paystack…");
+  const [message, setMessage] = useState(
+    "Confirming your payment with Paystack…",
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +44,9 @@ export default function ReceptionistCallbackPage() {
 
       if (!reference) {
         setState("failed");
-        setMessage("No payment reference was returned. If you were debited, send us the reference and we'll credit it manually.");
+        setMessage(
+          "No payment reference was returned. If you were debited, send us the reference and we'll credit it manually.",
+        );
         return;
       }
 
@@ -61,22 +68,37 @@ export default function ReceptionistCallbackPage() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-paper p-6 text-center">
-      {state === "working" ? <Loader2 className="size-8 animate-spin text-primary" /> : null}
-      {state === "done" ? <CheckCircle2 className="size-8 text-primary" /> : null}
+      {state === "working" ? (
+        <Loader2 className="size-8 animate-spin text-primary" />
+      ) : null}
+      {state === "done" ? (
+        <CheckCircle2 className="size-8 text-primary" />
+      ) : null}
       {state === "failed" ? <XCircle className="size-8 text-danger" /> : null}
 
       <div>
         <h1 className="font-display text-lg font-semibold text-ink">
-          {state === "working" ? "Confirming payment" : state === "done" ? "Payment confirmed" : "We couldn't confirm that yet"}
+          {state === "working"
+            ? "Confirming payment"
+            : state === "done"
+              ? "Payment confirmed"
+              : "We couldn't confirm that yet"}
         </h1>
         <p className="mt-1.5 text-sm text-ink-muted">{message}</p>
       </div>
 
-      <Button variant="outline" size="sm" onClick={() => router.push("/business/receptionist")}>
-        Back to the receptionist
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => router.push("/business/receptionist")}
+      >
+        <T>Back to the receptionist</T>
       </Button>
-      <Link href="/business/receptionist" className="text-xs text-ink-faint hover:text-ink">
-        Or tap here
+      <Link
+        href="/business/receptionist"
+        className="text-xs text-ink-faint hover:text-ink"
+      >
+        <T>Or tap here</T>
       </Link>
     </div>
   );

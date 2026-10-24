@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/i18n/LanguageProvider";
 
 import { useMemo, useState } from "react";
 import { Plus, Receipt, Trash2 } from "lucide-react";
@@ -16,7 +17,15 @@ import type { Expense } from "@/lib/types";
 
 type Cat = "all" | Expense["category"];
 
-const CATEGORIES: Expense["category"][] = ["rent", "electricity", "staff", "supplies", "transportation", "marketing", "other"];
+const CATEGORIES: Expense["category"][] = [
+  "rent",
+  "electricity",
+  "staff",
+  "supplies",
+  "transportation",
+  "marketing",
+  "other",
+];
 
 export default function ExpensesPage() {
   const expenses = useBusinessStore((s) => s.data.expenses);
@@ -28,8 +37,15 @@ export default function ExpensesPage() {
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState<Expense | null>(null);
 
-  const sorted = useMemo(() => [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [expenses]);
-  const filtered = category === "all" ? sorted : sorted.filter((e) => e.category === category);
+  const sorted = useMemo(
+    () =>
+      [...expenses].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      ),
+    [expenses],
+  );
+  const filtered =
+    category === "all" ? sorted : sorted.filter((e) => e.category === category);
   const total = filtered.reduce((sum, e) => sum + e.amountKobo, 0);
 
   return (
@@ -38,14 +54,21 @@ export default function ExpensesPage() {
         title="Expenses"
         action={
           <Button size="sm" onClick={() => setAdding(true)}>
-            <Plus className="size-4" /> Add
+            <Plus className="size-4" />
+            <T>Add</T>
           </Button>
         }
       />
 
       {expenses.length > 0 ? (
         <FilterTabs<Cat>
-          options={[{ value: "all", label: "All" }, ...CATEGORIES.map((c) => ({ value: c, label: c[0].toUpperCase() + c.slice(1) }))]}
+          options={[
+            { value: "all", label: "All" },
+            ...CATEGORIES.map((c) => ({
+              value: c,
+              label: c[0].toUpperCase() + c.slice(1),
+            })),
+          ]}
           value={category}
           onChange={setCategory}
         />
@@ -56,28 +79,49 @@ export default function ExpensesPage() {
           icon={<Receipt className="size-6 text-primary-strong" />}
           title="No expenses recorded yet"
           description="Track rent, staff, supplies and other costs to see your real margin."
-          action={<Button onClick={() => setAdding(true)}>Add expense</Button>}
+          action={
+            <Button onClick={() => setAdding(true)}>
+              <T>Add expense</T>
+            </Button>
+          }
         />
       ) : (
         <>
           <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
-            <span className="text-sm font-medium text-ink-muted">Total{category !== "all" ? ` · ${category}` : ""}</span>
-            <span className="font-display text-lg font-bold text-ink">{formatKobo(total)}</span>
+            <span className="text-sm font-medium text-ink-muted">
+              <T>Total</T>
+              {category !== "all" ? ` · ${category}` : ""}
+            </span>
+            <span className="font-display text-lg font-bold text-ink">
+              {formatKobo(total)}
+            </span>
           </div>
           {filtered.length === 0 ? (
-            <p className="py-8 text-center text-sm text-ink-muted">Nothing in this category yet.</p>
+            <p className="py-8 text-center text-sm text-ink-muted">
+              <T>Nothing in this category yet.</T>
+            </p>
           ) : (
             <div className="divide-y divide-border rounded-2xl border border-border">
               {filtered.map((e) => (
                 <div key={e.id} className="flex items-center gap-3 px-4 py-3.5">
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-ink">{e.description}</div>
+                    <div className="truncate text-sm font-medium text-ink">
+                      {e.description}
+                    </div>
                     <div className="text-xs text-ink-muted">
-                      {e.category[0].toUpperCase() + e.category.slice(1)} · {formatShortDate(e.date)} · {e.paymentMethod.toUpperCase()}
+                      {e.category[0].toUpperCase() + e.category.slice(1)} ·{" "}
+                      {formatShortDate(e.date)} ·{" "}
+                      {e.paymentMethod.toUpperCase()}
                     </div>
                   </div>
-                  <div className="shrink-0 text-sm font-semibold text-ink">{formatKobo(e.amountKobo)}</div>
-                  <button onClick={() => setDeleting(e)} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-danger hover:bg-danger-soft" aria-label="Delete">
+                  <div className="shrink-0 text-sm font-semibold text-ink">
+                    {formatKobo(e.amountKobo)}
+                  </div>
+                  <button
+                    onClick={() => setDeleting(e)}
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-danger hover:bg-danger-soft"
+                    aria-label="Delete"
+                  >
                     <Trash2 className="size-4" />
                   </button>
                 </div>
