@@ -25,8 +25,10 @@ export async function generateMetadata({ params }: { params: Promise<{ subdomain
   const isProspect = await isProspectOrganization(site.profile.organizationId);
 
   return {
-    title: site.profile.displayName,
-    description: site.profile.tagline || `Book with ${site.profile.displayName}`,
+    title: site.profile.websiteDocument?.seoTitle || site.profile.displayName,
+    description: site.profile.websiteDocument?.seoDescription || site.profile.tagline || `Book with ${site.profile.displayName}`,
+    alternates:{canonical:`https://${site.profile.customDomainVerified&&site.profile.customDomain?site.profile.customDomain:`${site.profile.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN||'jktl.com.ng'}`}`},
+    openGraph:{title:site.profile.websiteDocument?.seoTitle||site.profile.displayName,description:site.profile.websiteDocument?.seoDescription||site.profile.tagline,siteName:site.profile.displayName},
     ...(isProspect ? { robots: { index: false, follow: false } } : {}),
   };
 }

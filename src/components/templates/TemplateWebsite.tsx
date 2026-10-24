@@ -15,6 +15,9 @@ export type TemplateContact = {
   city?: string;
   state?: string;
   logoUrl?: string | null;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
 };
 export function TemplateWebsite({
   template,
@@ -24,6 +27,8 @@ export function TemplateWebsite({
   accent,
   businessSection,
   bookingAvailable = false,
+  reviews: existingReviews = [],
+  onInteraction,
 }: {
   template: WebsiteTemplate;
   document: WebsiteDocument;
@@ -32,6 +37,8 @@ export function TemplateWebsite({
   accent?: string;
   businessSection?: ReactNode;
   bookingAvailable?: boolean;
+  reviews?: { name: string; quote: string; rating?: number | null }[];
+  onInteraction?: (kind: "cta" | "contact") => void;
 }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -39,11 +46,10 @@ export function TemplateWebsite({
     // A failed image can finish before React attaches its onError handler.
     root.current?.querySelectorAll("img").forEach((image) => {
       if (image.complete && !image.naturalWidth && !image.dataset.fallback) {
-        image.dataset.fallback = "true";
-        image.src = `/template-art/${template.id}.svg`;
+        image.src = `/template-art/${template.sourceId || template.id}.svg`;
       }
     });
-  }, [template.id, doc.heroImage]);
+  }, [template.id, template.sourceId, doc.heroImage]);
   const colour = /^#[0-9a-f]{6}$/i.test(accent || "") ? accent! : doc.accent;
   const channel = (text: string) => text.trim();
   const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email || "")
@@ -73,14 +79,97 @@ export function TemplateWebsite({
       loading="lazy"
       referrerPolicy="no-referrer"
       onError={(e) => {
-        if (!e.currentTarget.dataset.fallback) {
-          e.currentTarget.dataset.fallback = "true";
-          e.currentTarget.src = `/template-art/${template.id}.svg`;
+        if (
+          e.currentTarget.getAttribute("src") !==
+          `/template-art/${template.sourceId || template.id}.svg`
+        ) {
+          e.currentTarget.src = `/template-art/${template.sourceId || template.id}.svg`;
         }
       }}
     />
   );
+  const reviews = doc.reviews?.length ? doc.reviews : existingReviews;
+  const visibleReviews = reviews.length
+    ? reviews
+    : preview
+      ? [
+          {
+            name: "Example customer",
+            quote:
+              "Add a genuine customer review here before publishing. This sample is not published.",
+            rating: 5,
+          },
+        ]
+      : [];
+  const socialLinks = doc.socials?.length
+    ? doc.socials
+    : [
+        { platform: "instagram", url: contact.instagramUrl },
+        { platform: "facebook", url: contact.facebookUrl },
+        { platform: "tiktok", url: contact.tiktokUrl },
+      ].filter((v): v is { platform: string; url: string } =>
+        Boolean(v.url?.startsWith("https://")),
+      );
+  const sectionEnabled = (key: string) =>
+    template.sectionOrder.includes(key) &&
+    (!doc.blank ||
+      (key === "about"
+        ? Boolean(doc.aboutText)
+        : key === "offerings"
+          ? doc.offerings.length > 0
+          : key === "gallery"
+            ? doc.gallery.length > 0
+            : key === "feature"
+              ? doc.featureItems.length > 0
+              : key === "faq"
+                ? doc.faqs.length > 0
+                : key === "areas"
+                  ? Boolean(doc.serviceAreas?.length)
+                  : key === "reviews"
+                    ? Boolean(doc.reviews?.length)
+                    : true));
   const sections: Record<string, React.ReactNode> = {
+    areas: (
+      <section id="service-areas" className={styles.areas}>
+        <p className={styles.label}>Local to you</p>
+        <h2>Service areas</h2>
+        <p>
+          {doc.serviceAreas?.length
+            ? doc.serviceAreas.join(" · ")
+            : preview
+              ? "Add the towns, cities or regions you serve in the editor."
+              : "Contact us to discuss service coverage."}
+        </p>
+      </section>
+    ),
+    reviews: (
+      <section id="reviews" className={styles.reviews}>
+        <div className={styles.sectionHeading}>
+          <p className={styles.label}>Kind words</p>
+          <h2>Reviews</h2>
+          {!reviews.length && preview && (
+            <p>Sample review · replace with genuine feedback in the editor</p>
+          )}
+        </div>
+        <div className={styles.cards}>
+          {visibleReviews.map((review, i) => (
+            <blockquote key={i}>
+              {review.rating && review.rating > 0 ? (
+                <p aria-label={`${review.rating} out of 5 stars`}>
+                  {"★".repeat(review.rating)}
+                </p>
+              ) : null}
+              <p>{review.quote}</p>
+              <cite>{review.name}</cite>
+            </blockquote>
+          ))}
+        </div>
+        {!visibleReviews.length && (
+          <p>Genuine customer feedback will be added here.</p>
+        )}
+      </section>
+    ),
+
     about: (
       <section id="about" className={styles.about}>
         <p className={styles.label}>Our story</p>
@@ -172,10 +261,33 @@ export function TemplateWebsite({
       className={styles.site}
       data-layout={template.layout}
       style={css}
+      data-kind={template.kind || "website"}
+      onClickCapture={(event) => {
+        const link = (event.target as Element).closest("a");
+        if (!link || !onInteraction) return;
+        const href = link.getAttribute("href") || "";
+        if (
+          href.startsWith("mailto:") ||
+          href.startsWith("tel:") ||
+          href === "#contact"
+        )
+          onInteraction("contact");
+        else if (link.classList.contains(styles.primary)) onInteraction("cta");
+      }}
     >
       <header className={styles.header}>
         <a href="#home" className={styles.brand}>
-          {contact.logoUrl && img(contact.logoUrl, "", styles.logo)}
+          {doc.logoUrl || contact.logoUrl ? (
+            img(doc.logoUrl || contact.logoUrl!, "", styles.logo)
+          ) : (
+            <span className={styles.monogram} aria-hidden="true">
+              {doc.brandName
+                .split(/\s+/)
+                .map((w) => w[0])
+                .slice(0, 2)
+                .join("")}
+            </span>
+          )}
           {doc.brandName}
         </a>
         <button
@@ -194,27 +306,59 @@ export function TemplateWebsite({
           className={open ? styles.expanded : ""}
           onClick={() => setOpen(false)}
         >
-          <a href="#about">About</a>
-          <a href="#offerings">Explore</a>
-          <a href="#gallery">Gallery</a>
-          <a href="#questions">Questions</a>
+          <a href="#home">Home</a>
+          {sectionEnabled("about") && <a href="#about">About</a>}
+          {sectionEnabled("offerings") && <a href="#offerings">Services</a>}
+          {sectionEnabled("gallery") && <a href="#gallery">Gallery</a>}
+          {sectionEnabled("areas") && (
+            <a href="#service-areas">Service areas</a>
+          )}
+          {sectionEnabled("reviews") && <a href="#reviews">Reviews</a>}
           {bookingAvailable && <a href="#book">Book an appointment</a>}
           <a href="#contact" className={styles.navContact}>
             Get in touch ↗
+          </a>
+          <a
+            href="https://business.jktl.com.ng/login"
+            aria-label="Sign in to JKTL Business"
+            title="Sign in to JKTL Business"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+            </svg>
           </a>
         </nav>
       </header>
       <section id="home" className={styles.hero}>
         <div className={styles.heroCopy}>
           <p className={styles.label}>{doc.eyebrow}</p>
-          <h1>{doc.headline}</h1>
+          <h1>
+            {doc.headline ||
+              (preview ? "Your headline starts here" : doc.brandName)}
+          </h1>
           <p className={styles.intro}>{doc.intro}</p>
           <div className={styles.heroActions}>
-            <a href="#offerings" className={styles.primary}>
+            <a
+              href={sectionEnabled("offerings") ? "#offerings" : "#contact"}
+              className={styles.primary}
+            >
               {doc.ctaLabel} ↗
             </a>
-            <a href="#about" className={styles.textLink}>
-              Our story <span aria-hidden="true">↓</span>
+            <a
+              href={sectionEnabled("about") ? "#about" : "#contact"}
+              className={styles.textLink}
+            >
+              {sectionEnabled("about") ? "Our story" : "Get in touch"}{" "}
+              <span aria-hidden="true">↓</span>
             </a>
           </div>
         </div>
@@ -233,7 +377,7 @@ export function TemplateWebsite({
         <span aria-hidden="true">✦</span>
         <a href="#contact">Let’s connect ↗</a>
       </div>
-      {template.sectionOrder.map((key) => (
+      {template.sectionOrder.filter(sectionEnabled).map((key) => (
         <div key={key}>{sections[key]}</div>
       ))}
       {businessSection}
@@ -262,6 +406,51 @@ export function TemplateWebsite({
         </div>
         {location && <p className={styles.location}>{location}</p>}
       </section>
+      <div className={styles.socials}>
+        {socialLinks.map((social) => (
+          <a
+            key={social.platform}
+            href={social.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={social.platform}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              aria-hidden="true"
+            >
+              {social.platform === "instagram" ? (
+                <>
+                  <rect x="3" y="3" width="18" height="18" rx="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle cx="18" cy="6" r="1" />
+                </>
+              ) : social.platform === "youtube" ? (
+                <>
+                  <rect x="2" y="5" width="20" height="14" rx="4" />
+                  <path d="m10 9 6 3-6 3z" />
+                </>
+              ) : social.platform === "facebook" ? (
+                <path d="M14 22V12h4l1-4h-5V6c0-2 1-3 4-3V0h-4c-4 0-6 2-6 6v2H5v4h3v10" />
+              ) : social.platform === "linkedin" ? (
+                <>
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="M7 10v8m0-12v1m5 11v-8m0 4c0-5 6-5 6 0v4" />
+                </>
+              ) : social.platform === "x" ? (
+                <path d="m4 3 16 18M20 3 4 21" />
+              ) : (
+                <path d="M14 3v12a4 4 0 1 1-4-4m4-8c0 4 3 6 7 6" />
+              )}
+            </svg>
+          </a>
+        ))}
+      </div>
       <footer className={styles.footer}>
         <strong>{doc.brandName}</strong>
         <p>

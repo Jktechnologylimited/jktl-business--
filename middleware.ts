@@ -65,6 +65,7 @@ function isCandidateCustomDomain(hostname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
+  if(request.nextUrl.pathname === "/api/site-metrics") return NextResponse.next();
   const host = request.headers.get("host") || "";
 
   const subdomain = extractSubdomain(host);

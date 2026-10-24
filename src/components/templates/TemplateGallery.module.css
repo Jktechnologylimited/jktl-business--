@@ -15,7 +15,8 @@
   font-size: 10px;
   color: #8b6b2f;
 }
-.heading h1 {
+.heading h1,
+.heading h2 {
   font-size: clamp(2rem, 4.1vw, 3.8rem);
   font-weight: 400;
   line-height: 1.15;
@@ -219,7 +220,8 @@
   .heading {
     padding: 50px 22px 35px;
   }
-  .heading h1 {
+  .heading h1,
+  .heading h2 {
     font-size: 2.1rem;
   }
   .heading > p {
@@ -251,4 +253,20 @@
   .note {
     padding-inline: 6%;
   }
+}
+
+.more {
+  display: block;
+  margin: 0 auto 30px;
+  border: 1px solid #17382a;
+  border-radius: 30px;
+  padding: 14px 28px;
+  background: #17382a;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+.filters {
+  flex-wrap: wrap;
 }

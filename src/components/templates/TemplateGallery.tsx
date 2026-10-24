@@ -8,9 +8,14 @@ import {
 import styles from "./TemplateGallery.module.css";
 export function TemplateGallery({
   insideBusiness = false,
+  initialType = "all",
 }: {
   insideBusiness?: boolean;
+  initialType?: "all" | "website" | "landing" | "blank";
 }) {
+  const [type, setType] = useState(initialType);
+  const [limit, setLimit] = useState(24);
+  const Heading = insideBusiness || initialType === "landing" ? "h2" : "h1";
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All industries");
   const categories = [
@@ -20,6 +25,8 @@ export function TemplateGallery({
   const filtered = websiteTemplates.filter(
     (t) =>
       (category === "All industries" || t.category === category) &&
+      (type === "all" ||
+        (type === "blank" ? t.kind === "blank" : t.kind === type)) &&
       `${t.name} ${t.category} ${t.document.brandName}`
         .toLowerCase()
         .includes(search.trim().toLowerCase()),
@@ -28,14 +35,14 @@ export function TemplateGallery({
     <section className={styles.gallery}>
       <div className={styles.heading}>
         <p>Designed for your next chapter</p>
-        <h1>
-          Pick the website template
+        <Heading>
+          Pick a 2026 website or landing-page template
           <br />
           that feels like your business.
-        </h1>
+        </Heading>
         <p>
-          20 complete starter websites. Preview a design, then make it yours in
-          JKTL Business.
+          200 industry designs, plus blank starting points. Preview a design,
+          then make it yours in JKTL Business.
         </p>
         <label className={styles.search}>
           <span aria-hidden="true">⌕</span>
@@ -49,6 +56,22 @@ export function TemplateGallery({
         </label>
       </div>
       <div className={styles.filters}>
+        <label>
+          Type{" "}
+          <select
+            aria-label="Filter template type"
+            value={type}
+            onChange={(e) => {
+              setType(e.target.value as typeof type);
+              setLimit(24);
+            }}
+          >
+            <option value="all">All templates</option>
+            <option value="website">Websites</option>
+            <option value="landing">Landing pages</option>
+            <option value="blank">Blank templates</option>
+          </select>
+        </label>
         <label>
           Industry{" "}
           <select
@@ -69,13 +92,15 @@ export function TemplateGallery({
           onClick={() => {
             setSearch("");
             setCategory("All industries");
+            setType("all");
+            setLimit(24);
           }}
         >
           All templates
         </button>
       </div>
       <div className={styles.grid}>
-        {filtered.map((template) => (
+        {filtered.slice(0, limit).map((template) => (
           <article key={template.id} className={styles.card}>
             <a
               href={`/templates/${template.id}`}
@@ -94,7 +119,7 @@ export function TemplateGallery({
                 onError={(e) => {
                   if (!e.currentTarget.dataset.fallback) {
                     e.currentTarget.dataset.fallback = "true";
-                    e.currentTarget.src = `/template-art/${template.id}.svg`;
+                    e.currentTarget.src = `/template-art/${template.sourceId || template.id}.svg`;
                   }
                 }}
               />
@@ -105,7 +130,13 @@ export function TemplateGallery({
                 <h2>{template.name}</h2>
                 <p>{template.category}</p>
               </div>
-              <span>JKTL</span>
+              <span>
+                {template.kind === "landing"
+                  ? "Landing page"
+                  : template.kind === "blank"
+                    ? "Blank"
+                    : "Website"}
+              </span>
             </div>
             <div className={styles.actions}>
               <a href={`/templates/${template.id}`}>View</a>
@@ -122,6 +153,15 @@ export function TemplateGallery({
           </article>
         ))}
       </div>
+      {filtered.length > limit && (
+        <button
+          type="button"
+          onClick={() => setLimit((n) => n + 24)}
+          className={styles.more}
+        >
+          Show more templates ({filtered.length - limit} remaining)
+        </button>
+      )}
       {!filtered.length && (
         <div className={styles.empty}>
           <h2>No templates found</h2>
@@ -130,6 +170,8 @@ export function TemplateGallery({
             onClick={() => {
               setSearch("");
               setCategory("All industries");
+              setType("all");
+              setLimit(24);
             }}
           >
             Clear filters

@@ -1,5 +1,8 @@
 "use server";
 
+import { getSql } from "@/lib/db/client";
+import { getWebsiteTemplate,templatePageKind } from "@/lib/website-templates";
+import { recordSiteEvent } from "@/lib/site-metrics";
 import { createCustomer, findCustomerByPhone } from "@/lib/db/customers";
 import { getOrganizationIdBySubdomain } from "@/lib/db/public";
 import { createPublicBooking } from "@/lib/db/bookings";
@@ -57,6 +60,9 @@ export async function createPublicBookingAction(subdomain: string, input: Public
       notes: input.notes.trim(),
     });
     if (!booking) return { ok: false, error: "That service isn't available right now." };
+
+    // Attribute a conversion only after the real booking has been persisted.
+    try { const profile=await getBusinessProfile(organizationId);const template=getWebsiteTemplate(profile?.websiteTemplateId);if(profile?.published&&template)await recordSiteEvent((text,params)=>getSql().query(text,params),{organizationId,templateId:template.id,eventId:booking.id,event:'booking',kind:templatePageKind(template)}); } catch { /* Metrics must never break a saved booking. */ }
 
     // Best-effort: the booking is already saved either way.
     void (async () => {

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import ts from "typescript";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -26,10 +27,11 @@ function loadTs(path, dependencies) {
   }, exports);
   return exports;
 }
-test("all 20 full industry templates have complete, valid, independent documents", () => {
+test("all 200 industry templates plus blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 20);
-  assert.equal(new Set(all.map((t) => t.id)).size, 20);
+  assert.equal(all.length, 202);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 200);
+  assert.equal(new Set(all.map((t) => t.id)).size, 202);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -38,9 +40,22 @@ test("all 20 full industry templates have complete, valid, independent documents
       catalogue.parseWebsiteDocument(template.document),
       template.document,
     );
-    assert.deepEqual(
-      [...template.sectionOrder].sort(),
-      ["about", "feature", "gallery", "offerings", "faq"].sort(),
+    assert.equal(
+      new Set(template.sectionOrder).size,
+      template.sectionOrder.length,
+    );
+    assert.ok(
+      template.sectionOrder.every((key) =>
+        [
+          "about",
+          "feature",
+          "gallery",
+          "offerings",
+          "faq",
+          "areas",
+          "reviews",
+        ].includes(key),
+      ),
     );
     assert.equal(
       catalogue.templateEditorPath(template.id),
@@ -52,13 +67,15 @@ test("all 20 full industry templates have complete, valid, independent documents
     );
     assert.ok(
       existsSync(
-        new URL(`../public/template-art/${template.id}.svg`, import.meta.url),
+        new URL(`../public/template-art/${template.sourceId || template.id}.svg`, import.meta.url),
       ),
     );
     const draft = catalogue.templateDraft(template.id, "My own business");
     assert.equal(draft.brandName, "My own business");
-    draft.offerings[0].title = "changed";
-    assert.notEqual(template.document.offerings[0].title, "changed");
+    if (draft.offerings.length) {
+      draft.offerings[0].title = "changed";
+      assert.notEqual(template.document.offerings[0].title, "changed");
+    }
   }
   assert.equal(
     catalogue.templateEditorPath("https://evil.example"),
@@ -110,14 +127,16 @@ test("actual full-site renderer renders every template and safely escapes edited
         preview: true,
       }),
     );
+    const sections = template.document.blank ? [] : template.sectionOrder;
     for (const id of [
       "home",
-      "about",
-      "offerings",
-      "gallery",
-      "approach",
-      "questions",
       "contact",
+      ...sections.map(
+        (key) =>
+          ({ feature: "approach", faq: "questions", areas: "service-areas" })[
+            key
+          ] || key,
+      ),
     ])
       assert.ok(html.includes(`id="${id}"`), `${template.id} missing ${id}`);
     assert.ok(html.includes(`data-layout="${template.layout}"`));
@@ -160,8 +179,12 @@ test("Main and Business publish the same catalogue and renderer", (t) => {
     ],
   ])
     assert.equal(
-      readFileSync(new URL(a, import.meta.url), "utf8"),
-      readFileSync(new URL(b, root), "utf8"),
+      createHash("sha256")
+        .update(readFileSync(new URL(a, import.meta.url)))
+        .digest("hex"),
+      createHash("sha256")
+        .update(readFileSync(new URL(b, root)))
+        .digest("hex"),
     );
 });
 test("database and real save action: tenant isolation, roles, draft/publish, concurrency, and migration repeatability", async (t) => {
@@ -409,23 +432,124 @@ test("template selection survives auth steps while rejecting unknown ids and ext
   assert.equal(selection.pendingTemplate("music-label"), "music-label");
 });
 
-test('template-based public sites retain actual booking, product and chat components',()=>{
- const {TemplateWebsite}=loadTs('../src/components/templates/TemplateWebsite.tsx',{'react':require('react'),'react/jsx-runtime':require('react/jsx-runtime'),'./TemplateWebsite.module.css':{__esModule:true,default:new Proxy({},{get:(_,key)=>String(key)})}});
- const empty=()=>null;
- const {PublicSiteView}=loadTs('../src/components/public-site/public-site-view.tsx',{
-  'react':require('react'),'react/jsx-runtime':require('react/jsx-runtime'),'framer-motion':{motion:{},AnimatePresence:empty},'lucide-react':require('lucide-react'),
-  '@/components/templates/TemplateWebsite':{TemplateWebsite},'@/lib/website-templates':catalogue,
-  './public-booking-form':{PublicBookingForm:props=>createElement('form',{'data-existing-booking-mode':props.mode})},
-  './chat-widget':{ChatWidget:()=>createElement('div',{'data-existing-scripted-chat':true})},
-  './site-ai-chat':{SiteAiChat:()=>createElement('div',{'data-existing-ai-chat':true})},
-  './site-sections':{FaqSection:empty,GallerySection:empty,HoursLocationSection:empty,TrustBar:empty},
-  './social-icons':{InstagramIcon:empty,TikTokIcon:empty,FacebookIcon:empty,SnapchatIcon:empty},
-  '@/lib/format':{formatKobo:v=>`NGN ${v/100}`,initials:()=>''},
-  '@/lib/contact':{waLink:()=>'',telLink:()=>'',mailLink:()=>'',textOnColor:()=> '#ffffff'},
-  '@/lib/fonts':{getSiteFontPair:()=>({displayVar:'serif',bodyVar:'sans-serif'})},
- });
- const props={profile:{websiteTemplateId:'hair-salon',websiteDocument:catalogue.templateDraft('hair-salon'),themeColor:'#234567',displayName:'Own business',phone:'',email:'',address:'',city:'',state:''},services:[{id:'real-service',name:'Existing service',description:'Your real service',priceKobo:100000,durationMin:30,active:true}],products:[{id:'real-product',name:'Existing product',priceKobo:20000,active:true}],testimonials:[],subdomain:'own-business',mode:'live'};
- const html=renderToStaticMarkup(createElement(PublicSiteView,props));assert.ok(html.includes('Existing service'));assert.ok(html.includes('Existing product'));assert.ok(html.includes('data-existing-booking-mode="live"'));assert.ok(html.includes('data-existing-scripted-chat'));
- const ai=renderToStaticMarkup(createElement(PublicSiteView,{...props,aiAssistant:{enabled:true,packLabel:'Enabled pack',greeting:'Hello'}}));assert.ok(ai.includes('data-existing-ai-chat'));
- const preview=renderToStaticMarkup(createElement(PublicSiteView,{...props,mode:'preview'}));assert.ok(preview.includes('data-existing-booking-mode="preview"'));assert.ok(!preview.includes('data-existing-scripted-chat'));
+test("template-based public sites retain actual booking, product and chat components", () => {
+  const { TemplateWebsite } = loadTs(
+    "../src/components/templates/TemplateWebsite.tsx",
+    {
+      react: require("react"),
+      "react/jsx-runtime": require("react/jsx-runtime"),
+      "./TemplateWebsite.module.css": {
+        __esModule: true,
+        default: new Proxy({}, { get: (_, key) => String(key) }),
+      },
+    },
+  );
+  const empty = () => null;
+  const { PublicSiteView } = loadTs(
+    "../src/components/public-site/public-site-view.tsx",
+    {
+      react: require("react"),
+      "react/jsx-runtime": require("react/jsx-runtime"),
+      "framer-motion": { motion: {}, AnimatePresence: empty },
+      "lucide-react": require("lucide-react"),
+      "@/components/templates/TemplateWebsite": { TemplateWebsite },
+      "@/components/templates/PublishedSiteMetrics": loadTs(
+        "../src/components/templates/PublishedSiteMetrics.tsx",
+        { react: require("react") },
+      ),
+      "@/lib/website-templates": catalogue,
+      "./public-booking-form": {
+        PublicBookingForm: (props) =>
+          createElement("form", { "data-existing-booking-mode": props.mode }),
+      },
+      "./chat-widget": {
+        ChatWidget: () =>
+          createElement("div", { "data-existing-scripted-chat": true }),
+      },
+      "./site-ai-chat": {
+        SiteAiChat: () =>
+          createElement("div", { "data-existing-ai-chat": true }),
+      },
+      "./site-sections": {
+        FaqSection: empty,
+        GallerySection: empty,
+        HoursLocationSection: empty,
+        TrustBar: empty,
+      },
+      "./social-icons": {
+        InstagramIcon: empty,
+        TikTokIcon: empty,
+        FacebookIcon: empty,
+        SnapchatIcon: empty,
+      },
+      "@/lib/format": {
+        formatKobo: (v) => `NGN ${v / 100}`,
+        initials: () => "",
+      },
+      "@/lib/contact": {
+        waLink: () => "",
+        telLink: () => "",
+        mailLink: () => "",
+        textOnColor: () => "#ffffff",
+      },
+      "@/lib/fonts": {
+        getSiteFontPair: () => ({ displayVar: "serif", bodyVar: "sans-serif" }),
+      },
+    },
+  );
+  const props = {
+    profile: {
+      websiteTemplateId: "hair-salon",
+      websiteDocument: catalogue.templateDraft("hair-salon"),
+      themeColor: "#234567",
+      displayName: "Own business",
+      phone: "",
+      email: "",
+      address: "",
+      city: "",
+      state: "",
+    },
+    services: [
+      {
+        id: "real-service",
+        name: "Existing service",
+        description: "Your real service",
+        priceKobo: 100000,
+        durationMin: 30,
+        active: true,
+      },
+    ],
+    products: [
+      {
+        id: "real-product",
+        name: "Existing product",
+        priceKobo: 20000,
+        active: true,
+      },
+    ],
+    testimonials: [],
+    subdomain: "own-business",
+    mode: "live",
+  };
+  const html = renderToStaticMarkup(createElement(PublicSiteView, props));
+  assert.ok(html.includes("Existing service"));
+  assert.ok(html.includes("Existing product"));
+  assert.ok(html.includes('data-existing-booking-mode="live"'));
+  assert.ok(html.includes("data-existing-scripted-chat"));
+  const ai = renderToStaticMarkup(
+    createElement(PublicSiteView, {
+      ...props,
+      aiAssistant: {
+        enabled: true,
+        packLabel: "Enabled pack",
+        greeting: "Hello",
+      },
+    }),
+  );
+  assert.ok(ai.includes("data-existing-ai-chat"));
+  const preview = renderToStaticMarkup(
+    createElement(PublicSiteView, { ...props, mode: "preview" }),
+  );
+  assert.ok(preview.includes('data-existing-booking-mode="preview"'));
+  assert.ok(!preview.includes("data-existing-scripted-chat"));
 });

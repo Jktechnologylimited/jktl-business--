@@ -32,5 +32,5 @@ export function templateBusinessType(id: string): BusinessType {
     photography: "photographer",
     events: "wedding_events",
   };
-  return mapped[id] || "general";
+  return mapped[getWebsiteTemplate(id)?.sourceId || id] || "general";
 }

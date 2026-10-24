@@ -7,10 +7,12 @@ if (!url) {
     "Website template schema: skipped (no DATABASE_URL; demo/gallery build only).",
   );
 } else {
-  const migration = await readFile(
-    new URL("../migrations/029_website_templates.sql", import.meta.url),
-    "utf8",
+  const migrations = await Promise.all(
+    ["029_website_templates.sql", "030_website_metrics.sql"].map((name) =>
+      readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
+    ),
   );
+  const migration = migrations.join("\n");
   const statements = migration
     .split(";")
     .map((sql) => sql.trim())
@@ -19,5 +21,11 @@ if (!url) {
   await sql.transaction(
     statements.map((statement) => sql.query(statement, [])),
   );
-  console.log("Website template schema: additive migration 029 applied.");
+  await sql.query(
+    "DELETE FROM website_metric_rate_limits WHERE expires_at < now()",
+    [],
+  );
+  console.log(
+    "Website template schema: additive migrations 029 and 030 applied.",
+  );
 }

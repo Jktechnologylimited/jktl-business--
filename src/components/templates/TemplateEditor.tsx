@@ -192,7 +192,10 @@ export function TemplateEditor({
                 type="button"
                 className="text-xs text-primary underline"
                 onClick={() =>
-                  update("heroImage", `/template-art/${template.id}.svg`)
+                  update(
+                    "heroImage",
+                    `/template-art/${template.sourceId || template.id}.svg`,
+                  )
                 }
               >
                 Use bundled template artwork
@@ -372,7 +375,7 @@ export function TemplateEditor({
                     update("gallery", [
                       ...content.gallery,
                       {
-                        src: `/template-art/${template.id}.svg`,
+                        src: `/template-art/${template.sourceId || template.id}.svg`,
                         alt: "Add your image description",
                       },
                     ])
@@ -497,6 +500,223 @@ export function TemplateEditor({
                 </Link>
                 .
               </p>
+            </div>
+          </details>
+          <details className="rounded-xl border border-border bg-surface p-5">
+            <summary className="cursor-pointer font-semibold">
+              Logo, service areas & SEO
+            </summary>
+            <div className="mt-5 space-y-4">
+              <label className="block text-sm">
+                Logo HTTPS URL
+                <input
+                  className={field}
+                  value={content.logoUrl || ""}
+                  onChange={(e) => update("logoUrl", e.target.value)}
+                  maxLength={2000}
+                />
+              </label>
+              <p className="text-xs text-ink-muted">
+                Your business logo is used when no template logo is set.
+                Otherwise a monogram is shown.
+              </p>
+              <label className="block text-sm">
+                Service areas (one city or region per line)
+                <textarea
+                  className={field}
+                  rows={4}
+                  value={(content.serviceAreas || []).join("\n")}
+                  onChange={(e) =>
+                    update(
+                      "serviceAreas",
+                      e.target.value.split("\n").filter(Boolean).slice(0, 30),
+                    )
+                  }
+                />
+              </label>
+              <label className="block text-sm">
+                Search title
+                <input
+                  className={field}
+                  value={content.seoTitle || ""}
+                  onChange={(e) => update("seoTitle", e.target.value)}
+                  maxLength={100}
+                />
+              </label>
+              <label className="block text-sm">
+                Search description
+                <textarea
+                  className={field}
+                  value={content.seoDescription || ""}
+                  onChange={(e) => update("seoDescription", e.target.value)}
+                  maxLength={320}
+                />
+              </label>
+            </div>
+          </details>
+          <details className="rounded-xl border border-border bg-surface p-5">
+            <summary className="cursor-pointer font-semibold">
+              Social icons
+            </summary>
+            <div className="mt-5 space-y-4">
+              {(content.socials || []).map((item, i) => (
+                <div key={i} className="space-y-2">
+                  <select
+                    aria-label={`Social platform ${i + 1}`}
+                    className={field}
+                    value={item.platform}
+                    onChange={(e) =>
+                      update(
+                        "socials",
+                        (content.socials || []).map((v, n) =>
+                          n === i ? { ...v, platform: e.target.value } : v,
+                        ),
+                      )
+                    }
+                  >
+                    {[
+                      "instagram",
+                      "facebook",
+                      "linkedin",
+                      "youtube",
+                      "tiktok",
+                      "x",
+                    ].map((p) => (
+                      <option key={p}>{p}</option>
+                    ))}
+                  </select>
+                  <input
+                    aria-label={`Social URL ${i + 1}`}
+                    className={field}
+                    value={item.url}
+                    placeholder="https://…"
+                    onChange={(e) =>
+                      update(
+                        "socials",
+                        (content.socials || []).map((v, n) =>
+                          n === i ? { ...v, url: e.target.value } : v,
+                        ),
+                      )
+                    }
+                  />
+                  <button
+                    className="text-xs text-danger"
+                    onClick={() =>
+                      update(
+                        "socials",
+                        (content.socials || []).filter((_, n) => n !== i),
+                      )
+                    }
+                  >
+                    Remove social link
+                  </button>
+                </div>
+              ))}
+              {(content.socials || []).length < 8 && (
+                <button
+                  className="text-sm text-primary underline"
+                  onClick={() =>
+                    update("socials", [
+                      ...(content.socials || []),
+                      { platform: "instagram", url: "https://instagram.com/" },
+                    ])
+                  }
+                >
+                  Add social icon
+                </button>
+              )}
+            </div>
+          </details>
+          <details className="rounded-xl border border-border bg-surface p-5">
+            <summary className="cursor-pointer font-semibold">Reviews</summary>
+            <p className="mt-3 text-xs text-ink-muted">
+              Publish only genuine feedback you have permission to use. Sample
+              reviews in the preview are never saved automatically.
+            </p>
+            <div className="mt-5 space-y-4">
+              {(content.reviews || []).map((review, i) => (
+                <fieldset key={i} className="space-y-2">
+                  <label className="block text-sm">
+                    Customer name
+                    <input
+                      className={field}
+                      value={review.name}
+                      maxLength={120}
+                      onChange={(e) =>
+                        update(
+                          "reviews",
+                          (content.reviews || []).map((v, n) =>
+                            n === i ? { ...v, name: e.target.value } : v,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    Review
+                    <textarea
+                      className={field}
+                      value={review.quote}
+                      maxLength={2000}
+                      onChange={(e) =>
+                        update(
+                          "reviews",
+                          (content.reviews || []).map((v, n) =>
+                            n === i ? { ...v, quote: e.target.value } : v,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    Rating
+                    <select
+                      className={field}
+                      value={review.rating}
+                      onChange={(e) =>
+                        update(
+                          "reviews",
+                          (content.reviews || []).map((v, n) =>
+                            n === i
+                              ? { ...v, rating: Number(e.target.value) }
+                              : v,
+                          ),
+                        )
+                      }
+                    >
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <option key={n} value={n}>
+                          {n} stars
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    className="text-xs text-danger"
+                    onClick={() =>
+                      update(
+                        "reviews",
+                        (content.reviews || []).filter((_, n) => n !== i),
+                      )
+                    }
+                  >
+                    Remove review
+                  </button>
+                </fieldset>
+              ))}
+              {(content.reviews || []).length < 20 && (
+                <button
+                  className="text-sm text-primary underline"
+                  onClick={() =>
+                    update("reviews", [
+                      ...(content.reviews || []),
+                      { name: "", quote: "", rating: 5 },
+                    ])
+                  }
+                >
+                  Add genuine review
+                </button>
+              )}
             </div>
           </details>
           <label className="flex gap-3 items-start rounded-xl border border-border bg-surface p-4">

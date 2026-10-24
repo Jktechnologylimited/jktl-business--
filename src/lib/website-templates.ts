@@ -14,6 +14,13 @@ export type TemplateLayout =
   | "studio";
 export type WebsiteDocument = {
   version: 1;
+  blank?: boolean;
+  logoUrl?: string;
+  serviceAreas?: string[];
+  socials?: { platform: string; url: string }[];
+  reviews?: { name: string; quote: string; rating: number }[];
+  seoTitle?: string;
+  seoDescription?: string;
   brandName: string;
   eyebrow: string;
   headline: string;
@@ -38,6 +45,9 @@ export type WebsiteDocument = {
   contactText: string;
 };
 export type WebsiteTemplate = {
+  kind?: "website" | "landing" | "blank";
+  sourceId?: string;
+  edition?: string;
   id: string;
   name: string;
   category: string;
@@ -804,7 +814,7 @@ const seeds = [
     order: ["about", "offerings", "feature", "gallery", "faq"],
   },
 ];
-export const websiteTemplates: WebsiteTemplate[] = seeds.map((s) => ({
+const baseWebsiteTemplates: WebsiteTemplate[] = seeds.map((s) => ({
   id: s.id,
   name: s.name,
   category: s.category,
@@ -880,6 +890,234 @@ export const websiteTemplates: WebsiteTemplate[] = seeds.map((s) => ({
       "Tell us a little about what you have in mind. We would love to hear from you.",
   },
 }));
+const unsplashPhotos = [
+  "1589829545856-d10d557cf95f",
+  "1438032005730-c779502df39b",
+  "1503676260728-1c00da094a0b",
+  "1516280440614-37939bbacd81",
+  "1570172619644-dfd03ed5d881",
+  "1560066984-138dadb4c035",
+  "1504307651254-35680f356dfd",
+  "1600585154340-be6161a56a0c",
+  "1517248135467-4c7edcad34c4",
+  "1566073771259-6a8506099945",
+  "1441986300917-64674bd600d8",
+  "1473181488821-2d23949a045a",
+  "1486262715619-67b85e0b08d3",
+  "1519494026892-80bbd2d6fd0d",
+  "1534438327276-14e5300c3a48",
+  "1516035069371-29a1b244cc32",
+  "1511795409834-ef04bbd61622",
+  "1488646953014-85cb44e25828",
+  "1521737711867-e3b97375f902",
+  "1559027615-cd4628902d4a",
+];
+const editions: {
+  id: string;
+  name: string;
+  layout?: TemplateLayout;
+  kind: "website" | "landing";
+  accent?: string;
+  paper?: string;
+  ink?: string;
+}[] = [
+  { id: "signature", name: "Signature", kind: "website" },
+  {
+    id: "editorial",
+    name: "Editorial",
+    layout: "editorial",
+    kind: "website",
+    accent: "#8a613d",
+    paper: "#f9f3e8",
+    ink: "#29291f",
+  },
+  {
+    id: "afterdark",
+    name: "After Dark",
+    layout: "stage",
+    kind: "website",
+    accent: "#d9ff76",
+    paper: "#12191c",
+    ink: "#f7f3e9",
+  },
+  {
+    id: "minimal",
+    name: "Minimal",
+    layout: "minimal",
+    kind: "website",
+    accent: "#256963",
+    paper: "#f2f8f6",
+    ink: "#173c36",
+  },
+  {
+    id: "portfolio",
+    name: "Portfolio",
+    layout: "studio",
+    kind: "website",
+    accent: "#ae5738",
+    paper: "#fbf3ec",
+    ink: "#402b23",
+  },
+  {
+    id: "community",
+    name: "Community",
+    layout: "community",
+    kind: "website",
+    accent: "#675388",
+    paper: "#f8f3fc",
+    ink: "#342443",
+  },
+  {
+    id: "showcase",
+    name: "Showcase",
+    layout: "catalogue",
+    kind: "website",
+    accent: "#38618c",
+    paper: "#f1f5fa",
+    ink: "#1c3047",
+  },
+  {
+    id: "campaign",
+    name: "Campaign",
+    layout: "portrait",
+    kind: "landing",
+    accent: "#a64731",
+    paper: "#fff4e8",
+    ink: "#40291e",
+  },
+  {
+    id: "launch",
+    name: "Launch",
+    layout: "minimal",
+    kind: "landing",
+    accent: "#225b99",
+    paper: "#f3f7ff",
+    ink: "#182e4d",
+  },
+  {
+    id: "bold",
+    name: "Bold",
+    layout: "stage",
+    kind: "landing",
+    accent: "#f2b85d",
+    paper: "#191719",
+    ink: "#fbf4e9",
+  },
+];
+export const websiteTemplates: WebsiteTemplate[] = baseWebsiteTemplates.flatMap(
+  (base, index) =>
+    editions.map((edition, i) => {
+      const doc = JSON.parse(JSON.stringify(base.document)) as WebsiteDocument;
+      const photo = unsplashPhotos[index];
+      doc.heroImage = `https://images.unsplash.com/photo-${photo}?auto=format&fit=crop&w=1600&q=85`;
+      doc.gallery = [0, 1, 2].map((n) => ({
+        src: `https://images.unsplash.com/photo-${photo}?auto=format&fit=crop&w=${800 + n * 100}&h=${650 + n * 100}&q=80`,
+        alt: `${base.name} inspiration — Unsplash photograph ${n + 1}`,
+      }));
+      doc.logoUrl = "";
+      doc.serviceAreas = [];
+      doc.socials = [];
+      doc.reviews = [];
+      doc.seoTitle = `${doc.brandName} | ${base.name}`;
+      doc.seoDescription = doc.intro;
+      if (edition.accent) {
+        doc.accent = edition.accent;
+        doc.paper = edition.paper!;
+        doc.ink = edition.ink!;
+      }
+      if (edition.kind === "landing") {
+        doc.eyebrow = `${base.name} · Let’s get started`;
+        doc.ctaLabel = "Get in touch";
+        doc.intro = `${base.document.intro} Tell us what you need and take the next step.`;
+      }
+      return {
+        ...base,
+        id: i === 0 ? base.id : `${base.id}-${edition.id}`,
+        name: i === 0 ? base.name : `${base.name} — ${edition.name}`,
+        sourceId: base.id,
+        edition: edition.name,
+        kind: edition.kind,
+        layout: edition.layout || base.layout,
+        sectionOrder:
+          edition.kind === "landing"
+            ? ["offerings", "about", "feature", "reviews", "areas", "faq"]
+            : [
+                ...base.sectionOrder.slice(0, 3),
+                "areas",
+                "reviews",
+                ...base.sectionOrder.slice(3),
+              ],
+        document: doc,
+      };
+    }),
+);
+for (const [id, name, layout] of [
+  ["blank-website", "Blank Website", "minimal"],
+  ["blank-landing", "Blank Landing Page", "portrait"],
+] as const) {
+  const doc = JSON.parse(
+    JSON.stringify(baseWebsiteTemplates[0].document),
+  ) as WebsiteDocument;
+  Object.assign(doc, {
+    blank: true,
+    brandName: "Your business",
+    eyebrow: "",
+    headline: "",
+    intro: "",
+    ctaLabel: "Get in touch",
+    aboutTitle: "About",
+    aboutText: "",
+    offeringsTitle: "Services",
+    offerings: [],
+    galleryTitle: "Gallery",
+    gallery: [],
+    featureTitle: "Our approach",
+    featureText: "",
+    featureItems: [],
+    faqTitle: "Questions",
+    faqs: [],
+    contactTitle: "Get in touch",
+    contactText: "",
+    heroImage: `/template-art/${id}.svg`,
+    accent: "#245e50",
+    paper: "#ffffff",
+    ink: "#142c25",
+    logoUrl: "",
+    serviceAreas: [],
+    socials: [],
+    reviews: [],
+    seoTitle: "",
+    seoDescription: "",
+  });
+  websiteTemplates.push({
+    id,
+    name,
+    category: "Blank starting points",
+    layout,
+    kind: "blank",
+    sourceId: id,
+    edition: "Blank",
+    sectionOrder: [
+      "about",
+      "offerings",
+      "gallery",
+      "areas",
+      "reviews",
+      "feature",
+      "faq",
+    ],
+    document: doc,
+  });
+}
+export const templatePageKind = (
+  template: WebsiteTemplate,
+): "website" | "landing" =>
+  template.kind === "landing" || template.id === "blank-landing"
+    ? "landing"
+    : "website";
+export const designedTemplateCount = websiteTemplates.filter(
+  (t) => t.kind !== "blank",
+).length;
 export const getWebsiteTemplate = (id: string | null | undefined) =>
   websiteTemplates.find((t) => t.id === id);
 export const templateEditorPath = (id: string) =>
@@ -896,7 +1134,13 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
   const document = JSON.parse(
     JSON.stringify(template.document),
   ) as WebsiteDocument;
-  if (brandName?.trim()) document.brandName = brandName.trim().slice(0, 120);
+  if (brandName?.trim()) {
+    document.brandName = brandName.trim().slice(0, 120);
+    document.seoTitle = `${document.brandName} | ${template.name}`.slice(
+      0,
+      100,
+    );
+  }
   return document;
 }
 export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
@@ -905,9 +1149,14 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   if (JSON.stringify(raw).length > 64000)
     throw new Error("Website content is too large.");
   const source = raw as Record<string, unknown>;
+  const blank = source.blank === true;
   const text = (record: Record<string, unknown>, key: string, max: number) => {
     const value = record[key];
-    if (typeof value !== "string" || !value.trim() || value.length > max)
+    if (
+      typeof value !== "string" ||
+      (!blank && !value.trim()) ||
+      value.length > max
+    )
       throw new Error(`Please check ${key}.`);
     return value.trim();
   };
@@ -924,7 +1173,7 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     const value = source[key];
     if (
       !Array.isArray(value) ||
-      !value.length ||
+      (!blank && !value.length) ||
       value.length > limit ||
       value.some((v) => !v || typeof v !== "object" || Array.isArray(v))
     )
@@ -934,6 +1183,7 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   if (source.version !== 1)
     throw new Error("Unsupported website content version.");
   const result: Record<string, unknown> = { version: 1 };
+  if (blank) result.blank = true;
   for (const [key, max] of Object.entries({
     brandName: 120,
     eyebrow: 160,
@@ -972,7 +1222,7 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   }));
   if (
     !Array.isArray(source.featureItems) ||
-    !source.featureItems.length ||
+    (!blank && !source.featureItems.length) ||
     source.featureItems.length > 12 ||
     source.featureItems.some(
       (v) => typeof v !== "string" || !v.trim() || v.length > 240,
@@ -980,5 +1230,68 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   )
     throw new Error("Please check your feature points.");
   result.featureItems = source.featureItems.map((v) => String(v).trim());
+  if (source.logoUrl !== undefined)
+    result.logoUrl = source.logoUrl ? image(text(source, "logoUrl", 2000)) : "";
+  for (const [key, max] of [
+    ["seoTitle", 100],
+    ["seoDescription", 320],
+  ] as const)
+    if (source[key] !== undefined) {
+      if (typeof source[key] !== "string" || source[key].length > max)
+        throw new Error(`Please check ${key}.`);
+      result[key] = source[key].trim();
+    }
+  if (source.serviceAreas !== undefined) {
+    if (
+      !Array.isArray(source.serviceAreas) ||
+      source.serviceAreas.length > 30 ||
+      source.serviceAreas.some(
+        (v) => typeof v !== "string" || !v.trim() || v.length > 120,
+      )
+    )
+      throw new Error("Please check service areas.");
+    result.serviceAreas = source.serviceAreas.map((v) => String(v).trim());
+  }
+  if (source.socials !== undefined) {
+    if (!Array.isArray(source.socials) || source.socials.length > 8)
+      throw new Error("Please check social links.");
+    result.socials = source.socials.map((v) => {
+      if (
+        !v ||
+        typeof v !== "object" ||
+        ![
+          "instagram",
+          "facebook",
+          "linkedin",
+          "youtube",
+          "tiktok",
+          "x",
+        ].includes(v.platform)
+      )
+        throw new Error("Please check social platform.");
+      const url = image(text(v, "url", 2000));
+      if (!url.startsWith("https://"))
+        throw new Error("Social links must use HTTPS.");
+      return { platform: v.platform, url };
+    });
+  }
+  if (source.reviews !== undefined) {
+    if (!Array.isArray(source.reviews) || source.reviews.length > 20)
+      throw new Error("Please check reviews.");
+    result.reviews = source.reviews.map((v) => {
+      if (
+        !v ||
+        typeof v !== "object" ||
+        !Number.isInteger(v.rating) ||
+        v.rating < 1 ||
+        v.rating > 5
+      )
+        throw new Error("Please check review rating.");
+      const name = text(v, "name", 120),
+        quote = text(v, "quote", 2000);
+      if (!name || !quote) throw new Error("Please check reviews.");
+      return { name, quote, rating: v.rating };
+    });
+  }
   return result as WebsiteDocument;
 }
