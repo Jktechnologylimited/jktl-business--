@@ -200,6 +200,7 @@ export default function SettingsPage() {
 
       {tab === "infrastructure" ? (
         <div className="flex flex-col gap-4">
+          <section className="rounded-2xl border border-border p-5"><h2 className="font-display text-lg font-semibold">Website plans & digital essentials</h2><p className="mt-2 text-sm text-ink-muted">Start with a free website. Compare monthly and yearly plans, or discuss domains, business email and add-ons separately. Your existing subscription and tools stay unchanged.</p><a href="/business/plans" className="mt-3 inline-block font-medium text-primary">Compare website plans →</a></section>
           <div className="flex flex-col gap-5">
             <SubscriptionBilling demo={mode === "demo"} />
             {/*

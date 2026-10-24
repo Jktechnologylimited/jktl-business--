@@ -43,10 +43,34 @@ export interface BillingCycleDef {
 }
 
 export const BILLING_CYCLES: BillingCycleDef[] = [
-  { id: "monthly", label: "Monthly", priceKobo: 500_000, months: 1, paystackInterval: "monthly" },
-  { id: "quarterly", label: "Quarterly", priceKobo: 1_450_000, months: 3, paystackInterval: "quarterly" },
-  { id: "biannually", label: "Every 6 months", priceKobo: 2_700_000, months: 6, paystackInterval: "biannually" },
-  { id: "yearly", label: "Yearly", priceKobo: 5_000_000, months: 12, paystackInterval: "annually" },
+  {
+    id: "monthly",
+    label: "Monthly",
+    priceKobo: 500_000,
+    months: 1,
+    paystackInterval: "monthly",
+  },
+  {
+    id: "quarterly",
+    label: "Quarterly",
+    priceKobo: 1_450_000,
+    months: 3,
+    paystackInterval: "quarterly",
+  },
+  {
+    id: "biannually",
+    label: "Every 6 months",
+    priceKobo: 2_700_000,
+    months: 6,
+    paystackInterval: "biannually",
+  },
+  {
+    id: "yearly",
+    label: "Yearly",
+    priceKobo: 5_000_000,
+    months: 12,
+    paystackInterval: "annually",
+  },
 ];
 
 export function getCycleDef(cycle: string): BillingCycleDef | undefined {
@@ -63,7 +87,14 @@ export function addBillingCycle(date: Date, cycleId: BillingCycle): Date {
   const cycle = getCycleDef(cycleId);
   const months = cycle?.months ?? 12;
   const next = new Date(date);
+  const day = next.getUTCDate();
+  // Clamp Jan 31 → Feb 28/29 and leap-day annual renewals to month end.
+  next.setUTCDate(1);
   next.setUTCMonth(next.getUTCMonth() + months);
+  const lastDay = new Date(
+    Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  next.setUTCDate(Math.min(day, lastDay));
   return next;
 }
 
@@ -107,7 +138,10 @@ export const MIN_OVERAGE_CHARGE_KOBO = 5_000;
  * is some but it's below `MIN_OVERAGE_CHARGE_KOBO` — callers should treat
  * either case as "nothing to charge this cycle."
  */
-export function computeStorageOverageKobo(usedBytes: number, limitBytes: number): number {
+export function computeStorageOverageKobo(
+  usedBytes: number,
+  limitBytes: number,
+): number {
   const overageBytes = Math.max(0, usedBytes - limitBytes);
   if (overageBytes === 0) return 0;
   const overageGb = overageBytes / (1024 * 1024 * 1024);

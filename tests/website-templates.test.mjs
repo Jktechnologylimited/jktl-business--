@@ -111,6 +111,7 @@ test("actual full-site renderer renders every template and safely escapes edited
   const { TemplateWebsite } = loadTs(
     "../src/components/templates/TemplateWebsite.tsx",
     {
+      "@/lib/website-templates": catalogue,
       react: require("react"),
       "react/jsx-runtime": require("react/jsx-runtime"),
       "./TemplateWebsite.module.css": {
@@ -436,6 +437,7 @@ test("template-based public sites retain actual booking, product and chat compon
   const { TemplateWebsite } = loadTs(
     "../src/components/templates/TemplateWebsite.tsx",
     {
+      "@/lib/website-templates": catalogue,
       react: require("react"),
       "react/jsx-runtime": require("react/jsx-runtime"),
       "./TemplateWebsite.module.css": {

@@ -1,13 +1,22 @@
 "use server";
 
+import { getSql } from "@/lib/db/client";
 import { requireSession } from "@/lib/session";
-import { getBusinessProfile, getInfrastructure, getUser } from "@/lib/db/organizations";
+import {
+  getBusinessProfile,
+  getInfrastructure,
+  getUser,
+} from "@/lib/db/organizations";
 import {
   ensurePlanCode,
   applyPaymentSuccess,
   getPaystackSubscriptionCode,
 } from "@/lib/db/billing";
-import { initializeTransaction, verifyTransaction, getSubscriptionManageLink } from "@/lib/paystack";
+import {
+  initializeTransaction,
+  verifyTransaction,
+  getSubscriptionManageLink,
+} from "@/lib/paystack";
 import { addBillingCycle, getCycleDef, type BillingCycle } from "@/lib/billing";
 import type { ActionResult } from "./types";
 import type { Infrastructure } from "@/lib/types";
@@ -22,16 +31,47 @@ function appOrigin(): string {
 /** Starts a hosted Paystack checkout for the given cycle and returns the
  * URL to redirect the browser to. The actual subscription is only created
  * once Paystack confirms the charge — nothing here touches the database. */
-export async function startCheckoutAction(cycleId: BillingCycle): Promise<ActionResult<{ authorizationUrl: string }>> {
+export async function startCheckoutAction(
+  cycleId: BillingCycle,
+): Promise<ActionResult<{ authorizationUrl: string }>> {
   try {
     const { organizationId, userId } = await requireSession();
     const cycle = getCycleDef(cycleId);
     if (!cycle) return { ok: false, error: "Unknown billing cycle." };
 
-    const [user, profile] = await Promise.all([getUser(userId), getBusinessProfile(organizationId)]);
-    if (!user?.email) return { ok: false, error: "Add an email to your account before subscribing." };
+    const [user, profile] = await Promise.all([
+      getUser(userId),
+      getBusinessProfile(organizationId),
+    ]);
+    if (!user?.email)
+      return {
+        ok: false,
+        error: "Add an email to your account before subscribing.",
+      };
     if (!profile) return { ok: false, error: "Business profile not found." };
 
+    const sql = getSql();
+    const owners =
+      await sql`SELECT user_id FROM organization_members WHERE organization_id=${organizationId} AND user_id=${userId} AND active=true AND role='owner' LIMIT 1`;
+    if (!owners[0])
+      return {
+        ok: false,
+        error: "Only the business owner can start a subscription.",
+      };
+    const infra = await getInfrastructure(organizationId);
+    if (
+      infra &&
+      (infra.subscriptionStatus === "active" ||
+        infra.subscriptionStatus === "past_due")
+    ) {
+      return {
+        ok: false,
+        error:
+          "This business already has a subscription. Manage it in Settings instead of starting another.",
+      };
+    }
+    // This action remains the legacy Website & Hosting product only.
+    // New target tiers are consultation-only until their migration is ready.
     const planCode = await ensurePlanCode(cycleId);
     const { authorizationUrl } = await initializeTransaction({
       email: user.email,
@@ -54,25 +94,39 @@ export async function startCheckoutAction(cycleId: BillingCycle): Promise<Action
  * `subscription.create` webhook. The webhook (see the Paystack webhook
  * route) still runs and reconciles the subscription code + authoritative
  * renewal date shortly after, whether or not this ran. */
-export async function confirmCheckoutAction(reference: string): Promise<ActionResult<Infrastructure>> {
+export async function confirmCheckoutAction(
+  reference: string,
+): Promise<ActionResult<Infrastructure>> {
   try {
     const { organizationId } = await requireSession();
     const data = await verifyTransaction(reference);
 
     if (data.status !== "success") {
       const infra = await getInfrastructure(organizationId);
-      return infra ? { ok: true, data: infra } : { ok: false, error: "Payment wasn't successful." };
+      return infra
+        ? { ok: true, data: infra }
+        : { ok: false, error: "Payment wasn't successful." };
     }
 
     // Only trust this reference if it's for the organization making the
     // request — metadata is set by us at initialize-time, so this also
     // guards against someone pasting another org's reference into the URL.
     if (data.metadata?.organizationId !== organizationId) {
-      return { ok: false, error: "That checkout reference doesn't belong to this business." };
+      return {
+        ok: false,
+        error: "That checkout reference doesn't belong to this business.",
+      };
     }
 
-    const cycleId = (data.metadata?.billingCycle as BillingCycle) || "yearly";
+    const cycleId = data.metadata?.billingCycle as BillingCycle;
     const cycle = getCycleDef(cycleId);
+    if (!cycle || data.currency !== "NGN" || data.amount !== cycle.priceKobo) {
+      return {
+        ok: false,
+        error:
+          "Payment amount or currency did not match this website subscription. Contact support before retrying.",
+      };
+    }
     const paidAt = data.paid_at ? new Date(data.paid_at) : new Date();
     const renewalDate = addBillingCycle(paidAt, cycleId);
 
@@ -84,19 +138,31 @@ export async function confirmCheckoutAction(reference: string): Promise<ActionRe
     });
 
     const infra = await getInfrastructure(organizationId);
-    if (!infra) return { ok: false, error: "Payment succeeded but your account record is missing — contact support." };
+    if (!infra)
+      return {
+        ok: false,
+        error:
+          "Payment succeeded but your account record is missing — contact support.",
+      };
     return { ok: true, data: infra };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: "Couldn't confirm your payment — please contact support if you were charged." };
+    return {
+      ok: false,
+      error:
+        "Couldn't confirm your payment — please contact support if you were charged.",
+    };
   }
 }
 
-export async function getManageSubscriptionLinkAction(): Promise<ActionResult<{ link: string }>> {
+export async function getManageSubscriptionLinkAction(): Promise<
+  ActionResult<{ link: string }>
+> {
   try {
     const { organizationId } = await requireSession();
     const subscriptionCode = await getPaystackSubscriptionCode(organizationId);
-    if (!subscriptionCode) return { ok: false, error: "No active subscription to manage yet." };
+    if (!subscriptionCode)
+      return { ok: false, error: "No active subscription to manage yet." };
     const link = await getSubscriptionManageLink(subscriptionCode);
     return { ok: true, data: { link } };
   } catch (err) {

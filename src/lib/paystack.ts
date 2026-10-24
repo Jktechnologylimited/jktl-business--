@@ -133,6 +133,7 @@ export async function initializeContractPayment(params: {
 }
 
 export interface VerifyTransactionData {
+  currency?: string;
   status: "success" | "failed" | "abandoned" | string;
   reference: string;
   amount: number;

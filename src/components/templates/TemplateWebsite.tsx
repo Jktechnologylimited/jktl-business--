@@ -6,7 +6,11 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import type { WebsiteTemplate, WebsiteDocument } from "@/lib/website-templates";
+import {
+  templateLoginPath,
+  type WebsiteTemplate,
+  type WebsiteDocument,
+} from "@/lib/website-templates";
 import styles from "./TemplateWebsite.module.css";
 export type TemplateContact = {
   email?: string;
@@ -319,7 +323,12 @@ export function TemplateWebsite({
             Get in touch ↗
           </a>
           <a
-            href="https://business.jktl.com.ng/login"
+            href={
+              preview
+                ? `https://business.jktl.com.ng${templateLoginPath(template.id)}`
+                : "https://business.jktl.com.ng/login"
+            }
+            target={preview ? "_top" : undefined}
             aria-label="Sign in to JKTL Business"
             title="Sign in to JKTL Business"
           >

@@ -1,10 +1,14 @@
+"use client";
 import Link from "next/link";
+import { useState } from "react";
+import { Monitor, Smartphone } from "lucide-react";
 import {
   getWebsiteTemplate,
   templateLoginPath,
   templateEditorPath,
 } from "@/lib/website-templates";
 import { TemplateWebsite } from "./TemplateWebsite";
+import styles from "./TemplatePreview.module.css";
 export function TemplatePreview({
   id,
   insideBusiness = false,
@@ -12,62 +16,69 @@ export function TemplatePreview({
   id: string;
   insideBusiness?: boolean;
 }) {
+  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const template = getWebsiteTemplate(id);
   if (!template) return null;
+  // A raw preview route prevents recursive frames and retains the full renderer.
   return (
-    <>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          padding: "12px 20px",
-          background: "#fff",
-          color: "#14221b",
-          borderBottom: "1px solid #ddd",
-          fontFamily: "Arial,sans-serif",
-          position: "sticky",
-          top: 0,
-          zIndex: 500,
-          fontSize: 12,
-        }}
-      >
-        <Link
-          href={insideBusiness ? "/business/templates" : "/templates"}
-          style={{ color: "inherit" }}
-        >
+    <div className={styles.shell}>
+      <header className={styles.toolbar}>
+        <Link href={insideBusiness ? "/business/templates" : "/templates"}>
           ← All templates
         </Link>
-        <span style={{ textAlign: "center" }}>
+        <div className={styles.name}>
           {template.name}
-          <span style={{ display: "block", fontSize: 10, color: "#676c68" }}>
-            Sample content · live preview
-          </span>
-        </span>
+          <small>Sample content · live preview</small>
+        </div>
+        <div
+          className={styles.devices}
+          role="group"
+          aria-label="Preview device"
+        >
+          <button
+            type="button"
+            aria-label="Desktop preview"
+            title="Desktop preview"
+            aria-pressed={device === "desktop"}
+            onClick={() => setDevice("desktop")}
+          >
+            <Monitor size={20} />
+          </button>
+          <button
+            type="button"
+            aria-label="Mobile preview"
+            title="Mobile preview"
+            aria-pressed={device === "mobile"}
+            onClick={() => setDevice("mobile")}
+          >
+            <Smartphone size={20} />
+          </button>
+        </div>
         <a
+          className={styles.edit}
           href={
             insideBusiness
               ? templateEditorPath(id)
               : `https://business.jktl.com.ng${templateLoginPath(id)}`
           }
-          style={{
-            padding: "10px 19px",
-            background: "#14291e",
-            color: "#fff",
-            borderRadius: 30,
-            textDecoration: "none",
-            whiteSpace: "nowrap",
-          }}
         >
           Edit template ↗
         </a>
+      </header>
+      <div className={styles.stage} data-device={device}>
+        <iframe
+          key={id}
+          title={`${template.name} ${device} preview`}
+          src={`/template-canvas/${id}`}
+          className={styles.frame}
+        />
       </div>
-      <TemplateWebsite
-        template={template}
-        document={template.document}
-        preview
-      />
-    </>
+    </div>
   );
+}
+export function RawTemplatePreview({ id }: { id: string }) {
+  const template = getWebsiteTemplate(id);
+  return template ? (
+    <TemplateWebsite template={template} document={template.document} preview />
+  ) : null;
 }

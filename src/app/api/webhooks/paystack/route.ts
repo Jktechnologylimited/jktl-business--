@@ -1,5 +1,9 @@
+import { getInfrastructure } from "@/lib/db/organizations";
 import { NextRequest, NextResponse } from "next/server";
-import { verifyWebhookSignature, INVOICE_PLATFORM_FEE_KOBO } from "@/lib/paystack";
+import {
+  verifyWebhookSignature,
+  INVOICE_PLATFORM_FEE_KOBO,
+} from "@/lib/paystack";
 import {
   applyPaymentSuccess,
   saveSubscriptionCode,
@@ -11,7 +15,12 @@ import {
   recordWebhookEventOnce,
 } from "@/lib/db/billing";
 import { markInvoicePaidOnline } from "@/lib/db/invoices";
-import { activateReceptionistContract, applyContractPayment, applyWalletTopUp, saveContractCard } from "@/lib/ai/billing-fulfilment";
+import {
+  activateReceptionistContract,
+  applyContractPayment,
+  applyWalletTopUp,
+  saveContractCard,
+} from "@/lib/ai/billing-fulfilment";
 import { finalizeInvoicePaid } from "@/lib/invoice-finalize";
 import { accrueCommissionForOrg } from "@/lib/db/affiliates";
 import { chargeStorageOverageForOrg } from "@/lib/db/storage-overage";
@@ -134,21 +143,40 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
   // as a single setup fee. Treated as month 1 so a checkout in flight when
   // this shipped still lands correctly.
   if (metadata.type === "receptionist_setup") {
-    await handleContractMonth({ ...data, metadata: { ...metadata, monthIndex: 1 } }, metadata);
+    await handleContractMonth(
+      { ...data, metadata: { ...metadata, monthIndex: 1 } },
+      metadata,
+    );
     return;
   }
 
   if (!data.plan) return; // a one-off charge unrelated to a subscription plan
 
   const customer = asRecord(data.customer);
-  const orgId = (metadata.organizationId as string) || (await findOrgIdByCustomerCode(customer.customer_code as string));
+  const orgId =
+    (metadata.organizationId as string) ||
+    (await findOrgIdByCustomerCode(customer.customer_code as string));
   if (!orgId) {
-    console.error("paystack webhook: charge.success with no matching organization", data.reference);
+    console.error(
+      "paystack webhook: charge.success with no matching organization",
+      data.reference,
+    );
     return;
   }
 
-  const cycleId = ((metadata.billingCycle as BillingCycle) || "yearly") as BillingCycle;
+  const infra = await getInfrastructure(orgId);
+  const cycleId = (metadata.billingCycle ||
+    infra?.billingCycle) as BillingCycle;
   const cycle = getCycleDef(cycleId);
+  if (
+    !cycle ||
+    data.currency !== "NGN" ||
+    Number(data.amount) !== cycle.priceKobo
+  ) {
+    throw new Error(
+      "Website subscription renewal amount, interval or currency mismatch",
+    );
+  }
   const paidAt = data.paid_at ? new Date(data.paid_at as string) : new Date();
   const renewalDate = addBillingCycle(paidAt, cycleId);
   const priceKobo = cycle?.priceKobo ?? Number(data.amount);
@@ -167,7 +195,10 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
   // token instead of skipping cleanly with "no card on file".
   const authorization = asRecord(data.authorization);
   if (authorization.reusable === true && authorization.authorization_code) {
-    await saveAuthorizationCode(orgId, authorization.authorization_code as string).catch((err) =>
+    await saveAuthorizationCode(
+      orgId,
+      authorization.authorization_code as string,
+    ).catch((err) =>
       console.error("paystack webhook: saveAuthorizationCode failed", err),
     );
   }
@@ -177,7 +208,11 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
   // optimistic checkout-callback path in billing-actions.ts, so a single
   // real payment is never double-counted. Best-effort: a commission
   // bookkeeping failure must never break subscription billing itself.
-  await accrueCommissionForOrg(orgId, priceKobo, (data.reference as string) ?? "").catch((err) =>
+  await accrueCommissionForOrg(
+    orgId,
+    priceKobo,
+    (data.reference as string) ?? "",
+  ).catch((err) =>
     console.error("paystack webhook: accrueCommissionForOrg failed", err),
   );
 
@@ -186,7 +221,10 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
   // *new* one, just computed) is this attempt's idempotency key, so a
   // redelivered webhook for the same renewal can't double-charge. Also
   // best-effort, for the same reason as the commission call just above.
-  await chargeStorageOverageForOrg(orgId, renewalDate.toISOString().slice(0, 10)).catch((err) =>
+  await chargeStorageOverageForOrg(
+    orgId,
+    renewalDate.toISOString().slice(0, 10),
+  ).catch((err) =>
     console.error("paystack webhook: chargeStorageOverageForOrg failed", err),
   );
 }
@@ -200,11 +238,17 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
  * The amount comes from `data.amount` (what Paystack actually collected),
  * never from the metadata we sent, so a tampered initiate call cannot buy
  * more credit than it paid for. */
-async function handleWalletTopUp(data: Record<string, unknown>, metadata: Record<string, unknown>) {
+async function handleWalletTopUp(
+  data: Record<string, unknown>,
+  metadata: Record<string, unknown>,
+) {
   const organizationId = metadata.organizationId as string;
   const reference = (data.reference as string) ?? "";
   if (!organizationId || !reference) {
-    console.error("paystack webhook: wallet_topup charge with missing metadata", reference);
+    console.error(
+      "paystack webhook: wallet_topup charge with missing metadata",
+      reference,
+    );
     return;
   }
 
@@ -227,11 +271,17 @@ async function handleWalletTopUp(data: Record<string, unknown>, metadata: Record
  * with the month the contract is expecting, the contract's own counter wins,
  * which is what makes the money path safe against a redelivered webhook.
  */
-async function handleContractMonth(data: Record<string, unknown>, metadata: Record<string, unknown>) {
+async function handleContractMonth(
+  data: Record<string, unknown>,
+  metadata: Record<string, unknown>,
+) {
   const organizationId = metadata.organizationId as string;
   const reference = (data.reference as string) ?? "";
   if (!organizationId || !reference) {
-    console.error("paystack webhook: receptionist_month charge with missing metadata", reference);
+    console.error(
+      "paystack webhook: receptionist_month charge with missing metadata",
+      reference,
+    );
     return;
   }
 
@@ -245,7 +295,9 @@ async function handleContractMonth(data: Record<string, unknown>, metadata: Reco
     last4: (authorization.last4 as string) ?? "",
     expMonth: (authorization.exp_month as string) ?? "",
     expYear: (authorization.exp_year as string) ?? "",
-  }).catch((err) => console.error("paystack webhook: saveContractCard failed", err));
+  }).catch((err) =>
+    console.error("paystack webhook: saveContractCard failed", err),
+  );
 
   const monthIndex = Number(metadata.monthIndex ?? 0);
   const result = await applyContractPayment({
@@ -261,7 +313,11 @@ async function handleContractMonth(data: Record<string, unknown>, metadata: Reco
     // often the first thing a clinic does), so make sure it exists and is
     // activated — `activateReceptionistContract` is idempotent and also grants
     // the bundled launch credit exactly once.
-    await activateReceptionistContract({ organizationId, startedAt: data.paid_at ? new Date(data.paid_at as string) : undefined, reference });
+    await activateReceptionistContract({
+      organizationId,
+      startedAt: data.paid_at ? new Date(data.paid_at as string) : undefined,
+      reference,
+    });
     return;
   }
 
@@ -285,7 +341,9 @@ async function handleContractMonth(data: Record<string, unknown>, metadata: Reco
 
   console.error(
     `paystack webhook: receptionist_month for ${organizationId} not applied (${result.reason}${
-      result.reason === "underpaid" ? `, expected ${result.expectedKobo} kobo` : ""
+      result.reason === "underpaid"
+        ? `, expected ${result.expectedKobo} kobo`
+        : ""
     })`,
   );
 }
@@ -296,11 +354,17 @@ async function handleContractMonth(data: Record<string, unknown>, metadata: Reco
  * telling the business. `markInvoicePaidOnline` is itself idempotent
  * (`WHERE status <> 'paid'`), on top of the dedupe already done above by
  * reference, so a retried webhook delivery can never double-apply this. */
-async function handleInvoicePaymentSuccess(data: Record<string, unknown>, metadata: Record<string, unknown>) {
+async function handleInvoicePaymentSuccess(
+  data: Record<string, unknown>,
+  metadata: Record<string, unknown>,
+) {
   const organizationId = metadata.organizationId as string;
   const invoiceId = metadata.invoiceId as string;
   if (!organizationId || !invoiceId) {
-    console.error("paystack webhook: invoice_payment charge with missing metadata", data.reference);
+    console.error(
+      "paystack webhook: invoice_payment charge with missing metadata",
+      data.reference,
+    );
     return;
   }
 
@@ -325,16 +389,22 @@ async function handleInvoicePaymentSuccess(data: Record<string, unknown>, metada
 async function handleSubscriptionCreate(data: Record<string, unknown>) {
   const customer = asRecord(data.customer);
   const orgId =
-    (await findOrgIdByCustomerCode(customer.customer_code as string)) || (await findOrgIdByOwnerEmail(customer.email as string));
+    (await findOrgIdByCustomerCode(customer.customer_code as string)) ||
+    (await findOrgIdByOwnerEmail(customer.email as string));
   if (!orgId) {
-    console.error("paystack webhook: subscription.create with no matching organization", data.subscription_code);
+    console.error(
+      "paystack webhook: subscription.create with no matching organization",
+      data.subscription_code,
+    );
     return;
   }
 
   await saveSubscriptionCode(orgId, {
     subscriptionCode: (data.subscription_code as string) ?? "",
     emailToken: (data.email_token as string) ?? "",
-    renewalDate: data.next_payment_date ? new Date(data.next_payment_date as string) : undefined,
+    renewalDate: data.next_payment_date
+      ? new Date(data.next_payment_date as string)
+      : undefined,
   });
 }
 
@@ -345,8 +415,9 @@ async function handleInvoicePaymentFailed(data: Record<string, unknown>) {
   const subscription = asRecord(data.subscription);
   const customer = asRecord(data.customer);
   const orgId =
-    (await findOrgIdBySubscriptionCode(subscription.subscription_code as string)) ||
-    (await findOrgIdByCustomerCode(customer.customer_code as string));
+    (await findOrgIdBySubscriptionCode(
+      subscription.subscription_code as string,
+    )) || (await findOrgIdByCustomerCode(customer.customer_code as string));
   if (!orgId) return;
   await setSubscriptionStatus(orgId, "past_due");
 }
@@ -359,7 +430,8 @@ async function handleInvoicePaymentFailed(data: Record<string, unknown>) {
 async function handleSubscriptionCanceled(data: Record<string, unknown>) {
   const customer = asRecord(data.customer);
   const orgId =
-    (await findOrgIdBySubscriptionCode(data.subscription_code as string)) || (await findOrgIdByCustomerCode(customer.customer_code as string));
+    (await findOrgIdBySubscriptionCode(data.subscription_code as string)) ||
+    (await findOrgIdByCustomerCode(customer.customer_code as string));
   if (!orgId) return;
   await setSubscriptionStatus(orgId, "canceled");
 }

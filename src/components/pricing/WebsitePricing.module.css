@@ -1,0 +1,322 @@
+.pricing {
+  background: #fff;
+  color: #163329;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+.hero {
+  margin: 24px auto;
+  padding: 64px 28px 42px;
+  border-radius: 28px;
+  background: #e8f0e7;
+  text-align: center;
+  max-width: 1500px;
+}
+.hero h1 {
+  font-size: clamp(2.7rem, 5vw, 4.8rem);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+  font-weight: 500;
+  margin: 18px 0 24px;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+}
+.primary,
+.outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 30px;
+  padding: 13px 22px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.primary {
+  background: #193f2d;
+  color: white;
+  border: 1px solid #193f2d;
+}
+.hero > a {
+  margin: 26px 0;
+}
+.outline {
+  background: transparent;
+  color: #193f2d;
+  border: 1px solid #9bac9c;
+}
+.included {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+  margin: 10px 0 30px;
+}
+.included span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toggle {
+  display: inline-flex;
+  background: #fff;
+  border: 1px solid #becfbd;
+  border-radius: 30px;
+  padding: 4px;
+  gap: 3px;
+}
+.toggle button {
+  border: 0;
+  border-radius: 25px;
+  padding: 11px 20px;
+  background: transparent;
+  color: #183b2a;
+  cursor: pointer;
+  font-weight: 600;
+}
+.toggle button[aria-pressed="true"] {
+  background: #173e2b;
+  color: #fff;
+}
+.toggle span {
+  font-size: 10px;
+  background: #d9f49b;
+  color: #183b2a;
+  padding: 4px 6px;
+  border-radius: 8px;
+  margin-left: 7px;
+}
+.small {
+  font-size: 12px;
+  max-width: 850px;
+  margin: 15px auto 28px;
+  color: #4f6354;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin: 34px 0;
+}
+.card {
+  background: #fff;
+  border-radius: 22px;
+  padding: 24px 20px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid transparent;
+}
+.recommended {
+  border: 2px solid #173e2b;
+}
+.badge {
+  font-size: 9px;
+  font-weight: 700;
+  height: 25px;
+  letter-spacing: 0.04em;
+  color: #33502d;
+}
+.recommended .badge {
+  background: #d9f49b;
+  padding: 3px 7px;
+  width: fit-content;
+  border-radius: 5px;
+}
+.card h2 {
+  font-size: 22px;
+  line-height: 1.2;
+  margin: 12px 0 6px;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+}
+.description {
+  font-size: 12px;
+  min-height: 40px;
+  color: #5d6e60;
+}
+.price {
+  font-size: clamp(1.7rem, 2.3vw, 2.7rem);
+  letter-spacing: -0.05em;
+  margin: 18px 0 2px;
+  line-height: 1.2;
+}
+.price small {
+  font-size: 13px;
+  letter-spacing: 0;
+}
+.billing {
+  font-size: 12px;
+  min-height: 38px;
+}
+.savings {
+  font-size: 11px;
+  color: #396f36;
+  min-height: 32px;
+}
+.card > a {
+  font-size: 12px;
+  padding: 11px 5px;
+  margin-bottom: 24px;
+}
+.card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  font-size: 12px;
+}
+.card li {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+.card li svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.notice {
+  font-size: 12px;
+  max-width: 950px;
+  margin: 24px auto;
+  padding: 18px;
+  background: #f8fbf6;
+  border: 1px solid #cbdac8;
+  border-radius: 12px;
+}
+.table {
+  overflow: auto;
+  margin: 24px 0;
+  text-align: left;
+}
+.table table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 700px;
+  font-size: 12px;
+  background: white;
+}
+.table td,
+.table th {
+  padding: 14px;
+  border-bottom: 1px solid #d3dfd2;
+}
+.table caption {
+  padding: 10px;
+}
+.foundation,
+.faq {
+  max-width: 1250px;
+  margin: auto;
+  padding: 60px 28px;
+}
+.foundation h2,
+.faq h2 {
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+.foundationGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-top: 36px;
+}
+.foundation article {
+  border-radius: 24px;
+  background: #e0f0cd;
+  padding: 30px;
+}
+.foundation h3 {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.foundation p {
+  font-size: 14px;
+  margin: 28px 0;
+}
+.foundation a {
+  font-size: 13px;
+  font-weight: 600;
+  color: #193f2d;
+}
+.faq {
+  max-width: 900px;
+}
+.faq details {
+  border-bottom: 1px solid #d3dfd2;
+  padding: 22px 0;
+}
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.faq details p {
+  font-size: 14px;
+  margin-top: 12px;
+}
+.pricing button:focus-visible,
+.pricing a:focus-visible,
+.pricing summary:focus-visible {
+  outline: 3px solid #a87520;
+  outline-offset: 4px;
+}
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .price {
+    font-size: 34px;
+  }
+}
+@media (max-width: 700px) {
+  .hero {
+    margin: 12px;
+    border-radius: 20px;
+    padding: 40px 16px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    padding: 24px;
+  }
+  .description,
+  .billing,
+  .savings {
+    min-height: 0;
+  }
+  .foundationGrid {
+    grid-template-columns: 1fr;
+  }
+  .included {
+    gap: 14px;
+  }
+  .foundation,
+  .faq {
+    padding: 36px 22px;
+  }
+  .toggle button {
+    padding: 11px 14px;
+  }
+  .card h2 {
+    font-size: 27px;
+  }
+  .card ul {
+    font-size: 14px;
+  }
+  .card > a {
+    font-size: 14px;
+  }
+}
