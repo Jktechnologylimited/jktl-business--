@@ -1,7 +1,12 @@
 "use server";
 
+import { getSql } from "@/lib/db/client";
 import * as db from "@/lib/db/members";
-import { ENTITLEMENT_PAST_DUE_MESSAGE, ENTITLEMENT_REQUIRED_MESSAGE, getEntitlement } from "@/lib/db/entitlements";
+import {
+  ENTITLEMENT_PAST_DUE_MESSAGE,
+  ENTITLEMENT_REQUIRED_MESSAGE,
+  getEntitlement,
+} from "@/lib/db/entitlements";
 import { requireSession } from "@/lib/session";
 import { FREE_TEAM_SEATS } from "@/lib/billing";
 import type { ActionResult } from "./types";
@@ -18,9 +23,20 @@ import type { OrganizationMember } from "@/lib/types";
  * any rejected mutation. The Settings → Users tab also checks this
  * up front so that's the rare path, not the common one.
  */
-export async function addMemberAction(id: string, input: db.MemberInput): Promise<ActionResult<OrganizationMember>> {
+export async function addMemberAction(
+  id: string,
+  input: db.MemberInput,
+): Promise<ActionResult<OrganizationMember>> {
   try {
-    const { organizationId } = await requireSession();
+    const { organizationId, userId } = await requireSession();
+    const sql = getSql();
+    const allowed =
+      await sql`SELECT user_id FROM organization_members WHERE organization_id=${organizationId} AND user_id=${userId} AND active=true AND role='owner' LIMIT 1`;
+    if (!allowed[0])
+      return {
+        ok: false,
+        error: "Only the business owner can manage team access.",
+      };
 
     const count = await db.countMembers(organizationId);
     if (count >= FREE_TEAM_SEATS) {
@@ -38,16 +54,35 @@ export async function addMemberAction(id: string, input: db.MemberInput): Promis
       }
     }
 
-    return { ok: true, data: await db.addMember(organizationId, id, input) };
+    const access = await getEntitlement(organizationId);
+    if (access.teamSeats && count >= access.teamSeats)
+      return {
+        ok: false,
+        error: `Your website plan supports ${access.teamSeats} collaborators, including the owner. Choose a larger plan under Billing.`,
+      };
+    return {
+      ok: true,
+      data: await db.addMember(organizationId, id, input, access.teamSeats),
+    };
   } catch (err) {
     console.error(err);
     return { ok: false, error: "Couldn't add this team member." };
   }
 }
 
-export async function removeMemberAction(id: string): Promise<ActionResult<null>> {
+export async function removeMemberAction(
+  id: string,
+): Promise<ActionResult<null>> {
   try {
-    const { organizationId } = await requireSession();
+    const { organizationId, userId } = await requireSession();
+    const sql = getSql();
+    const allowed =
+      await sql`SELECT user_id FROM organization_members WHERE organization_id=${organizationId} AND user_id=${userId} AND active=true AND role='owner' LIMIT 1`;
+    if (!allowed[0])
+      return {
+        ok: false,
+        error: "Only the business owner can manage team access.",
+      };
     await db.removeMember(organizationId, id);
     return { ok: true, data: null };
   } catch (err) {

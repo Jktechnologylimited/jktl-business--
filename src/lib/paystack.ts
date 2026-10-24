@@ -18,6 +18,7 @@ async function paystackFetch<T>(path: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {}),
     },
     cache: "no-store",
+    signal: init?.signal || AbortSignal.timeout(20000),
   });
 
   let body: { status?: boolean; message?: string; data?: T } = {};
@@ -338,4 +339,20 @@ export async function initializeInvoicePayment(params: {
     }),
   });
   return { authorizationUrl: data.authorization_url, reference: data.reference, accessCode: data.access_code };
+}
+
+/** Versioned website products never reuse or mutate legacy plans. */
+export async function findWebsiteProviderPlan(name:string){
+ for(let page=1;page<=20;page++){
+  const rows=await paystackFetch<Array<{name:string;plan_code:string;amount:number;currency:string;interval:string}>>(`/plan?perPage=100&page=${page}`);
+  const match=rows.find(row=>row.name===name);if(match)return match;if(rows.length<100)break;
+ }
+ return null;
+}
+export async function initializeWebsitePlanCheckout(params:{email:string;amountKobo:number;planCode:string;reference:string;callbackUrl:string;metadata:Record<string,unknown>}):Promise<InitializeTransactionResult>{
+ const data=await paystackFetch<{authorization_url:string;reference:string;access_code:string}>("/transaction/initialize",{method:"POST",body:JSON.stringify({email:params.email,amount:params.amountKobo,currency:"NGN",plan:params.planCode,reference:params.reference,callback_url:params.callbackUrl,metadata:params.metadata})});
+ return {authorizationUrl:data.authorization_url,reference:data.reference,accessCode:data.access_code};
+}
+export async function stopWebsiteProviderSubscription(code:string,token:string){
+ await paystackFetch('/subscription/disable',{method:'POST',body:JSON.stringify({code,token})});
 }

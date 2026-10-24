@@ -1,6 +1,6 @@
 import "server-only";
 import { getSql } from "./client";
-import { hasFullAccess } from "./entitlements";
+import { hasFullAccess, getEntitlement } from "./entitlements";
 import { computeStorageOverageKobo } from "@/lib/billing";
 
 /**
@@ -13,6 +13,7 @@ import { computeStorageOverageKobo } from "@/lib/billing";
 
 export interface StorageUsage {
   usedBytes: number;
+  hardCap?: boolean;
   limitBytes: number;
   /** What the *next* renewal would bill for the current overage, in kobo,
    * if usage stays exactly where it is — a live preview, not a charge that
@@ -28,8 +29,18 @@ export async function getStorageUsage(orgId: string): Promise<StorageUsage> {
   `;
   const row = rows[0];
   const usedBytes = Number(row?.storage_used_bytes ?? 0);
-  const limitBytes = Number(row?.storage_limit_bytes ?? 52_428_800);
-  return { usedBytes, limitBytes, overageKobo: computeStorageOverageKobo(usedBytes, limitBytes) };
+  const access = await getEntitlement(orgId);
+  const limitBytes =
+    access.storageBytes || Number(row?.storage_limit_bytes ?? 52_428_800);
+  return {
+    usedBytes,
+    limitBytes,
+    hardCap: access.source === "website_plan",
+    overageKobo:
+      access.source === "website_plan"
+        ? 0
+        : computeStorageOverageKobo(usedBytes, limitBytes),
+  };
 }
 
 /**
@@ -38,17 +49,26 @@ export async function getStorageUsage(orgId: string): Promise<StorageUsage> {
  * entirely — there's no separate "paid quota" ceiling right now, just
  * free-vs-unlimited). Checked before every image upload in `blob.ts`.
  */
-export async function hasStorageQuota(orgId: string, additionalBytes: number): Promise<boolean> {
+export async function hasStorageQuota(
+  orgId: string,
+  additionalBytes: number,
+): Promise<boolean> {
   const usage = await getStorageUsage(orgId);
   if (usage.usedBytes + additionalBytes <= usage.limitBytes) return true;
   // Storage beyond the free allowance is included with the AI receptionist
   // subscription, not a separate plan — see entitlements.ts.
+  const access = await getEntitlement(orgId);
+  if (access.source === "website_plan") return false;
   return hasFullAccess(orgId);
 }
 
 /** Records a newly-stored image (Blob-hosted or inline, either way costs
  * something real) and adds its size to the running usage counter. */
-export async function recordImageUpload(orgId: string, url: string, sizeBytes: number): Promise<void> {
+export async function recordImageUpload(
+  orgId: string,
+  url: string,
+  sizeBytes: number,
+): Promise<void> {
   const sql = getSql();
   await sql`INSERT INTO image_uploads (organization_id, url, size_bytes) VALUES (${orgId}, ${url}, ${sizeBytes})`;
   await sql`UPDATE infrastructure_accounts SET storage_used_bytes = storage_used_bytes + ${sizeBytes} WHERE organization_id = ${orgId}`;
@@ -61,10 +81,14 @@ export async function recordImageUpload(orgId: string, url: string, sizeBytes: n
  * to call for a URL that was never tracked (a pre-migration image, or one
  * that failed to record) — it just finds nothing and is a no-op.
  */
-export async function releaseImageUsage(orgId: string, url: string): Promise<void> {
+export async function releaseImageUsage(
+  orgId: string,
+  url: string,
+): Promise<void> {
   if (!url) return;
   const sql = getSql();
-  const rows = await sql`DELETE FROM image_uploads WHERE organization_id = ${orgId} AND url = ${url} RETURNING size_bytes`;
+  const rows =
+    await sql`DELETE FROM image_uploads WHERE organization_id = ${orgId} AND url = ${url} RETURNING size_bytes`;
   const freed = rows.reduce((sum, row) => sum + Number(row.size_bytes), 0);
   if (freed > 0) {
     await sql`

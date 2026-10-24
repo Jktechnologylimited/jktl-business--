@@ -109,6 +109,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin/prospects", label: "Lead engine", capability: "run_lead_engine" },
   { href: "/admin/clients", label: "Existing clients", capability: "run_lead_engine" },
   { href: "/admin/broadcasts", label: "Broadcasts", capability: "send_broadcasts" },
+  { href: "/admin/website-refunds", label:"Website refunds", capability:"manage_team" },
   { href: "/admin/team", label: "Team", capability: "manage_team" },
 ];
 

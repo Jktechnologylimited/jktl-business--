@@ -1,3 +1,4 @@
+import { handleWebsiteBillingEvent } from "@/lib/website-billing-webhooks";
 import { getInfrastructure } from "@/lib/db/organizations";
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -73,11 +74,13 @@ export async function POST(request: NextRequest) {
 
   const isNew = await recordWebhookEventOnce(dedupeKey, event).catch((err) => {
     console.error("paystack webhook: failed to record dedupe key", err);
-    return true; // fail open — better to risk a rare double-apply than silently drop every event
+    return null; // Fail closed: ask Paystack to retry; never process without receipt tracking.
   });
+  if (isNew === null) return NextResponse.json({error:"Webhook temporarily unavailable"},{status:503});
   if (!isNew) return NextResponse.json({ ok: true, deduped: true });
 
   try {
+    if(await handleWebsiteBillingEvent(event,data))return NextResponse.json({ok:true});
     switch (event) {
       case "charge.success":
         await handleChargeSuccess(data);
@@ -99,8 +102,11 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     console.error(`paystack webhook: handling "${event}" failed`, err);
-    // Still ack with 200 — we've already recorded receipt above, and
-    // Paystack retrying a handler bug won't fix itself, just resend traffic.
+    // Failed fulfilment must be retryable. Each money-moving handler has its
+    // own ledger idempotency; website activation and its ledger are atomic.
+    const {getSql}=await import("@/lib/db/client");
+    await getSql()`DELETE FROM paystack_webhook_events WHERE dedupe_key=${dedupeKey}`;
+    return NextResponse.json({error:"Payment processing will retry"},{status:503});
   }
 
   return NextResponse.json({ ok: true });

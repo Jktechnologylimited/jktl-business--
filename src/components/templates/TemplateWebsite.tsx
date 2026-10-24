@@ -28,6 +28,7 @@ export function TemplateWebsite({
   document: doc,
   contact = {},
   preview = false,
+  hideBranding = false,
   accent,
   businessSection,
   bookingAvailable = false,
@@ -38,6 +39,7 @@ export function TemplateWebsite({
   document: WebsiteDocument;
   contact?: TemplateContact;
   preview?: boolean;
+  hideBranding?: boolean;
   accent?: string;
   businessSection?: ReactNode;
   bookingAvailable?: boolean;
@@ -465,9 +467,15 @@ export function TemplateWebsite({
         <p>
           © {new Date().getFullYear()} {doc.brandName}
         </p>
-        <a href="https://jktl.com.ng" target="_blank" rel="noopener noreferrer">
-          Built with JKTL ↗
-        </a>
+        {!hideBranding && (
+          <a
+            href="https://jktl.com.ng"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Built with JKTL ↗
+          </a>
+        )}
       </footer>
     </div>
   );

@@ -70,6 +70,12 @@ export async function startCheckoutAction(
           "This business already has a subscription. Manage it in Settings instead of starting another.",
       };
     }
+    if (infra?.entitled)
+      return {
+        ok: false,
+        error:
+          "Your current subscription already includes these website features. Manage your existing plan instead of starting another.",
+      };
     // This action remains the legacy Website & Hosting product only.
     // New target tiers are consultation-only until their migration is ready.
     const planCode = await ensurePlanCode(cycleId);

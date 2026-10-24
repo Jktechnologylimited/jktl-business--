@@ -2,7 +2,12 @@ import "server-only";
 import type { WebsiteDocument } from "@/lib/website-templates";
 import { getSql } from "./client";
 import { kobo, isoDate } from "./rows";
-import type { BusinessProfile, Product, Service, Testimonial } from "@/lib/types";
+import type {
+  BusinessProfile,
+  Product,
+  Service,
+  Testimonial,
+} from "@/lib/types";
 
 /**
  * Reads for the public, unauthenticated business-website surface only.
@@ -35,10 +40,18 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     customDomainVerified: Boolean(row.custom_domain_verified),
     aboutText: (row.about_text as string) ?? "",
     aboutLong: (row.about_long as string) ?? "",
-    galleryUrls: Array.isArray(row.gallery_urls) ? (row.gallery_urls as string[]) : [],
-    openingHours: Array.isArray(row.opening_hours) ? (row.opening_hours as Array<{ day: string; hours: string }>) : [],
-    serviceAreas: Array.isArray(row.service_areas) ? (row.service_areas as string[]) : [],
-    faqs: Array.isArray(row.faqs) ? (row.faqs as Array<{ question: string; answer: string }>) : [],
+    galleryUrls: Array.isArray(row.gallery_urls)
+      ? (row.gallery_urls as string[])
+      : [],
+    openingHours: Array.isArray(row.opening_hours)
+      ? (row.opening_hours as Array<{ day: string; hours: string }>)
+      : [],
+    serviceAreas: Array.isArray(row.service_areas)
+      ? (row.service_areas as string[])
+      : [],
+    faqs: Array.isArray(row.faqs)
+      ? (row.faqs as Array<{ question: string; answer: string }>)
+      : [],
     // Carried from the Google listing the site was generated from. Zero when
     // there was no listing, and the trust bar then renders nothing.
     rating: Number(row.rating ?? 0),
@@ -50,7 +63,12 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     fontPairId: (row.font_pair_id as string) || "classic",
     websiteRevision: Number(row.website_revision || 0),
     websiteTemplateId: (row.website_template_id as string) || "",
-    websiteDocument: row.website_document && typeof row.website_document === "object" && Object.keys(row.website_document).length ? row.website_document as WebsiteDocument : null,
+    websiteDocument:
+      row.website_document &&
+      typeof row.website_document === "object" &&
+      Object.keys(row.website_document).length
+        ? (row.website_document as WebsiteDocument)
+        : null,
   };
 }
 
@@ -91,7 +109,10 @@ function mapTestimonial(row: Record<string, unknown>): Testimonial {
     organizationId: row.organization_id as string,
     customerName: row.customer_name as string,
     quote: row.quote as string,
-    rating: row.rating === null || row.rating === undefined ? null : Number(row.rating),
+    rating:
+      row.rating === null || row.rating === undefined
+        ? null
+        : Number(row.rating),
     createdAt: isoDate(row.created_at as string),
   };
 }
@@ -107,11 +128,22 @@ export interface PublicSite {
  * has actually published it. Returns null for an unknown subdomain or one
  * that hasn't published yet, without distinguishing the two (a visitor
  * shouldn't be able to tell which). */
-export async function getPublicSiteBySubdomain(subdomain: string): Promise<PublicSite | null> {
+export async function getPublicSiteBySubdomain(
+  subdomain: string,
+): Promise<PublicSite | null> {
   const sql = getSql();
-  const rows = await sql`SELECT * FROM business_profiles WHERE subdomain = ${subdomain} AND published = true`;
+  const rows =
+    await sql`SELECT * FROM business_profiles WHERE subdomain = ${subdomain} AND published = true`;
   if (!rows[0]) return null;
   const profile = mapProfile(rows[0]);
+  try {
+    const plans =
+      await sql`SELECT plan_id FROM website_plan_subscriptions WHERE organization_id=${profile.organizationId} AND period_end>now()`;
+    profile.websiteHideBranding = Boolean(plans[0]);
+  } catch (error) {
+    if (!["42P01", "42703"].includes(String((error as { code?: string }).code)))
+      throw error;
+  }
 
   const [serviceRows, productRows, testimonialRows] = await Promise.all([
     sql`SELECT * FROM services WHERE organization_id = ${profile.organizationId} AND active = true ORDER BY category, name`,
@@ -134,9 +166,12 @@ export async function getPublicSiteBySubdomain(subdomain: string): Promise<Publi
  * is purely a visibility switch for the page, not a security boundary. A
  * booking still can't happen against a subdomain that doesn't exist at all.
  */
-export async function getOrganizationIdBySubdomain(subdomain: string): Promise<string | null> {
+export async function getOrganizationIdBySubdomain(
+  subdomain: string,
+): Promise<string | null> {
   const sql = getSql();
-  const rows = await sql`SELECT organization_id FROM business_profiles WHERE subdomain = ${subdomain}`;
+  const rows =
+    await sql`SELECT organization_id FROM business_profiles WHERE subdomain = ${subdomain}`;
   return rows[0] ? (rows[0].organization_id as string) : null;
 }
 
@@ -151,7 +186,9 @@ export async function getOrganizationIdBySubdomain(subdomain: string): Promise<s
  * resolution. Only ever called from middleware for a host that didn't
  * already match `*.jktl.com.ng` or a reserved host.
  */
-export async function getSubdomainByCustomDomain(host: string): Promise<string | null> {
+export async function getSubdomainByCustomDomain(
+  host: string,
+): Promise<string | null> {
   const sql = getSql();
   const rows = await sql`
     SELECT subdomain FROM business_profiles WHERE custom_domain = ${host} AND custom_domain_verified = true

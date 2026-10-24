@@ -14,9 +14,12 @@ function mapRow(row: Record<string, unknown>): OrganizationMember {
   };
 }
 
-export async function listMembers(orgId: string): Promise<OrganizationMember[]> {
+export async function listMembers(
+  orgId: string,
+): Promise<OrganizationMember[]> {
   const sql = getSql();
-  const rows = await sql`SELECT * FROM organization_members WHERE organization_id = ${orgId} ORDER BY created_at ASC`;
+  const rows =
+    await sql`SELECT * FROM organization_members WHERE organization_id = ${orgId} ORDER BY created_at ASC`;
   return rows.map(mapRow);
 }
 
@@ -25,7 +28,8 @@ export async function listMembers(orgId: string): Promise<OrganizationMember[]> 
  * `addMemberAction`). */
 export async function countMembers(orgId: string): Promise<number> {
   const sql = getSql();
-  const rows = await sql`SELECT count(*)::int AS count FROM organization_members WHERE organization_id = ${orgId}`;
+  const rows =
+    await sql`SELECT count(*)::int AS count FROM organization_members WHERE organization_id = ${orgId}`;
   return Number(rows[0]?.count ?? 0);
 }
 
@@ -36,13 +40,33 @@ export interface MemberInput {
   title: string;
 }
 
-export async function addMember(orgId: string, id: string, input: MemberInput): Promise<OrganizationMember> {
+export async function addMember(
+  orgId: string,
+  id: string,
+  input: MemberInput,
+  seatLimit?: number,
+): Promise<OrganizationMember> {
   const sql = getSql();
+  if (seatLimit) {
+    const results = await sql.transaction([
+      sql`SELECT id FROM organizations WHERE id=${orgId} FOR UPDATE`,
+      sql`INSERT INTO organization_members(id,organization_id,name,email,role,title,active)
+       SELECT ${id},${orgId},${input.name},${input.email},${input.role},${input.title},true
+       WHERE (SELECT count(*) FROM organization_members WHERE organization_id=${orgId} AND active=true)<${seatLimit}
+       ON CONFLICT(id) DO UPDATE SET name=excluded.name,email=excluded.email,title=excluded.title,role=excluded.role
+       WHERE organization_members.organization_id=${orgId} AND organization_members.role<>'owner'
+       RETURNING *`,
+    ]);
+    if (!results[1][0])
+      throw new Error("The collaborator limit has been reached");
+    return mapRow(results[1][0]);
+  }
   const rows = await sql`
     INSERT INTO organization_members (id, organization_id, name, email, role, title, active)
     VALUES (${id}, ${orgId}, ${input.name}, ${input.email}, ${input.role}, ${input.title}, true)
     ON CONFLICT (id) DO UPDATE SET
       name = excluded.name, email = excluded.email, role = excluded.role, title = excluded.title
+    WHERE organization_members.organization_id=${orgId} AND organization_members.role<>'owner'
     RETURNING *
   `;
   return mapRow(rows[0]);

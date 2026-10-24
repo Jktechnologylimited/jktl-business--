@@ -75,7 +75,7 @@ export default function SettingsPage() {
   // somebody. `entitled` is computed server-side and carried on the store; the
   // server enforces it regardless of what this previews.
   const canAddMember =
-    mode !== "live" || members.length < FREE_TEAM_SEATS || infra.entitled;
+    mode !== "live" || (infra.websiteTeamSeats ? members.length < infra.websiteTeamSeats : members.length < FREE_TEAM_SEATS || infra.entitled);
 
   return (
     <div className="flex flex-col gap-5">

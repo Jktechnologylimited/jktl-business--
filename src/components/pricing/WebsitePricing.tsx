@@ -12,18 +12,40 @@ import {
   websitePlanQuote,
   priceNGN,
   type WebsiteBillingInterval,
+  type PlanId,
 } from "@/lib/website-pricing";
 import styles from "./WebsitePricing.module.css";
 export function WebsitePricing({
   insideBusiness = false,
+  onSelectPlan,
+  selectedPlanId,
 }: {
   insideBusiness?: boolean;
+  selectedPlanId?: PlanId;
+  onSelectPlan?: (planId: PlanId, interval: WebsiteBillingInterval) => void;
 }) {
   const [interval, setInterval] = useState<WebsiteBillingInterval>("yearly");
   const [compare, setCompare] = useState(false);
   return (
     <div className={styles.pricing}>
       <section className={styles.hero}>
+        <p
+          style={{
+            marginBottom: 28,
+            padding: "10px 16px",
+            borderRadius: 14,
+            background: "#d5e5c4",
+            fontSize: 13,
+          }}
+        >
+          14-day money-back guarantee on your first paid website plan ·{" "}
+          <a
+            href="https://jktl.com.ng/terms#website-guarantee"
+            style={{ textDecoration: "underline" }}
+          >
+            Terms apply
+          </a>
+        </p>
         <p className={styles.eyebrow}>JKTL BUSINESS · PLANS & PRICING</p>
         <h1>
           Find the right plan
@@ -63,14 +85,20 @@ export function WebsitePricing({
           <button
             type="button"
             aria-pressed={interval === "yearly"}
-            onClick={() => setInterval("yearly")}
+            onClick={() => {
+              setInterval("yearly");
+              if (selectedPlanId) onSelectPlan?.(selectedPlanId, "yearly");
+            }}
           >
             Yearly <span>Best value</span>
           </button>
           <button
             type="button"
             aria-pressed={interval === "monthly"}
-            onClick={() => setInterval("monthly")}
+            onClick={() => {
+              setInterval("monthly");
+              if (selectedPlanId) onSelectPlan?.(selectedPlanId, "monthly");
+            }}
           >
             Monthly
           </button>
@@ -113,20 +141,27 @@ export function WebsitePricing({
                       ? "Start with your free website"
                       : "Monthly billing available"}
                 </p>
-                <a
-                  className={
-                    plan.id === "growth" ? styles.primary : styles.outline
-                  }
-                  href={
-                    plan.id === "free"
-                      ? insideBusiness
-                        ? "/business/templates"
-                        : "https://business.jktl.com.ng/signup"
-                      : `https://jktl.com.ng/contact?product=website-plan&plan=${plan.id}&billing=${interval}#form`
-                  }
-                >
-                  {plan.id === "free" ? "Get Started" : "Discuss this plan"}
-                </a>
+                {onSelectPlan && (
+                  <label
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      margin: "8px 0 24px",
+                      fontSize: 13,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="website-plan"
+                      value={plan.id}
+                      checked={selectedPlanId === plan.id}
+                      onChange={() => onSelectPlan(plan.id, interval)}
+                    />{" "}
+                    Select {plan.name}
+                  </label>
+                )}
                 <ul>
                   {plan.features.map((feature) => (
                     <li key={feature}>
@@ -140,12 +175,25 @@ export function WebsitePricing({
           })}
         </div>
         <p className={styles.notice}>
-          <strong>Paid plans are being introduced.</strong> These are the target
-          packages. Features marked ¹ and new tier limits require rollout and
-          are not sold as active features. Existing customers retain their
-          current tools and subscriptions. Discuss a plan to confirm
-          availability and the full payable total before any payment.
+          <strong>14-day money-back guarantee.</strong> Your first website-plan
+          payment is covered. Request a refund in JKTL Business within 14 days.{" "}
+          <a href="https://jktl.com.ng/terms#website-guarantee">
+            Read the terms
+          </a>
+          . Features marked ¹ are coming later; your payment activates the
+          current capabilities shown at checkout. Existing customers retain
+          their current tools and subscriptions.
         </p>
+        <a
+          className={styles.primary}
+          href={
+            insideBusiness
+              ? "/business/templates"
+              : "https://business.jktl.com.ng/signup"
+          }
+        >
+          Start for free <ArrowRight size={18} />
+        </a>
         <button
           type="button"
           className={styles.outline}
@@ -159,8 +207,7 @@ export function WebsitePricing({
           <div id="plan-comparison" className={styles.table}>
             <table>
               <caption>
-                Target plan allowances — pending rollout, current access
-                preserved
+                Website plan allowances — current access preserved
               </caption>
               <thead>
                 <tr>
@@ -183,7 +230,7 @@ export function WebsitePricing({
                     "200 + blanks",
                   ],
                   ["Published websites", "1", "1", "1", "1", "1"],
-                  ["Target collaborators¹", "1", "2", "5", "10", "By quote"],
+                  ["Collaborators", "1", "2", "5", "10", "25"],
                   [
                     "Hosting & SSL",
                     "Included",
@@ -292,7 +339,7 @@ export function WebsitePricing({
           ],
           [
             "Can I cancel or change plans?",
-            "Existing paid subscriptions retain their current management and cancellation controls in Settings. New tier upgrades and downgrades are arranged with the team before payment; they are not automatically charged.",
+            "Existing paid subscriptions retain their current management and cancellation controls in Settings. Choose and pay for website plans in JKTL Business. You can stop renewal or schedule a different plan for the end of your paid period; a new paid plan requires your confirmation before checkout.",
           ],
           [
             "Is AI usage unlimited?",

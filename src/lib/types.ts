@@ -56,6 +56,7 @@ export interface Organization {
 export interface BusinessProfile {
   websiteTemplateId?: string;
   websiteRevision?: number;
+  websiteHideBranding?:boolean;
   websiteDocument?: WebsiteDocument | null;
   id: string;
   organizationId: string;
@@ -324,6 +325,7 @@ export interface Infrastructure {
    * is a preview and never the enforcement.
    */
   entitled: boolean;
+  websiteTeamSeats?: number;
 }
 
 export interface TenantData {

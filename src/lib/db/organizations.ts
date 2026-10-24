@@ -183,7 +183,9 @@ export async function getInfrastructure(orgId: string): Promise<Infrastructure |
   // One extra query, only when the billing screen is opened. Receives the
   // receptionist-contract answer as well as the legacy plan, so a clinic on the
   // new subscription is never shown a gate it has already paid through.
-  infra.entitled = (await getEntitlement(orgId)).entitled;
+  const entitlement = await getEntitlement(orgId);
+  infra.entitled=entitlement.entitled;
+  infra.websiteTeamSeats=entitlement.teamSeats;
   return infra;
 }
 

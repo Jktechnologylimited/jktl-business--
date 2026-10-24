@@ -9,7 +9,11 @@ import type { StorageUsage } from "@/lib/db/storage";
 
 // Demo mode has no real database usage to read — a fixed, plausible-looking
 // value so the bar isn't just empty while trying the app out.
-const DEMO_USAGE: StorageUsage = { usedBytes: 8_400_000, limitBytes: 52_428_800, overageKobo: 0 };
+const DEMO_USAGE: StorageUsage = {
+  usedBytes: 8_400_000,
+  limitBytes: 52_428_800,
+  overageKobo: 0,
+};
 
 /**
  * Shows how much of the free storage quota this business has used — photos
@@ -26,8 +30,16 @@ const DEMO_USAGE: StorageUsage = { usedBytes: 8_400_000, limitBytes: 52_428_800,
  * server-side in `getStorageUsage`, and `src/lib/db/storage-overage.ts`
  * for where that charge actually happens.
  */
-export function StorageUsagePanel({ mode, isSubscribed }: { mode: "demo" | "live"; isSubscribed: boolean }) {
-  const [usage, setUsage] = useState<StorageUsage | null>(mode !== "live" ? DEMO_USAGE : null);
+export function StorageUsagePanel({
+  mode,
+  isSubscribed,
+}: {
+  mode: "demo" | "live";
+  isSubscribed: boolean;
+}) {
+  const [usage, setUsage] = useState<StorageUsage | null>(
+    mode !== "live" ? DEMO_USAGE : null,
+  );
   const [error, setError] = useState("");
   const [upgrading, setUpgrading] = useState(false);
 
@@ -57,7 +69,10 @@ export function StorageUsagePanel({ mode, isSubscribed }: { mode: "demo" | "live
     );
   }
 
-  const pct = Math.min(100, Math.round((usage.usedBytes / usage.limitBytes) * 100));
+  const pct = Math.min(
+    100,
+    Math.round((usage.usedBytes / usage.limitBytes) * 100),
+  );
   const atLimit = usage.usedBytes >= usage.limitBytes;
 
   return (
@@ -75,16 +90,33 @@ export function StorageUsagePanel({ mode, isSubscribed }: { mode: "demo" | "live
         />
       </div>
       <p className="mt-2 text-xs text-ink-muted">
-        {!atLimit
-          ? "Covers your logo, staff avatars, receipt and product photos. Everything else on your plan is unlimited."
-          : !isSubscribed
-            ? "You've reached the free storage limit — upgrade to keep uploading photos."
-            : usage.overageKobo > 0
-              ? `You're ${formatGb(usage.usedBytes - usage.limitBytes)} over the free quota — that adds ${formatKobo(usage.overageKobo)}/cycle to your subscription, billed at your next renewal.`
-              : "You're a little over the free quota — not enough yet to add anything to your bill."}
+        {usage.hardCap
+          ? atLimit
+            ? "You have reached your included image storage limit. Remove unused images or choose a larger website plan. No automatic overage charge is made."
+            : "Included image storage for logos, avatars, receipts and product photos. Uploads stop at your plan limit, without automatic overage charges."
+          : !atLimit
+            ? "Covers your logo, staff avatars, receipt and product photos."
+            : !isSubscribed
+              ? "You've reached the free storage limit — upgrade to keep uploading photos."
+              : usage.overageKobo > 0
+                ? `You're ${formatGb(usage.usedBytes - usage.limitBytes)} over the free quota — that adds ${formatKobo(usage.overageKobo)}/cycle to your subscription, billed at your next renewal.`
+                : "You're a little over the free quota — not enough yet to add anything to your bill."}
       </p>
-      {atLimit && !isSubscribed ? (
-        <Button size="sm" variant="outline" className="mt-3" onClick={() => setUpgrading(true)}>
+      {atLimit && usage.hardCap && (
+        <a
+          href="/business/plans"
+          className="mt-3 inline-block text-sm text-primary underline"
+        >
+          Compare website plans
+        </a>
+      )}
+      {atLimit && !isSubscribed && !usage.hardCap ? (
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-3"
+          onClick={() => setUpgrading(true)}
+        >
           Upgrade for more storage
         </Button>
       ) : null}
