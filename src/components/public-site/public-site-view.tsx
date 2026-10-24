@@ -1,5 +1,7 @@
 "use client";
 
+import { TemplateWebsite } from "@/components/templates/TemplateWebsite";
+import { getWebsiteTemplate, parseWebsiteDocument, type WebsiteDocument } from "@/lib/website-templates";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, MessageCircle, Phone, Mail, Clock, Package, CalendarCheck, Menu, X, Star, Quote, Sparkles } from "lucide-react";
@@ -14,6 +16,8 @@ import { getSiteFontPair } from "@/lib/fonts";
 import type { Product, Service, Testimonial } from "@/lib/types";
 
 export interface PublicSiteProfile {
+  websiteTemplateId?: string;
+  websiteDocument?: WebsiteDocument | null;
   displayName: string;
   tagline: string;
   themeColor: string;
@@ -60,7 +64,7 @@ const fadeUp = {
  * grid. Always renders in the business's own chosen accent color and font
  * pairing, regardless of the visitor's OS dark-mode setting or the
  * dashboard's own navy brand (see `.jktl-light` in globals.css). */
-export function PublicSiteView({
+function LegacyPublicSiteView({
   profile,
   services,
   products,
@@ -664,4 +668,28 @@ export function PublicSiteView({
       ) : null}
     </div>
   );
+}
+
+
+function TemplatePublicSite(props: Parameters<typeof LegacyPublicSiteView>[0] & { template: NonNullable<ReturnType<typeof getWebsiteTemplate>>; content: WebsiteDocument }) {
+  const [selectedService, setSelectedService] = useState<string | undefined>();
+  const [chatOpen, setChatOpen] = useState(false);
+  const services = props.services.filter(s => s.active);
+  const products = props.products.filter(p => p.active);
+  const theme = /^#[0-9a-f]{6}$/i.test(props.profile.themeColor) ? props.profile.themeColor : props.content.accent;
+  const contrast = textOnColor(theme);
+  const selectService = (id: string) => { setSelectedService(id); window.document.getElementById('book')?.scrollIntoView({behavior:'smooth'}); };
+  const businessSection = services.length || products.length ? <section className="jktl-light px-6 py-16 bg-paper" id="book"><div className="mx-auto max-w-4xl space-y-8">
+    {services.length > 0 && <><h2 className="font-display text-3xl text-ink">Services &amp; appointments</h2><div className="grid gap-4 sm:grid-cols-2">{services.map(service => <button key={service.id} className="rounded-xl border border-border bg-surface p-5 text-left" onClick={() => selectService(service.id)}><strong className="text-ink">{service.name}</strong><p className="mt-2 text-sm text-ink-muted">{service.description}</p><p className="mt-3 text-sm text-ink">{formatKobo(service.priceKobo)} · {service.durationMin} min</p></button>)}</div><PublicBookingForm key={selectedService || 'booking'} subdomain={props.subdomain} services={services} themeColor={theme} textColor={contrast} mode={props.mode} initialServiceId={selectedService}/></>}
+    {products.length > 0 && <><h2 className="font-display text-3xl text-ink">Products</h2><div className="grid gap-4 sm:grid-cols-2">{products.map(product => <article key={product.id} className="rounded-xl border border-border bg-surface p-5"><h3 className="font-semibold text-ink">{product.name}</h3><p className="mt-2 text-sm text-ink">{formatKobo(product.priceKobo)}</p></article>)}</div></>}
+  </div></section> : undefined;
+  return <div className="jktl-light">{props.previewNotice && <p className="bg-paper p-4 text-center text-xs text-ink-muted">{props.previewNotice}</p>}<TemplateWebsite template={props.template} document={props.content} contact={props.profile} accent={theme} preview={props.mode === 'preview'} bookingAvailable={services.length > 0} businessSection={businessSection}/>{props.mode === 'live' && (props.aiAssistant?.enabled ? <SiteAiChat subdomain={props.subdomain} businessName={props.profile.displayName} packLabel={props.aiAssistant.packLabel} greeting={props.aiAssistant.greeting} themeColor={theme} textColor={contrast} services={services.map(s => ({id:s.id,name:s.name,priceKobo:s.priceKobo}))} clinicPhone={props.profile.phone} open={chatOpen} onOpenChange={setChatOpen} onSelectService={selectService}/> : <ChatWidget businessName={props.profile.displayName} services={services} products={products} phone={props.profile.phone} email={props.profile.email} address={props.profile.address} city={props.profile.city} state={props.profile.state} themeColor={theme} textColor={contrast} onSelectService={selectService}/>)}</div>;
+}
+/** Existing websites keep their renderer; saved template websites retain real bookings/products/chat. */
+export function PublicSiteView(props: Parameters<typeof LegacyPublicSiteView>[0]) {
+  const template = getWebsiteTemplate(props.profile.websiteTemplateId);
+  if (template && props.profile.websiteDocument) {
+    try { const content = parseWebsiteDocument(props.profile.websiteDocument); return <TemplatePublicSite {...props} template={template} content={content}/>; } catch { /* Invalid/stale template content uses the original website. */ }
+  }
+  return <LegacyPublicSiteView {...props}/>;
 }

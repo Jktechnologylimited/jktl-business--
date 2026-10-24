@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,15 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Field } from "@/components/app/field";
 import { JktlWordmark } from "@/components/app/logo";
+import { getWebsiteTemplate } from "@/lib/website-templates";
+import { pendingTemplate, rememberTemplate } from "@/lib/template-selection";
 import { useBusinessStore } from "@/lib/store";
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const selected = getWebsiteTemplate(searchParams.get("template"));
+  useEffect(() => { if(selected) rememberTemplate(selected.id); }, [selected]);
   const startSignup = useBusinessStore((s) => s.startSignup);
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -27,13 +31,16 @@ function SignupForm() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     startSignup(name, email, password, businessName, referralCode);
-    router.push("/onboarding");
+    const nextTemplate = pendingTemplate(searchParams.get("template"));
+    router.push(nextTemplate ? `/onboarding?template=${nextTemplate}` : "/onboarding");
   }
 
   return (
     <>
       <h1 className="mt-10 font-display text-2xl font-bold tracking-tight text-ink">Create your account</h1>
       <p className="mt-1.5 text-sm text-ink-muted">Takes about two minutes. No card required.</p>
+
+      {selected && <p className="mt-4 text-sm text-primary">Selected template: {selected.name}. It will open after account setup.</p>}
 
       <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
         <Field label="Your name" htmlFor="name">
@@ -61,7 +68,7 @@ function SignupForm() {
 
       <p className="mt-6 text-center text-sm text-ink-muted">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-primary">
+        <Link href={selected ? `/login?template=${selected.id}` : "/login"} className="font-medium text-primary">
           Sign in
         </Link>
       </p>

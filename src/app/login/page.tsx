@@ -1,17 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Field } from "@/components/app/field";
 import { JktlWordmark } from "@/components/app/logo";
+import { getWebsiteTemplate, templateEditorPath } from "@/lib/website-templates";
+import { pendingTemplate, rememberTemplate } from "@/lib/template-selection";
 import { useBusinessStore } from "@/lib/store";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const params = useSearchParams();
+  const selected = getWebsiteTemplate(params.get("template"));
+  const authenticated = useBusinessStore(s => s.authenticated);
+  const hydrated = useBusinessStore(s => s.hydrated);
+  const mode = useBusinessStore(s => s.mode);
+  useEffect(() => {
+    if (selected) { rememberTemplate(selected.id); if (hydrated && authenticated && mode === "live") router.replace(templateEditorPath(selected.id)); }
+  }, [selected, hydrated, authenticated, mode, router]);
   const login = useBusinessStore((s) => s.login);
   const openDemo = useBusinessStore((s) => s.openDemo);
   const [email, setEmail] = useState("");
@@ -29,7 +39,8 @@ export default function LoginPage() {
       setError(result.error);
       return;
     }
-    router.push("/business");
+    const nextTemplate = pendingTemplate(params.get("template"));
+    router.push(nextTemplate ? templateEditorPath(nextTemplate) : "/business");
   }
 
   return (
@@ -37,6 +48,8 @@ export default function LoginPage() {
       <JktlWordmark />
       <h1 className="mt-10 font-display text-2xl font-bold tracking-tight text-ink">Welcome back</h1>
       <p className="mt-1.5 text-sm text-ink-muted">Sign in to run your business today.</p>
+
+      {selected && <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm"><strong>{selected.name}</strong><p className="mt-1 text-ink-muted">Your selected template is ready. Sign in to open it in the website editor.</p></div>}
 
       <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
         <Field label="Email" htmlFor="email">
@@ -69,7 +82,7 @@ export default function LoginPage() {
         <Link href="/forgot-password" className="font-medium text-primary">
           Forgot password?
         </Link>
-        <Link href="/signup" className="font-medium text-primary">
+        <Link href={selected ? `/signup?template=${selected.id}` : "/signup"} className="font-medium text-primary">
           Create account
         </Link>
       </div>
@@ -85,7 +98,7 @@ export default function LoginPage() {
           className="mt-3 w-full"
           onClick={() => {
             openDemo();
-            router.push("/business");
+            router.push(selected ? templateEditorPath(selected.id) : "/business");
           }}
         >
           Open salon demo
@@ -94,3 +107,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage(){return <Suspense fallback={<div className="p-6">Loading sign-in…</div>}><LoginForm/></Suspense>;}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,12 +12,15 @@ import { WelcomeNote } from "@/components/onboarding/welcome-note";
 import { useBusinessStore } from "@/lib/store";
 import { BUSINESS_TYPE_GROUPS, getIndustry } from "@/lib/industry";
 import { cn } from "@/lib/utils";
+import { pendingTemplate, templateBusinessType } from "@/lib/template-selection";
+import { templateEditorPath } from "@/lib/website-templates";
 import type { BusinessType } from "@/lib/types";
 
 const STEPS = ["Business type", "Business details", "First service", "Finish"] as const;
 
-export default function OnboardingPage() {
+function OnboardingForm() {
   const router = useRouter();
+  const params = useSearchParams();
   const profile = useBusinessStore((s) => s.data.profile);
   const pendingSignup = useBusinessStore((s) => s.pendingSignup);
   const addService = useBusinessStore((s) => s.addService);
@@ -25,7 +28,7 @@ export default function OnboardingPage() {
   const completeOnboarding = useBusinessStore((s) => s.completeOnboarding);
 
   const [step, setStep] = useState(0);
-  const [businessType, setBusinessType] = useState<BusinessType>(profile.businessType);
+  const [businessType, setBusinessType] = useState<BusinessType>(pendingSignup && params.get("template") ? templateBusinessType(params.get("template")!) : profile.businessType);
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [phone, setPhone] = useState(profile.phone);
   const [city, setCity] = useState(profile.city);
@@ -56,7 +59,8 @@ export default function OnboardingPage() {
 
   function finish() {
     completeOnboarding(businessType, displayName);
-    router.push("/business");
+    const selected = pendingTemplate(params.get("template"));
+    router.push(selected ? templateEditorPath(selected) : "/business");
   }
 
   return (
@@ -193,3 +197,5 @@ export default function OnboardingPage() {
     </div>
   );
 }
+
+export default function OnboardingPage(){return <Suspense fallback={<div className="p-6">Loading setup…</div>}><OnboardingForm/></Suspense>;}

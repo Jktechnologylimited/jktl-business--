@@ -1,3 +1,4 @@
+import type { WebsiteDocument } from "./website-templates";
 export type BusinessType =
   | "salon"
   | "nail_tech"
@@ -53,6 +54,9 @@ export interface Organization {
 }
 
 export interface BusinessProfile {
+  websiteTemplateId?: string;
+  websiteRevision?: number;
+  websiteDocument?: WebsiteDocument | null;
   id: string;
   organizationId: string;
   businessType: BusinessType;

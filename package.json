@@ -12,7 +12,8 @@
     "migrate": "node scripts/migrate.mjs",
     "db:setup": "node scripts/migrate.mjs",
     "admin:create": "node scripts/create-admin.mjs",
-    "push:generate-keys": "web-push generate-vapid-keys"
+    "push:generate-keys": "web-push generate-vapid-keys",
+    "prebuild": "node scripts/prepare-website-templates.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
@@ -69,6 +70,8 @@ export default function WebsitePage() {
 
   const previewProfile = useMemo(
     () => ({
+      websiteTemplateId: profile.websiteTemplateId,
+      websiteDocument: profile.websiteDocument,
       displayName: profile.displayName,
       tagline,
       themeColor,
@@ -157,6 +160,7 @@ export default function WebsitePage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader title="Website" />
+      <div className="rounded-xl border border-border bg-surface p-4"><p className="text-sm font-semibold">20 complete website templates</p><p className="mt-1 text-xs text-ink-muted">Choose an industry design, preview a complete website and edit all its sections.</p><div className="mt-3 flex flex-wrap gap-4 text-sm text-primary"><Link href="/business/templates" className="underline">Browse website templates →</Link>{profile.websiteTemplateId && <Link href="/business/website/template" className="underline">Edit your template content →</Link>}</div></div>
 
       <section className="flex flex-col gap-4 rounded-2xl border border-border p-4">
         <Toggle

@@ -1,3 +1,4 @@
+import type { WebsiteDocument } from "@/lib/website-templates";
 import { getSql } from "./client";
 import { getEntitlement } from "./entitlements";
 import { isoDate } from "./rows";
@@ -53,6 +54,9 @@ function mapProfile(row: Record<string, unknown>): BusinessProfile {
     facebookUrl: (row.facebook_url as string) ?? "",
     snapchatUrl: (row.snapchat_url as string) ?? "",
     fontPairId: (row.font_pair_id as string) || "classic",
+    websiteRevision: Number(row.website_revision || 0),
+    websiteTemplateId: (row.website_template_id as string) || "",
+    websiteDocument: row.website_document && typeof row.website_document === "object" && Object.keys(row.website_document).length ? row.website_document as WebsiteDocument : null,
   };
 }
 
