@@ -44,7 +44,7 @@
 }
 
 @theme inline {
-  --font-display: var(--font-cormorant-garamond);
+  --font-display: var(--font-plus-jakarta-sans);
   --font-body: var(--font-plus-jakarta-sans);
   --font-mono: var(--font-jetbrains-mono);
 }

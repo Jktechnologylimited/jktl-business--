@@ -61,7 +61,7 @@
   font-weight: 600;
 }
 .story h2 {
-  font-family: Georgia, serif;
+  font-family: var(--font-plus-jakarta-sans), sans-serif;
   letter-spacing: -0.04em;
   font-size: clamp(2.6rem, 4vw, 4.3rem);
   font-weight: 400;
@@ -124,19 +124,19 @@
   padding: 28px;
 }
 .sampleNav {
-  font-family: Georgia, serif;
+  font-family: var(--font-plus-jakarta-sans), sans-serif;
   font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 .sampleNav span {
-  font-family: Arial, sans-serif;
+  font-family: var(--font-plus-jakarta-sans), sans-serif;
   font-size: 9px;
   color: var(--color-ink-muted);
 }
 .sample h3 {
-  font-family: Georgia, serif;
+  font-family: var(--font-plus-jakarta-sans), sans-serif;
   font-weight: 400;
   font-size: 37px;
   letter-spacing: -0.04em;
@@ -203,7 +203,7 @@
   min-width: 0;
 }
 .card h1 {
-  font-family: Georgia, serif;
+  font-family: var(--font-plus-jakarta-sans), sans-serif;
   letter-spacing: -0.04em;
   font-size: 2.45rem;
   line-height: 1.1;

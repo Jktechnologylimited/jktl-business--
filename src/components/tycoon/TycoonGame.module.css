@@ -3,7 +3,7 @@
   background: #f9f7f0;
   color: #060e2a;
   padding: 0 max(20px, calc((100vw - 1420px) / 2)) 35px;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-plus-jakarta-sans), sans-serif;
 }
 .header {
   display: flex;

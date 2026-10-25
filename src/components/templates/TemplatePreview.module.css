@@ -2,7 +2,7 @@
   background: #F9F7F0;
   color: #060E2A;
   min-height: 100dvh;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-plus-jakarta-sans), sans-serif;
 }
 .toolbar {
   display: flex;

@@ -1,7 +1,7 @@
 .pricing {
   background: var(--color-paper);
   color: var(--color-ink);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-plus-jakarta-sans), sans-serif;
   line-height: 1.6;
 }
 .hero {

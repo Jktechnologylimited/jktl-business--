@@ -6,13 +6,9 @@
  * client component, since the actual font-loading happens at build time,
  * not in whatever module imports the result.
  *
- * Two things use this file:
- *  1. The dashboard's own fixed brand (`layout.tsx`) — Cormorant Garamond +
- *     Plus Jakarta Sans + JetBrains Mono, matching business.jktl.com.ng.
- *  2. Seven public-website font *pairings* a business can choose between
- *     (`SITE_FONT_PAIRS` below) — the "classic" pairing deliberately reuses
- *     the exact same Cormorant Garamond / Plus Jakarta Sans objects as the
- *     dashboard, so choosing it doesn't load anything twice.
+ * The dashboard uses Plus Jakarta Sans throughout its interface, matching
+ * the Main site. Customer websites retain seven independent font pairings,
+ * including the classic Cormorant Garamond / Plus Jakarta Sans pairing.
  */
 import {
   Cormorant_Garamond,
@@ -88,7 +84,7 @@ export const SITE_FONT_PAIRS: SiteFontPair[] = [
   { id: "playful", label: "Playful", vibe: "Rounded and fun", displayVar: "var(--font-baloo-2)", bodyVar: "var(--font-quicksand)" },
   { id: "romantic", label: "Romantic", vibe: "Soft and feminine", displayVar: "var(--font-playfair-display)", bodyVar: "var(--font-poppins)" },
   { id: "chic", label: "Chic", vibe: "Trendy and editorial", displayVar: "var(--font-fraunces)", bodyVar: "var(--font-work-sans)" },
-  { id: "classic", label: "Classic", vibe: "Elegant — matches the JKTL brand", displayVar: "var(--font-cormorant-garamond)", bodyVar: "var(--font-plus-jakarta-sans)" },
+  { id: "classic", label: "Classic", vibe: "Elegant and traditional", displayVar: "var(--font-cormorant-garamond)", bodyVar: "var(--font-plus-jakarta-sans)" },
   { id: "bold", label: "Bold & Glam", vibe: "Confident and statement-making", displayVar: "var(--font-bebas-neue)", bodyVar: "var(--font-manrope)" },
   { id: "modern", label: "Modern", vibe: "Clean and tech-forward", displayVar: "var(--font-space-grotesk)", bodyVar: "var(--font-inter)" },
   { id: "professional", label: "Professional", vibe: "Plain and corporate", displayVar: "var(--font-inter)", bodyVar: "var(--font-inter)" },
