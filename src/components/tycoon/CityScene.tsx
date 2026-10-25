@@ -2,6 +2,17 @@
 import { useEffect, useRef, useState } from "react";
 import { ventures, type TycoonState } from "@/lib/tycoon";
 import styles from "./CityScene.module.css";
+const iso = (x: number, y: number) => ({
+  x: 620 + 0.68 * (x - y),
+  y: 170 + 0.34 * (x + y),
+});
+const pathThrough = (points: number[][]) =>
+  points
+    .map(([x, y], i) => {
+      const p = iso(x, y);
+      return `${i ? "L" : "M"}${p.x} ${p.y}`;
+    })
+    .join(" ");
 type Ride = "gwagon" | "lamborghini" | "cybertruck";
 function Car({ kind, paint = "#d3aa50" }: { kind: Ride; paint?: string }) {
   return (
@@ -256,6 +267,14 @@ export function CityScene({
   const [zoom, setZoom] = useState(1);
   const [ride, setRide] = useState<Ride>("gwagon");
   const svg = useRef<SVGSVGElement>(null);
+  const viewport = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const el = viewport.current;
+      if (el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => {
@@ -301,6 +320,7 @@ export function CityScene({
         </div>
       </div>
       <div
+        ref={viewport}
         className={styles.viewport}
         tabIndex={0}
         aria-label="City map. Scroll to explore when zoomed."
@@ -308,12 +328,15 @@ export function CityScene({
         <svg
           ref={svg}
           className={styles.city}
-          style={{ width: `${zoom * 100}%` }}
-          viewBox="0 0 920 740"
+          style={{ width: `max(${zoom * 100}%, ${zoom * 900}px)` }}
+          viewBox="0 0 1360 820"
           role="group"
           aria-label="Interactive 2D Nigerian business city. Select a plot to build or upgrade."
         >
           <defs>
+            <clipPath id="city-island">
+              <rect width="920" height="740" />
+            </clipPath>
             <pattern
               id="city-grass"
               width="24"
@@ -339,154 +362,178 @@ export function CityScene({
               <feDropShadow dx="0" dy="5" stdDeviation="3" floodOpacity=".12" />
             </filter>
           </defs>
-          <rect width="920" height="740" fill="url(#city-grass)" />
-          <path d="M0 0H920V58H0Z" fill="url(#city-sky)" />
-          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
-            <g key={i} opacity=".45">
-              <rect
-                x={i * 84 - 15}
-                y={10 + (i % 3) * 10}
-                width={55 + (i % 2) * 20}
-                height={48}
-                fill={night ? "#152c43" : "#80989a"}
-              />
-              <path
-                d={`M${i * 84 + 2} 24v5m8 -5v5m8 -5v5m-16 5v5m8 -5v5m8 -5v5`}
-                stroke={night ? "#e7cc83" : "#b9d1ce"}
-                strokeWidth="3"
-              />
-            </g>
-          ))}
-          <path
-            d="M0 75H920M0 263H920M0 465H920M0 670H920M225 58V740M455 58V740M685 58V740"
-            stroke={night ? "#9b9d8b" : "#d5d3ba"}
-            strokeWidth="66"
+          <rect
+            width="1360"
+            height="820"
+            fill={night ? "#132f4b" : "#a8e4f3"}
           />
           <path
-            d="M0 75H920M0 263H920M0 465H920M0 670H920M225 58V740M455 58V740M685 58V740"
-            stroke={night ? "#34424f" : "#606f77"}
-            strokeWidth="46"
+            d="M117 421L743 734L1246 483V506L743 759L117 445Z"
+            fill="#645336"
           />
-          <path
-            d="M0 75H920M0 263H920M0 465H920M0 670H920M225 58V740M455 58V740M685 58V740"
-            stroke="#c9c8b3"
-            strokeWidth="1.5"
-            strokeDasharray="10 12"
-          />
-          {[225, 455, 685].flatMap((x) =>
-            [263, 465, 670].map((y) => (
-              <g key={`${x}-${y}`}>
-                <path
-                  d={`M${x - 37} ${y - 17}v34m-5 -34v34M${x + 37} ${y - 17}v34m5 -34v34`}
-                  stroke="#e6e8de"
-                  strokeWidth="3"
-                />
-                <rect
-                  x={x - 33}
-                  y={y - 33}
-                  width="5"
-                  height="13"
-                  rx="2"
-                  fill="#283b43"
-                />
-                <circle cx={x - 30.5} cy={y - 29} r="1.5" fill="#e9b650" />
-                {night && (
-                  <circle
-                    cx={x - 29}
-                    cy={y - 30}
-                    r="32"
-                    fill="#ffe7a2"
-                    opacity=".08"
+          <g
+            transform="translate(620 170) matrix(.68 .34 -.68 .34 0 0)"
+            clipPath="url(#city-island)"
+          >
+            <rect width="920" height="740" fill="url(#city-grass)" />
+            <path
+              d="M0 75H920M0 263H920M0 465H920M0 670H920M225 58V740M455 58V740M685 58V740"
+              stroke={night ? "#9b9d8b" : "#d5d3ba"}
+              strokeWidth="66"
+            />
+            <path
+              d="M0 75H920M0 263H920M0 465H920M0 670H920M225 58V740M455 58V740M685 58V740"
+              stroke={night ? "#34424f" : "#606f77"}
+              strokeWidth="46"
+            />
+            <path
+              d="M0 75H920M0 263H920M0 465H920M0 670H920M225 58V740M455 58V740M685 58V740"
+              stroke="#c9c8b3"
+              strokeWidth="1.5"
+              strokeDasharray="10 12"
+            />
+            {[225, 455, 685].flatMap((x) =>
+              [263, 465, 670].map((y) => (
+                <g key={`${x}-${y}`}>
+                  <path
+                    d={`M${x - 37} ${y - 17}v34m-5 -34v34M${x + 37} ${y - 17}v34m5 -34v34`}
+                    stroke="#e6e8de"
+                    strokeWidth="3"
                   />
-                )}
-              </g>
-            )),
-          )}
-          {locations.map(({ x, y }, i) => {
-            const p = state.plots[i];
-            const v = ventures.find((v) => v.id === p?.kind);
-            return (
-              <g
-                key={i}
-                transform={`translate(${x} ${y})`}
-                tabIndex={0}
-                role="button"
-                aria-label={`Plot ${i + 1}: ${v ? `${v.name}, level ${p!.level}` : "empty"}`}
-                aria-pressed={slot === i}
-                onClick={() => onSlot(i)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onSlot(i);
-                  }
-                }}
-                className={styles.plot}
-              >
-                <path
-                  d="M-91 -15L0 -53L91 -15V62L0 98L-91 62Z"
-                  fill={slot === i ? "#dbc785" : night ? "#6c8470" : "#c2d4a7"}
-                  stroke={slot === i ? "#f3d994" : "#dce5c6"}
-                  strokeWidth={slot === i ? 3 : 1}
-                />
-                {v ? (
-                  <Building
-                    kind={v.id}
-                    name={v.name}
-                    color={v.color}
-                    level={p!.level}
-                    night={night}
+                  <rect
+                    x={x - 33}
+                    y={y - 33}
+                    width="5"
+                    height="13"
+                    rx="2"
+                    fill="#283b43"
                   />
-                ) : (
-                  <>
-                    <path
-                      d="M-67 18L0 -8L67 18V57L0 83L-67 57Z"
-                      fill="none"
-                      stroke={night ? "#a8bba4" : "#89a47c"}
-                      strokeDasharray="5 5"
+                  <circle cx={x - 30.5} cy={y - 29} r="1.5" fill="#e9b650" />
+                  {night && (
+                    <circle
+                      cx={x - 29}
+                      cy={y - 30}
+                      r="32"
+                      fill="#ffe7a2"
+                      opacity=".08"
                     />
-                    <text
-                      y="32"
-                      textAnchor="middle"
-                      fontSize="27"
-                      fill={night ? "#d9e6d0" : "#64825d"}
-                    >
-                      +
-                    </text>
-                    <text
-                      y="53"
-                      textAnchor="middle"
-                      fontSize="8"
-                      letterSpacing="1"
-                      fill={night ? "#d9e6d0" : "#4e6b49"}
-                    >
-                      YOUR NEXT VENTURE
-                    </text>
-                    <Tree x={-65} y={-13} small />
-                  </>
-                )}
-                <rect
-                  x="-87"
-                  y="77"
-                  width="174"
-                  height="23"
-                  rx="11.5"
-                  fill={v ? "#11243a" : "#faf4e0"}
-                  stroke="#c9a84c"
-                  strokeWidth=".6"
+                  )}
+                </g>
+              )),
+            )}
+          </g>
+          <g aria-hidden="true">
+            {[100, 330, 560, 790].map((x, i) => (
+              <g
+                key={x}
+                transform={`translate(${iso(x, 22).x} ${iso(x, 22).y}) scale(.75)`}
+              >
+                <Building
+                  kind={i % 2 ? "agency" : "solar"}
+                  level={i % 2 ? 3 : 2}
+                  color={["#5b7eab", "#d2ad4b", "#8eaf9b", "#a18bb3"][i]}
+                  name={i % 2 ? "JKTL TOWER" : "CIVIC CENTRE"}
+                  night={night}
                 />
-                <text
-                  y="92"
-                  textAnchor="middle"
-                  fontSize="9"
-                  fill={v ? "#fff6d9" : "#5d644f"}
-                >
-                  {v
-                    ? `${v.name} · ${moneyShort(v.income * p!.level)}/wk`
-                    : `Plot ${i + 1} · tap to build`}
-                </text>
               </g>
-            );
-          })}
+            ))}
+            <g transform="translate(180 620)">
+              <path d="M-25 0H25L14 13H-14Z" fill="#fff" />
+              <path d="M0 -43V-4H-23Z" fill="#f9fcff" />
+              <path d="M4 -36L23 -6H4Z" fill="#e8c55b" />
+              <path d="M-30 19H30" stroke="#67bfd9" strokeWidth="3" />
+            </g>
+          </g>
+          {locations
+            .map((p, i) => ({ ...p, i }))
+            .sort((a, b) => a.x + a.y - (b.x + b.y))
+            .map(({ x, y, i }) => {
+              const p = state.plots[i];
+              const v = ventures.find((v) => v.id === p?.kind);
+              return (
+                <g
+                  key={i}
+                  transform={`translate(${iso(x, y).x} ${iso(x, y).y})`}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Plot ${i + 1}: ${v ? `${v.name}, level ${p!.level}` : "empty"}`}
+                  aria-pressed={slot === i}
+                  onClick={() => onSlot(i)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSlot(i);
+                    }
+                  }}
+                  className={styles.plot}
+                >
+                  <path
+                    d="M0 -45L95 0L0 48L-95 0Z"
+                    fill={
+                      slot === i ? "#dbc785" : night ? "#6c8470" : "#c2d4a7"
+                    }
+                    stroke={slot === i ? "#f3d994" : "#dce5c6"}
+                    strokeWidth={slot === i ? 3 : 1}
+                  />
+                  {v ? (
+                    <Building
+                      kind={v.id}
+                      name={v.name}
+                      color={v.color}
+                      level={p!.level}
+                      night={night}
+                    />
+                  ) : (
+                    <>
+                      <path
+                        d="M0 -30L65 0L0 32L-65 0Z"
+                        fill="none"
+                        stroke={night ? "#a8bba4" : "#89a47c"}
+                        strokeDasharray="5 5"
+                      />
+                      <text
+                        y="32"
+                        textAnchor="middle"
+                        fontSize="27"
+                        fill={night ? "#d9e6d0" : "#64825d"}
+                      >
+                        +
+                      </text>
+                      <text
+                        y="53"
+                        textAnchor="middle"
+                        fontSize="8"
+                        letterSpacing="1"
+                        fill={night ? "#d9e6d0" : "#4e6b49"}
+                      >
+                        YOUR NEXT VENTURE
+                      </text>
+                      <Tree x={-65} y={-13} small />
+                    </>
+                  )}
+                  <rect
+                    x="-87"
+                    y={p ? -105 - p.level * 10 : 30}
+                    width="174"
+                    height="23"
+                    rx="11.5"
+                    fill={v ? "#11243a" : "#faf4e0"}
+                    stroke="#c9a84c"
+                    strokeWidth=".6"
+                  />
+                  <text
+                    y={p ? -90 - p.level * 10 : 45}
+                    textAnchor="middle"
+                    fontSize="9"
+                    fill={v ? "#fff6d9" : "#5d644f"}
+                  >
+                    {v
+                      ? `${v.name} · ${moneyShort(v.income * p!.level)}/wk`
+                      : `Plot ${i + 1} · tap to build`}
+                  </text>
+                </g>
+              );
+            })}
           <g aria-hidden="true" className={styles.traffic}>
             {(
               [
@@ -540,15 +587,20 @@ export function CityScene({
                 begin: number;
               }[]
             ).map((car, i) => (
-              <g key={`${i}-${car.kind}`}>
-                <Car kind={car.kind} paint={car.paint} />
-                <animateMotion
-                  path={car.path}
-                  dur={`${car.duration}s`}
-                  begin={`${car.begin}s`}
-                  repeatCount="indefinite"
-                  rotate="auto"
-                />
+              <g
+                key={`${i}-${car.kind}`}
+                transform="translate(620 170) matrix(.68 .34 -.68 .34 0 0)"
+              >
+                <g>
+                  <Car kind={car.kind} paint={car.paint} />
+                  <animateMotion
+                    path={car.path}
+                    dur={`${car.duration}s`}
+                    begin={`${car.begin}s`}
+                    repeatCount="indefinite"
+                    rotate="auto"
+                  />
+                </g>
               </g>
             ))}
             {locations.flatMap(({ x, y }, i) =>
@@ -560,7 +612,15 @@ export function CityScene({
                         skin={["#724835", "#9c6b4e", "#52362d"][i % 3]}
                       />
                       <animateMotion
-                        path={`M${x - 88} ${y + 111}L${x - 25} ${y + 111}L${x - 13} ${y + 56}L${x - 9} ${y + 37}L${x - 13} ${y + 56}L${x - 25} ${y + 111}L${x + 88} ${y + 111}`}
+                        path={pathThrough([
+                          [x - 88, y + 111],
+                          [x - 25, y + 111],
+                          [x - 13, y + 56],
+                          [x - 9, y + 37],
+                          [x - 13, y + 56],
+                          [x - 25, y + 111],
+                          [x + 88, y + 111],
+                        ])}
                         dur={`${20 + n * 5}s`}
                         begin={`${-i * 2 - n * 7}s`}
                         repeatCount="indefinite"
@@ -582,7 +642,17 @@ export function CityScene({
               <g key={`street-${i}`}>
                 <Person shirt={["#f4df9c", "#6e9bca", "#a681ac"][i % 3]} />
                 <animateMotion
-                  path={i % 2 ? "M193 760V42" : "M-20 702H950"}
+                  path={
+                    i % 2
+                      ? pathThrough([
+                          [193, 760],
+                          [193, 42],
+                        ])
+                      : pathThrough([
+                          [-20, 702],
+                          [950, 702],
+                        ])
+                  }
                   dur={`${55 + i * 6}s`}
                   begin={`${-i * 11}s`}
                   repeatCount="indefinite"
@@ -596,9 +666,9 @@ export function CityScene({
             { x: 38, y: 42 },
             { x: 850, y: 42 },
           ].map((p, i) => (
-            <Tree key={i} {...p} />
+            <Tree key={i} {...iso(p.x, p.y)} />
           ))}
-          <g transform="translate(64 708)">
+          <g transform={`translate(${iso(64, 708).x} ${iso(64, 708).y})`}>
             <rect
               x="-24"
               y="-12"

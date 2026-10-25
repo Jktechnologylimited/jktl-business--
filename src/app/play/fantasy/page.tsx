@@ -1,0 +1,1 @@
+export default function Page(){const origin=process.env.FANTASY_APP_ORIGIN||"https://fantasy.jktl.com.ng";return <iframe title="JKTL Fantasy" src={origin} style={{width:"100%",height:"100dvh",border:0,display:"block"}} allow="fullscreen"/>;}

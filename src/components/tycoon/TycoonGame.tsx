@@ -15,7 +15,13 @@ import {
 } from "@/lib/tycoon";
 import styles from "./TycoonGame.module.css";
 import { CityScene } from "./CityScene";
-export function TycoonGame() {
+export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
+  const loginHref =
+    returnTo === "games"
+      ? "/login?next=games"
+      : returnTo === "main"
+        ? "/login?next=games-main"
+        : "/login?next=tycoon";
   const [state, setState] = useState<TycoonState>(newGame);
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
@@ -25,6 +31,7 @@ export function TycoonGame() {
   const [kind, setKind] = useState<VentureId>("suya");
   const [busy, setBusy] = useState(false);
   const [restart, setRestart] = useState(false);
+  const [panel, setPanel] = useState("none");
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
@@ -101,20 +108,42 @@ export function TycoonGame() {
     }
   }
   return (
-    <main className={styles.game}>
+    <main className={styles.game} data-panel={panel}>
       <header className={styles.header}>
-        <Link href="/business">
-          JKTL <span>BUSINESS</span>
+        <Link href="/business" target="_top">
+          JKTL <span>BUSINESS TYCOON</span>
         </Link>
         <nav>
-          <Link href="https://jktl.com.ng">Main site ↗</Link>
+          <Link href="https://jktl.com.ng" target="_top">
+            Main site ↗
+          </Link>
           {signedIn ? (
-            <Link href="/business">My dashboard</Link>
+            <Link href="/business" target="_top">
+              My dashboard
+            </Link>
           ) : (
-            <Link href="/login?next=tycoon">Sign in to save</Link>
+            <Link href={loginHref} target="_top">
+              Sign in to save
+            </Link>
           )}
         </nav>
       </header>
+      <div className={styles.ticker} aria-label="Business revenue guide">
+        {ventures.map((v) => (
+          <span key={v.id}>
+            <b>{v.name}</b> {money(v.income)} base weekly revenue
+          </span>
+        ))}
+      </div>
+      <div className={styles.founder}>
+        <span aria-hidden="true">👩🏾‍💼</span>
+        <div>
+          <strong>{signedIn ? "JKTL founder" : "Guest founder"}</strong>
+          <small>
+            Level {1 + Math.floor(built / 3)} · {built}/12 businesses
+          </small>
+        </div>
+      </div>
       <div className={styles.intro}>
         <div>
           <p>NIGERIA · BUILD YOUR NEXT CHAPTER</p>
@@ -168,13 +197,20 @@ export function TycoonGame() {
                   : "New founder 🌱"}
             </span>
           </div>
-          <CityScene state={state} slot={slot} onSlot={setSlot} />
+          <CityScene
+            state={state}
+            slot={slot}
+            onSlot={(n) => {
+              setSlot(n);
+              setPanel("build");
+            }}
+          />
           <div className={styles.event}>
             <span>THIS WEEK · SIMULATED MARKET</span>
             <h2>{event.title}</h2>
             <p>{event.text}</p>
           </div>
-          <details className={styles.help}>
+          <details className={styles.help} open={panel === "help"}>
             <summary>How to play</summary>
             <ol>
               <li>
@@ -322,7 +358,9 @@ export function TycoonGame() {
                 {busy ? "Saving…" : "Save to my JKTL account"}
               </button>
             ) : (
-              <Link href="/login?next=tycoon">Connect your JKTL account →</Link>
+              <Link href={loginHref} target="_top">
+                Connect your JKTL account →
+              </Link>
             )}
             <button
               className={styles.reset}
@@ -351,6 +389,32 @@ export function TycoonGame() {
           </section>
         </aside>
       </div>
+      <nav className={styles.dock} aria-label="Game controls">
+        {[
+          ["build", "🏗", "Build & manage"],
+          ["market", "↗", "Market"],
+          ["journal", "▤", "Journal"],
+          ["help", "?", "How to play"],
+        ].map(([key, icon, label]) => (
+          <button
+            key={key}
+            aria-pressed={panel === key}
+            onClick={() => setPanel(panel === key ? "none" : key)}
+          >
+            <span aria-hidden="true">{icon}</span>
+            {label}
+          </button>
+        ))}
+      </nav>
+      {panel !== "none" && (
+        <button
+          className={styles.closePanel}
+          aria-label="Close game panel"
+          onClick={() => setPanel("none")}
+        >
+          ×
+        </button>
+      )}
       <section className={styles.journal}>
         <h2>Your founder journal</h2>
         <ul>
@@ -361,7 +425,9 @@ export function TycoonGame() {
       </section>
       <footer className={styles.footer}>
         <p>Ready to build beyond the game?</p>
-        <a href="https://jktl.com.ng/pricing">Explore JKTL Business</a>
+        <a href="https://jktl.com.ng/pricing" target="_top">
+          Explore JKTL Business
+        </a>
         <span>
           Independent fictional game. No affiliation with Dangote or any
           securities issuer.

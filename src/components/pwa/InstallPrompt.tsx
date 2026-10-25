@@ -55,7 +55,7 @@ export function InstallPrompt() {
     };
   }, []);
   useEffect(() => {
-    if (!eligible || shown.current || !platformHost()) return;
+    if (!eligible || shown.current || !platformHost() || window.self !== window.top) return;
     const standalone =
       matchMedia("(display-mode: standalone)").matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone;

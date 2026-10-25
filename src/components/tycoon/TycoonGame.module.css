@@ -331,3 +331,411 @@
     padding: 18px;
   }
 }
+/* Full-screen island interface. Economy, account saves and controls stay live. */
+.game {
+  height: 100dvh;
+  min-height: 600px;
+  overflow: hidden;
+  position: relative;
+  padding: 0;
+  background: #a8e4f3;
+}
+.header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 6;
+  height: 60px;
+  padding: 0 3%;
+  background: #060e2a;
+  color: white;
+  border: 0;
+}
+.header > a {
+  color: white;
+  font-size: 19px;
+}
+.header > a span {
+  color: #e6c462;
+  font-size: 13px;
+}
+.header nav {
+  font-size: 11px;
+}
+.ticker {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  right: 0;
+  height: 30px;
+  display: flex;
+  gap: 35px;
+  align-items: center;
+  overflow: auto;
+  white-space: nowrap;
+  padding: 0 20px;
+  background: #112055;
+  color: #bdc5dc;
+  z-index: 5;
+  scrollbar-width: none;
+  font-size: 9px;
+}
+.ticker b {
+  color: #f0d888;
+  margin-right: 8px;
+}
+.intro {
+  position: absolute;
+  right: 20px;
+  top: 104px;
+  z-index: 3;
+  padding: 0;
+}
+.intro > div {
+  display: none;
+}
+.intro .badge {
+  font-size: 9px;
+  background: #112055;
+  color: #fff3cf;
+  border-color: #456080;
+  box-shadow: 0 8px 22px #060e2a22;
+}
+.stats {
+  position: absolute;
+  top: 104px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: min(48%, 590px);
+  border-radius: 40px;
+  box-shadow: 0 10px 25px #060e2a22;
+  margin: 0;
+}
+.stats > div {
+  padding: 13px 15px;
+}
+.stats small {
+  font-size: 8px;
+}
+.stats strong {
+  font-size: 19px;
+  margin-top: 4px;
+}
+.founder {
+  position: absolute;
+  left: 20px;
+  top: 104px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #112055;
+  color: white;
+  border-radius: 35px;
+  padding: 10px 17px;
+  box-shadow: 0 8px 22px #060e2a22;
+}
+.founder > span {
+  font-size: 30px;
+}
+.founder strong {
+  font-size: 12px;
+  display: block;
+}
+.founder small {
+  display: block;
+  font-size: 9px;
+  color: #c0cbe1;
+  margin-top: 5px;
+}
+.layout {
+  position: absolute;
+  inset: 90px 0 0;
+  display: block;
+}
+.neighbourhood {
+  position: absolute;
+  inset: 0;
+}
+.mapHeader {
+  position: absolute;
+  left: 20px;
+  top: 95px;
+  z-index: 2;
+  display: block;
+}
+.mapHeader > span {
+  display: none;
+}
+.mapHeader label {
+  background: #ffffffed;
+  border-radius: 20px;
+  font-size: 10px;
+  padding: 5px 12px;
+  color: #19384c;
+}
+.mapHeader select {
+  border: 0;
+  font-size: 10px;
+  padding: 5px;
+  background: transparent;
+}
+.controls {
+  display: none;
+  position: absolute;
+  z-index: 5;
+  right: 20px;
+  top: 110px;
+  width: 300px;
+  max-height: calc(100dvh - 300px);
+  overflow: auto;
+  border-radius: 18px;
+  background: #fdfcf8;
+  box-shadow: 0 15px 50px #060e2a35;
+  gap: 0;
+  grid-template-columns: 1fr;
+}
+.controls section {
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid #e1dbc9;
+  padding: 18px 22px;
+}
+.game[data-panel="build"] .controls {
+  display: grid;
+}
+.event {
+  display: none;
+  position: absolute;
+  left: 20px;
+  bottom: 100px;
+  z-index: 5;
+  width: min(350px, 90vw);
+  margin: 0;
+  box-shadow: 0 12px 35px #060e2a25;
+}
+.game[data-panel="market"] .event {
+  display: block;
+}
+.help {
+  display: none;
+  position: absolute;
+  left: 20px;
+  bottom: 100px;
+  z-index: 5;
+  width: min(360px, 90vw);
+  max-height: 55vh;
+  overflow: auto;
+  box-shadow: 0 12px 35px #060e2a25;
+}
+.game[data-panel="help"] .help {
+  display: block;
+}
+.journal {
+  display: none;
+  position: absolute;
+  left: 20px;
+  bottom: 100px;
+  z-index: 5;
+  width: min(430px, 90vw);
+  max-height: 55vh;
+  overflow: auto;
+  background: #fdfcf8;
+  border-radius: 16px;
+  padding: 22px;
+  margin: 0;
+  box-shadow: 0 12px 35px #060e2a25;
+}
+.journal ul {
+  grid-template-columns: 1fr;
+}
+.game[data-panel="journal"] .journal {
+  display: block;
+}
+.dock {
+  position: absolute;
+  bottom: 22px;
+  left: 25px;
+  z-index: 6;
+  display: flex;
+  gap: 5px;
+  background: #112055;
+  padding: 8px;
+  border-radius: 22px;
+  box-shadow: 0 10px 30px #060e2a30;
+}
+.dock button {
+  border: 0;
+  background: transparent;
+  color: white;
+  border-radius: 15px;
+  padding: 10px 18px;
+  font-size: 10px;
+  cursor: pointer;
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+}
+.dock button > span {
+  font-size: 21px;
+  line-height: 1;
+}
+.dock button[aria-pressed="true"] {
+  background: #c9a84c;
+  color: #060e2a;
+}
+.closePanel {
+  position: absolute;
+  right: 20px;
+  top: 165px;
+  z-index: 7;
+  border: 0;
+  background: #112055;
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 24px;
+}
+.footer {
+  position: absolute;
+  bottom: 22px;
+  right: 20px;
+  z-index: 3;
+  width: 290px;
+  padding: 14px 18px;
+  margin: 0;
+  background: #fdfcf8;
+  color: #112055;
+  gap: 7px;
+  border-radius: 17px;
+  box-shadow: 0 8px 25px #060e2a25;
+}
+.footer > p {
+  display: none;
+}
+.footer > a {
+  color: #77591f;
+  font-size: 11px;
+}
+.footer > span {
+  font-size: 8px;
+  color: #667080;
+}
+@media (max-width: 800px) {
+  .game {
+    min-height: 570px;
+  }
+  .header > a {
+    font-size: 15px;
+  }
+  .header > a span {
+    font-size: 9px;
+  }
+  .header nav {
+    font-size: 9px;
+    gap: 12px;
+  }
+  .founder {
+    left: 12px;
+    padding: 9px 12px;
+  }
+  .founder strong {
+    font-size: 10px;
+  }
+  .founder small {
+    font-size: 8px;
+  }
+  .founder > span {
+    font-size: 23px;
+  }
+  .intro {
+    right: 12px;
+    top: 109px;
+  }
+  .intro .badge {
+    font-size: 8px;
+    padding: 9px;
+  }
+  .stats {
+    top: 173px;
+    width: 94%;
+    max-width: 540px;
+  }
+  .stats > div {
+    padding: 9px;
+  }
+  .stats small {
+    font-size: 7px;
+  }
+  .stats strong {
+    font-size: 15px;
+  }
+  .stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .mapHeader {
+    top: 145px;
+    left: 12px;
+  }
+  .controls {
+    right: 12px;
+    top: 160px;
+    max-height: calc(100dvh - 360px);
+    width: min(300px, 94vw);
+  }
+  .dock {
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 96%;
+    padding: 6px;
+  }
+  .dock button {
+    padding: 9px 14px;
+    font-size: 9px;
+  }
+  .footer {
+    bottom: 102px;
+    right: 12px;
+    width: 200px;
+    padding: 10px;
+  }
+  .footer > span {
+    font-size: 7px;
+  }
+  .closePanel {
+    top: 225px;
+    right: 12px;
+  }
+  .event,
+  .journal,
+  .help {
+    bottom: 110px;
+    left: 12px;
+  }
+  .journal {
+    max-height: 45vh;
+  }
+}
+@media (max-width: 370px) {
+  .dock button {
+    padding: 8px 10px;
+    font-size: 8px;
+  }
+  .stats strong {
+    font-size: 12px;
+  }
+  .founder {
+    max-width: 145px;
+  }
+  .intro .badge {
+    max-width: 130px;
+    white-space: normal;
+  }
+  .footer {
+    width: 175px;
+  }
+}

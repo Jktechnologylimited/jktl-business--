@@ -1,4 +1,5 @@
 "use client";
+import { gameReturnUrl } from "@/lib/game-routing";
 import { SignInFrame } from "@/components/auth/SignInFrame";
 import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
 
@@ -48,12 +49,14 @@ function LoginForm() {
       setError(result.error);
       return;
     }
+    const returnGame = params.get("next");
+    const gameUrl = gameReturnUrl(returnGame); if (gameUrl) { window.location.assign(gameUrl); return; }
     const nextTemplate = pendingTemplate(params.get("template"));
     if (params.get("next") === "tycoon") { router.push("/play/tycoon"); return; }
     router.push(nextTemplate ? templateEditorPath(nextTemplate) : "/business");
   }
 
-  useEffect(() => { if (params.get("next") === "tycoon" && hydrated && authenticated && mode === "live") router.replace("/play/tycoon"); }, [params, hydrated, authenticated, mode, router]);
+  useEffect(() => { if (hydrated && authenticated && mode === "live") { const value=params.get("next"); if(value==="tycoon") router.replace("/play/tycoon"); else { const gameUrl=gameReturnUrl(value); if(gameUrl) window.location.assign(gameUrl); } } }, [params, hydrated, authenticated, mode, router]);
 
   return (
     <SignInFrame kind="business"><div className="mx-auto flex max-w-sm flex-col justify-center">

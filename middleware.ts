@@ -34,7 +34,7 @@ const EXTRA_RESERVED = (process.env.RESERVED_APP_SUBDOMAINS || "")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
-const RESERVED_HOSTS = new Set(["www", "app", "api", "business", "admin", "accounts", ROOT_DOMAIN, ...EXTRA_RESERVED]);
+const RESERVED_HOSTS = new Set(["www", "app", "api", "business", "admin", "accounts", "games", "fantasy", ROOT_DOMAIN, ...EXTRA_RESERVED]);
 
 function extractSubdomain(host: string): string | null {
   const hostname = host.split(":")[0].toLowerCase();
@@ -42,7 +42,7 @@ function extractSubdomain(host: string): string | null {
   // Local dev convenience: businessname.localhost:3000
   if (hostname.endsWith(".localhost")) {
     const sub = hostname.slice(0, -".localhost".length);
-    return sub && sub !== "www" ? sub : null;
+    return sub && !RESERVED_HOSTS.has(sub) ? sub : null;
   }
 
   if (!hostname.endsWith(`.${ROOT_DOMAIN}`)) return null;
@@ -68,6 +68,13 @@ export async function middleware(request: NextRequest) {
   if(request.nextUrl.pathname === "/api/site-metrics") return NextResponse.next();
   const host = request.headers.get("host") || "";
 
+  const gameHost = host.split(":")[0].toLowerCase();
+  if ((gameHost === `games.${ROOT_DOMAIN}` || gameHost === "games.localhost") && request.nextUrl.pathname === "/") {
+    const url = request.nextUrl.clone(); url.pathname = "/play"; return NextResponse.rewrite(url);
+  }
+  if ((gameHost === `fantasy.${ROOT_DOMAIN}` || gameHost === "fantasy.localhost") && request.nextUrl.pathname === "/") {
+    return new NextResponse("Connect fantasy.jktl.com.ng to the JKTL Fantasy hosting project. This is the Business deployment.", {status:503,headers:{"Cache-Control":"no-store","Content-Type":"text/plain"}});
+  }
   const subdomain = extractSubdomain(host);
   if (subdomain) {
     const url = request.nextUrl.clone();

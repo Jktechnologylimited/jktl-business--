@@ -133,3 +133,91 @@
     min-height: 300px;
   }
 }
+.scene {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: 0;
+  background: #a8e4f3;
+  box-shadow: none;
+}
+.viewport {
+  position: absolute;
+  inset: 0;
+  max-height: none;
+  display: flex;
+  align-items: center;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.city {
+  flex: none;
+  min-height: 0;
+  max-width: none;
+}
+.toolbar {
+  position: absolute;
+  left: 20px;
+  top: 43%;
+  z-index: 3;
+  background: #112055;
+  border: 0;
+  border-radius: 24px;
+  padding: 9px;
+  box-shadow: 0 10px 25px #060e2a30;
+}
+.toolbar > span {
+  display: none;
+}
+.toolbar > div {
+  flex-direction: column;
+}
+.toolbar button {
+  border: 0;
+  background: transparent;
+  color: #fff3cb;
+  font-size: 11px;
+  min-width: 36px;
+  padding: 9px 6px;
+}
+.legend {
+  position: absolute;
+  right: 20px;
+  bottom: 130px;
+  z-index: 2;
+  border-radius: 18px;
+  background: #ffffffed;
+  box-shadow: 0 8px 25px #060e2a15;
+}
+.legend > span {
+  display: none;
+}
+.night {
+  background: #132f4b;
+}
+@media (max-width: 800px) {
+  .toolbar {
+    left: 12px;
+    top: 42%;
+    padding: 5px;
+  }
+  .legend {
+    right: 12px;
+    bottom: 205px;
+    padding: 8px;
+    font-size: 8px;
+  }
+  .legend select {
+    max-width: 125px !important;
+    font-size: 8px !important;
+  }
+  .legend label {
+    gap: 6px;
+  }
+  .viewport {
+    align-items: center;
+  }
+  .city {
+    min-height: 0;
+  }
+}
