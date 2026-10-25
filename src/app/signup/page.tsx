@@ -1,4 +1,5 @@
 "use client";
+import { ThemeControl } from "@/components/settings/theme-control";
 import { emailIntent } from "@/lib/product-intent";
 import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
 import { Suspense, useEffect, useState } from "react";
@@ -59,7 +60,7 @@ function SignupForm() {
     );
   }
   return (
-    <div className={`jktl-light ${styles.page}`}>
+    <div className={styles.page}>
       <header className={styles.topbar} style={{ flexWrap: "wrap", gap: 16 }}>
         <a href="https://jktl.com.ng" className={styles.brand}>
           <Image src="/jktl-logo.png" alt="" width={38} height={38} priority />
@@ -73,7 +74,7 @@ function SignupForm() {
             <T>Log in</T>
           </Link>
         </p>
-        <LanguageSwitcher />
+        <div className="ml-auto flex items-center gap-2"><ThemeControl /><LanguageSwitcher /></div>
       </header>
       <main className={styles.layout}>
         <section className={styles.story} aria-label="Build with JKTL">

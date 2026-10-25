@@ -1,6 +1,6 @@
 .pricing {
-  background: #fff;
-  color: #060e2a;
+  background: var(--color-paper);
+  color: var(--color-ink);
   font-family: Arial, sans-serif;
   line-height: 1.6;
 }
@@ -8,7 +8,7 @@
   margin: 24px auto;
   padding: 64px 28px 42px;
   border-radius: 28px;
-  background: #f9f7f0;
+  background: var(--color-surface);
   text-align: center;
   max-width: 1500px;
 }
@@ -48,7 +48,7 @@
 }
 .outline {
   background: transparent;
-  color: #060e2a;
+  color: var(--color-ink);
   border: 1px solid #9a967f;
 }
 .included {
@@ -66,8 +66,8 @@
 }
 .toggle {
   display: inline-flex;
-  background: #fff;
-  border: 1px solid #e8e1d0;
+  background: var(--color-paper);
+  border: 1px solid var(--color-border-strong);
   border-radius: 30px;
   padding: 4px;
   gap: 3px;
@@ -97,7 +97,7 @@
   font-size: 12px;
   max-width: 850px;
   margin: 15px auto 28px;
-  color: #5b6472;
+  color: var(--color-ink-muted);
 }
 .grid {
   display: grid;
@@ -106,7 +106,7 @@
   margin: 34px 0;
 }
 .card {
-  background: #fff;
+  background: var(--color-paper);
   border-radius: 22px;
   padding: 24px 20px;
   text-align: left;
@@ -140,7 +140,7 @@
 .description {
   font-size: 12px;
   min-height: 40px;
-  color: #5b6472;
+  color: var(--color-ink-muted);
 }
 .price {
   font-size: clamp(1.7rem, 2.3vw, 2.7rem);
@@ -189,8 +189,8 @@
   max-width: 950px;
   margin: 24px auto;
   padding: 18px;
-  background: #fdfcf8;
-  border: 1px solid #e8e1d0;
+  background: var(--color-paper);
+  border: 1px solid var(--color-border-strong);
   border-radius: 12px;
 }
 .table {
@@ -203,12 +203,12 @@
   width: 100%;
   min-width: 700px;
   font-size: 12px;
-  background: white;
+  background: var(--color-paper);
 }
 .table td,
 .table th {
   padding: 14px;
-  border-bottom: 1px solid #e8e1d0;
+  border-bottom: 1px solid var(--color-border-strong);
 }
 .table caption {
   padding: 10px;
@@ -234,7 +234,7 @@
 }
 .foundation article {
   border-radius: 24px;
-  background: #f3efe4;
+  background: var(--color-surface);
   padding: 30px;
 }
 .foundation h3 {
@@ -249,13 +249,13 @@
 .foundation a {
   font-size: 13px;
   font-weight: 600;
-  color: #060e2a;
+  color: var(--color-ink);
 }
 .faq {
   max-width: 900px;
 }
 .faq details {
-  border-bottom: 1px solid #e8e1d0;
+  border-bottom: 1px solid var(--color-border-strong);
   padding: 22px 0;
 }
 .faq summary {

@@ -1,7 +1,7 @@
 .page {
   min-height: 100dvh;
-  background: #f8f7f2;
-  color: #060e2a;
+  background: var(--color-surface);
+  color: var(--color-ink);
   font-family: var(--font-plus-jakarta-sans), Arial, sans-serif;
 }
 .topbar {
@@ -18,7 +18,7 @@
   align-items: center;
   gap: 11px;
   text-decoration: none;
-  color: #060e2a;
+  color: var(--color-ink);
   font-size: 15px;
   font-weight: 700;
 }
@@ -29,14 +29,14 @@
 }
 .signin {
   font-size: 12px;
-  color: #5b6472;
+  color: var(--color-ink-muted);
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 .signin a {
-  color: #112055;
+  color: var(--color-primary);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 4px;
@@ -57,7 +57,7 @@
   text-transform: uppercase;
   letter-spacing: 0.19em;
   font-size: 10px;
-  color: #91702c;
+  color: var(--color-primary);
   font-weight: 600;
 }
 .story h2 {
@@ -72,7 +72,7 @@
 .story > p:not(.eyebrow) {
   font-size: 14px;
   line-height: 1.9;
-  color: #5b6472;
+  color: var(--color-ink-muted);
   max-width: 410px;
 }
 .benefits {
@@ -85,12 +85,12 @@
   display: flex;
   gap: 7px;
   align-items: center;
-  background: #f3efe4;
-  border: 1px solid #e8e1d0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
   border-radius: 30px;
   padding: 8px 12px;
   font-size: 10px;
-  color: #112055;
+  color: var(--color-ink);
 }
 .showcase {
   position: relative;
@@ -101,7 +101,7 @@
 }
 .window {
   background: #faf7ed;
-  border: 1px solid #dedcca;
+  border: 1px solid var(--color-border-strong);
   box-shadow: 0 20px 40px #060e2a12;
   border-radius: 12px;
   overflow: hidden;
@@ -111,8 +111,8 @@
   display: flex;
   gap: 5px;
   padding: 12px;
-  background: white;
-  border-bottom: 1px solid #e7e9df;
+  background: var(--color-paper);
+  border-bottom: 1px solid var(--color-border-strong);
 }
 .browser i {
   width: 5px;
@@ -133,7 +133,7 @@
 .sampleNav span {
   font-family: Arial, sans-serif;
   font-size: 9px;
-  color: #8a92a1;
+  color: var(--color-ink-muted);
 }
 .sample h3 {
   font-family: Georgia, serif;
@@ -146,7 +146,7 @@
 }
 .sample > p {
   font-size: 10px;
-  color: #5b6472;
+  color: var(--color-ink-muted);
   max-width: 245px;
   line-height: 1.8;
 }
@@ -195,8 +195,8 @@
   margin-top: 4px;
 }
 .card {
-  background: #fff;
-  border: 1px solid #e8e1d0;
+  background: var(--color-paper);
+  border: 1px solid var(--color-border-strong);
   border-radius: 24px;
   padding: 38px;
   box-shadow: 0 18px 65px #060e2a08;
@@ -213,21 +213,21 @@
 .subhead {
   font-size: 12px;
   line-height: 1.8;
-  color: #5b6472;
+  color: var(--color-ink-muted);
 }
 .selected {
   display: flex;
   align-items: center;
   gap: 11px;
-  border: 1px solid #e8e1d0;
+  border: 1px solid var(--color-border-strong);
   border-radius: 12px;
-  background: #f9f7f0;
+  background: var(--color-surface);
   padding: 13px;
   margin-top: 22px;
 }
 .selected svg {
   flex-shrink: 0;
-  color: #80621c;
+  color: var(--color-primary);
 }
 .selected strong {
   display: block;
@@ -236,7 +236,7 @@
 .selected p {
   font-size: 10px;
   line-height: 1.6;
-  color: #5b6472;
+  color: var(--color-ink-muted);
   margin-top: 3px;
 }
 .form {
@@ -254,7 +254,7 @@
   display: block;
   font-size: 11px;
   font-weight: 600;
-  color: #060e2a;
+  color: var(--color-ink);
 }
 .field > span {
   display: block;
@@ -263,16 +263,16 @@
 .input {
   height: 47px !important;
   border-radius: 10px !important;
-  background: #fdfcf8 !important;
-  border-color: #e8e1d0 !important;
-  color: #060e2a !important;
+  background: var(--color-paper) !important;
+  border-color: var(--color-border-strong) !important;
+  color: var(--color-ink) !important;
   font-size: 12px !important;
   font-weight: 400 !important;
 }
 .passwordHint {
   font-size: 10px;
   line-height: 1.6;
-  color: #8a92a1;
+  color: var(--color-ink-muted);
   margin-top: 7px;
 }
 .submit {
@@ -302,13 +302,13 @@
 .agreement {
   font-size: 10px;
   line-height: 1.9;
-  color: #8a92a1;
+  color: var(--color-ink-muted);
   padding-top: 19px;
   margin-top: 20px;
   border-top: 1px solid #f9f7f0;
 }
 .agreement a {
-  color: #112055;
+  color: var(--color-primary);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -318,17 +318,17 @@
   justify-content: center;
   gap: 6px;
   font-size: 10px;
-  color: #5b6472;
+  color: var(--color-ink-muted);
   margin-top: 18px;
 }
 .bottom {
   font-size: 11px;
-  color: #5b6472;
+  color: var(--color-ink-muted);
   text-align: center;
   margin-top: 23px;
 }
 .bottom a {
-  color: #112055;
+  color: var(--color-primary);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -337,7 +337,7 @@
   margin: 0 auto;
   padding: 0 5% 25px;
   font-size: 10px;
-  color: #9ca293;
+  color: var(--color-ink-muted);
 }
 .page a:focus-visible,
 .page button:focus-visible {
@@ -436,3 +436,12 @@
   display: block;
   margin-bottom: 8px;
 }
+
+.window {
+  --color-paper: #fff;
+  --color-ink: #060e2a;
+  --color-ink-muted: #5b6472;
+  color-scheme: light;
+}
+
+.window { color: var(--color-ink); }

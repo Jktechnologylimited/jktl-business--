@@ -2,13 +2,13 @@
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   gap: 24px;
-  color: var(--ink, #060e2a);
+  color: var(--color-ink);
 }
 .library,
 .editor {
-  border: 1px solid #ded8c9;
+  border: 1px solid var(--color-border-strong);
   border-radius: 16px;
-  background: var(--paper, #fdfcf8);
+  background: var(--color-paper);
   padding: 20px;
   min-width: 0;
 }
@@ -18,9 +18,9 @@
   gap: 14px;
 }
 .library button {
-  border: 1px solid #d9cda9;
+  border: 1px solid var(--color-border-strong);
   border-radius: 9px;
-  background: var(--surface, #f8f5eb);
+  background: var(--color-surface);
   padding: 14px;
   text-align: left;
   color: inherit;
@@ -30,7 +30,7 @@
   font: inherit;
 }
 .library button[aria-pressed="true"] {
-  border-color: #96752e;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 1px #c9a84c;
 }
 .library small {
@@ -57,10 +57,10 @@
   font: inherit;
   font-size: 13px;
   padding: 11px;
-  border: 1px solid #d8d3c6;
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   width: 100%;
-  background: var(--paper, #fff);
+  background: var(--color-paper);
   color: inherit;
   min-width: 0;
 }
@@ -69,7 +69,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 15px;
-  border-bottom: 1px solid #ded8c9;
+  border-bottom: 1px solid var(--color-border-strong);
   padding-bottom: 20px;
   margin-bottom: 24px;
 }
@@ -147,7 +147,7 @@
 }
 .preview > span {
   font-size: 10px;
-  color: #96752e;
+  color: var(--color-primary);
 }
 .preview h1 {
   font-size: 32px;

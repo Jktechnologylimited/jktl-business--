@@ -36,6 +36,9 @@
      in dark mode, which made the (bg-ink, text-white) toast pill render as
      white-on-white — invisible. These two stay fixed dark colors in both
      themes so white toast text always has something dark behind it. */
+  --color-on-primary: #ffffff;
+  --color-on-accent: #060e2a;
+  --color-on-danger: #ffffff;
   --color-toast: #12151b;
   --color-toast-danger: #a5321d;
 }
@@ -60,6 +63,9 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-on-primary: #020818;
+    --color-on-danger: #020818;
     /* Navy dark scale, matching business.jktl.com.ng's own dark palette. */
     --color-paper: #020818; /* navy-950 */
     --color-surface: #060e2a; /* navy-900 */
@@ -69,7 +75,7 @@
 
     --color-ink: #eef2f9; /* navy-50 */
     --color-ink-muted: #96aecf; /* navy-200 */
-    --color-ink-faint: #3a5fa3; /* navy-400 */
+    --color-ink-faint: #96aecf; /* navy-200 */
 
     --color-primary: #6080bc; /* navy-300 — lighter than light-mode's navy-700 so it still reads against a navy-950 background */
     --color-primary-strong: #96aecf; /* navy-200 */
@@ -96,6 +102,9 @@
  * something to go dark just because the visitor's phone is in dark mode.
  */
 .jktl-light {
+  color-scheme: light;
+  --color-on-primary: #ffffff;
+  --color-on-danger: #ffffff;
   --color-paper: #ffffff;
   --color-surface: #f5f6f8;
   --color-surface-strong: #eceef2;
@@ -119,6 +128,9 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-on-primary: #020818;
+  --color-on-danger: #020818;
   --color-paper: #020818;
   --color-surface: #060e2a;
   --color-surface-strong: #0b1640;
@@ -127,7 +139,7 @@
 
   --color-ink: #eef2f9;
   --color-ink-muted: #96aecf;
-  --color-ink-faint: #3a5fa3;
+  --color-ink-faint: #96aecf;
 
   --color-primary: #6080bc;
   --color-primary-strong: #96aecf;
@@ -199,3 +211,11 @@ textarea {
     display: none !important;
   }
 }
+
+:root { color-scheme: light; }
+:root[data-theme="light"] { color-scheme: light; }
+
+/* Legacy utility combinations use the same readable foregrounds as Button. */
+.bg-primary.text-white, .bg-primary-strong.text-white, .bg-info.text-white { color: var(--color-on-primary); }
+.bg-accent.text-white { color: var(--color-on-accent); }
+.bg-danger.text-white { color: var(--color-on-danger); }

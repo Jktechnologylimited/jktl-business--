@@ -1,3 +1,4 @@
+import { ThemeControl } from "@/components/settings/theme-control";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAffiliateSession } from "@/lib/affiliate-session";
@@ -33,7 +34,7 @@ export default async function Layout({
             </h1>
             <p className="mt-2 text-sm text-white/65">{s.name}</p>
           </div>
-          <div className="flex gap-5 text-sm">
+          <div className="flex items-center gap-5 text-sm"><ThemeControl />
             <Link href="https://jktl.com.ng/partners">Programme</Link>
             <form action={affiliateLogoutAction}>
               <button>Sign out</button>

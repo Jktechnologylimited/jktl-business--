@@ -1,4 +1,5 @@
 "use client";
+import { ThemeControl } from "@/components/settings/theme-control";
 import { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -149,6 +150,7 @@ export function OperationsFrame({
             </div>
           </div>
           <div className={styles.identity}>
+            <ThemeControl />
             <div className={styles.avatar} aria-hidden="true">
               {name
                 .split(/\s+/)

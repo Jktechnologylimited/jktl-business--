@@ -1,4 +1,5 @@
 "use client";
+import { ThemeControl } from "@/components/settings/theme-control";
 import {FeatureBadge} from "@/components/features/FeatureBadge";
 import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
 
@@ -99,8 +100,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         </div>
-        <div className="px-5 pb-4">
-          <LanguageSwitcher />
+        <div className="flex items-center gap-2 px-5 pb-4">
+          <ThemeControl align="start" /><LanguageSwitcher />
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-4">
           {industry.nav.primary
@@ -202,7 +203,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <LanguageSwitcher />
+          <ThemeControl /><LanguageSwitcher />
           <details className="group relative">
             <summary className="cursor-pointer list-none">
               <Avatar

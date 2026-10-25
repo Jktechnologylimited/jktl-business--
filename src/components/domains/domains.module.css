@@ -1,6 +1,6 @@
 .page {
-  color: var(--ink, #060e2a);
-  background: var(--paper, #fdfcf8);
+  color: var(--color-ink);
+  background: var(--color-paper);
   min-height: 75vh;
 }
 .public {
@@ -52,11 +52,11 @@
   padding: 30px 24px 60px;
 }
 .section {
-  border: 1px solid #ded7c4;
+  border: 1px solid var(--color-border-strong);
   border-radius: 16px;
   padding: 26px;
   margin-bottom: 25px;
-  background: var(--paper, #fff);
+  background: var(--color-paper);
 }
 .section h2 {
   font-size: 24px;
@@ -104,9 +104,9 @@
   font: inherit;
   font-size: 13px;
   padding: 11px;
-  border: 1px solid #d8d3c7;
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
-  background: var(--paper, #fff);
+  background: var(--color-paper);
   color: inherit;
   width: 100%;
   min-width: 0;
@@ -120,15 +120,15 @@
 }
 .note {
   font-size: 11px;
-  color: var(--ink-muted, #647080);
+  color: var(--color-ink-muted);
   line-height: 1.8;
   margin: 13px 0;
 }
 .notice {
   padding: 22px;
   border: 1px solid #c9b985;
-  background: #f9f4e5;
-  color: #23334d;
+  background: var(--color-surface);
+  color: var(--color-ink);
   border-radius: 12px;
   margin-bottom: 22px;
   font-size: 13px;
@@ -155,13 +155,13 @@
 .page td {
   font-size: 12px;
   padding: 14px 12px;
-  border-bottom: 1px solid #e5dece;
+  border-bottom: 1px solid var(--color-border-strong);
   white-space: normal;
   min-width: 110px;
 }
 .page th {
   font-size: 10px;
-  color: #8a6a28;
+  color: var(--color-primary);
   font-weight: 600;
 }
 .checks,
@@ -175,8 +175,8 @@
 .cards article,
 .request {
   padding: 20px;
-  background: var(--surface, #f9f7f0);
-  border: 1px solid #e1dbc9;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
   border-radius: 12px;
   min-width: 0;
 }
@@ -238,11 +238,11 @@
   gap: 18px;
 }
 .quote {
-  background: #f7f1df;
+  background: var(--color-surface);
   border: 1px solid #c9b985;
   border-radius: 12px;
   padding: 20px;
-  color: #1b2b46;
+  color: var(--color-ink);
 }
 .quote p {
   font-size: 13px;
@@ -301,7 +301,7 @@
   gap: 18px;
 }
 .adminList details {
-  border: 1px solid #ded7c4;
+  border: 1px solid var(--color-border-strong);
   border-radius: 12px;
   padding: 20px;
 }

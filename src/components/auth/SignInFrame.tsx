@@ -1,3 +1,4 @@
+import { ThemeControl } from "@/components/settings/theme-control";
 import type { ReactNode } from "react";
 import styles from "./SignInFrame.module.css";
 export function SignInFrame({
@@ -39,7 +40,12 @@ export function SignInFrame({
         />
         <div className={styles.caption}>Good ideas deserve room to grow.</div>
       </aside>
-      <section className={styles.panel}>{children}</section>
+      <section className={styles.panel}>
+        <div className={styles.theme}>
+          <ThemeControl />
+        </div>
+        {children}
+      </section>
     </main>
   );
 }

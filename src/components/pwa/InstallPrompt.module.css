@@ -5,11 +5,11 @@
   width: min(92vw, 520px);
   max-height: 90dvh;
   overflow: auto;
-  border: 1px solid #d9cca5;
+  border: 1px solid var(--color-border-strong);
   border-radius: 24px;
   padding: 0;
-  background: #fdfcf8;
-  color: #060e2a;
+  background: var(--color-paper);
+  color: var(--color-ink);
   box-shadow: 0 25px 100px #060e2a40;
   z-index: 100;
 }
@@ -27,7 +27,7 @@
   top: 18px;
   border: 0;
   border-radius: 50%;
-  background: #eee9da;
+  background: var(--color-surface-strong);
   padding: 8px;
   cursor: pointer;
 }
@@ -43,7 +43,7 @@
 .kicker {
   font-size: 9px;
   letter-spacing: 0.17em;
-  color: #8b6b2f;
+  color: var(--color-primary);
   margin-top: 22px;
 }
 .inner h2 {
@@ -58,8 +58,8 @@
   color: #596172;
 }
 .guide {
-  background: #fff;
-  border: 1px solid #e7dfcb;
+  background: var(--color-paper);
+  border: 1px solid var(--color-border-strong);
   border-radius: 12px;
   padding: 16px;
   margin-top: 22px;
@@ -109,5 +109,14 @@
     padding: 12px;
   }
 }
-.guide > div > div:first-child { margin-inline: 0; padding-inline: 0; flex-wrap: wrap; overflow: visible; gap: 6px; }
-.guide > div > div:first-child button { padding: 7px 10px; font-size: 11px; }
+.guide > div > div:first-child {
+  margin-inline: 0;
+  padding-inline: 0;
+  flex-wrap: wrap;
+  overflow: visible;
+  gap: 6px;
+}
+.guide > div > div:first-child button {
+  padding: 7px 10px;
+  font-size: 11px;
+}

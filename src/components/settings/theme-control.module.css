@@ -1,0 +1,52 @@
+.root {
+  position: relative;
+  flex-shrink: 0;
+}
+.root .trigger {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.options {
+  position: fixed;
+  width: 190px;
+  padding: 7px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: 0 12px 35px #0003;
+  border-radius: 14px;
+  z-index: 350;
+}
+.root .options button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 10px;
+  font-size: 12px;
+  border-radius: 8px;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.root .options button[aria-pressed="true"],
+.root .options button:hover {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+.root button:focus-visible {
+  outline: 2px solid #c9a84c;
+  outline-offset: 3px;
+}
+@media (max-width: 380px) {
+  .root .trigger {
+    width: 30px;
+    height: 30px;
+  }
+}
