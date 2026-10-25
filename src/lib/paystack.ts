@@ -134,6 +134,7 @@ export async function initializeContractPayment(params: {
 }
 
 export interface VerifyTransactionData {
+  id?: number | string;
   currency?: string;
   status: "success" | "failed" | "abandoned" | string;
   reference: string;
@@ -356,3 +357,10 @@ export async function initializeWebsitePlanCheckout(params:{email:string;amountK
 export async function stopWebsiteProviderSubscription(code:string,token:string){
  await paystackFetch('/subscription/disable',{method:'POST',body:JSON.stringify({code,token})});
 }
+
+/** A domain order is a single charge: no subscription plan, card reuse, or automatic registrar purchase. */
+export async function initializeDomainPayment(params:{email:string;amountKobo:number;reference:string;callbackUrl:string;metadata:Record<string,unknown>}):Promise<InitializeTransactionResult>{
+ const data=await paystackFetch<{authorization_url:string;reference:string;access_code:string}>('/transaction/initialize',{method:'POST',body:JSON.stringify({email:params.email,amount:params.amountKobo,currency:'NGN',reference:params.reference,callback_url:params.callbackUrl,metadata:params.metadata})});
+ return {authorizationUrl:data.authorization_url,reference:data.reference,accessCode:data.access_code};
+}
+export async function getDomainRefund(id:string):Promise<Record<string,unknown>>{if(!/^\d{1,20}$/.test(id))throw Error('Invalid refund ID.');return paystackFetch<Record<string,unknown>>(`/refund/${encodeURIComponent(id)}`,{method:'GET'});}

@@ -1,3 +1,5 @@
+import { handleCustomEvent } from "@/lib/custom/service";
+import { handleDomainEvent } from "@/lib/domains/service";
 import { handleWebsiteBillingEvent } from "@/lib/website-billing-webhooks";
 import { getInfrastructure } from "@/lib/db/organizations";
 import { NextRequest, NextResponse } from "next/server";
@@ -55,10 +57,23 @@ function asRecord(value: unknown): Record<string, unknown> {
  * subscription.not_renew, invoice.payment_failed.
  */
 export async function POST(request: NextRequest) {
+  if (Number(request.headers.get("content-length") || 0) > 256000)
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
   const rawBody = await request.text();
+  if (rawBody.length > 256000)
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
   const signature = request.headers.get("x-paystack-signature");
 
-  if (!verifyWebhookSignature(rawBody, signature)) {
+  let validSignature = false;
+  try {
+    validSignature = verifyWebhookSignature(rawBody, signature);
+  } catch {
+    return NextResponse.json(
+      { error: "Payment verification unavailable" },
+      { status: 503 },
+    );
+  }
+  if (!validSignature) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
@@ -69,7 +84,48 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
+  if (!payload || typeof payload !== "object")
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   const { event, data } = payload;
+  if (
+    !event ||
+    typeof event !== "string" ||
+    !data ||
+    typeof data !== "object" ||
+    Array.isArray(data)
+  )
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  // Domain handlers commit their own unique payment ledger before acknowledgement.
+  // Do not acknowledge an in-flight/failed domain payment using the legacy receipt gate.
+  try {
+    if (await handleDomainEvent(event, data)) {
+      const { after } = await import("next/server");
+      after(async () => {
+        try {
+          const { flushDomainNotifications } =
+            await import("@/lib/domains/notifications");
+          await flushDomainNotifications(5);
+        } catch {}
+      });
+      return NextResponse.json({ ok: true });
+    }
+  } catch {
+    console.error("domain-payment-webhook: retry-required");
+    return NextResponse.json(
+      { error: "Domain payment processing will retry" },
+      { status: 503 },
+    );
+  }
+  try {
+    if (await handleCustomEvent(event, data))
+      return NextResponse.json({ ok: true });
+  } catch {
+    console.error("custom-invoice-webhook: retry-required");
+    return NextResponse.json(
+      { error: "Custom payment processing will retry" },
+      { status: 503 },
+    );
+  }
   const dedupeKey = `${event}:${data?.id ?? data?.subscription_code ?? data?.reference ?? JSON.stringify(data).slice(0, 100)}`;
 
   const isNew = await recordWebhookEventOnce(dedupeKey, event).catch((err) => {

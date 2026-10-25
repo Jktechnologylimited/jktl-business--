@@ -22,6 +22,7 @@ export default function MorePage() {
       <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
         <T>More</T>
       </h1>
+      <Link href="/business/domains" className="rounded-2xl border border-border bg-surface p-5"><strong>My Domains</strong><p className="mt-1 text-sm text-ink-muted">Buy, renew and connect your domains with one-off payments.</p></Link>
       <Link href="/play/tycoon" className="rounded-2xl border border-border bg-surface p-5"><strong>🎮 JKTL Business Tycoon</strong><p className="mt-1 text-sm text-ink-muted">Build a Nigerian neighbourhood. Play with your existing JKTL account.</p></Link>
       {groups.map((group) => (
         <div key={group.name} className="flex flex-col gap-2.5">

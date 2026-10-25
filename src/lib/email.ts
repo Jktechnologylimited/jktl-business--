@@ -573,3 +573,18 @@ export async function sendAffiliateDeclinedEmail(params: { to: string; name: str
   const text = `Hi ${firstName},\n\nThank you for applying to the JKTL Business partner programme. We are not taking your application forward on this occasion.\n\nIt is a judgement on the plan you described rather than on you. You are welcome to apply again if your plans change.\n\nIf you think this was a mistake, reply to this email and a person will read it.\n\n— JKTL Business`;
   return send(params.to, "About your JKTL partner application", html, text);
 }
+
+/** Domain notices contain no registrant contact/address or supplier credentials. Resend deduplicates retries. */
+export async function sendDomainOrderEmail(p:{to:string;domain:string;event:string;detail:string;key:string}):Promise<EmailResult>{
+ if(!p.to||!p.to.includes('@'))return{ok:false,error:'Missing recipient'};
+ const escape=(v:string)=>v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+ try{const{error}=await getResend().emails.send({from:FROM,to:p.to,subject:`${p.event}: ${p.domain}`,text:`${p.event}\n\n${p.domain}\n${p.detail}\n\nView your domain order securely at https://business.jktl.com.ng/business/domains`,html:`<div style="font-family:Arial;max-width:520px;margin:auto;background:#fdfcf8;border:1px solid #c9a84c;padding:24px;color:#060e2a"><h2>JKTL Business</h2><h3>${escape(p.event)}</h3><p><strong>${escape(p.domain)}</strong></p><p>${escape(p.detail)}</p><a href="https://business.jktl.com.ng/business/domains">View My Domains</a></div>`},{idempotencyKey:p.key});return error?{ok:false,error:'Email delivery failed'}:{ok:true};}catch{return{ok:false,error:'Email delivery unavailable'};}
+}
+
+/** Custom clients receive an activation link only after a configured pilot. */
+export async function sendCustomInvitationEmail(p:{to:string;name:string;url:string}):Promise<EmailResult>{
+ const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+ return send(p.to,'Your JKTL Custom workspace is ready',`<div style="font-family:Arial;background:#fdfcf8;color:#060e2a;padding:32px"><h1>Welcome to JKTL Custom</h1><p>${escape(p.name)}, your client workspace is ready for review.</p><p>Manage your connected websites, service agreements, invoices and support in JKTL Business.</p><p><a href="${escape(p.url)}">Activate your workspace</a></p><p>This link expires in 48 hours and works once. Existing account holders sign in with their existing password. We never email passwords.</p></div>`,`Your JKTL Custom workspace for ${p.name} is ready. Activate within 48 hours: ${p.url}. This link works once. Existing account holders keep their password.`);
+}
+
+export async function sendCustomNoticeEmail(p:{to:string;subject:string;detail:string;key:string}):Promise<EmailResult>{try{if(!p.to)return{ok:false,error:'Missing recipient'};const r=await getResend().emails.send({from:FROM,to:p.to,subject:p.subject,text:`${p.detail}\n\nReview your JKTL Custom workspace: ${(process.env.NEXT_PUBLIC_APP_URL||'https://business.jktl.com.ng')}/business/custom`},{idempotencyKey:p.key});return r.error?{ok:false,error:'Delivery failed'}:{ok:true};}catch{return{ok:false,error:'Delivery unavailable'};}}

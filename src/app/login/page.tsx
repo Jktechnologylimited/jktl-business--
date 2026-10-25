@@ -49,6 +49,8 @@ function LoginForm() {
       setError(result.error);
       return;
     }
+    if (params.get("next") === "custom") { router.replace("/business/custom"); return; }
+    if (params.get("next") === "domains") { router.push("/business/domains"); return; }
     const returnGame = params.get("next");
     const gameUrl = gameReturnUrl(returnGame); if (gameUrl) { window.location.assign(gameUrl); return; }
     const nextTemplate = pendingTemplate(params.get("template"));
@@ -56,7 +58,7 @@ function LoginForm() {
     router.push(nextTemplate ? templateEditorPath(nextTemplate) : "/business");
   }
 
-  useEffect(() => { if (hydrated && authenticated && mode === "live") { const value=params.get("next"); if(value==="tycoon") router.replace("/play/tycoon"); else { const gameUrl=gameReturnUrl(value); if(gameUrl) window.location.assign(gameUrl); } } }, [params, hydrated, authenticated, mode, router]);
+  useEffect(() => { if (hydrated && authenticated && mode === "live") { const value=params.get("next"); if(value==="domains") router.replace("/business/domains"); else if(value==="custom") router.replace("/business/custom"); else if(value==="tycoon") router.replace("/play/tycoon"); else { const gameUrl=gameReturnUrl(value); if(gameUrl) window.location.assign(gameUrl); } } }, [params, hydrated, authenticated, mode, router]);
 
   return (
     <SignInFrame kind="business"><div className="mx-auto flex max-w-sm flex-col justify-center">

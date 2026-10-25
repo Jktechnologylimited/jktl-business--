@@ -22,6 +22,8 @@ export type AdminRole = "owner" | "affiliate_manager" | "analyst" | "editor";
 
 /** A capability, not a page. Pages are composed from these. */
 export type AdminCapability =
+  | "manage_custom"
+  | "manage_domains"
   | "manage_content"
   | "view_businesses"
   | "send_broadcasts"
@@ -35,6 +37,8 @@ export type AdminCapability =
 
 const MATRIX: Record<AdminRole, AdminCapability[]> = {
   owner: [
+    "manage_custom",
+    "manage_domains",
     "manage_content",
     "view_businesses",
     "send_broadcasts",
@@ -108,6 +112,8 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
+  {href:"/admin/custom-projects",label:"Custom Projects",capability:"manage_custom"},
+  {href:"/admin/domains",label:"Domain orders",capability:"manage_domains"},
   { href: "/admin/content", label: "Blog & updates", capability: "manage_content" },
   { href: "/admin/insights", label: "Insights", capability: "view_insights" },
   { href: "/admin/affiliates", label: "Affiliates", capability: "manage_affiliates" },

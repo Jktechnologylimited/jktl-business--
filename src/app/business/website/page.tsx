@@ -55,7 +55,8 @@ export default function WebsitePage() {
     <div className="space-y-7">
       <div className="flex flex-wrap justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl">
+          <Link href="/business/domains" className="text-sm font-medium text-primary">Buy or connect a domain — keep your selected website →</Link>
+      <h1 className="font-display text-3xl">
             <T>Websites & landing pages</T>
           </h1>
           <p className="mt-2 text-sm text-ink-muted">

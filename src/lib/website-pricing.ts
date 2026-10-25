@@ -171,7 +171,7 @@ export const DIGITAL_PRODUCTS = [
   },
   {
     id: "custom-websites",
-    name: "Custom Websites",
+    name: "JKTL Custom",
     title: "Made for your business, from the ground up.",
     description:
       "JKTL Custom Websites — from ₦350,000. Premium projects may start from ₦650,000.",
@@ -180,6 +180,19 @@ export const DIGITAL_PRODUCTS = [
       "Custom development is separate from template subscriptions.",
       "Domain registration, hosting, email and maintenance charges are quoted separately.",
       "No recurring charge begins from a consultation request.",
+    ],
+  },
+  {
+    id: "managed-services",
+    name: "JKTL Managed Services",
+    title: "Ongoing care for your business online.",
+    description:
+      "Website maintenance, content management, technical support and infrastructure services with a tailored agreement.",
+    details: [
+      "Agree scope, service hours and individual pricing.",
+      "Review separate infrastructure, maintenance and third-party costs.",
+      "Accept the service proposal in your JKTL Custom workspace.",
+      "Pay invoices and request support from one account.",
     ],
   },
 ] as const;

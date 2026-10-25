@@ -1,5 +1,9 @@
 # JKTL Business
 
+Domain purchases and manual fulfillment: [operator guide](docs/DOMAIN_ORDERS.md).
+JKTL Custom client onboarding, service invoices and CMS pilot: [rollout guide](docs/JKTL_CUSTOM.md).
+Use [.env.example](.env.example) for the new settings; keep secret values in deployment configuration.
+
 A mobile-first, multi-tenant business platform for Nigerian SMEs. First
 vertical: hair salons. Also carries the **AI booking agent & missed-call
 revenue recovery** product for men's health, aesthetics and elderly care
