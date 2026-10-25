@@ -1,3 +1,4 @@
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { LanguageProvider } from "@/components/i18n/LanguageProvider";
 import type { Metadata, Viewport } from "next";
 import { jetBrainsMono, ALL_SITE_FONT_VARIABLES } from "@/lib/fonts";
@@ -24,7 +25,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#112055" },
     { media: "(prefers-color-scheme: dark)", color: "#020818" },
@@ -63,6 +63,7 @@ export default function RootLayout({
           <AppBootstrap />
           {children}
           <Toaster />
+          <InstallPrompt />
         </LanguageProvider>
       </body>
     </html>

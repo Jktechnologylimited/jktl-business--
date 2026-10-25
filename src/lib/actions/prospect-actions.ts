@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdminSession } from "@/lib/admin-session";
 import { getSql } from "@/lib/db/client";
 import { validateProspectEmails } from "@/lib/prospects/validate-emails";
 import {
@@ -121,7 +120,7 @@ export interface ImportLeadsResult {
 export async function importLeadsAction(input: ImportLeadsInput): Promise<ActionResult<ImportLeadsResult>> {
   let runId = "";
   try {
-    const admin = await requireAdminSession();
+    const admin = await requireAdminCapability("run_lead_engine");
 
     const query = input.query.trim();
     const location = input.location.trim();
@@ -231,7 +230,7 @@ export interface AuditLeadsResult {
  * attack to the sites being checked. */
 export async function auditLeadsAction(limit = 25): Promise<ActionResult<AuditLeadsResult>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     const batch = await listProspectsNeedingAudit(Math.min(Math.max(limit, 1), 60));
     if (batch.length === 0) return { ok: true, data: { audited: 0, qualified: 0, rejected: 0, breakdown: {} } };
 
@@ -310,7 +309,7 @@ export interface BuildSitesResult {
  */
 export async function buildSitesAction(limit = 5): Promise<ActionResult<BuildSitesResult>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
 
     const candidates = (await listProspects({ status: "qualified", limit: Math.min(Math.max(limit, 1), 20) })).filter(
       (p) => !p.siteOrganizationId && isQualifiedLead({ status: p.websiteStatus, score: p.websiteScore ?? 0, findings: p.auditFindings, summary: "" }),
@@ -356,7 +355,7 @@ export interface SendOutreachResult {
 
 export async function sendOutreachAction(prospectIds: string[] | null, limit = 10): Promise<ActionResult<SendOutreachResult>> {
   try {
-    const admin = await requireAdminSession();
+    const admin = await requireAdminCapability("run_lead_engine");
     const settings = await getOutreachSettings();
     const sentSoFar = await countSentToday();
     const remaining = Math.max(0, settings.dailySendCap - sentSoFar);
@@ -515,7 +514,7 @@ export async function sendOutreachAction(prospectIds: string[] | null, limit = 1
  */
 export async function startSiteBuildJobAction(params: { limit?: number; onlyWithPhotos?: boolean } = {}): Promise<ActionResult<SiteBuildJob>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     const job = await startSiteBuildJob(params);
     revalidatePath("/admin/prospects");
     return { ok: true, data: job };
@@ -528,7 +527,7 @@ export async function startSiteBuildJobAction(params: { limit?: number; onlyWith
 /** Builds the next slice, for an admin who would rather not wait for the cron. */
 export async function advanceSiteBuildJobAction(jobId: string, batchSize = 6): Promise<ActionResult<SiteBuildJob>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     const job = await advanceSiteBuildJob(jobId, batchSize);
     if (!job) return { ok: false, error: "That job no longer exists." };
     revalidatePath("/admin/prospects");
@@ -543,7 +542,7 @@ export async function getSiteBuildJobAction(): Promise<
   ActionResult<{ running: SiteBuildJob | null; jobs: SiteBuildJob[]; failures: Array<{ businessName: string; status: string; error: string; subdomain: string }> }>
 > {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     const [running, jobs] = await Promise.all([getRunningSiteBuildJob(), listSiteBuildJobs(6)]);
     const latest = jobs[0] ?? running;
     const failures = latest ? await listSiteBuildFailures(latest.id, 25) : [];
@@ -556,7 +555,7 @@ export async function getSiteBuildJobAction(): Promise<
 
 export async function cancelSiteBuildJobAction(jobId: string): Promise<ActionResult<null>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     await cancelSiteBuildJob(jobId);
     revalidatePath("/admin/prospects");
     return { ok: true, data: null };
@@ -589,7 +588,7 @@ export interface NumberSearchResult {
  */
 export async function searchNumbersAction(params: { country: string; areaCode?: string; contains?: string }): Promise<ActionResult<NumberSearchResult>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     if (!isMessagingConfigured()) return { ok: false, error: "Twilio credentials are not configured." };
 
     const result = await searchAvailableNumbers({
@@ -630,7 +629,7 @@ export async function provisionNumberAction(params: {
   friendlyName?: string;
 }): Promise<ActionResult<{ phoneNumber: string; rentalKobo: number }>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     if (!isMessagingConfigured()) return { ok: false, error: "Twilio credentials are not configured." };
 
     const rentalKobo = Math.round((Number(params.rentalNaira) || 0) * 100);
@@ -677,7 +676,7 @@ export async function provisionNumberAction(params: {
  * costing JKTL anything either. */
 export async function releaseNumberAction(organizationId: string): Promise<ActionResult<{ released: boolean }>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     const sql = getSql();
     const row = (await sql`SELECT line_number_sid FROM ai_receptionist_config WHERE organization_id = ${organizationId}`)[0];
     const sid = (row?.line_number_sid as string) ?? "";
@@ -705,7 +704,7 @@ export async function listNumberRequestsAction(): Promise<
   ActionResult<Array<{ organizationId: string; businessName: string; countryCode: string; note: string; requestedAt: string | null }>>
 > {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     const sql = getSql();
     const rows = await sql`
       SELECT c.organization_id, bp.display_name, bp.country_code, c.line_request_note, c.line_requested_at
@@ -737,7 +736,7 @@ export async function listNumberRequestsAction(): Promise<
 
 export async function setProspectStatusAction(id: string, status: Prospect["status"]): Promise<ActionResult<{ status: string }>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     await setProspectStatus(id, status);
     revalidatePath("/admin/prospects");
     return { ok: true, data: { status } };
@@ -749,7 +748,7 @@ export async function setProspectStatusAction(id: string, status: Prospect["stat
 
 export async function saveOutreachSettingsAction(input: OutreachSettings): Promise<ActionResult<{ saved: true }>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     if (!input.subjectTemplate.includes("{their_business}") && !input.subjectTemplate.includes("{my_business}")) {
       return { ok: false, error: "The subject must include {their_business} or {my_business} — that is what personalises it." };
     }
@@ -781,7 +780,7 @@ export interface ProspectWorkbench {
  */
 export async function recordConsentAction(prospectId: string, note: string): Promise<ActionResult<{ recorded: true }>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     const trimmed = note.trim();
     if (trimmed.length < 8) {
       return { ok: false, error: "Describe how they agreed — a note is what makes the consent defensible." };
@@ -797,7 +796,7 @@ export async function recordConsentAction(prospectId: string, note: string): Pro
 
 export async function clearConsentAction(prospectId: string): Promise<ActionResult<{ cleared: true }>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     await clearConsent(prospectId);
     revalidatePath("/admin/prospects");
     return { ok: true, data: { cleared: true } };
@@ -816,7 +815,7 @@ export async function setCountryRuleAction(
   note: string,
 ): Promise<ActionResult<{ countryCode: string; rule: string }>> {
   try {
-    const admin = await requireAdminSession();
+    const admin = await requireAdminCapability("run_lead_engine");
     const code = normalizeCountryCode(countryCode);
     if (!code) return { ok: false, error: "Unknown country code." };
     if (note.trim().length < 8) return { ok: false, error: "Add the reason — the statute or the advice you are relying on." };
@@ -833,7 +832,7 @@ export async function getProspectWorkbenchAction(filters: { status?: string; web
   ActionResult<ProspectWorkbench>
 > {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     const [prospects, stats, settings, runs, countries] = await Promise.all([
       listProspects({
         status: (filters.status as Prospect["status"] | "all") ?? "all",
@@ -873,7 +872,7 @@ export async function getProspectWorkbenchAction(filters: { status?: string; web
  * single most useful thing to check before a batch goes out. */
 export async function previewOutreachAction(prospectId: string): Promise<ActionResult<{ subject: string; text: string }>> {
   try {
-    await requireAdminSession();
+    await requireAdminCapability("run_lead_engine");
     const prospect = await getProspect(prospectId);
     if (!prospect) return { ok: false, error: "That lead no longer exists." };
     const settings = await getOutreachSettings();

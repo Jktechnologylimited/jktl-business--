@@ -1,17 +1,15 @@
 // JKTL Business service worker.
-// Strategy: network-first for pages (so data is always fresh when online),
-// falling back to the last cached copy, then to a friendly offline page.
+// Private pages and API data are network-only. Failed navigations use the
+// generic offline screen, never a cached copy of another account’s content.
 // Static, hashed Next.js assets are cache-first since they're immutable.
 // Nothing here ever caches or replays a mutation (POST/PUT/DELETE) — offline
 // writes are simply not attempted, per the "don't fake success offline" rule.
 
-const CACHE_VERSION = "jktl-v1";
+const CACHE_VERSION = "jktl-v2-private-network";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 const SHELL_URLS = [
-  "/",
-  "/login",
   "/offline",
   "/manifest.webmanifest",
   "/icon-192.png",
@@ -53,6 +51,9 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  // Never cache identity, publications, account data, or server-component payloads.
+  if (url.pathname.startsWith("/api/") || request.headers.get("RSC") || url.searchParams.has("_rsc")) return;
+
   // Immutable build assets: cache-first.
   if (isStaticAsset(url)) {
     event.respondWith(
@@ -67,37 +68,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Page navigations: network-first, cache fallback, offline-page last.
+  // Navigations always use the network. Never persist authenticated HTML.
   if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(SHELL_CACHE).then((cache) => cache.put(request, copy));
-          return response;
-        })
-        .catch(async () => {
-          const cache = await caches.open(SHELL_CACHE);
-          const cached = await cache.match(request);
-          return cached ?? (await cache.match("/offline"));
-        }),
-    );
+    event.respondWith(fetch(request).catch(async () => {
+      const cache = await caches.open(SHELL_CACHE);
+      return (await cache.match("/offline")) || new Response("You are offline. Reconnect to open JKTL Business.", { status: 503, headers: { "Content-Type": "text/plain" } });
+    }));
     return;
   }
 
-  // Everything else same-origin (icons, manifest): stale-while-revalidate.
-  event.respondWith(
-    caches.open(SHELL_CACHE).then(async (cache) => {
+  // Cache only public installation assets; all other data stays network-only.
+  if (url.pathname === "/manifest.webmanifest" || /^\/(icon-[^/]+\.png|favicon\.png|apple-touch-icon\.png)$/.test(url.pathname)) {
+    event.respondWith(caches.open(SHELL_CACHE).then(async cache => {
       const cached = await cache.match(request);
-      const network = fetch(request)
-        .then((response) => {
-          if (response.ok) cache.put(request, response.clone());
-          return response;
-        })
-        .catch(() => cached);
-      return cached ?? network;
-    }),
-  );
+      const network = fetch(request).then(response => { if (response.ok) cache.put(request, response.clone()); return response; }).catch(() => cached);
+      return cached || network;
+    }));
+  }
+
 });
 
 // Push notifications — see src/lib/push.ts for what sends these. Payload

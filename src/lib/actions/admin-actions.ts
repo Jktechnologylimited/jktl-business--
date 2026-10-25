@@ -66,7 +66,7 @@ export async function adminLoginAction(email: string, password: string): Promise
     const admin = await verifyAdminLogin(email, password);
     if (!admin) return { ok: false, error: "That email and password don't match a command-center account." };
     await startAdminSession(admin.id);
-    return { ok: true, data: { path: "/admin/insights" } };
+    return { ok: true, data: { path: admin.role === "editor" ? "/admin/content" : "/admin/insights" } };
   } catch (err) {
     console.error(err);
     return { ok: false, error: "Couldn't sign in right now. Please try again." };

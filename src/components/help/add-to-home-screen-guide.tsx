@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Share, MoreVertical, MonitorDown } from "lucide-react";
 import { FilterTabs } from "@/components/app/filter-tabs";
 
@@ -9,29 +9,34 @@ type Platform = "ios" | "android" | "desktop";
 function detectPlatform(): Platform {
   if (typeof navigator === "undefined") return "android";
   const ua = navigator.userAgent || "";
-  const isIOS = /iPhone|iPad|iPod/.test(ua) || (ua.includes("Macintosh") && navigator.maxTouchPoints > 1);
+  const isIOS =
+    /iPhone|iPad|iPod/.test(ua) ||
+    (ua.includes("Macintosh") && navigator.maxTouchPoints > 1);
   if (isIOS) return "ios";
   if (/Android/.test(ua)) return "android";
   return "desktop";
 }
 
-const steps: Record<Platform, { icon: typeof Share; note: string; list: string[] }> = {
+const steps: Record<
+  Platform,
+  { icon: typeof Share; note: string; list: string[] }
+> = {
   ios: {
     icon: Share,
-    note: "Works in Safari. If you're using Chrome or another browser on iPhone/iPad, open this page in Safari first — only Safari can add apps to the home screen on iOS.",
+    note: "Use Safari on iPhone or iPad for these steps. If your current browser does not offer Add to Home Screen, open this page in Safari.",
     list: [
       "Tap the Share icon in Safari's toolbar (the square with an arrow pointing up).",
-      "Scroll down the share sheet and tap \"Add to Home Screen\".",
-      "Tap \"Add\" in the top-right corner.",
+      'Scroll down the share sheet and tap "Add to Home Screen".',
+      'Tap "Add" in the top-right corner.',
     ],
   },
   android: {
     icon: MoreVertical,
-    note: "Works in Chrome. Some versions show an \"Install app\" banner automatically — you can tap that instead of the steps below.",
+    note: 'Works in Chrome. Some versions show an "Install app" banner automatically — you can tap that instead of the steps below.',
     list: [
       "Tap the ⋮ menu in the top-right corner of Chrome.",
-      "Tap \"Install app\" (or \"Add to Home screen\").",
-      "Confirm by tapping \"Install\".",
+      'Tap "Install app" (or "Add to Home screen").',
+      'Confirm by tapping "Install".',
     ],
   },
   desktop: {
@@ -39,19 +44,30 @@ const steps: Record<Platform, { icon: typeof Share; note: string; list: string[]
     note: "Works in Chrome or Edge on a computer.",
     list: [
       "Look for an install icon in the address bar, on the right — it looks like a small monitor with a down arrow, or a ⊕.",
-      "Click it, then click \"Install\".",
-      "If you don't see the icon, open the browser's menu and look for \"Install JKTL Business…\" or \"Apps → Install this site as an app\".",
+      'Click it, then click "Install".',
+      'If you don\'t see the icon, open the browser\'s menu and look for "Install JKTL Business…" or "Apps → Install this site as an app".',
     ],
   },
 };
 
-const labels: Record<Platform, string> = { ios: "iPhone / iPad", android: "Android", desktop: "Computer" };
+const labels: Record<Platform, string> = {
+  ios: "iPhone / iPad",
+  android: "Android",
+  desktop: "Computer",
+};
+
+const subscribePlatform = () => () => {};
+const serverPlatform = (): Platform => "desktop";
 
 export function AddToHomeScreenGuide() {
-  // Lazy initializer: runs once, safe during SSR (detectPlatform falls back
-  // to "android" when `navigator` doesn't exist yet), and avoids the
-  // effect-then-setState flash of guessing wrong before correcting itself.
-  const [platform, setPlatform] = useState<Platform>(() => detectPlatform());
+  // Use a stable server snapshot, then detect the browser without hydration mismatches.
+  const detected = useSyncExternalStore(
+    subscribePlatform,
+    detectPlatform,
+    serverPlatform,
+  );
+  const [selection, setPlatform] = useState<Platform | null>(null);
+  const platform = selection ?? detected;
 
   const current = steps[platform];
   const Icon = current.icon;

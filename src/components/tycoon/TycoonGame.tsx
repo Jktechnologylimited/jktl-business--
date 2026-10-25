@@ -14,138 +14,7 @@ import {
   type VentureId,
 } from "@/lib/tycoon";
 import styles from "./TycoonGame.module.css";
-function CityMap({
-  state,
-  slot,
-  onSlot,
-}: {
-  state: TycoonState;
-  slot: number;
-  onSlot: (slot: number) => void;
-}) {
-  return (
-    <svg
-      className={styles.map}
-      viewBox="0 0 900 620"
-      role="group"
-      aria-label="Interactive business neighbourhood. Select an empty plot to build or an existing business to upgrade."
-    >
-      <defs>
-        <pattern
-          id="grass"
-          width="30"
-          height="30"
-          patternUnits="userSpaceOnUse"
-        >
-          <rect width="30" height="30" fill="#92b877" />
-          <circle cx="8" cy="10" r="1" fill="#fff" opacity=".15" />
-        </pattern>
-        <filter id="shadow">
-          <feDropShadow dx="0" dy="8" stdDeviation="5" floodOpacity=".15" />
-        </filter>
-      </defs>
-      <rect width="900" height="620" rx="24" fill="url(#grass)" />
-      <path
-        d="M0 192H900M0 380H900M220 0V620M450 0V620M680 0V620"
-        stroke="#6b767a"
-        strokeWidth="40"
-      />
-      <path
-        d="M0 192H900M0 380H900M220 0V620M450 0V620M680 0V620"
-        stroke="#e3dbb5"
-        strokeWidth="2"
-        strokeDasharray="12 12"
-      />
-      {state.plots.map((plot, i) => {
-        const x = 110 + (i % 4) * 230,
-          y = 110 + Math.floor(i / 4) * 190;
-        const v = ventures.find((v) => v.id === plot?.kind);
-        return (
-          <g
-            key={i}
-            tabIndex={0}
-            role="button"
-            aria-label={`Plot ${i + 1}: ${v ? `${v.name}, level ${plot!.level}` : "empty"}`}
-            aria-pressed={slot === i}
-            onClick={() => onSlot(i)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onSlot(i);
-              }
-            }}
-            className={styles.plot}
-            transform={`translate(${x},${y})`}
-          >
-            <ellipse
-              rx="88"
-              ry="47"
-              cy="25"
-              fill={slot === i ? "#c9a84c" : "#c2d7a3"}
-              stroke={slot === i ? "#060e2a" : "#e3eccd"}
-              strokeWidth={slot === i ? 4 : 2}
-            />
-            {v ? (
-              <g filter="url(#shadow)">
-                <path
-                  d={`M-58 18V-${36 + plot!.level * 15}L0 -${59 + plot!.level * 15}L58 -${36 + plot!.level * 15}V18L0 45Z`}
-                  fill={v.color}
-                />
-                <path
-                  d={`M0 -${59 + plot!.level * 15}L58 -${36 + plot!.level * 15}L0 -${12 + plot!.level * 15}L-58 -${36 + plot!.level * 15}Z`}
-                  fill="#fdfcf8"
-                />
-                <path
-                  d={`M0 -${12 + plot!.level * 15}V45L58 18V-${36 + plot!.level * 15}Z`}
-                  fill="#060e2a"
-                  opacity=".2"
-                />
-                {Array.from({ length: plot!.level }, (_, j) => (
-                  <g key={j}>
-                    <path
-                      d={`M-42 ${-12 - j * 16}l12 5v10l-12 -5Z M-22 ${-4 - j * 16}l12 5v10l-12 -5Z M15 ${-j * 16}l12 -5v10l-12 5Z M35 ${-8 - j * 16}l12 -5v10l-12 5Z`}
-                      fill="#40566c"
-                    />
-                  </g>
-                ))}
-                <text
-                  y={-48 - plot!.level * 15}
-                  textAnchor="middle"
-                  fontSize="30"
-                >
-                  {v.icon}
-                </text>
-                <rect
-                  x="-90"
-                  y="48"
-                  width="180"
-                  height="27"
-                  rx="13"
-                  fill="#060e2a"
-                />
-                <text y="66" textAnchor="middle" fontSize="12" fill="white">
-                  {v.name} · L{plot!.level}
-                </text>
-              </g>
-            ) : (
-              <>
-                <text y="20" textAnchor="middle" fontSize="28" fill="#436144">
-                  +
-                </text>
-                <text y="43" textAnchor="middle" fontSize="11" fill="#29412c">
-                  BUILD HERE
-                </text>
-              </>
-            )}
-          </g>
-        );
-      })}
-      <text x="25" y="595" fill="#203826" fontSize="13">
-        {state.city} · Your neighbourhood, your ambition.
-      </text>
-    </svg>
-  );
-}
+import { CityScene } from "./CityScene";
 export function TycoonGame() {
   const [state, setState] = useState<TycoonState>(newGame);
   const [ready, setReady] = useState(false);
@@ -299,7 +168,7 @@ export function TycoonGame() {
                   : "New founder 🌱"}
             </span>
           </div>
-          <CityMap state={state} slot={slot} onSlot={setSlot} />
+          <CityScene state={state} slot={slot} onSlot={setSlot} />
           <div className={styles.event}>
             <span>THIS WEEK · SIMULATED MARKET</span>
             <h2>{event.title}</h2>

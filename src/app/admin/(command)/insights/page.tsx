@@ -1,3 +1,4 @@
+import { guardAdminPage } from "@/lib/admin-page-guard";
 import { PageHeader } from "@/components/app/page-header";
 import { StatTile } from "@/components/app/stat-tile";
 import { loadInsightInput } from "@/lib/db/admin-insights";
@@ -21,6 +22,7 @@ export const dynamic = "force-dynamic";
  * engine's cost per acquisition (nothing has converted).
  */
 export default async function AdminInsightsPage() {
+  await guardAdminPage("view_insights");
   const input = await loadInsightInput();
   const insights = buildInsights(input, (kobo) => formatKobo(kobo));
   const { growth, revenue, receptionist, affiliates, prospects, markets } = insights;

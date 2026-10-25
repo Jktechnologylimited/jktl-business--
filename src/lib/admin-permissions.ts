@@ -18,10 +18,11 @@
  * matrix nobody maintains is worse than a role that is occasionally too coarse.
  */
 
-export type AdminRole = "owner" | "affiliate_manager" | "analyst";
+export type AdminRole = "owner" | "affiliate_manager" | "analyst" | "editor";
 
 /** A capability, not a page. Pages are composed from these. */
 export type AdminCapability =
+  | "manage_content"
   | "view_businesses"
   | "send_broadcasts"
   | "manage_affiliates"
@@ -34,6 +35,7 @@ export type AdminCapability =
 
 const MATRIX: Record<AdminRole, AdminCapability[]> = {
   owner: [
+    "manage_content",
     "view_businesses",
     "send_broadcasts",
     "manage_affiliates",
@@ -44,6 +46,7 @@ const MATRIX: Record<AdminRole, AdminCapability[]> = {
     "manage_team",
     "run_daily_job",
   ],
+  editor: ["manage_content"],
   affiliate_manager: [
     // The point of the role: approve partners, pay them, and see the numbers
     // needed to do both without asking the owner.
@@ -64,16 +67,18 @@ export function can(role: AdminRole, capability: AdminCapability): boolean {
 
 /** Unknown roles get nothing. A role typo in the database must fail closed. */
 export function normaliseRole(role: string | null | undefined): AdminRole {
-  return role === "owner" || role === "affiliate_manager" || role === "analyst" ? role : "analyst";
+  return role === "owner" || role === "affiliate_manager" || role === "analyst" || role === "editor" ? role : "analyst";
 }
 
 export const ROLE_LABEL: Record<AdminRole, string> = {
   owner: "Owner",
+  editor: "Editor",
   affiliate_manager: "Affiliate manager",
   analyst: "Analyst (read-only)",
 };
 
 export const ROLE_DESCRIPTION: Record<AdminRole, string> = {
+  editor: "Create, edit, publish and unpublish Blog and Releases & Updates. No access to money or business accounts.",
   owner: "Everything: businesses, broadcasts, the lead engine, money and team accounts.",
   affiliate_manager: "The partner programme: approve or decline applications, record payouts, and see the reports.",
   analyst: "Read-only. Can see the insight reports and change nothing.",
@@ -103,6 +108,7 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
+  { href: "/admin/content", label: "Blog & updates", capability: "manage_content" },
   { href: "/admin/insights", label: "Insights", capability: "view_insights" },
   { href: "/admin/affiliates", label: "Affiliates", capability: "manage_affiliates" },
   { href: "/admin", label: "Businesses", capability: "view_businesses" },

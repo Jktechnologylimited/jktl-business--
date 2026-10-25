@@ -21,6 +21,6 @@ export async function guardAdminPage(capability: AdminCapability): Promise<void>
   if (!can(admin.role, capability)) {
     // Send them somewhere they can actually use, rather than a dead end. If they
     // cannot even see insights, the login page is the honest destination.
-    redirect(can(admin.role, "view_insights") ? "/admin/insights" : "/admin/login");
+    redirect(can(admin.role, "view_insights") ? "/admin/insights" : can(admin.role, "manage_content") ? "/admin/content" : "/admin/login");
   }
 }

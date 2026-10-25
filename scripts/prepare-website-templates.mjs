@@ -8,7 +8,7 @@ if (!url) {
   );
 } else {
   const migrations = await Promise.all(
-    ["029_website_templates.sql", "030_website_metrics.sql", "031_website_plan_billing.sql", "032_tycoon_saves.sql"].map((name) =>
+    ["029_website_templates.sql", "030_website_metrics.sql", "031_website_plan_billing.sql", "032_tycoon_saves.sql", "033_editorial.sql"].map((name) =>
       readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
     ),
   );
@@ -26,6 +26,6 @@ if (!url) {
     [],
   );
   console.log(
-    "Website template schema: additive migrations 029, 030, 031 and 032 applied.",
+    "Website template schema: additive migrations 029, 030, 031, 032 and 033 applied.",
   );
 }
