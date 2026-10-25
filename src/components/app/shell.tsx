@@ -1,4 +1,5 @@
 "use client";
+import {FeatureBadge} from "@/components/features/FeatureBadge";
 import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
 
 import type { ReactNode } from "react";
@@ -119,7 +120,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   )}
                 >
                   <Icon className="size-4" />
-                  <T>{item.label}</T>
+                  <T>{item.label}</T><FeatureBadge route={item.href}/>
                 </Link>
               );
             })}
@@ -139,12 +140,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               >
                 <span className="size-4" />
-                <T>{item.label}</T>
+                <T>{item.label}</T><FeatureBadge route={item.href}/>
               </Link>
             );
           })}
-        <Link href="/business/custom" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">JKTL Custom</Link>
-        <Link href="/business/domains" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">Domains</Link>
+        <Link href="/business/email" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">Business Email <FeatureBadge slug="business-email"/></Link>
+        <Link href="/business/custom" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">JKTL Custom <FeatureBadge slug="custom"/></Link>
+        <Link href="/business/domains" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">Domains <FeatureBadge slug="domains"/></Link>
         <Link href="/play/tycoon" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">🎮 Business Tycoon</Link>
         </nav>
         <div className="border-t border-border p-3">
@@ -255,7 +257,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             >
               <Icon className="size-5" />
-              <T>{item.label}</T>
+              <T>{item.label}</T><FeatureBadge route={item.href}/>
             </Link>
           );
         })}

@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Domains | JKTL Business",
   description:
-    "Buy and manage a domain with one-off payments. View current registration and renewal prices. Manual registration, renewal and DNS support through JKTL.",
+    "Buy and manage a domain with one-off payments. View current registration and renewal prices. Domain registration, renewal and DNS support through JKTL.",
 };
 export default async function Page() {
   let prices: Record<string, unknown>[] = [];

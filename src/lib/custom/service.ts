@@ -16,7 +16,7 @@ export async function owner() {
       )
     ).length
   )
-    throw Error("Only the business owner can manage Custom projects.");
+    throw Error("Only the business owner can manage this workspace.");
   return s;
 }
 export async function audit(

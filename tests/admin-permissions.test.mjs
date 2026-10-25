@@ -85,7 +85,7 @@ test("navigation is filtered by capability, and never empty", () => {
   assert.equal(ownerNav.length, ADMIN_NAV.length);
 
   const managerNav = navFor("affiliate_manager").map((i) => i.label);
-  assert.deepEqual(managerNav, ["Insights", "Affiliates"]);
+  assert.deepEqual(managerNav, ["Partners", "Insights", "Affiliates"]);
 
   const analystNav = navFor("analyst").map((i) => i.label);
   assert.deepEqual(analystNav, ["Insights"]);

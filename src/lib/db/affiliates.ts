@@ -34,6 +34,8 @@ export const WELCOME_BONUS_KOBO = 200_000;
 export const PAYOUT_REQUEST_DAY = 21;
 
 export interface Affiliate {
+  programme?: "affiliate" | "partner";
+  partnerSourceId?:string;
   id: string;
   name: string;
   email: string;
@@ -71,6 +73,8 @@ export interface Affiliate {
 
 function mapAffiliate(row: Record<string, unknown>): Affiliate {
   return {
+    partnerSourceId:row.partner_source_id?String(row.partner_source_id):undefined,
+    programme:row.programme === "partner" ? "partner":"affiliate",
     id: row.id as string,
     name: row.name as string,
     email: row.email as string,
@@ -216,7 +220,8 @@ export async function getAffiliateById(affiliateId: string): Promise<Affiliate |
 
 export async function setAffiliateStatus(affiliateId: string, status: "active" | "suspended"): Promise<void> {
   const sql = getSql();
-  await sql`UPDATE affiliates SET status = ${status} WHERE id = ${affiliateId}`;
+  const updated=await sql`UPDATE affiliates SET status = ${status} WHERE id = ${affiliateId} AND status<>'pending' AND(${status}='suspended' OR programme='affiliate' OR partner_terms_confirmed=true) RETURNING id`;
+  if(!updated.length)throw new Error("This account requires approval before activation, or no longer exists.");
 }
 
 // ---- Self-serve applications (migration 014) ----
@@ -284,7 +289,7 @@ export async function approveAffiliateApplication(affiliateId: string): Promise<
   // the `status = 'pending'` guard means the second call returns nothing.
   const rows = await sql`
     UPDATE affiliates SET status = 'active'
-    WHERE id = ${affiliateId} AND status = 'pending'
+    WHERE id = ${affiliateId} AND status = 'pending' AND (programme='affiliate' OR partner_terms_confirmed=true)
     RETURNING *
   `;
   return rows[0] ? mapAffiliate(rows[0]) : null;

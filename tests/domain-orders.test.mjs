@@ -607,7 +607,8 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
           return { id: adminId };
         },
       },
-      "@/lib/custom/service": { handleCustomEvent: async () => false },
+      "@/lib/business-email/service":{handleEmailEvent:async()=>false},
+"@/lib/custom/service": { handleCustomEvent: async () => false },
       "@/lib/domains/service": service,
       "@/lib/domains/contacts": contacts,
       "@/lib/domains/model": model,
@@ -753,7 +754,8 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
         };
         const route = load("../src/app/api/webhooks/paystack/route.ts", {
           "next/server": next,
-          "@/lib/custom/service": { handleCustomEvent: async () => false },
+          "@/lib/business-email/service":{handleEmailEvent:async()=>false},
+"@/lib/custom/service": { handleCustomEvent: async () => false },
           "@/lib/domains/service": service,
           "@/lib/website-billing-webhooks": {
             handleWebsiteBillingEvent: async () => {

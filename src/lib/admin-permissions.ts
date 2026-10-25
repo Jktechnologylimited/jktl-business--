@@ -22,6 +22,8 @@ export type AdminRole = "owner" | "affiliate_manager" | "analyst" | "editor";
 
 /** A capability, not a page. Pages are composed from these. */
 export type AdminCapability =
+  | "manage_email"
+  | "manage_features"
   | "manage_custom"
   | "manage_domains"
   | "manage_content"
@@ -37,6 +39,8 @@ export type AdminCapability =
 
 const MATRIX: Record<AdminRole, AdminCapability[]> = {
   owner: [
+    "manage_email",
+    "manage_features",
     "manage_custom",
     "manage_domains",
     "manage_content",
@@ -50,7 +54,7 @@ const MATRIX: Record<AdminRole, AdminCapability[]> = {
     "manage_team",
     "run_daily_job",
   ],
-  editor: ["manage_content"],
+  editor: ["manage_content", "manage_features"],
   affiliate_manager: [
     // The point of the role: approve partners, pay them, and see the numbers
     // needed to do both without asking the owner.
@@ -82,7 +86,7 @@ export const ROLE_LABEL: Record<AdminRole, string> = {
 };
 
 export const ROLE_DESCRIPTION: Record<AdminRole, string> = {
-  editor: "Create, edit, publish and unpublish Blog and Releases & Updates. No access to money or business accounts.",
+  editor: "Create, edit, publish and unpublish Blog and Releases & Updates, and manage NEW badges. No access to money or business accounts.",
   owner: "Everything: businesses, broadcasts, the lead engine, money and team accounts.",
   affiliate_manager: "The partner programme: approve or decline applications, record payouts, and see the reports.",
   analyst: "Read-only. Can see the insight reports and change nothing.",
@@ -112,6 +116,9 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
+  {href:"/admin/business-email",label:"Business Email",capability:"manage_email"},
+  {href:"/admin/features",label:"Feature Management",capability:"manage_features"},
+  {href:"/admin/partners",label:"Partners",capability:"manage_affiliates"},
   {href:"/admin/custom-projects",label:"Custom Projects",capability:"manage_custom"},
   {href:"/admin/domains",label:"Domain orders",capability:"manage_domains"},
   { href: "/admin/content", label: "Blog & updates", capability: "manage_content" },

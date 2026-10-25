@@ -1,4 +1,5 @@
 "use client";
+import { emailIntent } from "@/lib/product-intent";
 import { gameReturnUrl } from "@/lib/game-routing";
 import { SignInFrame } from "@/components/auth/SignInFrame";
 import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
@@ -49,108 +50,158 @@ function LoginForm() {
       setError(result.error);
       return;
     }
-    if (params.get("next") === "custom") { router.replace("/business/custom"); return; }
-    if (params.get("next") === "domains") { router.push("/business/domains"); return; }
+    if (params.get("next") === "email") {
+      router.replace(
+        "/business/email" +
+          (params.get("emailPlan")
+            ? "?plan=" + encodeURIComponent(params.get("emailPlan")!)
+            : ""),
+      );
+      return;
+    }
+    if (params.get("next") === "custom") {
+      router.replace("/business/custom");
+      return;
+    }
+    if (params.get("next") === "domains") {
+      router.push("/business/domains");
+      return;
+    }
     const returnGame = params.get("next");
-    const gameUrl = gameReturnUrl(returnGame); if (gameUrl) { window.location.assign(gameUrl); return; }
+    const gameUrl = gameReturnUrl(returnGame);
+    if (gameUrl) {
+      window.location.assign(gameUrl);
+      return;
+    }
     const nextTemplate = pendingTemplate(params.get("template"));
-    if (params.get("next") === "tycoon") { router.push("/play/tycoon"); return; }
+    if (params.get("next") === "tycoon") {
+      router.push("/play/tycoon");
+      return;
+    }
     router.push(nextTemplate ? templateEditorPath(nextTemplate) : "/business");
   }
 
-  useEffect(() => { if (hydrated && authenticated && mode === "live") { const value=params.get("next"); if(value==="domains") router.replace("/business/domains"); else if(value==="custom") router.replace("/business/custom"); else if(value==="tycoon") router.replace("/play/tycoon"); else { const gameUrl=gameReturnUrl(value); if(gameUrl) window.location.assign(gameUrl); } } }, [params, hydrated, authenticated, mode, router]);
+  useEffect(() => {
+    if (hydrated && authenticated && mode === "live") {
+      const value = params.get("next");
+      if (value === "email")
+        router.replace(
+          "/business/email" +
+            (params.get("emailPlan")
+              ? "?plan=" + encodeURIComponent(params.get("emailPlan")!)
+              : ""),
+        );
+      else if (value === "domains") router.replace("/business/domains");
+      else if (value === "custom") router.replace("/business/custom");
+      else if (value === "tycoon") router.replace("/play/tycoon");
+      else {
+        const gameUrl = gameReturnUrl(value);
+        if (gameUrl) window.location.assign(gameUrl);
+      }
+    }
+  }, [params, hydrated, authenticated, mode, router]);
 
   return (
-    <SignInFrame kind="business"><div className="mx-auto flex max-w-sm flex-col justify-center">
-      <div className="mb-4 flex justify-end">
-        <LanguageSwitcher />
-      </div>
-      <JktlWordmark />
-      <h1 className="mt-10 font-display text-2xl font-bold tracking-tight text-ink">
-        <T>Welcome back</T>
-      </h1>
-      <p className="mt-1.5 text-sm text-ink-muted">
-        <T>Sign in to run your business today.</T>
-      </p>
+    <SignInFrame kind="business">
+      <div className="mx-auto flex max-w-sm flex-col justify-center">
+        <div className="mb-4 flex justify-end">
+          <LanguageSwitcher />
+        </div>
+        <JktlWordmark />
+        <h1 className="mt-10 font-display text-2xl font-bold tracking-tight text-ink">
+          <T>Welcome back</T>
+        </h1>
+        <p className="mt-1.5 text-sm text-ink-muted">
+          <T>Sign in to run your business today.</T>
+        </p>
 
-      {selected && (
-        <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm">
-          <strong>{selected.name}</strong>
-          <p className="mt-1 text-ink-muted">
+        {selected && (
+          <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm">
+            <strong>{selected.name}</strong>
+            <p className="mt-1 text-ink-muted">
+              <T>
+                Your selected template is ready. Sign in to open it in the
+                website editor.
+              </T>
+            </p>
+          </div>
+        )}
+
+        <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
+          <Field label="Email" htmlFor="email">
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@yourbusiness.com"
+              required
+            />
+          </Field>
+          <Field label="Password" htmlFor="password">
+            <PasswordInput
+              id="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </Field>
+          {error ? <p className="text-sm text-danger">{error}</p> : null}
+          <Button
+            type="submit"
+            size="lg"
+            className="mt-1 w-full"
+            disabled={pending}
+          >
+            <T>{pending ? "Signing in…" : "Sign in"}</T>
+          </Button>
+        </form>
+
+        <div className="mt-4 flex items-center justify-between text-sm">
+          <Link href="/forgot-password" className="font-medium text-primary">
+            <T>Forgot password?</T>
+          </Link>
+          <Link
+            href={
+              emailIntent(params)
+                ? `/signup${emailIntent(params)}`
+                : selected
+                  ? `/signup?template=${selected.id}`
+                  : "/signup"
+            }
+            className="font-medium text-primary"
+          >
+            <T>Create account</T>
+          </Link>
+        </div>
+
+        <div className="mt-10 rounded-2xl border border-border bg-surface p-4">
+          <p className="text-sm font-semibold text-ink">
+            <T>Glam Hair Studio · Yenagoa</T>
+          </p>
+          <p className="mt-1 text-xs text-ink-muted">
             <T>
-              Your selected template is ready. Sign in to open it in the website
-              editor.
+              Try the app with a real salon&apos;s data — no account needed.
             </T>
           </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-3 w-full"
+            onClick={() => {
+              openDemo();
+              router.push(
+                selected ? templateEditorPath(selected.id) : "/business",
+              );
+            }}
+          >
+            <T>Open salon demo</T>
+          </Button>
         </div>
-      )}
-
-      <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
-        <Field label="Email" htmlFor="email">
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@yourbusiness.com"
-            required
-          />
-        </Field>
-        <Field label="Password" htmlFor="password">
-          <PasswordInput
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </Field>
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
-        <Button
-          type="submit"
-          size="lg"
-          className="mt-1 w-full"
-          disabled={pending}
-        >
-          <T>{pending ? "Signing in…" : "Sign in"}</T>
-        </Button>
-      </form>
-
-      <div className="mt-4 flex items-center justify-between text-sm">
-        <Link href="/forgot-password" className="font-medium text-primary">
-          <T>Forgot password?</T>
-        </Link>
-        <Link
-          href={selected ? `/signup?template=${selected.id}` : "/signup"}
-          className="font-medium text-primary"
-        >
-          <T>Create account</T>
-        </Link>
       </div>
-
-      <div className="mt-10 rounded-2xl border border-border bg-surface p-4">
-        <p className="text-sm font-semibold text-ink">
-          <T>Glam Hair Studio · Yenagoa</T>
-        </p>
-        <p className="mt-1 text-xs text-ink-muted">
-          <T>Try the app with a real salon&apos;s data — no account needed.</T>
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          className="mt-3 w-full"
-          onClick={() => {
-            openDemo();
-            router.push(
-              selected ? templateEditorPath(selected.id) : "/business",
-            );
-          }}
-        >
-          <T>Open salon demo</T>
-        </Button>
-      </div>
-    </div></SignInFrame>
+    </SignInFrame>
   );
 }
 

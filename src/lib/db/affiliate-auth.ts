@@ -19,6 +19,7 @@ import { getSql } from "./client";
 const AFFILIATE_SESSION_DAYS = 7;
 
 export interface AffiliateUser {
+ programme?: "partner" | "affiliate";
   id: string;
   name: string;
   email: string;
@@ -29,6 +30,7 @@ export interface AffiliateUser {
 
 function mapAffiliateUser(row: Record<string, unknown>): AffiliateUser {
   return {
+    programme: row.programme === "partner" ? "partner":"affiliate",
     id: row.id as string,
     name: row.name as string,
     email: row.email as string,

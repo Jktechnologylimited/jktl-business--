@@ -36,7 +36,7 @@ import {
 import type { AdminUser } from "@/lib/db/admin-auth";
 import type { AdminRole } from "@/lib/admin-permissions";
 import { firstYearValueKobo } from "@/lib/affiliate-commission";
-import { sendAffiliateApprovedEmail, sendAffiliateDeclinedEmail } from "@/lib/email";
+import { sendPartnerApprovedEmail, sendAffiliateApprovedEmail, sendAffiliateDeclinedEmail } from "@/lib/email";
 import { runDailySweep } from "@/lib/cron/daily-sweep";
 import { getSql } from "@/lib/db/client";
 import { deleteBusinessAccount, getBusinessOwnerUserId } from "@/lib/db/admin";
@@ -199,7 +199,8 @@ export async function approveAffiliateApplicationAction(affiliateId: string): Pr
      * matters, and a mail failure must not undo it. The admin sees the result in
      * the UI either way.
      */
-    await sendAffiliateApprovedEmail({
+    if(affiliate.programme === "partner") await sendPartnerApprovedEmail({to:affiliate.email,name:affiliate.name,signInUrl:`${appOrigin()}/partners/login`,referralLink:`${appOrigin()}/signup?ref=${affiliate.referralCode}`,commissionBps:affiliate.commissionBps,needsPasswordSetup:Boolean(affiliate.partnerSourceId)});
+    else await sendAffiliateApprovedEmail({
       to: affiliate.email,
       name: affiliate.name,
       signInUrl: `${appOrigin()}/affiliates/login`,

@@ -1,4 +1,5 @@
 "use client";
+import { emailIntent } from "@/lib/product-intent";
 import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
@@ -32,7 +33,11 @@ function SignupForm() {
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const referralCode = searchParams.get("ref");
-  const signIn = selected ? `/login?template=${selected.id}` : "/login";
+  const signIn = emailIntent(searchParams)
+    ? `/login${emailIntent(searchParams)}`
+    : selected
+      ? `/login?template=${selected.id}`
+      : "/login";
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (pending) return;
@@ -45,7 +50,13 @@ function SignupForm() {
       referralCode,
     );
     const next = pendingTemplate(searchParams.get("template"));
-    router.push(next ? `/onboarding?template=${next}` : "/onboarding");
+    router.push(
+      emailIntent(searchParams)
+        ? `/onboarding${emailIntent(searchParams)}`
+        : next
+          ? `/onboarding?template=${next}`
+          : "/onboarding",
+    );
   }
   return (
     <div className={`jktl-light ${styles.page}`}>

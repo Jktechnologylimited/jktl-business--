@@ -1,5 +1,7 @@
 # JKTL Business
 
+Business Email, feature badges, admin/affiliate dashboards and partner login: [deployment and operator guide](docs/BUSINESS_EMAIL_AND_PORTALS.md).
+
 Domain purchases and manual fulfillment: [operator guide](docs/DOMAIN_ORDERS.md).
 JKTL Custom client onboarding, service invoices and CMS pilot: [rollout guide](docs/JKTL_CUSTOM.md).
 Use [.env.example](.env.example) for the new settings; keep secret values in deployment configuration.

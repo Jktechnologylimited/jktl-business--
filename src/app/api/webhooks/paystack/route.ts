@@ -1,3 +1,4 @@
+import { handleEmailEvent } from "@/lib/business-email/service";
 import { handleCustomEvent } from "@/lib/custom/service";
 import { handleDomainEvent } from "@/lib/domains/service";
 import { handleWebsiteBillingEvent } from "@/lib/website-billing-webhooks";
@@ -126,17 +127,32 @@ export async function POST(request: NextRequest) {
       { status: 503 },
     );
   }
+  try {
+    if (await handleEmailEvent(event, data))
+      return NextResponse.json({ ok: true });
+  } catch {
+    console.error("business-email-payment: retry-required");
+    return NextResponse.json(
+      { error: "Email payment processing will retry" },
+      { status: 503 },
+    );
+  }
   const dedupeKey = `${event}:${data?.id ?? data?.subscription_code ?? data?.reference ?? JSON.stringify(data).slice(0, 100)}`;
 
   const isNew = await recordWebhookEventOnce(dedupeKey, event).catch((err) => {
     console.error("paystack webhook: failed to record dedupe key", err);
     return null; // Fail closed: ask Paystack to retry; never process without receipt tracking.
   });
-  if (isNew === null) return NextResponse.json({error:"Webhook temporarily unavailable"},{status:503});
+  if (isNew === null)
+    return NextResponse.json(
+      { error: "Webhook temporarily unavailable" },
+      { status: 503 },
+    );
   if (!isNew) return NextResponse.json({ ok: true, deduped: true });
 
   try {
-    if(await handleWebsiteBillingEvent(event,data))return NextResponse.json({ok:true});
+    if (await handleWebsiteBillingEvent(event, data))
+      return NextResponse.json({ ok: true });
     switch (event) {
       case "charge.success":
         await handleChargeSuccess(data);
@@ -160,9 +176,12 @@ export async function POST(request: NextRequest) {
     console.error(`paystack webhook: handling "${event}" failed`, err);
     // Failed fulfilment must be retryable. Each money-moving handler has its
     // own ledger idempotency; website activation and its ledger are atomic.
-    const {getSql}=await import("@/lib/db/client");
+    const { getSql } = await import("@/lib/db/client");
     await getSql()`DELETE FROM paystack_webhook_events WHERE dedupe_key=${dedupeKey}`;
-    return NextResponse.json({error:"Payment processing will retry"},{status:503});
+    return NextResponse.json(
+      { error: "Payment processing will retry" },
+      { status: 503 },
+    );
   }
 
   return NextResponse.json({ ok: true });

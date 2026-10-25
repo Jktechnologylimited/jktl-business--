@@ -117,6 +117,7 @@ export async function affiliateLogoutAction(): Promise<void> {
 }
 
 export interface AffiliateDashboardData {
+ programme?: "affiliate" | "partner";
   name: string;
   email: string;
   referralCode: string;
@@ -204,6 +205,7 @@ export async function getAffiliateDashboardAction(): Promise<ActionResult<Affili
     return {
       ok: true,
       data: {
+        programme:full.programme,
         name: full.name,
         email: full.email,
         referralCode: full.referralCode,

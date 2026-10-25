@@ -1,3 +1,4 @@
+import { runEmailMaintenance } from "@/lib/business-email/notifications";
 import { runCustomMaintenance } from "@/lib/custom/notifications";
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest) {
     const results = await Promise.allSettled([
       runDomainMaintenance(),
       runCustomMaintenance(),
+      runEmailMaintenance(),
     ]);
     const failed = results.some(
       (r) =>
@@ -35,6 +37,10 @@ export async function GET(req: NextRequest) {
         domain:
           results[0].status === "fulfilled"
             ? results[0].value
+            : "Retry required",
+        email:
+          results[2].status === "fulfilled"
+            ? results[2].value
             : "Retry required",
         custom:
           results[1].status === "fulfilled"

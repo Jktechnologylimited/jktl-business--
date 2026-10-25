@@ -84,7 +84,7 @@ export default async function AffiliateDashboardPage() {
       </div>
 
       <Link
-        href="/affiliates/playbook"
+        href={data.programme === "partner" ? "/partners/playbook" : "/affiliates/playbook"}
         className="flex items-center justify-between rounded-2xl border border-border bg-primary-soft p-4 text-primary"
       >
         <span className="flex items-center gap-2 text-sm font-semibold">

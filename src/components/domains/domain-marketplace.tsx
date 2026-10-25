@@ -130,7 +130,7 @@ export function DomainMarketplace({
         setMessage(
           result.ok
             ? result.data.paid
-              ? "Payment verified. Your domain is queued for manual fulfillment."
+              ? "Payment verified. Your domain setup is in progress."
               : `Payment is ${result.data.status}; the order remains unpaid.`
             : result.error,
         );
@@ -201,7 +201,7 @@ export function DomainMarketplace({
         </h1>
         <p>
           Buy a domain on its own or connect it to your JKTL website. One order,
-          one payment. JKTL handles registration and renewals manually.
+          one payment. JKTL handles your registration and renewal setup.
         </p>
         <div className={styles.links}>
           <Link href="/business/domains">My Domains</Link>
@@ -221,8 +221,8 @@ export function DomainMarketplace({
         )}
         {unavailable && (
           <p className={styles.notice}>
-            The domain catalogue is being prepared. No prices or availability
-            have been invented.
+            The domain catalogue is being prepared. Please check back shortly or
+            contact JKTL for help.
           </p>
         )}
         <section className={styles.section}>
@@ -269,10 +269,8 @@ export function DomainMarketplace({
             </button>
           </form>
           <p className={styles.note}>
-            A successful check is not a guarantee of registration. Premium,
-            restricted or uncertain names need a manual review before checkout.
-            When no availability provider is configured, JKTL checks your
-            request manually.
+            Availability can change before registration. Premium or restricted
+            names may require a confirmed quote.
           </p>
           <button
             className={styles.secondary}
@@ -293,14 +291,14 @@ export function DomainMarketplace({
                   <strong>{text(c, "domain")}</strong>
                   <span className={styles.status}>
                     {text(c, "status") === "UNKNOWN"
-                      ? "Awaiting manual check"
+                      ? "Checking for availability"
                       : text(c, "status")}
                   </span>
                 </div>
                 <p className={styles.note}>
                   {c.checked_at
-                    ? `Checked ${new Date(String(c.checked_at)).toLocaleString("en-NG")}. Availability can change before registration.`
-                    : "Your availability request is queued for administrator review."}
+                    ? `Checked ${new Date(String(c.checked_at)).toLocaleString("en-NG", { timeZone: "Africa/Lagos" })}. Availability can change before registration.`
+                    : "Checking for availability. Refresh to see the latest result."}
                 </p>
                 {c.status === "AVAILABLE" &&
                   new Date(text(c, "valid_until")).getTime() > now && (
@@ -601,7 +599,7 @@ export function DomainMarketplace({
                   </button>
                 </div>
                 <p className={styles.note}>
-                  Renewals are pay-per-order. Expired domains require a manual
+                  Renewals are pay-per-order. Expired domains require an
                   eligibility check; do not pay another registration order for a
                   domain you already own.
                 </p>
@@ -738,7 +736,7 @@ export function DomainMarketplace({
         </section>
         {(taskAsset || taskOrder) && (
           <section className={styles.section}>
-            <h2>Request a manual change</h2>
+            <h2>Request a domain change</h2>
             <form
               className={styles.form}
               onSubmit={async (e) => {

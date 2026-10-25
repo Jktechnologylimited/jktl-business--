@@ -17,11 +17,11 @@ export default function Page() {
         ],
         [
           "Availability and payment",
-          "Search results are time-limited checks, not reservations or guarantees. Premium and restricted names need a manual quote. The final registration or renewal total, period and current future renewal price are shown before your one-off NGN payment. No domain is bought automatically after payment.",
+          "Search results are time-limited checks, not reservations or guarantees. Premium and restricted names need a confirmed quote. The final registration or renewal total, period and current future renewal price are shown before your one-off NGN payment. No domain is bought automatically after payment.",
         ],
         [
-          "Manual fulfillment",
-          "Verified payments enter a JKTL fulfillment queue. Registration, renewal, nameserver changes, DNS changes and transfers are performed manually. A domain becomes active, or its expiry changes, only after registrar confirmation is recorded.",
+          "Registration and fulfillment",
+          "Verified payments enter a JKTL fulfillment queue. Registration, renewal, nameserver changes, DNS changes and transfers are completed by JKTL. A domain becomes active, or its expiry changes, only after registrar confirmation is recorded.",
         ],
         [
           "If registration fails",

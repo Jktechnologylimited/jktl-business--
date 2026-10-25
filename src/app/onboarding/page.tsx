@@ -1,4 +1,5 @@
 "use client";
+import { emailDestination } from "@/lib/product-intent";
 import { T } from "@/components/i18n/LanguageProvider";
 
 import { Suspense, useState } from "react";
@@ -73,7 +74,10 @@ function OnboardingForm() {
   function finish() {
     completeOnboarding(businessType, displayName);
     const selected = pendingTemplate(params.get("template"));
-    router.push(selected ? templateEditorPath(selected) : "/business");
+    router.push(
+      emailDestination(params) ||
+        (selected ? templateEditorPath(selected) : "/business"),
+    );
   }
 
   return (

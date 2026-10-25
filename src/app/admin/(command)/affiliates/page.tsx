@@ -31,7 +31,7 @@ export default async function AdminAffiliatesPage() {
         businesses that sign up through their referral link, for as long as that business stays subscribed. Payouts
         are manual — you pay the affiliate yourself and log it here so their balance reflects it.
       </p>
-      <AffiliateManager initialAffiliates={affiliates} initialPayoutRequests={payoutRequests} origin={appOrigin()} />
+      <AffiliateManager initialAffiliates={affiliates.filter(a=>a.programme!=="partner")} initialPayoutRequests={payoutRequests} origin={appOrigin()} />
     </div>
   );
 }

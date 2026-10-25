@@ -1,3 +1,4 @@
+import {FeatureBadgeProvider} from "@/components/features/FeatureBadge";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { LanguageProvider } from "@/components/i18n/LanguageProvider";
 import type { Metadata, Viewport } from "next";
@@ -59,12 +60,12 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="font-body antialiased">
-        <LanguageProvider>
+        <LanguageProvider><FeatureBadgeProvider>
           <AppBootstrap />
           {children}
           <Toaster />
           <InstallPrompt />
-        </LanguageProvider>
+        </FeatureBadgeProvider></LanguageProvider>
       </body>
     </html>
   );
