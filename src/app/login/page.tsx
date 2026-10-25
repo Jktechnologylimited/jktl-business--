@@ -1,4 +1,5 @@
 "use client";
+import { SignInFrame } from "@/components/auth/SignInFrame";
 import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
 
 import { Suspense, useEffect, useState } from "react";
@@ -48,11 +49,14 @@ function LoginForm() {
       return;
     }
     const nextTemplate = pendingTemplate(params.get("template"));
+    if (params.get("next") === "tycoon") { router.push("/play/tycoon"); return; }
     router.push(nextTemplate ? templateEditorPath(nextTemplate) : "/business");
   }
 
+  useEffect(() => { if (params.get("next") === "tycoon" && hydrated && authenticated && mode === "live") router.replace("/play/tycoon"); }, [params, hydrated, authenticated, mode, router]);
+
   return (
-    <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
+    <SignInFrame kind="business"><div className="mx-auto flex max-w-sm flex-col justify-center">
       <div className="mb-4 flex justify-end">
         <LanguageSwitcher />
       </div>
@@ -141,7 +145,7 @@ function LoginForm() {
           <T>Open salon demo</T>
         </Button>
       </div>
-    </div>
+    </div></SignInFrame>
   );
 }
 

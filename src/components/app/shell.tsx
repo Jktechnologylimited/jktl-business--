@@ -143,6 +143,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
+        <Link href="/play/tycoon" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">🎮 Business Tycoon</Link>
         </nav>
         <div className="border-t border-border p-3">
           <details className="group relative">

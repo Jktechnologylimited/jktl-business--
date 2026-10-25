@@ -45,7 +45,7 @@ export function AffiliateLanding() {
             </Link>
           </div>
           <Link href="/affiliates/login" className="text-sm font-medium text-primary">
-            Partner sign in
+            Affiliate sign in
           </Link>
         </div>
       </header>
@@ -53,7 +53,7 @@ export function AffiliateLanding() {
       <main className="mx-auto max-w-3xl px-5 py-10">
         <div className="flex items-center gap-2 text-primary">
           <Handshake className="size-5" />
-          <span className="text-sm font-semibold uppercase tracking-wide">Partner programme</span>
+          <span className="text-sm font-semibold uppercase tracking-wide">JKTL Affiliates</span>
         </div>
 
         <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
@@ -69,10 +69,11 @@ export function AffiliateLanding() {
             Apply to join <ArrowRight className="size-4" />
           </Link>
           <Link href="/affiliates/login" className="text-sm font-medium text-primary">
-            Already a partner? Sign in
+            Already an affiliate? Sign in
           </Link>
         </div>
 
+        <section className="mt-8 rounded-2xl border border-border bg-surface p-5"><h2 className="font-display text-lg font-semibold text-ink">For creators, influencers and business educators</h2><p className="mt-2 text-sm text-ink-muted">Introduce JKTL to your audience and earn on qualifying purchases. Signup bonuses are held until a qualifying subscription is paid.</p><p className="mt-3 text-sm text-ink-muted">Developers, marketing agencies, business consultants and CAC registration agents serving clients directly can apply for JKTL Partners, with terms agreed separately.</p><a href="https://jktl.com.ng/partners" className="mt-3 inline-block text-sm font-medium text-primary">Explore JKTL Partners →</a></section>
         {/* The offer, in the order it happens. */}
         <section className="mt-10">
           <h2 className="font-display text-lg font-semibold text-ink">How you get paid</h2>
@@ -145,7 +146,7 @@ export function AffiliateLanding() {
               Apply to join
             </Link>
             <Link href="/affiliates/login" className={buttonVariants({ variant: "outline" })}>
-              Partner sign in
+              Affiliate sign in
             </Link>
           </div>
         </section>

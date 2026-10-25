@@ -177,8 +177,8 @@ export const translations: Record<
     "Your preferred name": "Sunan da kake so",
     Extension: "Ƙarin sunan yanar gizo",
     "Explore domains": "Bincika sunayen yanar gizo",
-    "JKTL handles registration requests through Go54. Availability, eligibility and the full price are confirmed before you pay. Searching here does not reserve a domain.":
-      "JKTL yana sarrafa buƙatun rajista ta Go54. Za a tabbatar da samuwa, cancanta da cikakken farashi kafin ka biya. Wannan binciken ba ya ajiye suna.",
+    "JKTL handles registration requests. Availability, eligibility and the full price are confirmed before you pay. Searching here does not reserve a domain.":
+      "JKTL yana sarrafa buƙatun rajista. Za a tabbatar da samuwa, cancanta da cikakken farashi kafin ka biya. Wannan binciken ba ya ajiye suna.",
     "START WITH YOUR IDENTITY": "FARA DA ASALINKA",
     "Made for a Nigerian name.": "An yi don sunan Najeriya.",
     "Your website, email address and brand can share one memorable name.":
@@ -624,8 +624,8 @@ export const translations: Record<
       "Kayan kasuwanci na asali da duk samfura suna nan. Sunayen yanar gizo, imel, AI da ayyuka na musamman suna da farashi dabam. Duba abubuwan da ake samu da cikakken kuɗi kafin biya.",
     "No. These are name suggestions and extension choices. The JKTL team confirms live registrar availability before quoting or taking payment.":
       "A’a. Waɗannan shawarwarin suna ne da zaɓin ƙarin suna. Ƙungiyar JKTL tana tabbatar da ainihin samuwa kafin farashi ko karɓar kuɗi.",
-    "JKTL manages your request and fulfils domain registration through Go54 after confirming the quote, payment and any registry requirements.":
-      "JKTL yana sarrafa buƙatarka yana yin rajista ta Go54 bayan tabbatar da farashi, biyan kuɗi da bukatun rajista.",
+    "JKTL manages your request and fulfils domain registration after confirming the quote, payment and any registry requirements.":
+      "JKTL yana sarrafa buƙatarka yana yin rajista bayan tabbatar da farashi, biyan kuɗi da bukatun rajista.",
     "A free JKTL subdomain is included. Registration of a separate domain and its annual renewal are quoted independently.":
       "Adireshin JKTL na kyauta yana ciki. Ana bayar da farashin rajistar suna dabam da sabuntawar shekara dabam.",
     "The JKTL team will confirm registrar availability, eligibility, registration price and renewal price before requesting payment. Your domain has not yet been registered or reserved.":
@@ -636,8 +636,8 @@ export const translations: Record<
       "Sunayen ƙasa ko masu sharadi na iya buƙatar zama a ƙasar ko takardun shaida. Ƙungiyar za ta tabbatar da tallafin rajista, sunaye na musamman, cancantar canja wuri da sharuɗɗan ƙarshe.",
     "One-year request. The quote confirms the permitted term, any transfer requirements, taxes and renewal dates. No payment or automatic registration starts from this form.":
       "Buƙatar shekara ɗaya. Tayin farashi zai tabbatar da wa’adin da aka yarda, bukatun canja wuri, haraji da ranakun sabuntawa. Wannan fom ba ya fara biyan kuɗi ko rajista ta atomatik.",
-    "JKTL checks availability and confirms registration and renewal totals through Go54.":
-      "JKTL yana duba samuwa yana tabbatar da jimillar rajista da sabuntawa ta Go54.",
+    "JKTL checks availability and confirms registration and renewal totals.":
+      "JKTL yana duba samuwa yana tabbatar da jimillar rajista da sabuntawa.",
     "After payment and any required checks, the team completes registration and helps you connect your website.":
       "Bayan biya da binciken da ake buƙata, ƙungiyar tana kammala rajista tana taimaka maka haɗa shafinka.",
     "You can request a transfer assessment. The team confirms registry rules, transfer eligibility, authorisation requirements and any applicable cost.":
@@ -847,8 +847,8 @@ export const translations: Record<
     "Your preferred name": "Aha ị chọrọ",
     Extension: "Mgbakwunye aha",
     "Explore domains": "Chọgharịa aha ngalaba",
-    "JKTL handles registration requests through Go54. Availability, eligibility and the full price are confirmed before you pay. Searching here does not reserve a domain.":
-      "JKTL na-elekọta arịrịọ ndebanye aha site na Go54. A ga-ekwenye nnweta, ntozu na ọnụahịa zuru ezu tupu ị kwụọ ụgwọ. Nchọgharị a anaghị edobe aha ngalaba.",
+    "JKTL handles registration requests. Availability, eligibility and the full price are confirmed before you pay. Searching here does not reserve a domain.":
+      "JKTL na-elekọta arịrịọ ndebanye aha. A ga-ekwenye nnweta, ntozu na ọnụahịa zuru ezu tupu ị kwụọ ụgwọ. Nchọgharị a anaghị edobe aha ngalaba.",
     "START WITH YOUR IDENTITY": "BIDO NA NJIRIMARA GỊ",
     "Made for a Nigerian name.": "E mere maka aha Naịjirịa.",
     "Your website, email address and brand can share one memorable name.":
@@ -1288,8 +1288,8 @@ export const translations: Record<
       "Ngwa azụmahịa mbụ na ụdị weebụsaịtị niile ka dị. Aha ngalaba, email, AI na ọrụ pụrụ iche nwere nkọwa na ọnụahịa iche. Nyochaa ikike dị ugbu a na ngụkọta tupu ịkwụ ụgwọ.",
     "No. These are name suggestions and extension choices. The JKTL team confirms live registrar availability before quoting or taking payment.":
       "Mba. Ndị a bụ aro aha na nhọrọ mgbakwunye. Ndị otu JKTL na-ekwenye nnweta n’ezie tupu inye ọnụahịa ma ọ bụ ịnata ụgwọ.",
-    "JKTL manages your request and fulfils domain registration through Go54 after confirming the quote, payment and any registry requirements.":
-      "JKTL na-elekọta arịrịọ gị ma debanye aha site na Go54 mgbe ekwenyere ọnụahịa, ịkwụ ụgwọ na ihe ndị ndebanye chọrọ.",
+    "JKTL manages your request and fulfils domain registration after confirming the quote, payment and any registry requirements.":
+      "JKTL na-elekọta arịrịọ gị ma debanye aha mgbe ekwenyere ọnụahịa, ịkwụ ụgwọ na ihe ndị ndebanye chọrọ.",
     "A free JKTL subdomain is included. Registration of a separate domain and its annual renewal are quoted independently.":
       "Aha ngalaba JKTL n’efu so. Ndebanye aha nke ọzọ na mmegharị kwa afọ nwere ọnụahịa iche.",
     "The JKTL team will confirm registrar availability, eligibility, registration price and renewal price before requesting payment. Your domain has not yet been registered or reserved.":
@@ -1300,8 +1300,8 @@ export const translations: Record<
       "Aha ngalaba obodo na ndị nwere mgbochi nwere ike ịchọ ọnụnọ obodo ma ọ bụ akwụkwọ nkwado. Ndị otu ga-ekwenye nkwado ndebanye, aha pụrụ iche, ntozu nnyefe na usoro ikpeazụ.",
     "One-year request. The quote confirms the permitted term, any transfer requirements, taxes and renewal dates. No payment or automatic registration starts from this form.":
       "Arịrịọ otu afọ. Ọnụahịa ga-egosi oge akwadoro, ihe nnyefe chọrọ, ụtụ na ụbọchị mmegharị. Fọm a anaghị amalite ịkwụ ụgwọ ma ọ bụ ndebanye akpaaka.",
-    "JKTL checks availability and confirms registration and renewal totals through Go54.":
-      "JKTL na-enyocha nnweta ma kwado ngụkọta ndebanye aha na mmegharị site na Go54.",
+    "JKTL checks availability and confirms registration and renewal totals.":
+      "JKTL na-enyocha nnweta ma kwado ngụkọta ndebanye aha na mmegharị.",
     "After payment and any required checks, the team completes registration and helps you connect your website.":
       "Mgbe ịkwụ ụgwọ na nyocha achọrọ gasịrị, ndị otu na-emecha ndebanye aha ma nyere gị aka ijikọ weebụsaịtị gị.",
     "You can request a transfer assessment. The team confirms registry rules, transfer eligibility, authorisation requirements and any applicable cost.":
@@ -1509,8 +1509,8 @@ export const translations: Record<
     "Your preferred name": "Orúkọ tí o fẹ́",
     Extension: "Àfikún orúkọ ẹ̀ka",
     "Explore domains": "Ṣàwárí orúkọ ẹ̀ka",
-    "JKTL handles registration requests through Go54. Availability, eligibility and the full price are confirmed before you pay. Searching here does not reserve a domain.":
-      "JKTL ń bójú tó ìbéèrè ìforúkọsílẹ̀ nípasẹ̀ Go54. A ó fìdí wíwà, yíyẹ àti iye owó kíkún múlẹ̀ kí o tó sanwó. Ìwádìí yìí kò fi orúkọ ẹ̀ka pamọ́.",
+    "JKTL handles registration requests. Availability, eligibility and the full price are confirmed before you pay. Searching here does not reserve a domain.":
+      "JKTL ń bójú tó ìbéèrè ìforúkọsílẹ̀. A ó fìdí wíwà, yíyẹ àti iye owó kíkún múlẹ̀ kí o tó sanwó. Ìwádìí yìí kò fi orúkọ ẹ̀ka pamọ́.",
     "START WITH YOUR IDENTITY": "BẸRẸ PẸ̀LÚ ÌDÁNIMỌ̀ RẸ",
     "Made for a Nigerian name.": "Fún orúkọ Nàìjíríà.",
     "Your website, email address and brand can share one memorable name.":
@@ -1944,8 +1944,8 @@ export const translations: Record<
       "Àwọn ohun èlò iṣẹ́ ìpìlẹ̀ àti gbogbo àpẹẹrẹ ojúlé ṣì wà. Orúkọ ẹ̀ka, ímeèlì, AI àti iṣẹ́ àkànṣe ní ètò ọ̀tọ̀. Ṣàyẹ̀wò ohun tí ó wà àti iye owó kíkún kí o tó sanwó.",
     "No. These are name suggestions and extension choices. The JKTL team confirms live registrar availability before quoting or taking payment.":
       "Rárá. Àwọn wọ̀nyí jẹ́ ìmọ̀ràn orúkọ àti àṣàyàn àfikún. Ẹgbẹ́ JKTL ń fìdí wíwà rẹ̀ múlẹ̀ kí a tó fún ọ ní ìdíyelé tàbí gba owó.",
-    "JKTL manages your request and fulfils domain registration through Go54 after confirming the quote, payment and any registry requirements.":
-      "JKTL ń bójú tó ìbéèrè rẹ, ó sì ń forúkọsílẹ̀ nípasẹ̀ Go54 lẹ́yìn ìfọwọ́sí ìdíyelé, ìsanwó àti àwọn ohun tí a nílò.",
+    "JKTL manages your request and fulfils domain registration after confirming the quote, payment and any registry requirements.":
+      "JKTL ń bójú tó ìbéèrè rẹ, ó sì ń forúkọsílẹ̀ lẹ́yìn ìfọwọ́sí ìdíyelé, ìsanwó àti àwọn ohun tí a nílò.",
     "A free JKTL subdomain is included. Registration of a separate domain and its annual renewal are quoted independently.":
       "Orúkọ abẹ́-ẹ̀ka JKTL ọ̀fẹ́ wà nínú ètò. Ìforúkọsílẹ̀ orúkọ ẹ̀ka ọ̀tọ̀ àti ìtunṣe ọdún ní ìdíyelé ọ̀tọ̀.",
     "The JKTL team will confirm registrar availability, eligibility, registration price and renewal price before requesting payment. Your domain has not yet been registered or reserved.":
@@ -1956,8 +1956,8 @@ export const translations: Record<
       "Orúkọ ẹ̀ka orílẹ̀-èdè àti àwọn tó ní òfin pàtàkì lè nílò ìbùgbé níbẹ̀ tàbí ìwé ẹ̀rí. Ẹgbẹ́ wa yóò fìdí àtìlẹ́yìn, orúkọ pàtàkì, yíyẹ fún gbígbé àti òfin ìforúkọsílẹ̀ múlẹ̀.",
     "One-year request. The quote confirms the permitted term, any transfer requirements, taxes and renewal dates. No payment or automatic registration starts from this form.":
       "Ìbéèrè ọdún kan. Ìwé ìdíyelé yóò sọ àkókò tó yẹ, ohun tí gbígbé nílò, owó orí àti ọjọ́ ìtunṣe. Fọ́ọ̀mù yìí kì í bẹ̀rẹ̀ ìsanwó tàbí ìforúkọsílẹ̀ aládàáṣiṣẹ́.",
-    "JKTL checks availability and confirms registration and renewal totals through Go54.":
-      "JKTL ń ṣàyẹ̀wò wíwà, ó sì ń fìdí àpapọ̀ owó ìforúkọsílẹ̀ àti ìtunṣe múlẹ̀ nípasẹ̀ Go54.",
+    "JKTL checks availability and confirms registration and renewal totals.":
+      "JKTL ń ṣàyẹ̀wò wíwà, ó sì ń fìdí àpapọ̀ owó ìforúkọsílẹ̀ àti ìtunṣe múlẹ̀.",
     "After payment and any required checks, the team completes registration and helps you connect your website.":
       "Lẹ́yìn ìsanwó àti àyẹ̀wò tó yẹ, ẹgbẹ́ wa yóò parí ìforúkọsílẹ̀ kí ó sì ràn ọ́ lọ́wọ́ láti so ojúlé rẹ pọ̀.",
     "You can request a transfer assessment. The team confirms registry rules, transfer eligibility, authorisation requirements and any applicable cost.":

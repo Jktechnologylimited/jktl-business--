@@ -125,7 +125,7 @@ export const DIGITAL_PRODUCTS = [
     description:
       "Register a domain, connect one you own, and publish with managed hosting.",
     details: [
-      "Go54 domain registration is manually provisioned after a quote and availability confirmation.",
+      "Domain registration is manually provisioned after a quote and availability confirmation.",
       "Domain renewals are annual and separate from your website subscription.",
       "Managed website hosting and supported SSL are included with your website plan — no second hosting fee.",
       "Standalone hosting is quoted according to your requirements.",

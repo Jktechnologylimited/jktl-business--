@@ -1,4 +1,5 @@
 "use client";
+import { SignInFrame } from "@/components/auth/SignInFrame";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -35,7 +36,7 @@ export default function AffiliateLoginPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
+    <SignInFrame kind="affiliate"><div className="mx-auto flex max-w-sm flex-col justify-center">
       <div className="flex items-center gap-2.5">
         <JktlMark className="size-9" />
         <div>
@@ -76,6 +77,6 @@ export default function AffiliateLoginPage() {
           Apply here
         </Link>
       </p>
-    </div>
+    </div></SignInFrame>
   );
 }

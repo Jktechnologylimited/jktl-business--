@@ -140,6 +140,35 @@ export function TemplateGallery({
                   }
                 }}
               />
+              {template.kind !== "blank" && (
+                <div className={styles.photoStrip}>
+                  <img
+                    ref={(node) => {
+                      if (
+                        node?.complete &&
+                        !node.naturalWidth &&
+                        !node.dataset.photoFallback
+                      ) {
+                        node.dataset.photoFallback = "true";
+                        node.src = "/brand/entrepreneur-studio.png";
+                      }
+                    }}
+                    src={template.document.heroImage}
+                    alt={`${template.category} inspiration`}
+                    loading="lazy"
+                    onError={(e) => {
+                      if (!e.currentTarget.dataset.photoFallback) {
+                        e.currentTarget.dataset.photoFallback = "true";
+                        e.currentTarget.src = "/brand/entrepreneur-studio.png";
+                      }
+                    }}
+                  />
+                  <span>
+                    {template.document.brandName}
+                    <small>Picture your business here</small>
+                  </span>
+                </div>
+              )}
               <span className={styles.previewLabel}>Live preview ↗</span>
             </Link>
             <div className={styles.cardTitle}>
