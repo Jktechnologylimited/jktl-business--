@@ -1,4 +1,5 @@
 "use client";
+import { SupportDock } from "@/components/support/support-dock";
 import { ThemeControl } from "@/components/settings/theme-control";
 import {FeatureBadge} from "@/components/features/FeatureBadge";
 import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
@@ -62,6 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-paper lg:pl-60">
+      <SupportDock />
       {/*
         Sync runs behind the scenes: while the outbox is draining the user sees a
         small spinner, not a running commentary on how many changes are queued.

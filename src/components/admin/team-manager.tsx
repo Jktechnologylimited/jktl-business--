@@ -183,6 +183,7 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
           <Field label="Role" htmlFor="team-role" hint={ROLE_DESCRIPTION[role]}>
             <Select id="team-role" value={role} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as AdminRole)}>
               <option value="affiliate_manager">{ROLE_LABEL.affiliate_manager}</option>
+              <option value="support">{ROLE_LABEL.support}</option>
               <option value="editor">{ROLE_LABEL.editor}</option>
               <option value="analyst">{ROLE_LABEL.analyst}</option>
               <option value="owner">{ROLE_LABEL.owner}</option>

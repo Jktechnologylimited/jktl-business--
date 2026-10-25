@@ -1,5 +1,5 @@
 ALTER TABLE admin_users DROP CONSTRAINT IF EXISTS admin_users_role_check;
-ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_check CHECK (role IN ('owner','affiliate_manager','analyst','editor'));
+ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_check CHECK (role IN ('owner','affiliate_manager','analyst','editor','support'));
 CREATE TABLE IF NOT EXISTS jktl_publications (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  slug text NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),

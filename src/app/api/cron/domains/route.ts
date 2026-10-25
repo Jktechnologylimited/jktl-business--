@@ -1,3 +1,4 @@
+import { processSupportNotifications } from "@/lib/support/notifications";
 import { runEmailMaintenance } from "@/lib/business-email/notifications";
 import { runCustomMaintenance } from "@/lib/custom/notifications";
 import { timingSafeEqual } from "node:crypto";
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const results = await Promise.allSettled([
+      processSupportNotifications(),
       runDomainMaintenance(),
       runCustomMaintenance(),
       runEmailMaintenance(),

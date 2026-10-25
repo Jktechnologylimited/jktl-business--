@@ -14,13 +14,23 @@ import { can, type AdminCapability } from "./admin-permissions";
  * Without this, an affiliate manager who signs in and is sent to `/admin` gets a
  * stack trace, because the page's capability check throws inside a render.
  */
-export async function guardAdminPage(capability: AdminCapability): Promise<void> {
+export async function guardAdminPage(
+  capability: AdminCapability,
+): Promise<void> {
   const admin = await getAdminSession();
   if (!admin) redirect("/admin/login");
 
   if (!can(admin.role, capability)) {
     // Send them somewhere they can actually use, rather than a dead end. If they
     // cannot even see insights, the login page is the honest destination.
-    redirect(can(admin.role, "view_insights") ? "/admin/insights" : can(admin.role, "manage_content") ? "/admin/content" : "/admin/login");
+    redirect(
+      can(admin.role, "manage_support")
+        ? "/admin/support"
+        : can(admin.role, "view_insights")
+          ? "/admin/insights"
+          : can(admin.role, "manage_content")
+            ? "/admin/content"
+            : "/admin/login",
+    );
   }
 }

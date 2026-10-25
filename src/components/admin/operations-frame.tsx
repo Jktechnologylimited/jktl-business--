@@ -4,6 +4,8 @@ import { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  LifeBuoy,
+  Star,
   LayoutDashboard,
   Users,
   Mail,
@@ -47,6 +49,8 @@ export function OperationsFrame({
     return () => window.removeEventListener("keydown", escape);
   }, [open]);
   const icons: Record<string, typeof Users> = {
+    "/admin/support": LifeBuoy,
+    "/admin/reviews": Star,
     "/admin": Users,
     "/admin/insights": ChartNoAxesCombined,
     "/admin/affiliates": Handshake,

@@ -1,137 +1,21 @@
-"use client";
-import { T } from "@/components/i18n/LanguageProvider";
-
-import { useMemo, useState } from "react";
-import { LifeBuoy, MessageCircle } from "lucide-react";
-import { PageHeader } from "@/components/app/page-header";
-import { SearchInput } from "@/components/app/search-input";
-import { FilterTabs } from "@/components/app/filter-tabs";
-import { GuideBubble } from "@/components/help/guide-bubble";
-import { AddToHomeScreenGuide } from "@/components/help/add-to-home-screen-guide";
-import { GUIDE_CATEGORIES, GUIDES } from "@/lib/guides";
-import { useCurrentIndustry } from "@/lib/store";
-import { waLink } from "@/lib/contact";
-
-const ALL = "all";
-const SUPPORT_PHONE = "07036580994";
-
+import { Suspense } from "react";
+import { CustomerSupport } from "@/components/support/customer-support";
+import { HelpLibrary } from "@/components/support/help-library";
 export default function HelpPage() {
-  const industry = useCurrentIndustry();
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string>(ALL);
-  const supportLink = waLink(
-    SUPPORT_PHONE,
-    "Hi JKTL Business, I need some help with my account.",
-  );
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return GUIDES.filter((g) => {
-      if (category !== ALL && g.category !== category) return false;
-      if (!q) return true;
-      const haystack = [g.question, ...g.answer, ...(g.keywords ?? [])]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [query, category]);
-
-  const grouped = useMemo(() => {
-    const byCategory = new Map<string, typeof GUIDES>();
-    for (const g of filtered) {
-      const list = byCategory.get(g.category) ?? [];
-      list.push(g);
-      byCategory.set(g.category, list);
-    }
-    return GUIDE_CATEGORIES.filter((c) => byCategory.has(c.id)).map((c) => ({
-      ...c,
-      items: byCategory.get(c.id)!,
-    }));
-  }, [filtered]);
-
   return (
-    <div className="flex flex-col gap-5">
-      <PageHeader title="Help & guides" />
-      <p className="-mt-2 text-sm text-ink-muted">
-        <T>Answers to common questions about running </T>
-        {industry.productName}
-        <T>— tap any question to open it up.</T>
-      </p>
-
-      {supportLink ? (
-        <a
-          href={supportLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary"
-        >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
-            <MessageCircle className="size-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-ink">
-              <T>Need more help? Chat with support</T>
-            </span>
-            <span className="block text-xs text-ink-muted">
-              <T>Message us on WhatsApp — we usually reply quickly</T>
-            </span>
-          </span>
-        </a>
-      ) : null}
-
-      <SearchInput
-        value={query}
-        onChange={setQuery}
-        placeholder={'Search guides — e.g. "partial payment"'}
-      />
-
-      <FilterTabs
-        options={[
-          { value: ALL, label: "All" },
-          ...GUIDE_CATEGORIES.map((c) => ({ value: c.id, label: c.label })),
-        ]}
-        value={category}
-        onChange={setCategory}
-      />
-
-      {grouped.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-16 text-center">
-          <LifeBuoy className="size-6 text-ink-faint" />
-          <p className="text-sm text-ink-muted">
-            <T>No guides match &quot;</T>
-            {query}
-            <T>&quot;.</T>
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-7">
-          {grouped.map((group) => (
-            <section key={group.id} className="flex flex-col gap-2.5">
-              <h2 className="font-display text-sm font-semibold text-ink">
-                {group.label}
-              </h2>
-              <div className="flex flex-col gap-2.5">
-                {group.items.map((item) =>
-                  item.custom === "add-to-home-screen" ? (
-                    <GuideBubble key={item.id} question={item.question}>
-                      <div className="flex flex-col gap-3">
-                        <p>{item.answer[0]}</p>
-                        <AddToHomeScreenGuide />
-                      </div>
-                    </GuideBubble>
-                  ) : (
-                    <GuideBubble
-                      key={item.id}
-                      question={item.question}
-                      answer={item.answer}
-                    />
-                  ),
-                )}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
+    <div className="space-y-12">
+      <Suspense fallback={<p>Loading help…</p>}>
+        <CustomerSupport />
+      </Suspense>
+      <HelpLibrary />
+      <a
+        className="inline-block text-sm text-primary underline"
+        href="https://wa.me/2347036580994?text=Hi%20JKTL%20Business%2C%20I%20need%20help%20with%20my%20account."
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Contact the team on WhatsApp →
+      </a>
     </div>
   );
 }

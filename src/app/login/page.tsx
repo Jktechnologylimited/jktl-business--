@@ -50,6 +50,10 @@ function LoginForm() {
       setError(result.error);
       return;
     }
+    if (params.get("next") === "support") {
+      router.replace("/business/help");
+      return;
+    }
     if (params.get("next") === "email") {
       router.replace(
         "/business/email" +
@@ -84,7 +88,8 @@ function LoginForm() {
   useEffect(() => {
     if (hydrated && authenticated && mode === "live") {
       const value = params.get("next");
-      if (value === "email")
+      if (value === "support") router.replace("/business/help");
+      else if (value === "email")
         router.replace(
           "/business/email" +
             (params.get("emailPlan")
