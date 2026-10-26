@@ -146,7 +146,7 @@ export async function verifyEmailReference(reference: string) {
     ])
   )[0];
   if (!current?.provider_transaction)
-    throw Error("Payment requires administrator review.");
+    throw Error("Payment requires team review.");
   return true;
 }
 export async function handleEmailEvent(

@@ -411,7 +411,7 @@ export async function saveEmailPlanAction(input: Record<string, unknown>) {
       ],
     );
     if (!rows.length)
-      throw Error("Reload this plan; another administrator updated it.");
+      throw Error("Reload this plan; another team member updated it.");
     return { ok: true as const };
   } catch (e) {
     return failure(e);

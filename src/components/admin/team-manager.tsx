@@ -136,7 +136,7 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
         await configureGrowthStaffAction(f);
         window.location.reload();
       } catch {
-        show("Could not change staff access.", "danger");
+        show("Could not change team access.", "danger");
       }
       setBusy("");
       return;

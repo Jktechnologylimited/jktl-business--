@@ -37,7 +37,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
       }
     } catch {
       setMessage(
-        "Could not save. Check configuration and your administrator session.",
+        "Could not save. Check configuration and your team member session.",
       );
     } finally {
       setBusy(false);
@@ -52,7 +52,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
   return (
     <div className={styles.page}>
       <header className={styles.hero}>
-        <p>JKTL ADMIN / BUSINESS EMAIL</p>
+        <p>JKTL TEAM / BUSINESS EMAIL</p>
         <h1>
           Professional email.
           <br />

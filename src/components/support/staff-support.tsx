@@ -99,7 +99,7 @@ export function StaffSupport() {
         <p className="mt-3 text-sm leading-7 text-ink-muted">
           Claim a request, continue the conversation and help the customer
           finish their next step. Sensitive requests go to an owner
-          administrator.
+          team member.
         </p>
       </header>
       {guide && (
@@ -160,7 +160,7 @@ export function StaffSupport() {
                   const result = await actions.supportDeviceAction(sub);
                   if (!result.ok) throw Error(result.error);
                   setMessage(
-                    "This device is registered for support alerts while your staff session remains active.",
+                    "This device is registered for support alerts while your team session remains active.",
                   );
                 })
               }
@@ -192,7 +192,7 @@ export function StaffSupport() {
                     if (!result.ok) throw Error(result.error);
                   }
                   setMessage(
-                    "Support alerts disabled for this staff account on this device.",
+                    "Support alerts disabled for this team account on this device.",
                   );
                 })
               }
@@ -258,7 +258,7 @@ export function StaffSupport() {
               <p className="my-3 text-sm text-ink-muted">
                 {String(data.case.status)} ·{" "}
                 {data.case.sensitive
-                  ? "Administrator review required"
+                  ? "Team review required"
                   : "Routine assistance"}
               </p>
               {(!data.case.assigned_to || isOwner) && (
@@ -300,7 +300,7 @@ export function StaffSupport() {
                   ["reply", "Send reply"],
                   ["note", "Save internal note"],
                   ["resolve", "Reply and resolve"],
-                  ["escalate", "Escalate to administrator"],
+                  ["escalate", "Escalate to team member"],
                 ].map(([kind, label]) => (
                   <button
                     disabled={

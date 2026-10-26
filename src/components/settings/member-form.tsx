@@ -20,7 +20,7 @@ export function MemberForm({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    onSubmit({ name, email, role, title: title || (role === "manager" ? "Manager" : "Staff") });
+    onSubmit({ name, email, role, title: title || (role === "manager" ? "Manager" : "Team") });
   }
 
   return (
@@ -34,7 +34,7 @@ export function MemberForm({
       <div className="grid grid-cols-2 gap-3">
         <Field label="Role" htmlFor="mem-role">
           <Select id="mem-role" value={role} onChange={(e) => setRole(e.target.value as NewMemberInput["role"])}>
-            <option value="staff">Staff</option>
+            <option value="staff">Team</option>
             <option value="manager">Manager</option>
           </Select>
         </Field>

@@ -57,7 +57,7 @@ export async function getAdminSession(): Promise<AdminUser | null> {
  * to `/admin/login` on this rather than letting it surface as an error. */
 export async function requireAdminSession(): Promise<AdminUser> {
   const admin = await getAdminSession();
-  if (!admin) throw new Error("Not signed in as admin.");
+  if (!admin) throw new Error("Not signed in to a team account.");
   return admin;
 }
 

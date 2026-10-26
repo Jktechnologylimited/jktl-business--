@@ -68,7 +68,7 @@ const salon: IndustryConfig = {
       { href: "/business/services", label: "Services", description: "Hair, nails, makeup and more", group: "Catalogue & stock" },
       { href: "/business/products", label: "Products", description: "Hair, care and retail stock", group: "Catalogue & stock" },
       { href: "/business/inventory", label: "Inventory", description: "Stock levels and movements", group: "Catalogue & stock" },
-      { href: "/business/expenses", label: "Expenses", description: "Rent, power, staff and supplies", group: "Money" },
+      { href: "/business/expenses", label: "Expenses", description: "Rent, power, team and supplies", group: "Money" },
       { href: "/business/invoices", label: "Invoices", description: "Bills and outstanding payments", group: "Money" },
       { href: "/business/reports", label: "Reports", description: "Sales, bookings and stock", group: "Money" },
       { href: "/business/analytics", label: "Analytics", description: "Trends, ageing, profit and health", group: "Money" },
@@ -95,8 +95,8 @@ function stub(id: BusinessType, label: string, bookingLabel: string, catalogLabe
     tagline: "Manage your business from your phone.",
     bookingLabel,
     bookingLabelPlural: `${bookingLabel}s`,
-    staffLabel: "Staff",
-    staffLabelPlural: "Staff",
+    staffLabel: "Team",
+    staffLabelPlural: "Team",
     catalogLabel,
   };
 }

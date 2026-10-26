@@ -20,7 +20,7 @@ export default async function Page({
       <h1 className="text-3xl font-semibold">Apply with your JKTL account</h1>
       <p>
         Your Business name and email identify the applicant. No separate
-        password is created. Applications require administrator approval before
+        password is created. Applications require team member approval before
         referral eligibility or Partner access.
       </p>
       <ActionForm

@@ -144,7 +144,7 @@ const BOOKING_STATUSES: Booking["status"][] = ["pending", "confirmed", "complete
 const EXPENSE_CATEGORY_LABEL: Record<Expense["category"], string> = {
   rent: "Rent",
   electricity: "Electricity",
-  staff: "Staff",
+  staff: "Team",
   supplies: "Supplies",
   transportation: "Transportation",
   marketing: "Marketing",

@@ -42,17 +42,17 @@ export default function AdminLoginPage() {
               JKTL Business
             </div>
             <div className="flex items-center gap-1 text-xs font-medium text-ink-muted">
-              <ShieldCheck className="size-3.5" /> Command center
+              <ShieldCheck className="size-3.5" /> Team workspace
             </div>
           </div>
         </div>
 
         <h1 className="mt-10 font-display text-2xl font-bold tracking-tight text-ink">
-          Staff & admin sign in
+          Team sign in
         </h1>
         <p className="mt-1.5 text-sm text-ink-muted">
-          Growth & Gaming staff use their normal JKTL Business credentials.
-          Existing administrators use their admin credentials.
+          Sign in with your team account. Existing linked accounts can continue
+          using their Business credentials.
         </p>
 
         <form onSubmit={submit} className="mt-8 flex flex-col gap-4">

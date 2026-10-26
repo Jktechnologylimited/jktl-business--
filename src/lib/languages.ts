@@ -394,7 +394,7 @@ export const translations: Record<
     "Record what comes in, what goes out and the expenses that keep your business running.":
       "Bibiyar kaya da kashe kuɗi. Duba yadda kayan aikin JKTL za su taimaka wa kasuwancinka, ka fara kyauta sannan ka zaɓi ayyukan da kake buƙata.",
     "A workspace your team can share.": "Yi aiki tare da ƙungiyarka",
-    "Use owner, manager and staff roles. New website plans support finite collaborator allowances while existing contractual access remains unchanged.":
+    "Use owner, manager and team member roles. New website plans support finite collaborator allowances while existing contractual access remains unchanged.":
       "Yi aiki tare da ƙungiyarka. Duba yadda kayan aikin JKTL za su taimaka wa kasuwancinka, ka fara kyauta sannan ka zaɓi ayyukan da kake buƙata.",
     "Your business, wherever the day takes you.": "Gudanar da kasuwanci a waya",
     "Use JKTL Business on your phone and install it from a supported browser for easier access.":
@@ -584,7 +584,7 @@ export const translations: Record<
       "Karɓi kuɗi. Gano abubuwan da JKTL ke ba kasuwancinka.",
     "Keep an eye on your products and operating costs.":
       "Bibiyar kaya da kashe kuɗi. Gano abubuwan da JKTL ke ba kasuwancinka.",
-    "Manage access with owner, manager and staff roles.":
+    "Manage access with owner, manager and team member roles.":
       "Yi aiki tare da ƙungiyarka. Gano abubuwan da JKTL ke ba kasuwancinka.",
     "Install JKTL from your browser and work on the go.":
       "Gudanar da kasuwanci a waya. Gano abubuwan da JKTL ke ba kasuwancinka.",
@@ -1058,7 +1058,7 @@ export const translations: Record<
     "Record what comes in, what goes out and the expenses that keep your business running.":
       "Sochie ngwaahịa na mmefu. Chọpụta otu ngwa JKTL nwere ike isi nyere azụmahịa gị aka; bido n’efu ma họrọ ọrụ ị chọrọ.",
     "A workspace your team can share.": "Soro ndị otu gị rụọ ọrụ",
-    "Use owner, manager and staff roles. New website plans support finite collaborator allowances while existing contractual access remains unchanged.":
+    "Use owner, manager and team member roles. New website plans support finite collaborator allowances while existing contractual access remains unchanged.":
       "Soro ndị otu gị rụọ ọrụ. Chọpụta otu ngwa JKTL nwere ike isi nyere azụmahịa gị aka; bido n’efu ma họrọ ọrụ ị chọrọ.",
     "Your business, wherever the day takes you.":
       "Jiri ekwentị lekọta azụmahịa gị",
@@ -1248,7 +1248,7 @@ export const translations: Record<
       "Nata ụgwọ. Chọpụta ihe JKTL na-enye azụmahịa gị.",
     "Keep an eye on your products and operating costs.":
       "Sochie ngwaahịa na mmefu. Chọpụta ihe JKTL na-enye azụmahịa gị.",
-    "Manage access with owner, manager and staff roles.":
+    "Manage access with owner, manager and team member roles.":
       "Soro ndị otu gị rụọ ọrụ. Chọpụta ihe JKTL na-enye azụmahịa gị.",
     "Install JKTL from your browser and work on the go.":
       "Jiri ekwentị lekọta azụmahịa gị. Chọpụta ihe JKTL na-enye azụmahịa gị.",
@@ -1718,7 +1718,7 @@ export const translations: Record<
     "Record what comes in, what goes out and the expenses that keep your business running.":
       "Tọpinpin ọjà àti ìnáwó. Ṣàwárí bí àwọn ohun èlò JKTL ṣe lè ran iṣẹ́ rẹ lọ́wọ́; bẹ̀rẹ̀ lọ́fẹ̀ẹ́ kí o sì yan iṣẹ́ tí o nílò.",
     "A workspace your team can share.": "Bá ẹgbẹ́ rẹ ṣiṣẹ́",
-    "Use owner, manager and staff roles. New website plans support finite collaborator allowances while existing contractual access remains unchanged.":
+    "Use owner, manager and team member roles. New website plans support finite collaborator allowances while existing contractual access remains unchanged.":
       "Bá ẹgbẹ́ rẹ ṣiṣẹ́. Ṣàwárí bí àwọn ohun èlò JKTL ṣe lè ran iṣẹ́ rẹ lọ́wọ́; bẹ̀rẹ̀ lọ́fẹ̀ẹ́ kí o sì yan iṣẹ́ tí o nílò.",
     "Your business, wherever the day takes you.": "Ṣàkóso iṣẹ́ rẹ lórí fóònù",
     "Use JKTL Business on your phone and install it from a supported browser for easier access.":
@@ -1904,7 +1904,7 @@ export const translations: Record<
       "Gba owó. Ṣàwárí ohun tí JKTL ń pèsè fún iṣẹ́ rẹ.",
     "Keep an eye on your products and operating costs.":
       "Tọpinpin ọjà àti ìnáwó. Ṣàwárí ohun tí JKTL ń pèsè fún iṣẹ́ rẹ.",
-    "Manage access with owner, manager and staff roles.":
+    "Manage access with owner, manager and team member roles.":
       "Bá ẹgbẹ́ rẹ ṣiṣẹ́. Ṣàwárí ohun tí JKTL ń pèsè fún iṣẹ́ rẹ.",
     "Install JKTL from your browser and work on the go.":
       "Ṣàkóso iṣẹ́ rẹ lórí fóònù. Ṣàwárí ohun tí JKTL ń pèsè fún iṣẹ́ rẹ.",

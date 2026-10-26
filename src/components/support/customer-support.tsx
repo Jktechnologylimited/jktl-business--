@@ -204,7 +204,7 @@ export function CustomerSupport() {
                   : data.case.status === "WAITING"
                     ? "Waiting for a support agent"
                     : data.case.status === "ESCALATED"
-                      ? "Escalated to an administrator"
+                      ? "Escalated to a team member"
                       : data.case.status === "RESOLVED"
                         ? "Resolved"
                         : "A support agent has taken over"}
@@ -299,7 +299,7 @@ export function CustomerSupport() {
                         void run(() => support.requestHumanAction(caseId, true))
                       }
                     >
-                      Request administrator review
+                      Request team review
                     </button>
                   </div>
                 </>

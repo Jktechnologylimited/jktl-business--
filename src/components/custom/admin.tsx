@@ -48,7 +48,7 @@ export function CustomAdmin({ initial }: { initial: Data }) {
   return (
     <main className={styles.page}>
       <header className={styles.hero}>
-        <p>JKTL ADMIN / CUSTOM PROJECTS</p>
+        <p>JKTL TEAM / CUSTOM PROJECTS</p>
         <h1>
           Independent sites.
           <br />

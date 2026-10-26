@@ -416,7 +416,7 @@ export function ExpenseBreakdownSection({ breakdown }: { breakdown: ExpenseBreak
   if (breakdown.rows.length === 0) {
     return (
       <Card title="Where the money goes" hint="Expenses by category">
-        <EmptyState title="No expenses in this period" description="Log rent, staff and supplies and the biggest cost shows up here." />
+        <EmptyState title="No expenses in this period" description="Log rent, team and supplies and the biggest cost shows up here." />
       </Card>
     );
   }

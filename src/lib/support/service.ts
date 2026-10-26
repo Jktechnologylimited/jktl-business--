@@ -54,7 +54,7 @@ export async function staffCase(caseId: string) {
     )
   )[0];
   if (!c)
-    throw Error("This case needs an assigned agent or owner administrator.");
+    throw Error("This case needs an assigned agent or team owner.");
   return { a, c };
 }
 export async function audit(

@@ -50,7 +50,7 @@ export default async function Page({
     <div className="space-y-5 text-ink">
       <h1 className="text-3xl font-semibold">Partner support queue</h1>
       <Link href="/admin/support" className="underline">
-        Install JKTL and enable staff notifications
+        Install JKTL and enable team notifications
       </Link>
       <p>
         Internal response target: {String(settings?.response_hours || 48)}{" "}
@@ -155,7 +155,7 @@ export default async function Page({
                 key={String(m.id)}
                 className="whitespace-pre-wrap break-words rounded bg-surface p-3"
               >
-                {String(m.kind)}: {String(m.body)}
+                {m.kind === "STAFF" ? "TEAM" : String(m.kind)}: {m.kind === "EVENT" && m.body === "Staff assignment updated" ? "Team assignment updated" : String(m.body)}
               </p>
             ))}
           <div>
@@ -178,7 +178,7 @@ export default async function Page({
             >
               <input type="hidden" name="id" value={String(t.id)} />
               <label>
-                Assign staff
+                Assign team
                 <select
                   name="assignedTo"
                   required
@@ -186,7 +186,7 @@ export default async function Page({
                   className="ml-2 rounded border border-border bg-paper p-2"
                 >
                   <option value="" disabled>
-                    Choose staff
+                    Choose team
                   </option>
                   {staff
                     .filter((s) => !t.sensitive || s.role === "owner")
@@ -245,7 +245,7 @@ export default async function Page({
               />
             </label>
             <label>
-              <input type="checkbox" name="internal" /> Internal staff note
+              <input type="checkbox" name="internal" /> Internal team note
             </label>
             <button className="rounded-lg bg-primary p-3 text-on-primary">
               Claim or update ticket

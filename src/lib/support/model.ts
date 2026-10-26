@@ -92,7 +92,7 @@ export function publicError(error: unknown) {
     message,
   )
     ? message
-    : "Could not complete this request. Refresh your sign-in and try again, or contact an administrator.";
+    : "Could not complete this request. Refresh your sign-in and try again, or contact a team member.";
 }
 export function wantsHuman(value: string) {
   return /\b(?:talk|speak|chat|connect|transfer|need|want).{0,30}\b(?:a human|human support|human help|a person|an agent|a real person|a support agent)\b|^human[!. ]*$/i.test(

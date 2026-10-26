@@ -81,7 +81,7 @@ export const GUIDES: GuideItem[] = [
     category: "bookings",
     question: "How do I schedule a booking?",
     answer: [
-      "Go to Bookings and tap the + button. Pick the customer, service, staff member and time, then save.",
+      "Go to Bookings and tap the + button. Pick the customer, service, team member and time, then save.",
       "Bookings move through statuses — pending, confirmed, completed, cancelled or no-show — which you can update from the booking itself.",
     ],
   },
@@ -175,7 +175,7 @@ export const GUIDES: GuideItem[] = [
     id: "add-expense",
     category: "money",
     question: "How do I record an expense?",
-    answer: ["Go to Expenses and tap the + button. Choose a category (rent, electricity, staff, supplies, transport, marketing or other), enter the amount and date, and save."],
+    answer: ["Go to Expenses and tap the + button. Choose a category (rent, electricity, team, supplies, transport, marketing or other), enter the amount and date, and save."],
   },
   {
     id: "reports",
@@ -190,8 +190,8 @@ export const GUIDES: GuideItem[] = [
   {
     id: "add-team-member",
     category: "team",
-    question: "How do I add a staff member?",
-    answer: ["Go to Settings → Users and tap \"Add\". They're added as a manager or staff member — only the account owner can be removed as \"owner\"."],
+    question: "How do I add a team member?",
+    answer: ["Go to Settings → Users and tap \"Add\". They're added as a manager or team member — only the account owner can be removed as \"owner\"."],
   },
   {
     id: "edit-business-details",

@@ -84,7 +84,7 @@ export async function importLegacyPartnerAction(sourceId: string) {
     return {
       ok: false,
       error:
-        "Could not import this application. Check administrator access and bridge configuration.",
+        "Could not import this application. Check team member access and bridge configuration.",
     };
   }
 }

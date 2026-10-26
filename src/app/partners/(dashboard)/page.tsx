@@ -56,7 +56,7 @@ export default async function Overview() {
           [
             "/partners/support",
             "Contact JKTL support",
-            "Track client-related tickets and staff replies.",
+            "Track client-related tickets and team replies.",
           ],
           [
             "/partners/earnings",

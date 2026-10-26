@@ -168,7 +168,7 @@ export async function approvePartnerAction(
   } catch {
     return {
       ok: false,
-      error: "Could not approve this partner. Check administrator access.",
+      error: "Could not approve this partner. Check team member access.",
     };
   }
 }

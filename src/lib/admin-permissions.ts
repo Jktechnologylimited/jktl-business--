@@ -136,7 +136,7 @@ export const ROLE_LABEL: Record<AdminRole, string> = {
 
 export const ROLE_DESCRIPTION: Record<AdminRole, string> = {
   growth_gaming_lead:
-    "Marketing execution, customer acquisition, affiliate and partner growth, community engagement, and approved JKTL Games content. No financial, infrastructure or staff-management authority.",
+    "Marketing execution, customer acquisition, affiliate and partner growth, community engagement, and approved JKTL Games content. No financial, infrastructure or team management authority.",
   support:
     "Help customers through the support queue. Limited, customer-authorized website assistance; sensitive requests go to an owner. No payments, private customer records, passwords or team access.",
   editor:

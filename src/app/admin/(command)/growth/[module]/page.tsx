@@ -40,7 +40,7 @@ export default async function Page({
       <div className="space-y-5 text-ink">
         <h2 className="text-2xl font-semibold">Assigned acquisition leads</h2>
         <p>
-          Only assigned contacts are available to staff. Outreach notes record
+          Only assigned contacts are available to team. Outreach notes record
           work; they do not send messages or manufacture paid conversions.
         </p>
         <ActionForm
@@ -113,7 +113,7 @@ export default async function Page({
               <ActionForm action={assignGrowthLeadAction} className="space-y-3">
                 <input type="hidden" name="lead" value={String(l.id)} />
                 <label>
-                  Assign staff
+                  Assign team
                   <select name="staff" className={input}>
                     {staff.map((s) => (
                       <option key={String(s.id)} value={String(s.id)}>
@@ -332,7 +332,7 @@ export default async function Page({
           </a>
           <p className="mt-3">
             The separate Fantasy repository has account sign-on but no connected
-            staff content or analytics API. Descriptions, settings, scores,
+            team content or analytics API. Descriptions, settings, scores,
             leaderboards, results and rewards cannot be changed here. Source
             development requires separately assigned GitHub access.
           </p>
@@ -430,7 +430,7 @@ export default async function Page({
         Use your existing Business support inbox to request product guidance,
         campaign assistance, game deployment help, report bugs or escalate
         programme concerns. The assistant can answer first and route to
-        authorized human staff. You can read your own cases and replies there;
+        authorized human team. You can read your own cases and replies there;
         this role does not grant access to other customers’ conversations.
       </p>
       <Link

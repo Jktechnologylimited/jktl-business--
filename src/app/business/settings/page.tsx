@@ -189,11 +189,11 @@ export default function SettingsPage() {
                     {m.name}
                   </div>
                   <div className="truncate text-xs text-ink-muted">
-                    {m.title}
+                    {m.title === "Staff" ? "Team" : m.title}
                   </div>
                 </div>
                 <StatusPill tone={m.role === "owner" ? "primary" : "neutral"}>
-                  {m.role[0].toUpperCase() + m.role.slice(1)}
+                  {m.role === "staff" ? "Team" : m.role[0].toUpperCase() + m.role.slice(1)}
                 </StatusPill>
                 {m.role !== "owner" ? (
                   <button

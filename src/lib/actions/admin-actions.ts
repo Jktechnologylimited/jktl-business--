@@ -86,7 +86,7 @@ export async function adminLoginAction(
     if (!admin)
       return {
         ok: false,
-        error: "That email and password don't match a command-center account.",
+        error: "That email and password don't match a team account.",
       };
     await startAdminSession(admin.id);
     return {
@@ -502,7 +502,7 @@ export async function createAdminTeamMemberAction(input: {
     if (err instanceof Error && err.message === ADMIN_EMAIL_TAKEN) {
       return {
         ok: false,
-        error: "There's already an admin account with that email.",
+        error: "There's already a team member account with that email.",
       };
     }
     console.error(err);

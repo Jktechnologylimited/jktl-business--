@@ -68,7 +68,7 @@ export async function assignPartnerTicketAction(f: FormData) {
     `WITH assigned AS(UPDATE partner_tickets t SET assigned_to=a.id,priority=$3,status='ASSIGNED',updated_at=now() FROM admin_users a WHERE t.id=$1 AND a.id=$2 AND a.disabled_at IS NULL AND(a.role='owner' OR(a.role='support' AND t.sensitive=false)) RETURNING t.id) INSERT INTO partner_ticket_messages(ticket_id,actor_id,kind,body) SELECT id,$4,'EVENT','Staff assignment updated' FROM assigned RETURNING id`,
     [id, target, priority, a.id],
   );
-  if (!r.length) throw Error("Choose an eligible active staff member");
+  if (!r.length) throw Error("Choose an eligible active team member");
   revalidatePath("/admin/partner-support");
 }
 export async function partnerResponseTargetAction(f: FormData) {

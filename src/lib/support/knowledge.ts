@@ -101,7 +101,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Editor rejects content: read the field-specific validation. Long text, unsupported URLs and missing required content are not fixed by repeated submission.",
     ],
     escalate:
-      "Escalate to human support with the exact validation message and expected change. Access, deletion or ownership disputes must go to an administrator.",
+      "Escalate to human support with the exact validation message and expected change. Access, deletion or ownership disputes must go to a team member.",
   },
   {
     id: "domains",
@@ -137,7 +137,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Website works but email stops: stop making DNS changes and escalate with the record names/types that changed. Never send a mailbox password.",
     ],
     escalate:
-      "Transfers, registrant changes, refunds, ownership conflicts, registrar credentials and destructive DNS changes require an administrator or authorized provisioning specialist.",
+      "Transfers, registrant changes, refunds, ownership conflicts, registrar credentials and destructive DNS changes require a team member or authorized provisioning specialist.",
   },
   {
     id: "renewals",
@@ -162,7 +162,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Unknown renewal amount: obtain a current reviewed quote; do not estimate from an old promotional price.",
     ],
     escalate:
-      "Refunds, restoration disputes, transfer authorization codes and changes to the registered owner go to the administrator.",
+      "Refunds, restoration disputes, transfer authorization codes and changes to the registered owner go to the team member.",
   },
   {
     id: "business-email",
@@ -215,18 +215,18 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Complete any bank authentication yourself. An agent can describe the next screen but cannot authorize a debit on your behalf.",
       "Return to the Business workspace after checkout. Use the status/verification control for the existing order and keep the payment reference.",
       "If debited but still pending, wait for provider verification and request help with that same reference. Do not immediately pay again; duplicate attempts can create separate charges.",
-      "If the payment failed or was abandoned, use the application’s retry/resume flow when it becomes eligible. A cancelled order paid late may need administrator review rather than automatic fulfilment.",
+      "If the payment failed or was abandoned, use the application’s retry/resume flow when it becomes eligible. A cancelled order paid late may need team review rather than automatic fulfilment.",
       "For invoices, identify which service the invoice covers and the payable total. An invoice paid to JKTL Custom does not automatically buy a domain or email plan.",
       "Review the confirmed status and receipt/history in the relevant workspace. A screenshot supplied by either a customer or an agent cannot change the ledger.",
       "Ask human support to trace the stage if needed. Give the reference, product, amount and approximate time; never give banking credentials.",
     ],
     problems: [
       "Bank debited, order pending: keep the reference and ask for verification. Do not create another order as a workaround.",
-      "Wrong amount or currency: stop before payment. An administrator must review the quote/order; support cannot edit a paid ledger.",
+      "Wrong amount or currency: stop before payment. a team member must review the quote/order; support cannot edit a paid ledger.",
       "Paid order needs review: the team must reconcile it. No assistant should promise an automatic refund or mark it fulfilled without evidence.",
     ],
     escalate:
-      "Refunds, duplicate-charge reconciliation, manual payment overrides, changed amounts, bank details and disputed purchases go to an owner administrator.",
+      "Refunds, duplicate-charge reconciliation, manual payment overrides, changed amounts, bank details and disputed purchases go to an team owner.",
   },
   {
     id: "plans",
@@ -256,10 +256,10 @@ export const HELP_GUIDES: HelpGuide[] = [
     problems: [
       "Asked to select a template again: confirm the account/business and retain the current template name. Ask support to inspect the existing upgrade journey.",
       "Plan not updated after debit: verify the existing payment before retrying.",
-      "Need cancellation or refund: use the relevant terms and administrator review. Domain, email and custom-service charges are not automatically covered by website-plan terms.",
+      "Need cancellation or refund: use the relevant terms and team review. Domain, email and custom-service charges are not automatically covered by website-plan terms.",
     ],
     escalate:
-      "An owner administrator reviews billing changes, refunds and entitlement discrepancies. Support may explain the screen but cannot upgrade an account without verified authorization/payment.",
+      "An team owner reviews billing changes, refunds and entitlement discrepancies. Support may explain the screen but cannot upgrade an account without verified authorization/payment.",
   },
   {
     id: "refunds",
@@ -272,7 +272,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Locate the original purchase in the relevant workspace and identify whether it is a website plan, domain, email service or custom project.",
       "Read the published website-guarantee terms and check the first paid website-plan purchase date. Renewal, upgrades and separately scoped products can have different terms.",
       "Create a support request with the product, payment reference and reason. Do not include card details, bank login information or an OTP.",
-      "The request will be escalated for administrator review because support agents cannot decide or move refunds.",
+      "The request will be escalated for team review because support agents cannot decide or move refunds.",
       "Keep the original order and receipt. Do not cancel a pending order merely to erase a successful charge or send a second payment hoping to reverse the first.",
       "Wait for a written decision and the recorded refund status. Processing times depend on the provider/bank; no bot or support agent should promise an exact completion time without evidence.",
       "If a refund is approved, follow the original payment-provider process. Never pay a release fee to an agent or disclose credentials to receive a refund.",
@@ -280,10 +280,10 @@ export const HELP_GUIDES: HelpGuide[] = [
     problems: [
       "Purchased a domain or email: read that product’s terms; do not assume the website guarantee applies.",
       "Two charges for one intended purchase: provide both references and ask for reconciliation before taking another action.",
-      "Someone promises an instant refund in chat: an administrator and the actual payment record must confirm it.",
+      "Someone promises an instant refund in chat: a team member and the actual payment record must confirm it.",
     ],
     escalate:
-      "All refund and chargeback requests require an owner administrator. The assistant cannot approve, reject or execute a refund.",
+      "All refund and chargeback requests require an team owner. The assistant cannot approve, reject or execute a refund.",
   },
   {
     id: "access",
@@ -305,16 +305,16 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Use the Business sign-in page for a business account, /admin/login for team operators, /partners/login for partners or the affiliate sign-in for affiliates. These are different account types.",
       "Check the email spelling and the account type before resetting a password. An application awaiting programme approval may not have dashboard access yet.",
       "Use the password-reset link provided by the relevant sign-in page. Follow the secure link yourself; never forward it to an agent or paste it into chat.",
-      "If you cannot receive email, check spam and whether you still control the mailbox. Ask an administrator for the verified recovery process if ownership cannot be established through the normal flow.",
+      "If you cannot receive email, check spam and whether you still control the mailbox. Ask a team member for the verified recovery process if ownership cannot be established through the normal flow.",
       "Do not create duplicate accounts to resolve an ownership issue. Record the business name, public website address and the access problem, without sharing identity documents in the public assistant.",
-      "For a suspected compromise, use a trusted device, change credentials through secure account controls and request immediate administrator review. Do not follow payment or password instructions from an unsolicited message.",
+      "For a suspected compromise, use a trusted device, change credentials through secure account controls and request immediate team review. Do not follow payment or password instructions from an unsolicited message.",
       "Support can explain navigation but cannot change account email, passwords, owner membership or payout details. Sensitive recovery is escalated and may require verification outside routine chat.",
       "After recovery, review logged-in devices and authorized team members through the available settings. Sign out of shared devices and protect the email account used for recovery.",
     ],
     problems: [
       "Wrong portal: use the sign-in page for the account type you registered.",
       "Account appears empty: check whether you are in the demo, another business or a different email account.",
-      "Asked for an OTP or password by support: do not provide it; escalate to an administrator.",
+      "Asked for an OTP or password by support: do not provide it; escalate to a team member.",
     ],
     escalate:
       "Account recovery, owner changes, compromised accounts, deletion and private identity verification always require higher authority.",
@@ -343,11 +343,11 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If you want website assistance, the business owner can grant permission for this case. Draft permission allows the assigned agent to inspect and edit the website document. Publishing permission is a separate choice for the first free publication.",
       "Each grant expires after 24 hours and is checked again for every action. You can revoke it immediately from the conversation. Permission applies to this business and case, not every account you own.",
       "Review the proposed website content and changes. The agent cannot silently replace an existing template, overwrite a concurrently saved revision or make a paid purchase.",
-      "Sensitive requests are escalated to an owner administrator. Ordinary support cannot change credentials, owner memberships, payment records, pricing, domain ownership or mailbox provisioning.",
-      "After the issue is resolved, review the outcome and close the case. You can read your conversation later; internal staff notes are not published to customers.",
+      "Sensitive requests are escalated to an team owner. Ordinary support cannot change credentials, owner memberships, payment records, pricing, domain ownership or mailbox provisioning.",
+      "After the issue is resolved, review the outcome and close the case. You can read your conversation later; internal team notes are not published to customers.",
     ],
     problems: [
-      "Cannot grant permission: only the active business owner can authorize account changes. Staff can still ask for guidance.",
+      "Cannot grant permission: only the active business owner can authorize account changes. Team can still ask for guidance.",
       "Agent cannot save: check assignment, case status, permission expiry and website revision. Do not bypass a failed check.",
       "Issue remains unresolved: request escalation in the same case and include what you already tried.",
     ],
@@ -373,13 +373,13 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Open the correct JKTL workspace over HTTPS in a supported browser. A normal browser tab still works even if installation is unavailable.",
       "On iPhone or iPad, open the site in Safari, use Share, then Add to Home Screen. Open the new home-screen icon before enabling push notifications on iOS.",
       "On Android or desktop Chromium, use the browser Install app/Add to Home screen option when offered. If the install button is unavailable, follow the browser’s menu instructions rather than downloading an unknown APK.",
-      "Sign in with the correct account after installation. Support operators should install from /admin/support so the support app opens the staff inbox, not a customer workspace.",
+      "Sign in with the correct account after installation. Support operators should install from /admin/support so the support app opens the team inbox, not a customer workspace.",
       "Enable notifications only by pressing the workspace’s notification button. Accept the browser permission prompt if you want alerts. Installing alone does not grant notification permission.",
-      "For a business account, review notification preferences in Settings → Account. For a support operator, use Enable support alerts in the support inbox; each staff device is registered against its active admin session.",
+      "For a business account, review notification preferences in Settings → Account. For a support operator, use Enable support alerts in the support inbox; each team device is registered against its active team session.",
       "If permission was denied, the browser will not necessarily ask again. Open site permissions in the browser/device settings, allow notifications there and then enable the relevant workspace notifications again.",
       "Check the device’s focus/do-not-disturb mode and OS notification settings. Private browsing and some in-app browsers do not support the full install/push flow.",
       "Push requires JKTL’s notification service to be configured. If the app reports that it is unavailable, the support inbox and in-app conversation remain the source of truth; do not assume an alert was delivered.",
-      "On shared devices, sign out when finished. Support alerts contain a generic queue notice, not customer messages or payment details. A disabled/expired staff session must not continue receiving support notifications.",
+      "On shared devices, sign out when finished. Support alerts contain a generic queue notice, not customer messages or payment details. A disabled/expired team session must not continue receiving support notifications.",
     ],
     problems: [
       "No install option: check browser support and whether the app is already installed; use the manual home-screen instructions.",
@@ -421,7 +421,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Not ready to review: dismiss the invitation. Support and free website access remain available.",
     ],
     escalate:
-      "Ask an owner administrator about privacy or moderation disputes. Support must not offer access, refunds or priority assistance in exchange for a positive rating.",
+      "Ask an team owner about privacy or moderation disputes. Support must not offer access, refunds or priority assistance in exchange for a positive rating.",
   },
   {
     id: "daily-tools",
@@ -446,7 +446,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "When creating a booking, review the customer, service, date, time and status before saving. JKTL’s business scheduling guidance uses Nigeria time where indicated; verify the displayed timezone rather than relying on your device clock alone.",
       "For invoices, verify the customer, items and payable amount before sending. A draft is not proof the customer received or paid it. Payment verification follows the invoice’s own workflow.",
       "For stock, record the actual product and quantity and review the resulting balance. Do not change a large set of products while someone else is recording sales without coordinating.",
-      "Use the available team roles and active-member settings to control who can operate the business. A JKTL support role is separate from your own business’s staff membership.",
+      "Use the available team roles and active-member settings to control who can operate the business. A JKTL support role is separate from your own business’s team membership.",
       "If a record seems missing, check filters, dates and the active business before recreating it. Recreating an invoice or sale can produce duplicates.",
       "When requesting help, describe the screen and the error. Do not give a support operator unrestricted exports of customer records; website assistance permission does not grant access to those records.",
     ],
@@ -456,7 +456,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Need bulk import or data correction: preserve a copy, check supported columns and request scoped help rather than pasting private files into chat.",
     ],
     escalate:
-      "Private customer data, financial corrections, irreversible imports/deletions and membership changes require the business owner or an authorized administrator.",
+      "Private customer data, financial corrections, irreversible imports/deletions and membership changes require the business owner or an authorized team member.",
   },
   {
     id: "partners",
@@ -480,14 +480,14 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Copy your referral link from the programme workspace. Visitors may explicitly allow a 30-day referral cookie; declining does not block signup. Existing attribution is preserved. Do not self-refer or publish another person’s code.",
       "When helping clients create Business accounts, let the client use their own email and control their credentials. Obtain their permission before creating or changing their website.",
       "Partners: create a named client draft in /partners/workspace, select an existing template and preview mobile and desktop. Share the private claim link with the client owner. The owner chooses viewing, service-request, editing and publishing permissions separately; revocation immediately blocks subsequent access. Never ask for client passwords.",
-      "Open client services for real domain, business email and website statuses. Authorized DNS, nameserver or email changes create requests in JKTL’s existing fulfillment queues. A request or quote acceptance is not payment or provisioning. Sensitive transfers, billing and credential changes require the owner or authorized administrator.",
-      "For ticket support use /partners/support. Choose a client, category and priority; describe the problem without passwords or payment credentials. Attach PNG, JPEG, WebP or PDF files up to 512 KB each and 5 MB per ticket. Attachments are private. Staff notes stay internal; sensitive matters require an Owner administrator.",
+      "Open client services for real domain, business email and website statuses. Authorized DNS, nameserver or email changes create requests in JKTL’s existing fulfillment queues. A request or quote acceptance is not payment or provisioning. Sensitive transfers, billing and credential changes require the owner or authorized team member.",
+      "For ticket support use /partners/support. Choose a client, category and priority; describe the problem without passwords or payment credentials. Attach PNG, JPEG, WebP or PDF files up to 512 KB each and 5 MB per ticket. Attachments are private. Team notes stay internal; sensitive matters require an team owner.",
       "Enable alerts explicitly from Partner support if your browser supports notifications. Install JKTL Business using the PWA prompt; on iPhone use Share → Add to Home Screen. Delivery requires supported devices, permission and configured push/email providers. The internal response target is not a 24/7 service guarantee.",
       "Read individual agreement terms in Commercial before accepting. Owner activation is separate from your acceptance. New-policy website commissions use verified net captured revenue, actual processing fees and at most 12 paid service months per referred business. Annual payments earn once; holds and manual review apply. Reseller discounts do not also earn referral commission.",
       "Payouts require verified bank details, available reviewed earnings, the configured minimum and the Nigeria-time request window. A requested or approved payout is not a completed transfer. Refunds and disputes may hold unpaid earnings or create separately recorded debt against future payouts; paid history is preserved.",
       "For reseller quotes, the named billing business owner accepts the scope and billing responsibility in Programs & partner access. Pay using the existing approved JKTL order or invoice. JKTL verifies the exact payment and supplier fulfillment before closing the quote. Domain registration and licensed mailbox setup retain their existing provider workflows.",
       "Track qualifying referrals and earnings through the portal. A click, signup, held bonus, payable commission and completed payout are distinct states.",
-      "Use the portal’s payout-request process and the applicable programme terms. Staff support cannot change payout bank details, release held commissions or invent an earning.",
+      "Use the portal’s payout-request process and the applicable programme terms. Team support cannot change payout bank details, release held commissions or invent an earning.",
       "For an earlier enquiry without a password, follow the secure setup/reset instructions after the application is approved. Never accept a reusable password emailed by an operator.",
     ],
     problems: [
@@ -496,7 +496,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Missing commission: provide the referral/reference and qualifying purchase information for authorized review, not the customer’s card data.",
     ],
     escalate:
-      "Approval, commission disputes, payout changes and bank-detail changes go to the programme manager or owner administrator.",
+      "Approval, commission disputes, payout changes and bank-detail changes go to the programme manager or team owner.",
   },
   {
     id: "ai-receptionist",
@@ -531,7 +531,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Need provider credentials or number changes: request specialist assistance instead of sharing keys in chat.",
     ],
     escalate:
-      "Activation, provider credentials, automatic charges, phone-number changes and sensitive conversation/data incidents require authorized administrators or specialists.",
+      "Activation, provider credentials, automatic charges, phone-number changes and sensitive conversation/data incidents require authorized team members or specialists.",
   },
   {
     id: "metrics",
@@ -599,7 +599,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "A screenshot shows the wrong business: check the current workspace before editing or buying anything.",
     ],
     escalate:
-      "Contact support for an unreadable or inaccessible control. Ownership and account-access issues follow the separate administrator recovery process.",
+      "Contact support for an unreadable or inaccessible control. Ownership and account-access issues follow the separate team member recovery process.",
   },
   {
     id: "business-add-customer",
@@ -616,7 +616,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-customer-history",
@@ -633,7 +633,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-add-booking",
@@ -642,7 +642,7 @@ export const HELP_GUIDES: HelpGuide[] = [
     route: "/business/bookings",
     summary: "Using your own business tools: How do I schedule a booking?",
     steps: [
-      "Go to Bookings and tap the + button. Pick the customer, service, staff member and time, then save.",
+      "Go to Bookings and tap the + button. Pick the customer, service, team member and time, then save.",
       "Bookings move through statuses — pending, confirmed, completed, cancelled or no-show — which you can update from the booking itself.",
     ],
     problems: [
@@ -650,7 +650,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-booking-email",
@@ -667,7 +667,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-record-sale",
@@ -684,7 +684,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-partial-payment",
@@ -702,7 +702,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-complete-payment",
@@ -721,7 +721,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-receipt-photo",
@@ -739,7 +739,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-create-invoice",
@@ -755,7 +755,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-send-invoice",
@@ -773,7 +773,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-mark-invoice-paid",
@@ -789,7 +789,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-add-product",
@@ -805,7 +805,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-stock-movements",
@@ -822,7 +822,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-add-expense",
@@ -831,14 +831,14 @@ export const HELP_GUIDES: HelpGuide[] = [
     route: "/business/reports",
     summary: "Using your own business tools: How do I record an expense?",
     steps: [
-      "Go to Expenses and tap the + button. Choose a category (rent, electricity, staff, supplies, transport, marketing or other), enter the amount and date, and save.",
+      "Go to Expenses and tap the + button. Choose a category (rent, electricity, team, supplies, transport, marketing or other), enter the amount and date, and save.",
     ],
     problems: [
       "Confirm the active business, role and date/filter before creating another record.",
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-reports",
@@ -854,23 +854,23 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-add-team-member",
-    title: "How do I add a staff member?",
+    title: "How do I add a team member?",
     tags: ["team"],
     route: "/business/settings",
-    summary: "Using your own business tools: How do I add a staff member?",
+    summary: "Using your own business tools: How do I add a team member?",
     steps: [
-      'Go to Settings → Users and tap "Add". They\'re added as a manager or staff member — only the account owner can be removed as "owner".',
+      'Go to Settings → Users and tap "Add". They\'re added as a manager or team member — only the account owner can be removed as "owner".',
     ],
     problems: [
       "Confirm the active business, role and date/filter before creating another record.",
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-edit-business-details",
@@ -887,7 +887,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-change-password",
@@ -903,7 +903,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-forgot-password",
@@ -921,7 +921,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-profile-photo",
@@ -937,7 +937,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-offline-banner",
@@ -955,7 +955,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
   {
     id: "business-sync-safety",
@@ -972,7 +972,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "If a save fails, keep a local copy of your work and follow the displayed error. Do not ask an agent to bypass role or payment verification.",
     ],
     escalate:
-      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized administrator; the scoped Support website tool cannot make them.",
+      "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
 ];
 export function relevantGuides(question: string) {

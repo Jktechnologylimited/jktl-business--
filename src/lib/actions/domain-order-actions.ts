@@ -565,7 +565,7 @@ export async function completeDomainTaskAction(
       ],
     );
     if (!updated.length)
-      throw Error("Reload the task; another administrator updated it.");
+      throw Error("Reload the task; another team member updated it.");
     return { ok: true as const };
   } catch (e) {
     return failure(e);

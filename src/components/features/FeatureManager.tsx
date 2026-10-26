@@ -26,7 +26,7 @@ export function FeatureManager({
       );
       if (r.ok) setData(await featureAdminAction());
     } catch {
-      setMessage("Could not save. Check your administrator session.");
+      setMessage("Could not save. Check your team member session.");
     } finally {
       setBusy(false);
     }
@@ -34,7 +34,7 @@ export function FeatureManager({
   return (
     <section className={styles.page}>
       <header className={styles.hero}>
-        <p>JKTL ADMIN / FEATURE MANAGEMENT</p>
+        <p>JKTL TEAM / FEATURE MANAGEMENT</p>
         <h1>
           A small badge.
           <br />A clear announcement.

@@ -27,7 +27,7 @@ export default function Page() {
         ],
         [
           "Renewals and changes",
-          "Eligible paid services may be renewed at a newly reviewed price. Existing agreed periods retain their price. Automatic charging is off. Overdue JKTL invoices do not automatically suspend or delete mailboxes. Any suspension or cancellation follows the service agreement and administrator workflow.",
+          "Eligible paid services may be renewed at a newly reviewed price. Existing agreed periods retain their price. Automatic charging is off. Overdue JKTL invoices do not automatically suspend or delete mailboxes. Any suspension or cancellation follows the service agreement and team member workflow.",
         ],
         [
           "Existing services",

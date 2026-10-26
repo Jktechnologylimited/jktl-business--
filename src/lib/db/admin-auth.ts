@@ -267,7 +267,7 @@ export async function setAdminPassword(
     await sql`SELECT business_user_id FROM admin_users WHERE id=${adminUserId}`;
   if (linked[0]?.business_user_id)
     throw Error(
-      "This staff member uses their Business password. Use the Business password reset process.",
+      "This team member uses their Business password. Use the Business password reset process.",
     );
   const passwordHash = await bcrypt.hash(newPassword, 10);
   await sql`UPDATE admin_users SET password_hash = ${passwordHash} WHERE id = ${adminUserId}`;

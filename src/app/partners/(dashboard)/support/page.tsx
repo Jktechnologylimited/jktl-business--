@@ -129,9 +129,9 @@ export default async function Page() {
                 key={n}
                 className="whitespace-pre-wrap break-words rounded bg-surface p-3"
               >
-                <strong>{String(m.kind)}</strong>
+                <strong>{m.kind === "STAFF" ? "TEAM" : String(m.kind)}</strong>
                 <br />
-                {String(m.body)}
+                {m.kind === "EVENT" && m.body === "Staff assignment updated" ? "Team assignment updated" : String(m.body)}
               </p>
             ))}
           <div>

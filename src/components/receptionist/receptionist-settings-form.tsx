@@ -125,7 +125,7 @@ export function ReceptionistSettingsForm({
       <section className="rounded-2xl border border-border bg-paper p-4">
         <h2 className="font-display text-base font-semibold text-ink">Line and messages</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field label="Clinic line (the number patients call)" htmlFor="voice" hint="The Twilio number patients call. Buy it from the admin, or paste one you already own.">
+          <Field label="Clinic line (the number patients call)" htmlFor="voice" hint="The Twilio number patients call. Buy it from the team, or paste one you already own.">
             <Input id="voice" value={form.voiceNumber} onChange={(e) => set("voiceNumber", e.target.value)} placeholder="0700 000 0000" />
           </Field>
           <Field label="SMS sender ID" htmlFor="sender" hint="An alphanumeric Sender ID (up to 11 characters) where the country allows one, otherwise a Twilio number.">

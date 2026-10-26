@@ -120,7 +120,7 @@ export function MailPreview() {
                 const r = await sendTestMailAction(id);
                 setMessage(
                   r.ok
-                    ? "Test preview sent to your own staff email."
+                    ? "Test preview sent to your own team email."
                     : r.error || "Test delivery failed.",
                 );
               } catch {
@@ -132,7 +132,7 @@ export function MailPreview() {
               }
             }}
           >
-            Send test to my staff email
+            Send test to my team email
           </button>
         </>
       )}

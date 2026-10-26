@@ -208,7 +208,7 @@ export async function saveCustomProjectAction(input: {
           [org, name, url, input.status, cms, analytics, desc, domain],
         );
     if (!rows.length)
-      throw Error("Reload this project; another administrator updated it.");
+      throw Error("Reload this project; another team member updated it.");
     await audit(org, a.id, "PROJECT_SAVED", {}, String(rows[0].id));
     return { ok: true as const };
   } catch (e) {

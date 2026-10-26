@@ -12,7 +12,7 @@ export default async function Layout({
     <div className="space-y-6">
       <div>
         <p className="text-sm font-semibold text-gold">
-          JKTL Business · Staff workspace
+          JKTL Business · Team workspace
         </p>
         <h1 className="text-3xl font-semibold text-ink">Growth & Gaming</h1>
       </div>

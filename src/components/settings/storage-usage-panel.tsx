@@ -95,7 +95,7 @@ export function StorageUsagePanel({
             ? "You have reached your included image storage limit. Remove unused images or choose a larger website plan. No automatic overage charge is made."
             : "Included image storage for logos, avatars, receipts and product photos. Uploads stop at your plan limit, without automatic overage charges."
           : !atLimit
-            ? "Covers your logo, staff avatars, receipt and product photos."
+            ? "Covers your logo, team avatars, receipt and product photos."
             : !isSubscribed
               ? "You've reached the free storage limit — upgrade to keep uploading photos."
               : usage.overageKobo > 0
@@ -123,7 +123,7 @@ export function StorageUsagePanel({
       <UpgradeSheet
         open={upgrading}
         onClose={() => setUpgrading(false)}
-        reason={`Get more storage for photos — logos, staff avatars, receipts and product photos — past the free ${formatGb(usage.limitBytes)}.`}
+        reason={`Get more storage for photos — logos, team avatars, receipts and product photos — past the free ${formatGb(usage.limitBytes)}.`}
         mode={mode}
       />
     </section>

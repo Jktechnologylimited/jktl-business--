@@ -15,7 +15,7 @@ export function SignInFrame({
     ],
     admin: [
       "A clear view. A stronger business.",
-      "The JKTL command centre. Built for the people keeping everything moving.",
+      "The JKTL team workspace. Built for the people keeping everything moving.",
     ],
     affiliate: [
       "Trusted voices. Shared growth.",

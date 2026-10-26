@@ -93,7 +93,7 @@ export function OperationsFrame({
           <JktlMark className="size-10" /> JKTL
           <span>
             {kind === "admin"
-              ? "COMMAND CENTRE"
+              ? "TEAM WORKSPACE"
               : kind === "partner"
                 ? "PARTNER WORKSPACE"
                 : "AFFILIATE WORKSPACE"}
@@ -106,7 +106,7 @@ export function OperationsFrame({
           <nav
             className={styles.nav}
             aria-label={
-              kind === "admin" ? "Admin navigation" : "Programme navigation"
+              kind === "admin" ? "Team navigation" : "Programme navigation"
             }
           >
             {nav.map((n) => {

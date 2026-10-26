@@ -41,7 +41,7 @@ export function PartnerManager({
   return (
     <section className={styles.page}>
       <header className={styles.hero}>
-        <p>JKTL ADMIN / PARTNERS</p>
+        <p>JKTL TEAM / PARTNERS</p>
         <h1>
           Trusted relationships.
           <br />

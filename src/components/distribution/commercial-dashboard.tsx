@@ -176,7 +176,7 @@ export async function CommercialDashboard() {
             Number(settings[0]?.minimum_payout_kobo || 1000000) / 100
           ).toLocaleString("en-NG")}
           . Verified bank details and reviewed available earnings are required.
-          Transfer confirmation follows administrator review.
+          Transfer confirmation follows team review.
         </p>
         <ActionForm action={requestDistributionPayoutAction}>
           <button className="rounded-lg border border-border p-3">

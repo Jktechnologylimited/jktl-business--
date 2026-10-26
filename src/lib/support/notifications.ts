@@ -79,7 +79,7 @@ export async function processSupportNotifications() {
                   title: "JKTL support inbox",
                   body:
                     event.audience === "owner"
-                      ? "A request needs administrator review."
+                      ? "A request needs team review."
                       : "A customer needs support. Open the inbox to review.",
                   url: "/admin/support?case=" + event.case_id,
                 }),

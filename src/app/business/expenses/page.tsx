@@ -78,7 +78,7 @@ export default function ExpensesPage() {
         <EmptyState
           icon={<Receipt className="size-6 text-primary-strong" />}
           title="No expenses recorded yet"
-          description="Track rent, staff, supplies and other costs to see your real margin."
+          description="Track rent, team, supplies and other costs to see your real margin."
           action={
             <Button onClick={() => setAdding(true)}>
               <T>Add expense</T>

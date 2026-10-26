@@ -80,7 +80,7 @@ export function ClientAccountManager({ clients }: { clients: ExistingClient[] })
       <p className="mt-3 flex items-start gap-1.5 text-[11px] text-ink-faint">
         <MailPlus className="mt-0.5 size-3 shrink-0" />
         The invite links to the password page and works once, for seven days. Creating an account is claimed atomically,
-        so two admins working this list cannot make two tenants for one business.
+        so two team members working this list cannot make two tenants for one business.
       </p>
     </section>
   );

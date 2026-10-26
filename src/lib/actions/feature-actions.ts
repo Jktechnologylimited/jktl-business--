@@ -61,7 +61,7 @@ export async function saveFeatureBadgeAction(input: {
       error:
         e instanceof Error && /^(Choose |Select |Reload )/.test(e.message)
           ? e.message
-          : "Could not save badge settings. Check administrator access.",
+          : "Could not save badge settings. Check team member access.",
     };
   }
 }

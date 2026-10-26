@@ -86,7 +86,7 @@ export const WEBSITE_PLANS = [
       "25 collaborators",
       "30 GB image storage",
       "Multiple business locations¹",
-      "Advanced staff permissions¹",
+      "Advanced team permissions¹",
       "Advanced automation and reports¹",
       "Higher AI chatbot allowances¹",
       "Priority onboarding¹",
@@ -165,7 +165,7 @@ export const DIGITAL_PRODUCTS = [
     details: [
       "AI receptionist is a separately scoped product; existing contracts remain unchanged.",
       "Request a tailored quote covering setup, call and message usage, and the recurring subscription before you commit.",
-      "AI chatbot, staff seats, storage and automation upgrades need a confirmed quote and explicit usage limits.",
+      "AI chatbot, team seats, storage and automation upgrades need a confirmed quote and explicit usage limits.",
       "No unlimited AI promise or automatic add-on activation. Existing usage and wallet controls remain in place.",
     ],
   },
