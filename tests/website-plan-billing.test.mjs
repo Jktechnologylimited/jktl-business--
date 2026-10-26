@@ -388,12 +388,19 @@ test("signed website webhook lifecycle: retries early attachment, confirms renew
           ).length > 0,
       };
       const route = load("../src/app/api/webhooks/paystack/route.ts", {
+        "@/lib/distribution/notifications": {
+          flushProgramNotices: async () => ({}),
+        },
+        "@/lib/distribution/finance": {
+          recordDistributionRisk: async () => {},
+          reconcileDistributionPayments: async () => ({}),
+        },
         "next/server": next,
         "@/lib/db/client": { getSql: () => sql },
         "@/lib/db/organizations": { getInfrastructure: async () => null },
         "@/lib/website-billing-webhooks": webhooks,
-        "@/lib/business-email/service":{handleEmailEvent:async()=>false},
-"@/lib/custom/service": { handleCustomEvent: async () => false },
+        "@/lib/business-email/service": { handleEmailEvent: async () => false },
+        "@/lib/custom/service": { handleCustomEvent: async () => false },
         "@/lib/domains/service": { handleDomainEvent: async () => false },
         "@/lib/paystack": provider,
         "@/lib/db/billing": dbBilling,
@@ -554,12 +561,27 @@ test("signed website webhook lifecycle: retries early attachment, confirms renew
         new Date((await store.currentWebsitePlan(query, org)).period_end) <=
           new Date(),
       );
-      const laterPaid=billing.addBillingCycle(new Date(paid.paid_at),'monthly');
-      const laterEnd=billing.addBillingCycle(laterPaid,'yearly');
-      await query(`UPDATE website_plan_subscriptions SET last_paid_at=$2,period_end=$3,status='active' WHERE organization_id=$1`,[org,laterPaid.toISOString(),laterEnd.toISOString()]);
-      await webhooks.handleWebsiteBillingEvent('refund.processed',{transaction:{reference:paid.reference},amount:paid.amount,currency:'NGN'});
-      assert.equal(new Date((await store.currentWebsitePlan(query,org)).period_end).toISOString(),laterEnd.toISOString(),'An old refund cannot revoke a later paid period');
-
+      const laterPaid = billing.addBillingCycle(
+        new Date(paid.paid_at),
+        "monthly",
+      );
+      const laterEnd = billing.addBillingCycle(laterPaid, "yearly");
+      await query(
+        `UPDATE website_plan_subscriptions SET last_paid_at=$2,period_end=$3,status='active' WHERE organization_id=$1`,
+        [org, laterPaid.toISOString(), laterEnd.toISOString()],
+      );
+      await webhooks.handleWebsiteBillingEvent("refund.processed", {
+        transaction: { reference: paid.reference },
+        amount: paid.amount,
+        currency: "NGN",
+      });
+      assert.equal(
+        new Date(
+          (await store.currentWebsitePlan(query, org)).period_end,
+        ).toISOString(),
+        laterEnd.toISOString(),
+        "An old refund cannot revoke a later paid period",
+      );
     } finally {
       if (oldSecret === undefined) delete process.env.PAYSTACK_SECRET_KEY;
       else process.env.PAYSTACK_SECRET_KEY = oldSecret;

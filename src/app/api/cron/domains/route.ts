@@ -1,3 +1,7 @@
+import { cleanReferralVisits } from "@/lib/distribution/referrals";
+import { flushProgramNotices } from "@/lib/distribution/notifications";
+import { reconcileDistributionPayments } from "@/lib/distribution/finance";
+import { processPartnerNotices } from "@/lib/partners/notifications";
 import { processSupportNotifications } from "@/lib/support/notifications";
 import { runEmailMaintenance } from "@/lib/business-email/notifications";
 import { runCustomMaintenance } from "@/lib/custom/notifications";
@@ -25,6 +29,10 @@ export async function GET(req: NextRequest) {
       runDomainMaintenance(),
       runCustomMaintenance(),
       runEmailMaintenance(),
+      processPartnerNotices(),
+      reconcileDistributionPayments(),
+      flushProgramNotices(),
+      cleanReferralVisits(),
     ]);
     const failed = results.some(
       (r) =>
@@ -37,16 +45,16 @@ export async function GET(req: NextRequest) {
       {
         ok: !failed,
         domain:
-          results[0].status === "fulfilled"
-            ? results[0].value
-            : "Retry required",
-        email:
-          results[2].status === "fulfilled"
-            ? results[2].value
-            : "Retry required",
-        custom:
           results[1].status === "fulfilled"
             ? results[1].value
+            : "Retry required",
+        email:
+          results[3].status === "fulfilled"
+            ? results[3].value
+            : "Retry required",
+        custom:
+          results[2].status === "fulfilled"
+            ? results[2].value
             : "Retry required",
       },
       { status: failed ? 503 : 200 },

@@ -3,7 +3,10 @@ import bcrypt from "bcryptjs";
 import { getSql } from "./client";
 import { kobo, isoDate } from "./rows";
 import { periodKeyFor } from "@/lib/ai/pricing";
-import { summariseEarnings, type AffiliateBalance } from "@/lib/affiliate-commission";
+import {
+  summariseEarnings,
+  type AffiliateBalance,
+} from "@/lib/affiliate-commission";
 import {
   RECURRING_MONTHLY_KOBO,
   SIGNUP_BONUS_KOBO,
@@ -35,7 +38,7 @@ export const PAYOUT_REQUEST_DAY = 21;
 
 export interface Affiliate {
   programme?: "affiliate" | "partner";
-  partnerSourceId?:string;
+  partnerSourceId?: string;
   id: string;
   name: string;
   email: string;
@@ -73,26 +76,42 @@ export interface Affiliate {
 
 function mapAffiliate(row: Record<string, unknown>): Affiliate {
   return {
-    partnerSourceId:row.partner_source_id?String(row.partner_source_id):undefined,
-    programme:row.programme === "partner" ? "partner":"affiliate",
+    partnerSourceId: row.partner_source_id
+      ? String(row.partner_source_id)
+      : undefined,
+    programme: row.programme === "partner" ? "partner" : "affiliate",
     id: row.id as string,
     name: row.name as string,
     email: row.email as string,
     referralCode: row.referral_code as string,
     commissionBps: Number(row.commission_bps),
-    commissionModel: (row.commission_model as "tiered" | "percentage") ?? "tiered",
+    commissionModel:
+      (row.commission_model as "tiered" | "percentage") ?? "tiered",
     signupBonusKobo: Number(row.signup_bonus_kobo ?? SIGNUP_BONUS_KOBO),
-    subscriptionBonusKobo: Number(row.subscription_bonus_kobo ?? SUBSCRIPTION_BONUS_KOBO),
-    recurringMonthlyKobo: Number(row.recurring_monthly_kobo ?? RECURRING_MONTHLY_KOBO),
+    subscriptionBonusKobo: Number(
+      row.subscription_bonus_kobo ?? SUBSCRIPTION_BONUS_KOBO,
+    ),
+    recurringMonthlyKobo: Number(
+      row.recurring_monthly_kobo ?? RECURRING_MONTHLY_KOBO,
+    ),
     recurringMonthsCap: Number(row.recurring_months_cap ?? 0),
-    status: (row.status as string) === "pending" ? "pending" : (row.status as string) === "suspended" ? "suspended" : "active",
+    status:
+      (row.status as string) === "pending"
+        ? "pending"
+        : (row.status as string) === "suspended"
+          ? "suspended"
+          : "active",
     applicationNote: (row.application_note as string) ?? "",
-    welcomeBonusClaimedAt: row.welcome_bonus_claimed_at ? isoDate(row.welcome_bonus_claimed_at as string) : null,
+    welcomeBonusClaimedAt: row.welcome_bonus_claimed_at
+      ? isoDate(row.welcome_bonus_claimed_at as string)
+      : null,
     bankCode: (row.bank_code as string) ?? "",
     bankName: (row.bank_name as string) ?? "",
     accountNumber: (row.account_number as string) ?? "",
     accountName: (row.account_name as string) ?? "",
-    bankVerifiedAt: row.bank_verified_at ? isoDate(row.bank_verified_at as string) : null,
+    bankVerifiedAt: row.bank_verified_at
+      ? isoDate(row.bank_verified_at as string)
+      : null,
     createdAt: isoDate(row.created_at as string),
   };
 }
@@ -101,9 +120,19 @@ function mapAffiliate(row: Record<string, unknown>): Affiliate {
  * reflects the real local day/month regardless of where the server runs —
  * unlike `new Date().getDate()`, which would read the server's own UTC
  * clock and could be a day off right around midnight. */
-function lagosDateParts(d: Date = new Date()): { year: number; month: number; day: number } {
-  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d);
-  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+function lagosDateParts(d: Date = new Date()): {
+  year: number;
+  month: number;
+  day: number;
+} {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+  const get = (type: string) =>
+    Number(parts.find((p) => p.type === type)?.value ?? 0);
   return { year: get("year"), month: get("month"), day: get("day") };
 }
 
@@ -130,7 +159,8 @@ const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
 function randomReferralCode(): string {
   let code = "";
-  for (let i = 0; i < 7; i++) code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+  for (let i = 0; i < 7; i++)
+    code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
   return code;
 }
 
@@ -177,7 +207,9 @@ export interface CreateAffiliateInput {
  * unique-violation error, so the caller gets an unambiguous reason. */
 export const AFFILIATE_EMAIL_TAKEN = "AFFILIATE_EMAIL_TAKEN";
 
-export async function createAffiliate(input: CreateAffiliateInput): Promise<Affiliate> {
+export async function createAffiliate(
+  input: CreateAffiliateInput,
+): Promise<Affiliate> {
   const sql = getSql();
   const email = input.email.toLowerCase();
 
@@ -204,7 +236,9 @@ export async function createAffiliate(input: CreateAffiliateInput): Promise<Affi
       lastErr = err;
     }
   }
-  throw lastErr instanceof Error ? lastErr : new Error("Couldn't create affiliate.");
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error("Couldn't create affiliate.");
 }
 
 /** The full `Affiliate` record (bank details, bonus status, etc.) — the
@@ -212,16 +246,25 @@ export async function createAffiliate(input: CreateAffiliateInput): Promise<Affi
  * (see affiliate-auth.ts), so anything that needs these extra fields
  * fetches them separately here rather than bloating every session check
  * with columns most callers don't need. */
-export async function getAffiliateById(affiliateId: string): Promise<Affiliate | null> {
+export async function getAffiliateById(
+  affiliateId: string,
+): Promise<Affiliate | null> {
   const sql = getSql();
   const rows = await sql`SELECT * FROM affiliates WHERE id = ${affiliateId}`;
   return rows[0] ? mapAffiliate(rows[0]) : null;
 }
 
-export async function setAffiliateStatus(affiliateId: string, status: "active" | "suspended"): Promise<void> {
+export async function setAffiliateStatus(
+  affiliateId: string,
+  status: "active" | "suspended",
+): Promise<void> {
   const sql = getSql();
-  const updated=await sql`UPDATE affiliates SET status = ${status} WHERE id = ${affiliateId} AND status<>'pending' AND(${status}='suspended' OR programme='affiliate' OR partner_terms_confirmed=true) RETURNING id`;
-  if(!updated.length)throw new Error("This account requires approval before activation, or no longer exists.");
+  const updated =
+    await sql`UPDATE affiliates SET status = ${status} WHERE id = ${affiliateId} AND status<>'pending' AND(${status}='suspended' OR programme='affiliate' OR partner_terms_confirmed=true) RETURNING id`;
+  if (!updated.length)
+    throw new Error(
+      "This account requires approval before activation, or no longer exists.",
+    );
 }
 
 // ---- Self-serve applications (migration 014) ----
@@ -241,7 +284,9 @@ export interface ApplyAsAffiliateInput {
   applicationNote: string;
 }
 
-export async function applyAsAffiliate(input: ApplyAsAffiliateInput): Promise<Affiliate> {
+export async function applyAsAffiliate(
+  input: ApplyAsAffiliateInput,
+): Promise<Affiliate> {
   const sql = getSql();
   const email = input.email.toLowerCase();
 
@@ -269,12 +314,15 @@ export async function applyAsAffiliate(input: ApplyAsAffiliateInput): Promise<Af
       lastErr = err;
     }
   }
-  throw lastErr instanceof Error ? lastErr : new Error("Couldn't submit that application.");
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error("Couldn't submit that application.");
 }
 
 export async function listPendingApplications(): Promise<Affiliate[]> {
   const sql = getSql();
-  const rows = await sql`SELECT * FROM affiliates WHERE status = 'pending' ORDER BY created_at ASC`;
+  const rows =
+    await sql`SELECT * FROM affiliates WHERE status = 'pending' ORDER BY created_at ASC`;
   return rows.map(mapAffiliate);
 }
 
@@ -282,7 +330,9 @@ export async function listPendingApplications(): Promise<Affiliate[]> {
  * approving is just a status flip — no password to generate or share.
  * Scoped to `status = 'pending'` so this can't accidentally reactivate a
  * suspended affiliate through the wrong code path. */
-export async function approveAffiliateApplication(affiliateId: string): Promise<Affiliate | null> {
+export async function approveAffiliateApplication(
+  affiliateId: string,
+): Promise<Affiliate | null> {
   const sql = getSql();
   // RETURNING, not a bare UPDATE: the caller needs the person's details to tell
   // them they were approved, and a double-click must not send a second email —
@@ -295,21 +345,23 @@ export async function approveAffiliateApplication(affiliateId: string): Promise<
   return rows[0] ? mapAffiliate(rows[0]) : null;
 }
 
-/** Deletes the application outright rather than keeping a 'rejected'
- * status — there's nothing worth retaining about one nobody approved, and
- * it frees up the email for a future application. Scoped to `status =
- * 'pending'` so this can never be used to delete a real, active affiliate
- * and its earnings history. */
-export async function rejectAffiliateApplication(affiliateId: string): Promise<{ name: string; email: string } | null> {
+/** Preserve rejected applications and all linked policy/audit records. Only
+ * pending applications may be rejected through this action. */
+export async function rejectAffiliateApplication(
+  affiliateId: string,
+): Promise<{ name: string; email: string } | null> {
   const sql = getSql();
-  // Read before deleting: the row is about to stop existing, and the applicant
-  // still deserves to be told. Silently deleting an application is the one
-  // response that is actually rude.
+  // Return contact details for the transactional rejection notice.
   const rows = await sql`
-    DELETE FROM affiliates WHERE id = ${affiliateId} AND status = 'pending'
+    UPDATE affiliates SET status='suspended', application_stage='REJECTED' WHERE id = ${affiliateId} AND status = 'pending'
     RETURNING name, email
   `;
-  return rows[0] ? { name: (rows[0].name as string) ?? "", email: (rows[0].email as string) ?? "" } : null;
+  return rows[0]
+    ? {
+        name: (rows[0].name as string) ?? "",
+        email: (rows[0].email as string) ?? "",
+      }
+    : null;
 }
 
 export interface AffiliateReferredBusiness {
@@ -319,7 +371,9 @@ export interface AffiliateReferredBusiness {
   referredAt: string;
 }
 
-export async function listReferredBusinesses(affiliateId: string): Promise<AffiliateReferredBusiness[]> {
+export async function listReferredBusinesses(
+  affiliateId: string,
+): Promise<AffiliateReferredBusiness[]> {
   const sql = getSql();
   const rows = await sql`
     SELECT r.organization_id, r.created_at, bp.display_name, COALESCE(ia.subscription_status, 'inactive') AS subscription_status
@@ -362,7 +416,10 @@ export interface AffiliateEarning {
   createdAt: string;
 }
 
-export async function listEarnings(affiliateId: string, limit = 50): Promise<AffiliateEarning[]> {
+export async function listEarnings(
+  affiliateId: string,
+  limit = 50,
+): Promise<AffiliateEarning[]> {
   const sql = getSql();
   const rows = await sql`
     SELECT e.id, e.organization_id, e.source_amount_kobo, e.commission_kobo, e.created_at,
@@ -382,7 +439,8 @@ export async function listEarnings(affiliateId: string, limit = 50): Promise<Aff
     // Defensive defaults: rows written before migration 024 have no `kind`, and
     // calling them 'commission' is honest — that is what they were.
     kind: ((row.kind as string) ?? "commission") as AffiliateEarning["kind"],
-    status: ((row.status as string) ?? "available") as AffiliateEarning["status"],
+    status: ((row.status as string) ??
+      "available") as AffiliateEarning["status"],
     periodKey: (row.period_key as string) ?? "",
     createdAt: isoDate(row.created_at as string),
   }));
@@ -395,7 +453,10 @@ export interface AffiliatePayout {
   createdAt: string;
 }
 
-export async function listPayouts(affiliateId: string, limit = 50): Promise<AffiliatePayout[]> {
+export async function listPayouts(
+  affiliateId: string,
+  limit = 50,
+): Promise<AffiliatePayout[]> {
   const sql = getSql();
   const rows = await sql`
     SELECT id, amount_kobo, note, created_at FROM affiliate_payouts
@@ -411,7 +472,12 @@ export async function listPayouts(affiliateId: string, limit = 50): Promise<Affi
   }));
 }
 
-export async function recordPayout(affiliateId: string, adminUserId: string, amountKobo: number, note: string): Promise<AffiliatePayout> {
+export async function recordPayout(
+  affiliateId: string,
+  adminUserId: string,
+  amountKobo: number,
+  note: string,
+): Promise<AffiliatePayout> {
   const sql = getSql();
   const rows = await sql`
     INSERT INTO affiliate_payouts (affiliate_id, admin_user_id, amount_kobo, note)
@@ -419,7 +485,12 @@ export async function recordPayout(affiliateId: string, adminUserId: string, amo
     RETURNING *
   `;
   const row = rows[0];
-  return { id: row.id as string, amountKobo: kobo(row.amount_kobo as string), note: (row.note as string) ?? "", createdAt: isoDate(row.created_at as string) };
+  return {
+    id: row.id as string,
+    amountKobo: kobo(row.amount_kobo as string),
+    note: (row.note as string) ?? "",
+    createdAt: isoDate(row.created_at as string),
+  };
 }
 
 /**
@@ -430,7 +501,12 @@ export async function recordPayout(affiliateId: string, adminUserId: string, amo
  */
 export async function saveAffiliateBankDetails(
   affiliateId: string,
-  input: { bankCode: string; bankName: string; accountNumber: string; accountName: string },
+  input: {
+    bankCode: string;
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+  },
 ): Promise<Affiliate> {
   const sql = getSql();
   const rows = await sql`
@@ -452,7 +528,9 @@ export async function saveAffiliateBankDetails(
  * partner withdraw the signup bonus the day a referral created an account —
  * before that referral had paid anything — which pays out against free accounts.
  */
-export async function getAffiliateBalance(affiliateId: string): Promise<AffiliateBalance> {
+export async function getAffiliateBalance(
+  affiliateId: string,
+): Promise<AffiliateBalance> {
   const sql = getSql();
   const rows = await sql`
     SELECT
@@ -468,8 +546,16 @@ export async function getAffiliateBalance(affiliateId: string): Promise<Affiliat
     [
       // The pure summariser owns the arithmetic; the SQL above exists so the two
       // figures can be cross-checked rather than trusted blindly.
-      { kind: "commission", status: "pending", commissionKobo: kobo(row.pending_kobo as string) },
-      { kind: "commission", status: "available", commissionKobo: kobo(row.available_kobo as string) },
+      {
+        kind: "commission",
+        status: "pending",
+        commissionKobo: kobo(row.pending_kobo as string),
+      },
+      {
+        kind: "commission",
+        status: "available",
+        commissionKobo: kobo(row.available_kobo as string),
+      },
     ],
     kobo(row.total_paid_out_kobo as string),
   ) as AffiliateBalance;
@@ -483,10 +569,14 @@ export async function getAffiliateBalance(affiliateId: string): Promise<Affiliat
  * The UNIQUE constraint on organization_id means this can only ever
  * happen once per business, no matter how many times it's called.
  */
-export async function recordReferralIfValid(organizationId: string, referralCode: string | null | undefined): Promise<void> {
+export async function recordReferralIfValid(
+  organizationId: string,
+  referralCode: string | null | undefined,
+): Promise<void> {
   if (!referralCode) return;
   const sql = getSql();
-  const rows = await sql`SELECT id FROM affiliates WHERE referral_code = ${referralCode.toUpperCase()} AND status = 'active'`;
+  const rows =
+    await sql`SELECT id FROM affiliates WHERE referral_code = ${referralCode.toUpperCase()} AND status = 'active'`;
   const affiliate = rows[0];
   if (!affiliate) return;
   const inserted = await sql`
@@ -500,7 +590,9 @@ export async function recordReferralIfValid(organizationId: string, referralCode
   // person returning via the link, a retried signup — must not write a second
   // signup bonus.
   if (inserted[0]) {
-    await recordSignupBonus(organizationId).catch((err) => console.error("recordSignupBonus failed:", err));
+    await recordSignupBonus(organizationId).catch((err) =>
+      console.error("recordSignupBonus failed:", err),
+    );
   }
 }
 
@@ -543,11 +635,16 @@ export async function accrueCommissionForOrg(
   const row = rows[0];
   if (!row) return;
 
+  if (row.commission_model === "policy") return;
   const affiliateId = row.affiliate_id as string;
   const terms = {
     signupBonusKobo: Number(row.signup_bonus_kobo ?? SIGNUP_BONUS_KOBO),
-    subscriptionBonusKobo: Number(row.subscription_bonus_kobo ?? SUBSCRIPTION_BONUS_KOBO),
-    recurringMonthlyKobo: Number(row.recurring_monthly_kobo ?? RECURRING_MONTHLY_KOBO),
+    subscriptionBonusKobo: Number(
+      row.subscription_bonus_kobo ?? SUBSCRIPTION_BONUS_KOBO,
+    ),
+    recurringMonthlyKobo: Number(
+      row.recurring_monthly_kobo ?? RECURRING_MONTHLY_KOBO,
+    ),
     recurringMonthsCap: Number(row.recurring_months_cap ?? 0),
   };
 
@@ -595,13 +692,13 @@ export async function accrueCommissionForOrg(
 export async function recordSignupBonus(organizationId: string): Promise<void> {
   const sql = getSql();
   const rows = await sql`
-    SELECT r.affiliate_id, a.signup_bonus_kobo
+    SELECT r.affiliate_id, a.signup_bonus_kobo, a.commission_model
     FROM affiliate_referrals r
     JOIN affiliates a ON a.id = r.affiliate_id
     WHERE r.organization_id = ${organizationId} AND a.status = 'active'
   `;
   const row = rows[0];
-  if (!row) return;
+  if (!row || row.commission_model === "policy") return;
 
   await sql`
     INSERT INTO affiliate_earnings (
@@ -624,7 +721,9 @@ export async function recordSignupBonus(organizationId: string): Promise<void> {
  * that was lost. `dueRecurringPeriods` decides which months are outstanding and
  * the unique index prevents a double credit, so this is safe to run daily.
  */
-export async function accrueDueRecurringCommissions(at: Date = new Date()): Promise<{ credited: number; affiliates: number }> {
+export async function accrueDueRecurringCommissions(
+  at: Date = new Date(),
+): Promise<{ credited: number; affiliates: number }> {
   const sql = getSql();
   const current = periodKeyFor(at);
 
@@ -665,7 +764,9 @@ export async function accrueDueRecurringCommissions(at: Date = new Date()): Prom
       WHERE affiliate_id = ${affiliateId} AND organization_id = ${organizationId} AND kind = 'subscription'
       LIMIT 1
     `;
-    const startedPeriod = first[0] ? periodKeyFor(new Date(first[0].created_at as string)) : periodKeyFor(new Date(referral.created_at as string));
+    const startedPeriod = first[0]
+      ? periodKeyFor(new Date(first[0].created_at as string))
+      : periodKeyFor(new Date(referral.created_at as string));
 
     const months = dueRecurringPeriods({
       startedPeriod,
@@ -710,7 +811,7 @@ function mapPayoutRequest(row: Record<string, unknown>): PayoutRequest {
   return {
     id: row.id as string,
     amountKobo: kobo(row.amount_kobo as string),
-    status: (row.status as string) as PayoutRequest["status"],
+    status: row.status as string as PayoutRequest["status"],
     requestedAt: isoDate(row.requested_at as string),
   };
 }
@@ -719,7 +820,9 @@ function mapPayoutRequest(row: Record<string, unknown>): PayoutRequest {
  * any — regardless of status, so a declined request this month still
  * blocks a second one until next month's window (same one-per-month rule
  * a paid or pending request enforces). */
-export async function getCurrentPayoutRequest(affiliateId: string): Promise<PayoutRequest | null> {
+export async function getCurrentPayoutRequest(
+  affiliateId: string,
+): Promise<PayoutRequest | null> {
   const sql = getSql();
   const rows = await sql`
     SELECT * FROM payout_requests
@@ -739,7 +842,9 @@ export const PAYOUT_BANK_NOT_VERIFIED = "PAYOUT_BANK_NOT_VERIFIED";
  * needing amount validation against a balance that could itself change
  * between load and submit. Throws one of the sentinels above; the action
  * layer turns each into a specific message. */
-export async function requestPayout(affiliateId: string): Promise<PayoutRequest> {
+export async function requestPayout(
+  affiliateId: string,
+): Promise<PayoutRequest> {
   if (!isPayoutWindowOpen()) throw new Error(PAYOUT_WINDOW_CLOSED);
 
   const sql = getSql();
@@ -747,7 +852,8 @@ export async function requestPayout(affiliateId: string): Promise<PayoutRequest>
     sql`SELECT bank_verified_at FROM affiliates WHERE id = ${affiliateId}`,
     getAffiliateBalance(affiliateId),
   ]);
-  if (!affiliateRows[0]?.bank_verified_at) throw new Error(PAYOUT_BANK_NOT_VERIFIED);
+  if (!affiliateRows[0]?.bank_verified_at)
+    throw new Error(PAYOUT_BANK_NOT_VERIFIED);
   if (balanceKobo <= 0) throw new Error(PAYOUT_NOTHING_TO_REQUEST);
 
   const rows = await sql`
@@ -769,7 +875,9 @@ export interface PendingPayoutRequest extends PayoutRequest {
   accountName: string;
 }
 
-export async function listPendingPayoutRequests(): Promise<PendingPayoutRequest[]> {
+export async function listPendingPayoutRequests(): Promise<
+  PendingPayoutRequest[]
+> {
   const sql = getSql();
   const rows = await sql`
     SELECT pr.*, a.name AS affiliate_name, a.email AS affiliate_email,
@@ -798,18 +906,31 @@ export async function listPendingPayoutRequests(): Promise<PendingPayoutRequest[
  * interactive transaction support, and a manual, one-off admin click here
  * carries the same acceptable risk window this codebase takes elsewhere
  * (see CHECKPOINT's "failure handling is deliberately simple" notes). */
-export async function markPayoutRequestPaid(requestId: string, adminUserId: string, note: string): Promise<AffiliatePayout> {
+export async function markPayoutRequestPaid(
+  requestId: string,
+  adminUserId: string,
+  note: string,
+): Promise<AffiliatePayout> {
   const sql = getSql();
-  const rows = await sql`SELECT affiliate_id, amount_kobo FROM payout_requests WHERE id = ${requestId} AND status = 'pending'`;
+  const rows =
+    await sql`SELECT affiliate_id, amount_kobo FROM payout_requests WHERE id = ${requestId} AND status = 'pending'`;
   const row = rows[0];
   if (!row) throw new Error("That payout request was already resolved.");
 
-  const payout = await recordPayout(row.affiliate_id as string, adminUserId, kobo(row.amount_kobo as string), note);
+  const payout = await recordPayout(
+    row.affiliate_id as string,
+    adminUserId,
+    kobo(row.amount_kobo as string),
+    note,
+  );
   await sql`UPDATE payout_requests SET status = 'paid', resolved_at = now(), admin_user_id = ${adminUserId} WHERE id = ${requestId} AND status = 'pending'`;
   return payout;
 }
 
-export async function declinePayoutRequest(requestId: string, adminUserId: string): Promise<void> {
+export async function declinePayoutRequest(
+  requestId: string,
+  adminUserId: string,
+): Promise<void> {
   const sql = getSql();
   await sql`UPDATE payout_requests SET status = 'declined', resolved_at = now(), admin_user_id = ${adminUserId} WHERE id = ${requestId} AND status = 'pending'`;
 }

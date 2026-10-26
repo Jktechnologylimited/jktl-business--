@@ -1,3 +1,4 @@
+import { JktlMark } from "@/components/app/logo";
 import { ThemeControl } from "@/components/settings/theme-control";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -26,6 +27,9 @@ export default async function Layout({
       <header className="bg-[#060e2a] px-6 py-8 text-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5">
           <div>
+            <Link href="/partners" aria-label="JKTL Partners home">
+              <JktlMark className="mb-3 size-14" />
+            </Link>
             <p className="text-xs tracking-widest text-[#c9a84c]">
               JKTL PARTNERS
             </p>
@@ -34,10 +38,13 @@ export default async function Layout({
             </h1>
             <p className="mt-2 text-sm text-white/65">{s.name}</p>
           </div>
-          <div className="flex items-center gap-5 text-sm"><ThemeControl />
+          <div className="flex flex-wrap items-center gap-5 text-sm">
+            <ThemeControl />
             <Link href="https://jktl.com.ng/partners">Programme</Link>
             <Link href="/partners/workspace">Workspace</Link>
             <Link href="/partners/support">Support</Link>
+            <Link href="/partners/commercial">Commercial terms</Link>
+            <Link href="/partners/resources">Resources</Link>
             <Link href="/partners/clients">Clients</Link>
             <Link href="/business/distribution">Business account</Link>
             <form action={affiliateLogoutAction}>

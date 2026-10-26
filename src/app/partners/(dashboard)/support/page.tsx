@@ -1,3 +1,5 @@
+import { PartnerAlerts } from "@/components/distribution/partner-alerts";
+import { uploadPartnerAttachmentAction } from "@/lib/actions/partner-operations-actions";
 import { approvedPartner } from "@/lib/partners/access";
 import { query } from "@/lib/custom/service";
 import {
@@ -19,9 +21,14 @@ export default async function Page() {
     "SELECT id,business_name FROM partner_workspaces WHERE partner_id=$1",
     [p.id],
   );
+  const attachments = await query(
+    "SELECT f.id,f.ticket_id,f.file_name,f.size FROM partner_ticket_attachments f JOIN partner_tickets t ON t.id=f.ticket_id WHERE t.partner_id=$1 ORDER BY f.created_at DESC LIMIT 200",
+    [p.id],
+  );
   return (
     <div className="space-y-6 text-ink">
       <h1 className="text-3xl font-semibold">Partner support</h1>
+      <PartnerAlerts />
       <p>
         Get help with client setup and JKTL products. Never include passwords,
         payment credentials or mailbox contents. Sensitive billing and security
@@ -126,6 +133,37 @@ export default async function Page() {
                 {String(m.body)}
               </p>
             ))}
+          <div>
+            {attachments
+              .filter((f) => f.ticket_id === t.id)
+              .map((f) => (
+                <a
+                  key={String(f.id)}
+                  className="my-2 block underline"
+                  href={"/api/partners/attachments/" + f.id}
+                >
+                  {String(f.file_name)} · {Math.ceil(Number(f.size) / 1024)} KB
+                </a>
+              ))}
+          </div>
+          {t.status !== "CLOSED" && (
+            <form action={uploadPartnerAttachmentAction} className="space-y-3">
+              <input type="hidden" name="id" value={String(t.id)} />
+              <label>
+                Screenshot or PDF (maximum 512 KB)
+                <input
+                  type="file"
+                  name="file"
+                  accept="image/png,image/jpeg,image/webp,application/pdf"
+                  required
+                  className="mt-2 block w-full"
+                />
+              </label>
+              <button className="rounded-lg border border-border p-3">
+                Upload protected attachment
+              </button>
+            </form>
+          )}
           {t.status !== "CLOSED" && (
             <form action={partnerTicketReplyAction}>
               <input type="hidden" name="id" value={String(t.id)} />

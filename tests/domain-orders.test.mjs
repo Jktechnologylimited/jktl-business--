@@ -607,8 +607,8 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
           return { id: adminId };
         },
       },
-      "@/lib/business-email/service":{handleEmailEvent:async()=>false},
-"@/lib/custom/service": { handleCustomEvent: async () => false },
+      "@/lib/business-email/service": { handleEmailEvent: async () => false },
+      "@/lib/custom/service": { handleCustomEvent: async () => false },
       "@/lib/domains/service": service,
       "@/lib/domains/contacts": contacts,
       "@/lib/domains/model": model,
@@ -753,9 +753,18 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
           after,
         };
         const route = load("../src/app/api/webhooks/paystack/route.ts", {
+          "@/lib/distribution/notifications": {
+            flushProgramNotices: async () => ({}),
+          },
+          "@/lib/distribution/finance": {
+            recordDistributionRisk: async () => {},
+            reconcileDistributionPayments: async () => ({}),
+          },
           "next/server": next,
-          "@/lib/business-email/service":{handleEmailEvent:async()=>false},
-"@/lib/custom/service": { handleCustomEvent: async () => false },
+          "@/lib/business-email/service": {
+            handleEmailEvent: async () => false,
+          },
+          "@/lib/custom/service": { handleCustomEvent: async () => false },
           "@/lib/domains/service": service,
           "@/lib/website-billing-webhooks": {
             handleWebsiteBillingEvent: async () => {

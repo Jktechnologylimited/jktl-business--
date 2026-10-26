@@ -1,4 +1,6 @@
 "use server";
+import { after } from "next/server";
+import { processPartnerNotices } from "@/lib/partners/notifications";
 import { query } from "@/lib/custom/service";
 import { approvedPartner, workspace } from "@/lib/partners/access";
 import { requireAdminCapability } from "@/lib/admin-session";
@@ -35,6 +37,11 @@ export async function createPartnerTicketAction(f: FormData) {
       body,
     ],
   );
+  after(async () => {
+    try {
+      await processPartnerNotices();
+    } catch {}
+  });
   revalidatePath("/partners/support");
 }
 export async function partnerTicketReplyAction(f: FormData) {
@@ -46,6 +53,11 @@ export async function partnerTicketReplyAction(f: FormData) {
     `WITH allowed AS(UPDATE partner_tickets SET status=CASE WHEN status='RESOLVED' THEN 'OPEN' ELSE status END,sensitive=sensitive OR $4,assigned_to=CASE WHEN $4 THEN NULL ELSE assigned_to END,updated_at=now() WHERE id=$1 AND partner_id=$2 AND status<>'CLOSED' RETURNING id) INSERT INTO partner_ticket_messages(ticket_id,actor_id,kind,body) SELECT id,$2,'PARTNER',$3 FROM allowed`,
     [String(f.get("id")), p.id, body, sensitive(body)],
   );
+  after(async () => {
+    try {
+      await processPartnerNotices();
+    } catch {}
+  });
   revalidatePath("/partners/support");
 }
 export async function staffPartnerTicketAction(f: FormData) {
@@ -74,5 +86,10 @@ export async function staffPartnerTicketAction(f: FormData) {
   );
   if (!result.length)
     throw Error("Ticket requires the assigned agent or an owner");
+  after(async () => {
+    try {
+      await processPartnerNotices();
+    } catch {}
+  });
   revalidatePath("/admin/partner-support");
 }

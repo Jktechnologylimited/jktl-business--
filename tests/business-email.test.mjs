@@ -700,6 +700,13 @@ test("email checkout, provisioning, renewals, badges and partners use real isola
         );
         let legacy = 0;
         const route = load("../src/app/api/webhooks/paystack/route.ts", {
+          "@/lib/distribution/notifications": {
+            flushProgramNotices: async () => ({}),
+          },
+          "@/lib/distribution/finance": {
+            recordDistributionRisk: async () => {},
+            reconcileDistributionPayments: async () => ({}),
+          },
           "next/server": {
             NextResponse: { json: (b, o) => Response.json(b, o) },
           },

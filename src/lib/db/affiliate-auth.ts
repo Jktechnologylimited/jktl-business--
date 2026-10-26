@@ -19,7 +19,7 @@ import { getSql } from "./client";
 const AFFILIATE_SESSION_DAYS = 7;
 
 export interface AffiliateUser {
- programme?: "partner" | "affiliate";
+  programme?: "partner" | "affiliate";
   id: string;
   name: string;
   email: string;
@@ -30,19 +30,27 @@ export interface AffiliateUser {
 
 function mapAffiliateUser(row: Record<string, unknown>): AffiliateUser {
   return {
-    programme: row.programme === "partner" ? "partner":"affiliate",
+    programme: row.programme === "partner" ? "partner" : "affiliate",
     id: row.id as string,
     name: row.name as string,
     email: row.email as string,
     referralCode: row.referral_code as string,
     commissionBps: Number(row.commission_bps),
-    status: (row.status as string) === "pending" ? "pending" : (row.status as string) === "suspended" ? "suspended" : "active",
+    status:
+      (row.status as string) === "pending"
+        ? "pending"
+        : (row.status as string) === "suspended"
+          ? "suspended"
+          : "active",
   };
 }
 
 export type AffiliateLoginResult =
   | { ok: true; affiliate: AffiliateUser }
-  | { ok: false; reason: "not_found" | "pending" | "suspended" | "wrong_password" };
+  | {
+      ok: false;
+      reason: "not_found" | "pending" | "suspended" | "wrong_password";
+    };
 
 /**
  * A self-serve application (migration 014) sits in `status = 'pending'`
@@ -54,13 +62,18 @@ export type AffiliateLoginResult =
  * wording, and none of them are sensitive enough to hide behind one vague
  * error the way, say, a business login's credential check would be.
  */
-export async function verifyAffiliateLogin(email: string, password: string): Promise<AffiliateLoginResult> {
+export async function verifyAffiliateLogin(
+  email: string,
+  password: string,
+  programme?: "affiliate" | "partner",
+): Promise<AffiliateLoginResult> {
   const sql = getSql();
-  const rows = await sql`SELECT * FROM affiliates WHERE email = ${email.toLowerCase()}`;
+  const rows =
+    await sql`SELECT * FROM affiliates WHERE email = ${email.toLowerCase()} AND (${programme ?? null}::text IS NULL OR programme=${programme ?? null}) ORDER BY created_at ASC,id`;
   const row = rows[0];
   if (!row) return { ok: false, reason: "not_found" };
   if (row.status === "pending") return { ok: false, reason: "pending" };
-  if (row.status === "suspended") return { ok: false, reason: "suspended" };
+  if (row.status !== "active") return { ok: false, reason: "suspended" };
 
   const ok = await bcrypt.compare(password, row.password_hash as string);
   if (!ok) return { ok: false, reason: "wrong_password" };
@@ -68,16 +81,22 @@ export async function verifyAffiliateLogin(email: string, password: string): Pro
   return { ok: true, affiliate: mapAffiliateUser(row) };
 }
 
-export async function createAffiliateSession(affiliateId: string): Promise<string> {
+export async function createAffiliateSession(
+  affiliateId: string,
+): Promise<string> {
   const sql = getSql();
-  const expiresAt = new Date(Date.now() + AFFILIATE_SESSION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(
+    Date.now() + AFFILIATE_SESSION_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString();
   const rows = await sql`
     INSERT INTO affiliate_sessions (affiliate_id, expires_at) VALUES (${affiliateId}, ${expiresAt}) RETURNING id
   `;
   return rows[0].id as string;
 }
 
-export async function validateAffiliateSession(sessionId: string): Promise<AffiliateUser | null> {
+export async function validateAffiliateSession(
+  sessionId: string,
+): Promise<AffiliateUser | null> {
   const sql = getSql();
   const rows = await sql`
     SELECT a.*
@@ -91,14 +110,21 @@ export async function validateAffiliateSession(sessionId: string): Promise<Affil
   return mapAffiliateUser(row);
 }
 
-export async function destroyAffiliateSession(sessionId: string): Promise<void> {
+export async function destroyAffiliateSession(
+  sessionId: string,
+): Promise<void> {
   const sql = getSql();
   await sql`DELETE FROM affiliate_sessions WHERE id = ${sessionId}`;
 }
 
-export async function changeAffiliatePassword(affiliateId: string, currentPassword: string, newPassword: string): Promise<boolean> {
+export async function changeAffiliatePassword(
+  affiliateId: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<boolean> {
   const sql = getSql();
-  const rows = await sql`SELECT password_hash FROM affiliates WHERE id = ${affiliateId}`;
+  const rows =
+    await sql`SELECT password_hash FROM affiliates WHERE id = ${affiliateId}`;
   const row = rows[0];
   if (!row) return false;
   const ok = await bcrypt.compare(currentPassword, row.password_hash as string);
@@ -147,11 +173,13 @@ export async function requestAffiliatePasswordReset(
   const normalized = email.trim().toLowerCase();
   if (!normalized) return { sent: false, rateLimited: false };
 
-  const rows = await sql`SELECT id, status, name FROM affiliates WHERE email = ${normalized}`;
+  const rows =
+    await sql`SELECT id, status, name FROM affiliates WHERE email = ${normalized} ORDER BY created_at ASC,id LIMIT 1`;
   const affiliate = rows[0];
   // Only an active partner can reset. A pending applicant has a password but no
   // approved account, and a suspended one must not be able to get back in.
-  if (!affiliate || affiliate.status !== "active") return { sent: false, rateLimited: false };
+  if (!affiliate || affiliate.status !== "active")
+    return { sent: false, rateLimited: false };
 
   const affiliateId = affiliate.id as string;
 
@@ -159,7 +187,10 @@ export async function requestAffiliatePasswordReset(
     SELECT COUNT(*)::int AS n FROM affiliate_password_resets
     WHERE affiliate_id = ${affiliateId} AND created_at > now() - interval '1 hour'
   `;
-  if (Number((recent[0] as Record<string, unknown>)?.n ?? 0) >= RESET_REQUESTS_PER_HOUR) {
+  if (
+    Number((recent[0] as Record<string, unknown>)?.n ?? 0) >=
+    RESET_REQUESTS_PER_HOUR
+  ) {
     return { sent: false, rateLimited: true };
   }
 
@@ -181,12 +212,22 @@ export async function requestAffiliatePasswordReset(
     sent: true,
     rateLimited: false,
     token,
-    recipient: { affiliateId, name: (affiliate.name as string) ?? "", email: normalized },
+    recipient: {
+      affiliateId,
+      name: (affiliate.name as string) ?? "",
+      email: normalized,
+    },
   };
 }
 
 export type ResetLookup =
-  | { ok: true; affiliateId: string; name: string; email: string; resetId: string }
+  | {
+      ok: true;
+      affiliateId: string;
+      name: string;
+      email: string;
+      resetId: string;
+    }
   | { ok: false; state: ResetTokenState };
 
 /**
@@ -196,7 +237,10 @@ export type ResetLookup =
  * mutated — and so a partner who opens the link twice gets a clear "already used"
  * message rather than a silent failure.
  */
-export async function lookupAffiliatePasswordReset(token: string, now: Date = new Date()): Promise<ResetLookup> {
+export async function lookupAffiliatePasswordReset(
+  token: string,
+  now: Date = new Date(),
+): Promise<ResetLookup> {
   if (!isPlausibleToken(token)) return { ok: false, state: "expired" };
   const sql = getSql();
   const rows = await sql`
@@ -209,7 +253,11 @@ export async function lookupAffiliatePasswordReset(token: string, now: Date = ne
   if (!row) return { ok: false, state: "expired" };
 
   const state = resetTokenState(
-    { expiresAt: row.expires_at as string, usedAt: (row.used_at as string) ?? null, supersededAt: (row.superseded_at as string) ?? null },
+    {
+      expiresAt: row.expires_at as string,
+      usedAt: (row.used_at as string) ?? null,
+      supersededAt: (row.superseded_at as string) ?? null,
+    },
     now,
   );
   if (state !== "usable") return { ok: false, state };
@@ -239,7 +287,9 @@ export async function lookupAffiliatePasswordReset(token: string, now: Date = ne
 export async function completeAffiliatePasswordReset(params: {
   token: string;
   newPassword: string;
-}): Promise<{ ok: true; affiliateId: string } | { ok: false; state: ResetTokenState }> {
+}): Promise<
+  { ok: true; affiliateId: string } | { ok: false; state: ResetTokenState }
+> {
   const sql = getSql();
   const lookup = await lookupAffiliatePasswordReset(params.token);
   if (!lookup.ok) return lookup;
@@ -265,7 +315,9 @@ export async function completeAffiliatePasswordReset(params: {
 
 /** Deletes expired and long-spent tokens. Called from a cron — the table should
  * not grow forever, and an old row is only a liability. */
-export async function pruneAffiliatePasswordResets(olderThanDays = 7): Promise<number> {
+export async function pruneAffiliatePasswordResets(
+  olderThanDays = 7,
+): Promise<number> {
   const sql = getSql();
   const rows = await sql`
     DELETE FROM affiliate_password_resets

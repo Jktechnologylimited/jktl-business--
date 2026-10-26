@@ -108,7 +108,7 @@ export async function partnerLoginAction(email: string, password: string) {
       10,
       60,
     );
-    const result = await verifyAffiliateLogin(email, password);
+    const result = await verifyAffiliateLogin(email, password, "partner");
     if (!result.ok)
       return {
         ok: false,

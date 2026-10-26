@@ -1,58 +1,44 @@
-# Partner service workspace
+# Partner operations
 
-Migration 040 extends the existing shared feature registry with partner eligibility,
-action permissions and service mode. Defaults are seeded once; replaying the migration
-must not re-enable a product an Owner disabled. New products default to unavailable
-until reviewed under Admin → Distribution → Partner products.
+The existing product registry, template catalog, website renderer, client
+organizations and native fulfillment queues are reused. No parallel website or
+billing system is created. Product availability and actions are Owner controlled;
+new products default to unavailable until reviewed.
 
-## Available workflow
+- `/partners`: real client/draft/support counts.
+- `/partners/workspace`: multiple named client drafts, existing searchable template
+  catalog, shared website fields/renderer, desktop/mobile preview and revision-safe
+  saving. Client-owner acceptance is required before publishing. The owner grants
+  viewing, requests, content editing and publishing independently; revocation
+  blocks subsequent operations. Partners never impersonate owners.
+- Authorized client services show real domain/email/website statuses. Requests
+  enter existing domain tasks or email requests and create a related support
+  conversation. Runtime product validation, current grants and product action
+  rules apply to each mutation. Requests cannot transfer domains, reveal passwords,
+  change ownership, make payments or bypass licensing/provisioning controls.
+- Automatic onboarding evidence (claim/design/publish) is distinguished from
+  partner-confirmed profile, review, training and handover checklist items.
+- `/partners/support`: categorized, prioritized tickets, conversation/reopening,
+  private PNG/JPEG/WebP/PDF attachments (512 KB each, 5 MB/ticket), explicit optional
+  notification registration and PWA installation guidance. Closed tickets are
+  read-only. Protected attachments require an active authorized session and are
+  returned as downloads with no-store/nosniff/sandbox headers.
+- `/admin/partner-support`: queue search and filters, response-target overdue
+  visibility, eligible staff assignment/reassignment, private internal notes and
+  sensitive Owner escalation. Support cannot read sensitive tickets. Response
+  targets are operational goals, not public 24/7 guarantees.
+- Durable ticket notices exclude private message bodies and internal notes.
+  Existing email/Web Push settings are reused. Subscriptions bind to current
+  sessions, invalid endpoints are pruned, transient delivery is retried. Missing
+  configuration leaves notices queued; installation alone does not grant push
+  permission. Staff opt in through the existing admin support control.
+- `/partners/commercial`, `/partners/resources`: accepted agreements, verified
+  financial ledger, bank verification, payout requests, CSV statements and approved
+  promotional resources. Owner approval and actual fulfillment/payment evidence
+  remain mandatory. See DISTRIBUTION_IMPLEMENTATION.md for financial controls.
 
-- `/partners`: actual workspace, relationship, draft and open-ticket counts.
-- `/partners/workspace`: create multiple named client drafts, select a client,
-  browse/search/filter the existing template library, reuse the existing website
-  fields and renderer, preview mobile/desktop and save a draft before acceptance.
-- Invite owners with a hashed one-use, seven-day claim link. Acceptance binds the
-  workspace to the owner's selected existing organization; it never grants the
-  partner ownership or impersonates the client. Signup can create that client org.
-- Owners grant website editing and publishing separately under
-  `/business/distribution`. No permission is preselected. Publishing before client
-  acceptance is rejected. Website operations use the customer save engine and
-  renderer, with grant, product and current partner agreement checks locked into
-  the update. Revocation blocks subsequent writes and stale revisions fail closed.
-- Domain, email and other assisted products route through authorized service
-  requests at `/partners/clients` and the existing JKTL fulfillment operation.
-  They do not create unapproved purchases or pretend to register/provision anything.
-- `/partners/support`: create categorized, prioritized client tickets, read the
-  conversation and reply/reopen resolved tickets. Closed tickets remain read-only.
-- `/admin/partner-support`: existing Support and Owner staff identities handle
-  the queue. Non-sensitive tickets are claimable and subsequent changes require
-  assignment. Sensitive tickets require Owner access. Notes stay outside the
-  partner conversation. Messages and status events retain their history.
-- `/partners/earnings`: existing commission, bank verification and payout reporting.
-
-The active signed agreement still determines commissions. Proposed 15%/20% policies
-remain draft. There is no new fee for free websites, no automatic client billing,
-no new provider admin access and no unrestricted mailbox access.
-
-## Current limits and production work still required
-
-This delivery expands operational access but is not the entire master brief.
-Domain/email purchase and provisioning remain the existing customer-approved,
-assisted workflows; partner checkout, negotiated reseller billing and direct DNS
-configuration are not enabled. Partners can provide authorized image URLs using
-the existing content controls; partner-specific file upload is not added.
-
-Support notifications, attachment handling, configurable response targets,
-advanced assignment/filtering and additional onboarding checklist tasks remain
-outstanding. The payment-connected policy ledger and cohort activation from the
-previous brief also remain outstanding. Do not advertise those as live features.
-
-No new environment variables. Prebuild includes migration 040 using the repaired
-SQL runner. Existing DATABASE_URL is required in deployment. Current cloud checks
-use isolated PostgreSQL-compatible databases; no real domains, mailbox provisioning,
-payments, customer invitations or staff notifications are performed by tests.
-
-Before launch, validate the complete flow using approved test identities and a
-nonproduction tenant, including owner claim, product disablement, switching clients,
-publication cache invalidation and revocation. Production delivery and browser
-accessibility/responsiveness are not established by unit tests or a build alone.
+Migrations 040–046 are additive. No production messages, purchases, bank transfers
+or provider registrations are made by automated tests. Live deployment still needs
+working database/provider configuration, scheduled cron execution and operational
+verification using approved identities. Existing legacy obligations remain intact;
+no migration activates the proposed global 15%/20% policies.

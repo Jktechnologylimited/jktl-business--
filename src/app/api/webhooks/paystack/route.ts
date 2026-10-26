@@ -1,9 +1,14 @@
+import { flushProgramNotices } from "@/lib/distribution/notifications";
+import {
+  recordDistributionRisk,
+  reconcileDistributionPayments,
+} from "@/lib/distribution/finance";
 import { handleEmailEvent } from "@/lib/business-email/service";
 import { handleCustomEvent } from "@/lib/custom/service";
 import { handleDomainEvent } from "@/lib/domains/service";
 import { handleWebsiteBillingEvent } from "@/lib/website-billing-webhooks";
 import { getInfrastructure } from "@/lib/db/organizations";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import {
   verifyWebhookSignature,
   INVOICE_PLATFORM_FEE_KOBO,
@@ -96,6 +101,27 @@ export async function POST(request: NextRequest) {
     Array.isArray(data)
   )
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  try {
+    await recordDistributionRisk(event, data);
+  } catch {
+    return NextResponse.json(
+      { error: "Payment risk recording will retry" },
+      { status: 503 },
+    );
+  }
+  if (
+    event === "charge.success" ||
+    event === "refund.processed" ||
+    event.startsWith("charge.dispute.")
+  )
+    try {
+      after(async () => {
+        try {
+          await reconcileDistributionPayments();
+          await flushProgramNotices();
+        } catch {}
+      });
+    } catch {}
   // Domain handlers commit their own unique payment ledger before acknowledgement.
   // Do not acknowledge an in-flight/failed domain payment using the legacy receipt gate.
   try {

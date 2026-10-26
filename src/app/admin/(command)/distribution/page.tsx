@@ -41,7 +41,25 @@ export default async function Distribution() {
           Affiliate and Partner policy governance. Proposed policies remain
           draft; current agreements and payout balances are unchanged.
         </p>
-        <nav className="mt-4 flex flex-wrap gap-5"><Link className="underline" href="/admin/distribution/products">Partner products</Link><Link className="underline" href="/admin/distribution/requests">Partner service requests</Link>
+        <nav className="mt-4 flex flex-wrap gap-5">
+          <Link className="underline" href="/admin/distribution/applications">
+            Applications
+          </Link>
+          <Link className="underline" href="/admin/distribution/resources">
+            Marketing resources
+          </Link>
+          <Link className="underline" href="/admin/distribution/quotes">
+            Reseller quotes
+          </Link>
+          <Link className="underline" href="/admin/distribution/finance">
+            Agreements & finance
+          </Link>
+          <Link className="underline" href="/admin/distribution/products">
+            Partner products
+          </Link>
+          <Link className="underline" href="/admin/distribution/requests">
+            Partner service requests
+          </Link>
           <Link className="underline" href="/admin/affiliates">
             Affiliate applications, earnings & payouts
           </Link>

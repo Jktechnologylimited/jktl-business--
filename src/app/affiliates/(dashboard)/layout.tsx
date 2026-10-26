@@ -51,6 +51,11 @@ export default async function AffiliateLayout({
       role="JKTL Affiliate"
       nav={[
         { href: "/affiliates", label: "Overview" },
+        {
+          href: "/affiliates/commercial",
+          label: "Agreements & verified earnings",
+        },
+        { href: "/affiliates/resources", label: "Marketing resources" },
         { href: "/affiliates/playbook", label: "Growth playbook" },
       ]}
       logout={affiliateLogoutAction}

@@ -14,6 +14,9 @@ test("partner invites require current agreement, owner acceptance, single use an
     await db.exec(
       `CREATE TABLE admin_users(id uuid PRIMARY KEY);CREATE TABLE users(id uuid PRIMARY KEY);CREATE TABLE organizations(id uuid PRIMARY KEY);CREATE TABLE affiliates(id uuid PRIMARY KEY,programme text,status text,partner_terms_confirmed boolean);CREATE TABLE distribution_audit(id bigserial,actor_id text,event text,affiliate_id uuid,detail jsonb);CREATE TABLE feature_registry(slug text PRIMARY KEY,name text,category text,route text UNIQUE,description text);INSERT INTO users VALUES('${user}');INSERT INTO organizations VALUES('${org}');INSERT INTO affiliates VALUES('${pid}','partner','active',true),('${other}','partner','active',true);`,
     );
+    await db.exec(
+      `ALTER TABLE affiliates ADD COLUMN commission_model text DEFAULT 'tiered';ALTER TABLE affiliates ADD COLUMN email text;ALTER TABLE users ADD COLUMN email text;ALTER TABLE organizations ADD COLUMN created_at timestamptz DEFAULT now();CREATE TABLE distribution_contracts(affiliate_id uuid,status text,model text);CREATE TABLE affiliate_referrals(affiliate_id uuid,organization_id uuid UNIQUE);CREATE TABLE website_plan_payments(organization_id uuid);CREATE TABLE domain_orders(organization_id uuid,paid_at timestamptz);CREATE TABLE email_orders(organization_id uuid,paid_at timestamptz);CREATE TABLE infrastructure_accounts(organization_id uuid,subscription_status text);CREATE TABLE organization_members(organization_id uuid,user_id uuid);UPDATE affiliates SET commission_model='policy';INSERT INTO distribution_contracts VALUES('${pid}','ACTIVE','REFERRAL');`,
+    );
     const query = async (s, p = []) => (await db.query(s, p)).rows;
     await applyMigrationBatch(
       {
@@ -43,7 +46,9 @@ test("partner invites require current agreement, owner acceptance, single use an
         ),
       ],
     );
-    await db.exec("INSERT INTO feature_registry(slug,name,category,route,description,partner_mode,partner_actions) VALUES('website-builder','Website','Product','/business/website','Website','SELF_SERVICE',ARRAY['REQUEST_SETUP'])");
+    await db.exec(
+      "INSERT INTO feature_registry(slug,name,category,route,description,partner_mode,partner_actions) VALUES('website-builder','Website','Product','/business/website','Website','SELF_SERVICE',ARRAY['REQUEST_SETUP'])",
+    );
     let partnerId = pid,
       isOwner = true;
     const deps = {
@@ -117,6 +122,11 @@ test("partner invites require current agreement, owner acceptance, single use an
     isOwner = true;
     await a.acceptPartnerInviteAction(f);
     await assert.rejects(a.acceptPartnerInviteAction(f));
+    assert.equal(
+      (await query("SELECT affiliate_id FROM affiliate_referrals"))[0]
+        .affiliate_id,
+      pid,
+    );
     const relationship = (
       await query("SELECT * FROM partner_client_access")
     )[0];
@@ -163,5 +173,27 @@ test("invitation intent survives authentication without accepting arbitrary redi
   assert.equal(
     emailDestination(new URLSearchParams({ next: "https://evil.example" })),
     null,
+  );
+});
+
+test("program application intent preserves only supported programme choices", async () => {
+  const { emailIntent, emailDestination } =
+    await import("../src/lib/product-intent.ts");
+  for (const program of ["affiliate", "partner"]) {
+    const p = new URLSearchParams({ next: "programs", program });
+    assert.equal(emailIntent(p), "?next=programs&program=" + program);
+    assert.equal(
+      emailDestination(p),
+      "/business/programs/apply?program=" + program,
+    );
+  }
+  assert.equal(
+    emailDestination(
+      new URLSearchParams({
+        next: "programs",
+        program: "https://evil.example",
+      }),
+    ),
+    "/business/programs/apply",
   );
 });

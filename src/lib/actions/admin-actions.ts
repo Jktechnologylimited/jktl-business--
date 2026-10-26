@@ -1,9 +1,16 @@
 "use server";
 
+import { query } from "@/lib/custom/service";
+import { after } from "next/server";
+import { flushProgramNotices } from "@/lib/distribution/notifications";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { verifyAdminLogin } from "@/lib/db/admin-auth";
-import { startAdminSession, endAdminSession, requireAdminCapability } from "@/lib/admin-session";
+import {
+  startAdminSession,
+  endAdminSession,
+  requireAdminCapability,
+} from "@/lib/admin-session";
 import { listBroadcastSubscriptions } from "@/lib/db/push";
 import { sendBroadcastPush } from "@/lib/push";
 import { recordBroadcast, listBroadcasts } from "@/lib/db/admin";
@@ -36,7 +43,11 @@ import {
 import type { AdminUser } from "@/lib/db/admin-auth";
 import type { AdminRole } from "@/lib/admin-permissions";
 import { firstYearValueKobo } from "@/lib/affiliate-commission";
-import { sendPartnerApprovedEmail, sendAffiliateApprovedEmail, sendAffiliateDeclinedEmail } from "@/lib/email";
+import {
+  sendPartnerApprovedEmail,
+  sendAffiliateApprovedEmail,
+  sendAffiliateDeclinedEmail,
+} from "@/lib/email";
 import { runDailySweep } from "@/lib/cron/daily-sweep";
 import { getSql } from "@/lib/db/client";
 import { deleteBusinessAccount, getBusinessOwnerUserId } from "@/lib/db/admin";
@@ -61,15 +72,35 @@ function appOrigin(): string {
  * landed on a page their role cannot open. `/admin/insights` is the one page all
  * three roles share, so it is the safe landing for everyone.
  */
-export async function adminLoginAction(email: string, password: string): Promise<ActionResult<{ path: string }>> {
+export async function adminLoginAction(
+  email: string,
+  password: string,
+): Promise<ActionResult<{ path: string }>> {
   try {
     const admin = await verifyAdminLogin(email, password);
-    if (!admin) return { ok: false, error: "That email and password don't match a command-center account." };
+    if (!admin)
+      return {
+        ok: false,
+        error: "That email and password don't match a command-center account.",
+      };
     await startAdminSession(admin.id);
-    return { ok: true, data: { path: admin.role === "support" ? "/admin/support" : admin.role === "editor" ? "/admin/content" : "/admin/insights" } };
+    return {
+      ok: true,
+      data: {
+        path:
+          admin.role === "support"
+            ? "/admin/support"
+            : admin.role === "editor"
+              ? "/admin/content"
+              : "/admin/insights",
+      },
+    };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: "Couldn't sign in right now. Please try again." };
+    return {
+      ok: false,
+      error: "Couldn't sign in right now. Please try again.",
+    };
   }
 }
 
@@ -123,7 +154,9 @@ export async function sendBroadcastAction(input: {
   }
 }
 
-export async function listBroadcastsAction(): Promise<ActionResult<AdminBroadcast[]>> {
+export async function listBroadcastsAction(): Promise<
+  ActionResult<AdminBroadcast[]>
+> {
   try {
     await requireAdminCapability("send_broadcasts");
     return { ok: true, data: await listBroadcasts() };
@@ -133,7 +166,9 @@ export async function listBroadcastsAction(): Promise<ActionResult<AdminBroadcas
   }
 }
 
-export async function listAffiliatesAction(): Promise<ActionResult<AffiliateStats[]>> {
+export async function listAffiliatesAction(): Promise<
+  ActionResult<AffiliateStats[]>
+> {
   try {
     await requireAdminCapability("manage_affiliates");
     return { ok: true, data: await listAffiliatesWithStats() };
@@ -151,23 +186,47 @@ export async function createAffiliateAction(input: {
 }): Promise<ActionResult<AffiliateStats>> {
   try {
     await requireAdminCapability("manage_affiliates");
-    if (!input.name.trim() || !input.email.trim()) return { ok: false, error: "Name and email are both required." };
-    if (input.password.length < 6) return { ok: false, error: "Password must be at least 6 characters." };
-    if (!Number.isFinite(input.commissionBps) || input.commissionBps < 0 || input.commissionBps > 10000) {
-      return { ok: false, error: "Commission rate must be between 0% and 100%." };
+    if (!input.name.trim() || !input.email.trim())
+      return { ok: false, error: "Name and email are both required." };
+    if (input.password.length < 6)
+      return { ok: false, error: "Password must be at least 6 characters." };
+    if (
+      !Number.isFinite(input.commissionBps) ||
+      input.commissionBps < 0 ||
+      input.commissionBps > 10000
+    ) {
+      return {
+        ok: false,
+        error: "Commission rate must be between 0% and 100%.",
+      };
     }
     const affiliate = await createAffiliate(input);
-    return { ok: true, data: { ...affiliate, referralCount: 0, totalEarnedKobo: 0, totalPaidOutKobo: 0, balanceKobo: 0 } };
+    return {
+      ok: true,
+      data: {
+        ...affiliate,
+        referralCount: 0,
+        totalEarnedKobo: 0,
+        totalPaidOutKobo: 0,
+        balanceKobo: 0,
+      },
+    };
   } catch (err) {
     if (err instanceof Error && err.message === AFFILIATE_EMAIL_TAKEN) {
-      return { ok: false, error: "An affiliate with that email already exists." };
+      return {
+        ok: false,
+        error: "An affiliate with that email already exists.",
+      };
     }
     console.error(err);
     return { ok: false, error: "Couldn't create that affiliate." };
   }
 }
 
-export async function setAffiliateStatusAction(affiliateId: string, status: "active" | "suspended"): Promise<ActionResult<null>> {
+export async function setAffiliateStatusAction(
+  affiliateId: string,
+  status: "active" | "suspended",
+): Promise<ActionResult<null>> {
   try {
     await requireAdminCapability("manage_affiliates");
     await setAffiliateStatus(affiliateId, status);
@@ -181,7 +240,9 @@ export async function setAffiliateStatusAction(affiliateId: string, status: "act
 /** Approves a self-serve application (migration 014) — the applicant
  * already set their own password when they applied, so this is just a
  * status flip to 'active'; nothing to generate or share with them. */
-export async function approveAffiliateApplicationAction(affiliateId: string): Promise<ActionResult<null>> {
+export async function approveAffiliateApplicationAction(
+  affiliateId: string,
+): Promise<ActionResult<null>> {
   try {
     await requireAdminCapability("manage_affiliates");
     const affiliate = await approveAffiliateApplication(affiliateId);
@@ -199,23 +260,47 @@ export async function approveAffiliateApplicationAction(affiliateId: string): Pr
      * matters, and a mail failure must not undo it. The admin sees the result in
      * the UI either way.
      */
-    if(affiliate.programme === "partner") await sendPartnerApprovedEmail({to:affiliate.email,name:affiliate.name,signInUrl:`${appOrigin()}/partners/login`,referralLink:`${appOrigin()}/signup?ref=${affiliate.referralCode}`,commissionBps:affiliate.commissionBps,needsPasswordSetup:Boolean(affiliate.partnerSourceId)});
-    else await sendAffiliateApprovedEmail({
-      to: affiliate.email,
-      name: affiliate.name,
-      signInUrl: `${appOrigin()}/affiliates/login`,
-      referralLink: `${appOrigin()}/signup?ref=${affiliate.referralCode}`,
-      signupBonusKobo: affiliate.signupBonusKobo,
-      subscriptionBonusKobo: affiliate.subscriptionBonusKobo,
-      recurringMonthlyKobo: affiliate.recurringMonthlyKobo,
-      firstYearValueKobo: firstYearValueKobo({
+    const businessLinked =
+      (
+        await query(
+          "SELECT 1 FROM distribution_account_links WHERE affiliate_id=$1",
+          [affiliate.id],
+        )
+      ).length > 0;
+    if (businessLinked)
+      after(async () => {
+        try {
+          await flushProgramNotices();
+        } catch {}
+      });
+    else if (affiliate.programme === "partner")
+      await sendPartnerApprovedEmail({
+        to: affiliate.email,
+        name: affiliate.name,
+        signInUrl: `${appOrigin()}/partners/login`,
+        referralLink: `${appOrigin()}/signup?ref=${affiliate.referralCode}`,
+        commissionBps: affiliate.commissionBps,
+        needsPasswordSetup: Boolean(affiliate.partnerSourceId),
+      });
+    else
+      await sendAffiliateApprovedEmail({
+        to: affiliate.email,
+        name: affiliate.name,
+        signInUrl: `${appOrigin()}/affiliates/login`,
+        referralLink: `${appOrigin()}/signup?ref=${affiliate.referralCode}`,
         signupBonusKobo: affiliate.signupBonusKobo,
         subscriptionBonusKobo: affiliate.subscriptionBonusKobo,
         recurringMonthlyKobo: affiliate.recurringMonthlyKobo,
-        recurringMonthsCap: affiliate.recurringMonthsCap,
-      }),
-      payoutDay: PAYOUT_REQUEST_DAY,
-    }).catch((err) => console.error("approveAffiliate: approval email failed", err));
+        firstYearValueKobo: firstYearValueKobo({
+          signupBonusKobo: affiliate.signupBonusKobo,
+          subscriptionBonusKobo: affiliate.subscriptionBonusKobo,
+          recurringMonthlyKobo: affiliate.recurringMonthlyKobo,
+          recurringMonthsCap: affiliate.recurringMonthsCap,
+        }),
+        payoutDay: PAYOUT_REQUEST_DAY,
+      }).catch((err) =>
+        console.error("approveAffiliate: approval email failed", err),
+      );
 
     revalidatePath("/admin/affiliates");
     return { ok: true, data: null };
@@ -225,18 +310,20 @@ export async function approveAffiliateApplicationAction(affiliateId: string): Pr
   }
 }
 
-/** Deletes the application outright — see rejectAffiliateApplication's own
- * comment for why that's fine (nothing worth keeping about one nobody
- * approved). */
-export async function rejectAffiliateApplicationAction(affiliateId: string): Promise<ActionResult<null>> {
+/** Retain rejected applications, policy snapshots and audit history. */
+export async function rejectAffiliateApplicationAction(
+  affiliateId: string,
+): Promise<ActionResult<null>> {
   try {
     await requireAdminCapability("manage_affiliates");
     const applicant = await rejectAffiliateApplication(affiliateId);
     if (!applicant) return { ok: true, data: null };
 
-    // A real reply, not silence. Sent before the nothing that is left of the
-    // record — the row is gone, so this is the only trace of the decision.
-    await sendAffiliateDeclinedEmail({ to: applicant.email, name: applicant.name }).catch((err) =>
+    // Notify the applicant while preserving the rejected application record.
+    await sendAffiliateDeclinedEmail({
+      to: applicant.email,
+      name: applicant.name,
+    }).catch((err) =>
       console.error("rejectAffiliate: decline email failed", err),
     );
 
@@ -248,11 +335,21 @@ export async function rejectAffiliateApplicationAction(affiliateId: string): Pro
   }
 }
 
-export async function recordAffiliatePayoutAction(affiliateId: string, amountKobo: number, note: string): Promise<ActionResult<AffiliatePayout>> {
+export async function recordAffiliatePayoutAction(
+  affiliateId: string,
+  amountKobo: number,
+  note: string,
+): Promise<ActionResult<AffiliatePayout>> {
   try {
     const admin = await requireAdminCapability("record_payouts");
-    if (!Number.isFinite(amountKobo) || amountKobo <= 0) return { ok: false, error: "Enter a valid payout amount." };
-    const payout = await recordPayout(affiliateId, admin.id, amountKobo, note.trim());
+    if (!Number.isFinite(amountKobo) || amountKobo <= 0)
+      return { ok: false, error: "Enter a valid payout amount." };
+    const payout = await recordPayout(
+      affiliateId,
+      admin.id,
+      amountKobo,
+      note.trim(),
+    );
     return { ok: true, data: payout };
   } catch (err) {
     console.error(err);
@@ -260,7 +357,9 @@ export async function recordAffiliatePayoutAction(affiliateId: string, amountKob
   }
 }
 
-export async function listPendingPayoutRequestsAction(): Promise<ActionResult<PendingPayoutRequest[]>> {
+export async function listPendingPayoutRequestsAction(): Promise<
+  ActionResult<PendingPayoutRequest[]>
+> {
   try {
     await requireAdminCapability("record_payouts");
     return { ok: true, data: await listPendingPayoutRequests() };
@@ -273,10 +372,17 @@ export async function listPendingPayoutRequestsAction(): Promise<ActionResult<Pe
 /** Pays a request via the same ledger the manual "Record payout" form
  * uses (see `markPayoutRequestPaid`'s own comment), then marks the
  * request resolved. */
-export async function markPayoutRequestPaidAction(requestId: string, note: string): Promise<ActionResult<AffiliatePayout>> {
+export async function markPayoutRequestPaidAction(
+  requestId: string,
+  note: string,
+): Promise<ActionResult<AffiliatePayout>> {
   try {
     const admin = await requireAdminCapability("record_payouts");
-    const payout = await markPayoutRequestPaid(requestId, admin.id, note.trim());
+    const payout = await markPayoutRequestPaid(
+      requestId,
+      admin.id,
+      note.trim(),
+    );
     return { ok: true, data: payout };
   } catch (err) {
     console.error(err);
@@ -284,7 +390,9 @@ export async function markPayoutRequestPaidAction(requestId: string, note: strin
   }
 }
 
-export async function declinePayoutRequestAction(requestId: string): Promise<ActionResult<null>> {
+export async function declinePayoutRequestAction(
+  requestId: string,
+): Promise<ActionResult<null>> {
   try {
     const admin = await requireAdminCapability("record_payouts");
     await declinePayoutRequest(requestId, admin.id);
@@ -307,7 +415,12 @@ export async function declinePayoutRequestAction(requestId: string): Promise<Act
  * so it uses the same internal budget and reports the same per-step outcomes
  * rather than a spinner that may be killed.
  */
-export async function runDailySweepNowAction(): Promise<ActionResult<{ steps: Array<{ name: string; ok: boolean; detail: string; ms: number }>; truncated: boolean }>> {
+export async function runDailySweepNowAction(): Promise<
+  ActionResult<{
+    steps: Array<{ name: string; ok: boolean; detail: string; ms: number }>;
+    truncated: boolean;
+  }>
+> {
   try {
     await requireAdminCapability("run_daily_job");
     const result = await runDailySweep();
@@ -315,7 +428,12 @@ export async function runDailySweepNowAction(): Promise<ActionResult<{ steps: Ar
     return {
       ok: true,
       data: {
-        steps: result.steps.map((s) => ({ name: s.name, ok: s.ok, detail: s.detail, ms: s.ms })),
+        steps: result.steps.map((s) => ({
+          name: s.name,
+          ok: s.ok,
+          detail: s.detail,
+          ms: s.ms,
+        })),
         truncated: result.truncated,
       },
     };
@@ -331,7 +449,9 @@ export async function runDailySweepNowAction(): Promise<ActionResult<{ steps: Ar
 
 /** Everyone with a command-centre account. Owner-only: see who else has access
  * is itself privileged information. */
-export async function listAdminTeamAction(): Promise<ActionResult<AdminTeamMember[]>> {
+export async function listAdminTeamAction(): Promise<
+  ActionResult<AdminTeamMember[]>
+> {
   try {
     await requireAdminCapability("manage_team");
     return { ok: true, data: await listAdminTeam() };
@@ -357,8 +477,10 @@ export async function createAdminTeamMemberAction(input: {
   try {
     const acting = await requireAdminCapability("manage_team");
     if (!input.name.trim()) return { ok: false, error: "Enter their name." };
-    if (!input.email.includes("@")) return { ok: false, error: "Enter a valid email address." };
-    if (input.password.length < 8) return { ok: false, error: "Use a password of at least 8 characters." };
+    if (!input.email.includes("@"))
+      return { ok: false, error: "Enter a valid email address." };
+    if (input.password.length < 8)
+      return { ok: false, error: "Use a password of at least 8 characters." };
 
     const created = await createAdminUser({
       name: input.name,
@@ -371,7 +493,10 @@ export async function createAdminTeamMemberAction(input: {
     return { ok: true, data: created };
   } catch (err) {
     if (err instanceof Error && err.message === ADMIN_EMAIL_TAKEN) {
-      return { ok: false, error: "There's already an admin account with that email." };
+      return {
+        ok: false,
+        error: "There's already an admin account with that email.",
+      };
     }
     console.error(err);
     return { ok: false, error: "Couldn't create that account." };
@@ -384,7 +509,10 @@ export async function createAdminTeamMemberAction(input: {
  * Refuses two things, both of which make the command centre unrecoverable: an
  * owner disabling themselves, and disabling the last enabled owner.
  */
-export async function setAdminDisabledAction(adminUserId: string, disabled: boolean): Promise<ActionResult<null>> {
+export async function setAdminDisabledAction(
+  adminUserId: string,
+  disabled: boolean,
+): Promise<ActionResult<null>> {
   try {
     const acting = await requireAdminCapability("manage_team");
     if (adminUserId === acting.id && disabled) {
@@ -394,7 +522,11 @@ export async function setAdminDisabledAction(adminUserId: string, disabled: bool
       const team = await listAdminTeam();
       const target = team.find((member) => member.id === adminUserId);
       if (target?.role === "owner" && !target.disabledAt) {
-        return { ok: false, error: "That's the last owner. Promote someone else first, or you'd lock yourself out." };
+        return {
+          ok: false,
+          error:
+            "That's the last owner. Promote someone else first, or you'd lock yourself out.",
+        };
       }
     }
 
@@ -403,7 +535,11 @@ export async function setAdminDisabledAction(adminUserId: string, disabled: bool
     return { ok: true, data: null };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: err instanceof Error ? err.message : "Couldn't change that account." };
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Couldn't change that account.",
+    };
   }
 }
 
@@ -423,19 +559,26 @@ export async function setAdminDisabledAction(adminUserId: string, disabled: bool
  * password — it emails a one-time link to the owner, so the reset happens between
  * the owner and their own inbox.
  */
-export async function resetBusinessPasswordAction(organizationId: string): Promise<ActionResult<{ email: string }>> {
+export async function resetBusinessPasswordAction(
+  organizationId: string,
+): Promise<ActionResult<{ email: string }>> {
   try {
     await requireAdminCapability("view_businesses");
 
     const ownerId = await getBusinessOwnerUserId(organizationId);
     if (!ownerId) {
-      return { ok: false, error: "That business has no owner account to reset. Check its team list." };
+      return {
+        ok: false,
+        error:
+          "That business has no owner account to reset. Check its team list.",
+      };
     }
 
     const sql = getSql();
     const rows = await sql`SELECT name, email FROM users WHERE id = ${ownerId}`;
     const owner = rows[0];
-    if (!owner?.email) return { ok: false, error: "That owner has no email address on file." };
+    if (!owner?.email)
+      return { ok: false, error: "That owner has no email address on file." };
 
     const token = await createPasswordResetToken(ownerId);
     const resetUrl = `${appOrigin()}/reset-password?token=${encodeURIComponent(token)}`;
@@ -468,12 +611,16 @@ export async function deleteBusinessAccountAction(
     await requireAdminCapability("view_businesses");
 
     const sql = getSql();
-    const rows = await sql`SELECT name FROM organizations WHERE id = ${organizationId}`;
+    const rows =
+      await sql`SELECT name FROM organizations WHERE id = ${organizationId}`;
     const actual = (rows[0]?.name as string) ?? "";
     if (!actual) return { ok: false, error: "That business no longer exists." };
 
     if (confirmName.trim().toLowerCase() !== actual.trim().toLowerCase()) {
-      return { ok: false, error: `Type the business name exactly to confirm: "${actual}".` };
+      return {
+        ok: false,
+        error: `Type the business name exactly to confirm: "${actual}".`,
+      };
     }
 
     await deleteBusinessAccount(organizationId);
@@ -486,30 +633,45 @@ export async function deleteBusinessAccountAction(
 }
 
 /** Sets a new password for a teammate and signs them out everywhere. Owner-only. */
-export async function resetAdminPasswordAction(adminUserId: string, password: string): Promise<ActionResult<null>> {
+export async function resetAdminPasswordAction(
+  adminUserId: string,
+  password: string,
+): Promise<ActionResult<null>> {
   try {
     const acting = await requireAdminCapability("manage_team");
-    if (password.length < 8) return { ok: false, error: "Use a password of at least 8 characters." };
+    if (password.length < 8)
+      return { ok: false, error: "Use a password of at least 8 characters." };
     await setAdminPassword(adminUserId, password, acting.id);
     revalidatePath("/admin/team");
     return { ok: true, data: null };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: err instanceof Error ? err.message : "Couldn't reset that password." };
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Couldn't reset that password.",
+    };
   }
 }
 
 /** Deletes a teammate's account. Owner-only, with the same lockout guards as
  * disabling — deleting the last owner is not recoverable from inside the app. */
-export async function deleteAdminAccountAction(adminUserId: string): Promise<ActionResult<null>> {
+export async function deleteAdminAccountAction(
+  adminUserId: string,
+): Promise<ActionResult<null>> {
   try {
     const acting = await requireAdminCapability("manage_team");
-    if (adminUserId === acting.id) return { ok: false, error: "You can't delete your own account." };
+    if (adminUserId === acting.id)
+      return { ok: false, error: "You can't delete your own account." };
     await deleteAdminUser(adminUserId, acting.id);
     revalidatePath("/admin/team");
     return { ok: true, data: null };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: err instanceof Error ? err.message : "Couldn't delete that account." };
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Couldn't delete that account.",
+    };
   }
 }

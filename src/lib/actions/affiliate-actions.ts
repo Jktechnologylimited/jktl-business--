@@ -1,7 +1,14 @@
 "use server";
 
-import { verifyAffiliateLogin, changeAffiliatePassword } from "@/lib/db/affiliate-auth";
-import { startAffiliateSession, endAffiliateSession, requireAffiliateSession } from "@/lib/affiliate-session";
+import {
+  verifyAffiliateLogin,
+  changeAffiliatePassword,
+} from "@/lib/db/affiliate-auth";
+import {
+  startAffiliateSession,
+  endAffiliateSession,
+  requireAffiliateSession,
+} from "@/lib/affiliate-session";
 import { firstYearValueKobo } from "@/lib/affiliate-commission";
 import {
   earningsByKind,
@@ -23,7 +30,11 @@ import {
   requestAffiliatePasswordReset,
 } from "@/lib/db/affiliate-auth";
 import { sendAffiliatePasswordResetEmail } from "@/lib/email";
-import { listBanks, resolveAccountNumber, type PaystackBank } from "@/lib/paystack";
+import {
+  listBanks,
+  resolveAccountNumber,
+  type PaystackBank,
+} from "@/lib/paystack";
 import {
   listReferredBusinesses,
   listEarnings,
@@ -52,7 +63,9 @@ import type { ActionResult } from "./types";
 function monthBefore(periodKey: string): string {
   const [year, month] = periodKey.split("-").map(Number);
   if (!year || !month) return "";
-  return month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, "0")}`;
+  return month === 1
+    ? `${year - 1}-12`
+    : `${year}-${String(month - 1).padStart(2, "0")}`;
 }
 
 function appOrigin(): string {
@@ -62,22 +75,33 @@ function appOrigin(): string {
   return `https://business.${root}`;
 }
 
-const LOGIN_ERROR: Record<"not_found" | "pending" | "suspended" | "wrong_password", string> = {
-  not_found: "That email doesn't match an affiliate account. Applied recently? Check the email you applied with.",
-  pending: "Your application is still under review — you'll be able to sign in once it's approved.",
+const LOGIN_ERROR: Record<
+  "not_found" | "pending" | "suspended" | "wrong_password",
+  string
+> = {
+  not_found:
+    "That email doesn't match an affiliate account. Applied recently? Check the email you applied with.",
+  pending:
+    "Your application is still under review — you'll be able to sign in once it's approved.",
   suspended: "Your affiliate account has been suspended.",
   wrong_password: "That password isn't correct.",
 };
 
-export async function affiliateLoginAction(email: string, password: string): Promise<ActionResult<null>> {
+export async function affiliateLoginAction(
+  email: string,
+  password: string,
+): Promise<ActionResult<null>> {
   try {
-    const result = await verifyAffiliateLogin(email, password);
+    const result = await verifyAffiliateLogin(email, password, "affiliate");
     if (!result.ok) return { ok: false, error: LOGIN_ERROR[result.reason] };
     await startAffiliateSession(result.affiliate.id);
     return { ok: true, data: null };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: "Couldn't sign in right now. Please try again." };
+    return {
+      ok: false,
+      error: "Couldn't sign in right now. Please try again.",
+    };
   }
 }
 
@@ -94,8 +118,10 @@ export async function applyAsAffiliateAction(input: {
   applicationNote: string;
 }): Promise<ActionResult<null>> {
   try {
-    if (!input.name.trim() || !input.email.trim()) return { ok: false, error: "Name and email are both required." };
-    if (input.password.length < 6) return { ok: false, error: "Password must be at least 6 characters." };
+    if (!input.name.trim() || !input.email.trim())
+      return { ok: false, error: "Name and email are both required." };
+    if (input.password.length < 6)
+      return { ok: false, error: "Password must be at least 6 characters." };
     await applyAsAffiliate({
       name: input.name.trim(),
       email: input.email.trim(),
@@ -105,10 +131,17 @@ export async function applyAsAffiliateAction(input: {
     return { ok: true, data: null };
   } catch (err) {
     if (err instanceof Error && err.message === AFFILIATE_EMAIL_TAKEN) {
-      return { ok: false, error: "There's already an affiliate account (or a pending application) with that email." };
+      return {
+        ok: false,
+        error:
+          "There's already an affiliate account (or a pending application) with that email.",
+      };
     }
     console.error(err);
-    return { ok: false, error: "Couldn't submit your application right now. Please try again." };
+    return {
+      ok: false,
+      error: "Couldn't submit your application right now. Please try again.",
+    };
   }
 }
 
@@ -117,7 +150,7 @@ export async function affiliateLogoutAction(): Promise<void> {
 }
 
 export interface AffiliateDashboardData {
- programme?: "affiliate" | "partner";
+  programme?: "affiliate" | "partner";
   name: string;
   email: string;
   referralCode: string;
@@ -135,7 +168,11 @@ export interface AffiliateDashboardData {
   recurringMonthlyKobo: number;
   /** The published tiers, so the dashboard never states a rate the ledger does
    * not pay. */
-  terms: { signupBonusKobo: number; subscriptionBonusKobo: number; recurringMonthlyKobo: number };
+  terms: {
+    signupBonusKobo: number;
+    subscriptionBonusKobo: number;
+    recurringMonthlyKobo: number;
+  };
   /** What one referral is worth in year one. */
   firstYearValueKobo: number;
   /** Reporting, computed from the ledger rather than stored. */
@@ -160,10 +197,19 @@ export interface AffiliateDashboardData {
   currentPayoutRequest: PayoutRequest | null;
 }
 
-export async function getAffiliateDashboardAction(): Promise<ActionResult<AffiliateDashboardData>> {
+export async function getAffiliateDashboardAction(): Promise<
+  ActionResult<AffiliateDashboardData>
+> {
   try {
     const session = await requireAffiliateSession();
-    const [full, balance, referredBusinesses, earnings, payouts, currentPayoutRequest] = await Promise.all([
+    const [
+      full,
+      balance,
+      referredBusinesses,
+      earnings,
+      payouts,
+      currentPayoutRequest,
+    ] = await Promise.all([
       getAffiliateById(session.id),
       getAffiliateBalance(session.id),
       listReferredBusinesses(session.id),
@@ -185,7 +231,9 @@ export async function getAffiliateDashboardAction(): Promise<ActionResult<Affili
       recurringMonthsCap: full.recurringMonthsCap,
     };
     const thisPeriod = periodKeyFor();
-    const businessNames = Object.fromEntries(referredBusinesses.map((b) => [b.organizationId, b.displayName]));
+    const businessNames = Object.fromEntries(
+      referredBusinesses.map((b) => [b.organizationId, b.displayName]),
+    );
 
     const report = {
       byKind: earningsByKind(earnings),
@@ -197,7 +245,11 @@ export async function getAffiliateDashboardAction(): Promise<ActionResult<Affili
         recurringMonthlyKobo: terms.recurringMonthlyKobo,
         previousPeriod: monthBefore(thisPeriod),
       }),
-      value: referralValue({ earnings, businessNames, modelledFirstYearKobo: firstYearValueKobo(terms) }),
+      value: referralValue({
+        earnings,
+        businessNames,
+        modelledFirstYearKobo: firstYearValueKobo(terms),
+      }),
       projectedTwelveMonthsKobo: 0,
     };
     report.projectedTwelveMonthsKobo = projectedTwelveMonths(report.runRate);
@@ -205,7 +257,7 @@ export async function getAffiliateDashboardAction(): Promise<ActionResult<Affili
     return {
       ok: true,
       data: {
-        programme:full.programme,
+        programme: full.programme,
         name: full.name,
         email: full.email,
         referralCode: full.referralCode,
@@ -247,7 +299,9 @@ export async function getAffiliateDashboardAction(): Promise<ActionResult<Affili
 // ---- Bank details (verified via Paystack, same free resolve endpoint
 // Settings → Payments uses for a business's own payout account) ----
 
-export async function listBanksForAffiliateAction(): Promise<ActionResult<PaystackBank[]>> {
+export async function listBanksForAffiliateAction(): Promise<
+  ActionResult<PaystackBank[]>
+> {
   try {
     await requireAffiliateSession();
     return { ok: true, data: await listBanks() };
@@ -261,29 +315,46 @@ export async function listBanksForAffiliateAction(): Promise<ActionResult<Paysta
  * confirmation before saving — mirrors verifyAccountAction in
  * payment-settings-actions.ts, just gated by an affiliate session instead
  * of a business one. */
-export async function verifyAffiliateAccountAction(bankCode: string, accountNumber: string): Promise<ActionResult<{ accountName: string }>> {
+export async function verifyAffiliateAccountAction(
+  bankCode: string,
+  accountNumber: string,
+): Promise<ActionResult<{ accountName: string }>> {
   try {
     await requireAffiliateSession();
     if (!bankCode || accountNumber.trim().length < 10) {
-      return { ok: false, error: "Choose a bank and enter a 10-digit account number." };
+      return {
+        ok: false,
+        error: "Choose a bank and enter a 10-digit account number.",
+      };
     }
     const resolved = await resolveAccountNumber(accountNumber.trim(), bankCode);
     return { ok: true, data: { accountName: resolved.accountName } };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: "Couldn't verify that account — double-check the bank and account number." };
+    return {
+      ok: false,
+      error:
+        "Couldn't verify that account — double-check the bank and account number.",
+    };
   }
 }
 
 /** Always re-resolves server-side right before saving — never trusts a
  * client-supplied account name, even one shown back from an earlier
  * verify call, since the account number could have changed in between. */
-export async function saveAffiliateBankDetailsAction(input: { bankCode: string; bankName: string; accountNumber: string }): Promise<ActionResult<null>> {
+export async function saveAffiliateBankDetailsAction(input: {
+  bankCode: string;
+  bankName: string;
+  accountNumber: string;
+}): Promise<ActionResult<null>> {
   try {
     const affiliate = await requireAffiliateSession();
     const accountNumber = input.accountNumber.trim();
     if (!input.bankCode || accountNumber.length < 10) {
-      return { ok: false, error: "Choose a bank and enter a 10-digit account number." };
+      return {
+        ok: false,
+        error: "Choose a bank and enter a 10-digit account number.",
+      };
     }
     const resolved = await resolveAccountNumber(accountNumber, input.bankCode);
     await saveAffiliateBankDetails(affiliate.id, {
@@ -295,7 +366,11 @@ export async function saveAffiliateBankDetailsAction(input: { bankCode: string; 
     return { ok: true, data: null };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: "Couldn't save your bank details — double-check the account number and try again." };
+    return {
+      ok: false,
+      error:
+        "Couldn't save your bank details — double-check the account number and try again.",
+    };
   }
 }
 
@@ -303,10 +378,13 @@ const PAYOUT_REQUEST_ERROR: Record<string, string> = {
   [PAYOUT_WINDOW_CLOSED]: "Payout requests open on the 21st of each month.",
   [PAYOUT_ALREADY_REQUESTED]: "You've already requested a payout this month.",
   [PAYOUT_NOTHING_TO_REQUEST]: "You don't have a balance to request yet.",
-  [PAYOUT_BANK_NOT_VERIFIED]: "Add and verify your bank details above before requesting a payout.",
+  [PAYOUT_BANK_NOT_VERIFIED]:
+    "Add and verify your bank details above before requesting a payout.",
 };
 
-export async function requestAffiliatePayoutAction(): Promise<ActionResult<PayoutRequest>> {
+export async function requestAffiliatePayoutAction(): Promise<
+  ActionResult<PayoutRequest>
+> {
   try {
     const affiliate = await requireAffiliateSession();
     const request = await requestPayout(affiliate.id);
@@ -320,12 +398,24 @@ export async function requestAffiliatePayoutAction(): Promise<ActionResult<Payou
   }
 }
 
-export async function changeAffiliatePasswordAction(currentPassword: string, newPassword: string): Promise<ActionResult<null>> {
+export async function changeAffiliatePasswordAction(
+  currentPassword: string,
+  newPassword: string,
+): Promise<ActionResult<null>> {
   try {
-    if (newPassword.length < 6) return { ok: false, error: "New password must be at least 6 characters." };
+    if (newPassword.length < 6)
+      return {
+        ok: false,
+        error: "New password must be at least 6 characters.",
+      };
     const affiliate = await requireAffiliateSession();
-    const ok = await changeAffiliatePassword(affiliate.id, currentPassword, newPassword);
-    if (!ok) return { ok: false, error: "Your current password isn't correct." };
+    const ok = await changeAffiliatePassword(
+      affiliate.id,
+      currentPassword,
+      newPassword,
+    );
+    if (!ok)
+      return { ok: false, error: "Your current password isn't correct." };
     return { ok: true, data: null };
   } catch (err) {
     console.error(err);
@@ -351,18 +441,23 @@ export async function changeAffiliatePasswordAction(currentPassword: string, new
  * on this request, and a partner staring at a "check your inbox" message deserves
  * to know the mail actually left.
  */
-export async function requestAffiliatePasswordResetAction(email: string): Promise<ActionResult<{ message: string }>> {
-  const GENERIC = "If that email belongs to an approved partner, a reset link is on its way. Check your inbox and your spam folder.";
+export async function requestAffiliatePasswordResetAction(
+  email: string,
+): Promise<ActionResult<{ message: string }>> {
+  const GENERIC =
+    "If that email belongs to an approved partner, a reset link is on its way. Check your inbox and your spam folder.";
   try {
     const address = email.trim();
-    if (!address || !address.includes("@")) return { ok: false, error: "Enter the email address you applied with." };
+    if (!address || !address.includes("@"))
+      return { ok: false, error: "Enter the email address you applied with." };
 
     const outcome = await requestAffiliatePasswordReset(address);
 
     if (outcome.rateLimited) {
       return {
         ok: false,
-        error: "That address has already been sent a few reset links in the last hour. Wait a little, then try again, or check your inbox.",
+        error:
+          "That address has already been sent a few reset links in the last hour. Wait a little, then try again, or check your inbox.",
       };
     }
 
@@ -391,14 +486,20 @@ export async function requestAffiliatePasswordResetAction(email: string): Promis
 
 /** Checks a token before rendering the form, so an expired link says so on the
  * page rather than after the partner has typed a password twice. */
-export async function checkAffiliateResetTokenAction(token: string): Promise<ActionResult<{ name: string; email: string }>> {
+export async function checkAffiliateResetTokenAction(
+  token: string,
+): Promise<ActionResult<{ name: string; email: string }>> {
   try {
     const lookup = await lookupAffiliatePasswordReset(token);
-    if (!lookup.ok) return { ok: false, error: resetFailureMessage(lookup.state) };
+    if (!lookup.ok)
+      return { ok: false, error: resetFailureMessage(lookup.state) };
     return { ok: true, data: { name: lookup.name, email: lookup.email } };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: "We couldn't check that link. Try opening it again." };
+    return {
+      ok: false,
+      error: "We couldn't check that link. Try opening it again.",
+    };
   }
 }
 
@@ -419,15 +520,25 @@ export async function resetAffiliatePasswordAction(input: {
     const check = validateNewPassword(input.password, input.confirm);
     if (!check.ok) return { ok: false, error: check.error };
 
-    const result = await completeAffiliatePasswordReset({ token: input.token, newPassword: input.password });
-    if (!result.ok) return { ok: false, error: resetFailureMessage(result.state) };
+    const result = await completeAffiliatePasswordReset({
+      token: input.token,
+      newPassword: input.password,
+    });
+    if (!result.ok)
+      return { ok: false, error: resetFailureMessage(result.state) };
 
     return {
       ok: true,
-      data: { message: "Your password is set. Sign in with your new password — any other device you were signed in on has been signed out." },
+      data: {
+        message:
+          "Your password is set. Sign in with your new password — any other device you were signed in on has been signed out.",
+      },
     };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: "Couldn't reset your password just now. Please try again." };
+    return {
+      ok: false,
+      error: "Couldn't reset your password just now. Please try again.",
+    };
   }
 }

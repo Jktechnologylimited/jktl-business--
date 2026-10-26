@@ -1,5 +1,6 @@
 "use client";
 import { ThemeControl } from "@/components/settings/theme-control";
+import { ReferralConsent } from "@/components/distribution/referral-consent";
 import { emailIntent } from "@/lib/product-intent";
 import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
 import { Suspense, useEffect, useState } from "react";
@@ -74,7 +75,10 @@ function SignupForm() {
             <T>Log in</T>
           </Link>
         </p>
-        <div className="ml-auto flex items-center gap-2"><ThemeControl /><LanguageSwitcher /></div>
+        <div className="ml-auto flex items-center gap-2">
+          <ThemeControl />
+          <LanguageSwitcher />
+        </div>
       </header>
       <main className={styles.layout}>
         <section className={styles.story} aria-label="Build with JKTL">
@@ -181,6 +185,7 @@ function SignupForm() {
             </div>
           )}
           <form onSubmit={submit} className={styles.form}>
+            <ReferralConsent />
             <div className={styles.names}>
               <label className={styles.field} htmlFor="name">
                 <span>

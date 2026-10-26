@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { acceptPartnerQuoteAction } from "@/lib/actions/distribution-program-actions";
+import { ActionForm } from "@/components/distribution/action-form";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { query } from "@/lib/custom/service";
@@ -25,7 +28,7 @@ export default async function Page({
     );
   const [links, access, members] = await Promise.all([
     query(
-      "SELECT l.program,a.name,a.status FROM distribution_account_links l JOIN affiliates a ON a.id=l.affiliate_id WHERE l.user_id=$1",
+      "SELECT l.program,a.name,a.status,a.application_stage,a.applicant_message FROM distribution_account_links l JOIN affiliates a ON a.id=l.affiliate_id WHERE l.user_id=$1",
       [s.userId],
     ),
     query(
@@ -38,6 +41,12 @@ export default async function Page({
     ),
   ]);
   const isOwner = members.length > 0;
+  const quotes = isOwner
+    ? await query(
+        `SELECT q.id,q.amount_kobo,q.scope,q.billing_party,q.status,q.expires_at FROM partner_commercial_quotes q JOIN partner_service_requests r ON r.id=q.request_id JOIN partner_client_access x ON x.id=r.relationship_id WHERE x.revoked_at IS NULL AND(q.billing_party='CUSTOMER' AND x.organization_id=$1 OR q.billing_party='PARTNER' AND EXISTS(SELECT 1 FROM distribution_account_links l WHERE l.user_id=$2 AND l.affiliate_id=x.partner_id)) ORDER BY q.created_at DESC LIMIT 50`,
+        [s.organizationId, s.userId],
+      )
+    : [];
   let invitation;
   if (invite && validInviteToken(invite))
     invitation = (
@@ -50,6 +59,50 @@ export default async function Page({
   return (
     <div className="space-y-6 text-ink">
       <h1 className="text-3xl font-semibold">Programs & partner access</h1>
+      <Link className="underline" href="/business/programs/apply">
+        Apply to Affiliates or Partners with this Business account
+      </Link>
+      {quotes.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">
+            Service quotes for your approval
+          </h2>
+          {quotes.map((q) => (
+            <article
+              key={String(q.id)}
+              className="space-y-3 rounded-xl border border-border p-5"
+            >
+              <strong>
+                ₦{(Number(q.amount_kobo) / 100).toLocaleString("en-NG")} ·{" "}
+                {String(q.status)} · Billing: {String(q.billing_party)}
+              </strong>
+              <p className="whitespace-pre-wrap">{String(q.scope)}</p>
+              <p className="text-sm">
+                Acceptance authorizes the agreed scope and billing
+                responsibility. It does not itself make a payment, create a
+                subscription or confirm provisioning.
+              </p>
+              {q.status === "OFFERED" && (
+                <ActionForm
+                  action={acceptPartnerQuoteAction}
+                  className="space-y-3"
+                >
+                  <input type="hidden" name="id" value={String(q.id)} />
+                  <label>
+                    <input type="checkbox" name="consent" required />I accept
+                    these exact terms as the authorized owner of the billing
+                    business.
+                  </label>
+                  <button className="rounded-lg border border-border p-3">
+                    Accept quote
+                  </button>
+                </ActionForm>
+              )}
+            </article>
+          ))}
+        </section>
+      )}
+
       <p className="text-ink-muted">
         Open your approved Affiliate or Partner dashboard using your Business
         session. Your business belongs to you; granting a partner access never
@@ -74,15 +127,22 @@ export default async function Page({
                   {CLIENT_SCOPES.map((scope) => (
                     <label key={scope} className="flex gap-3">
                       <input type="checkbox" name="scopes" value={scope} />
-                      {scope === "MANAGE_WEBSITE_CONTENT" ? "Edit website content for this business" : scope === "PUBLISH_WEBSITE" ? "Publish this business website" : scope === "VIEW_ALLOWED_SERVICES"
-                        ? "View the services you authorize"
-                        : "Request service assistance from JKTL on your behalf"}
+                      {scope === "MANAGE_WEBSITE_CONTENT"
+                        ? "Edit website content for this business"
+                        : scope === "PUBLISH_WEBSITE"
+                          ? "Publish this business website"
+                          : scope === "VIEW_ALLOWED_SERVICES"
+                            ? "View the services you authorize"
+                            : "Request service assistance from JKTL on your behalf"}
                     </label>
                   ))}
                   <label className="flex gap-3">
                     <input type="checkbox" required name="consent" />I authorize
                     this relationship for my current business and can revoke it
-                    here.
+                    here. If this is a new, unpaid business without an existing
+                    referrer, this partner may receive a commission on eligible
+                    purchases under an active referral agreement. Your prices do
+                    not increase.
                   </label>
                   <button className="rounded-lg bg-primary p-3 text-on-primary">
                     Accept invitation
@@ -105,7 +165,9 @@ export default async function Page({
             className="my-4 flex flex-wrap items-center gap-4"
           >
             <p>
-              {String(l.name)} · {String(l.program)} · {String(l.status)}
+              {String(l.name)} · {String(l.program)} · {String(l.status)} ·{" "}
+              {String(l.application_stage || "")}{" "}
+              {String(l.applicant_message || "")}
             </p>
             <form action={openProgramAction}>
               <input type="hidden" name="program" value={String(l.program)} />
@@ -130,6 +192,13 @@ export default async function Page({
           without a separate sign-in.
         </p>
         <form action={connectProgramAction} className="grid max-w-lg gap-4">
+          <label>
+            Program
+            <select name="program" className={input}>
+              <option value="affiliate">Affiliates</option>
+              <option value="partner">Partners</option>
+            </select>
+          </label>
           <label>
             Program email
             <input

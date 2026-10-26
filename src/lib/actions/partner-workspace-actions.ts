@@ -172,3 +172,23 @@ export async function configurePartnerProductAction(f: FormData) {
   );
   revalidatePath("/admin/distribution/products");
 }
+
+export async function setPartnerChecklistAction(
+  id: string,
+  task: string,
+  complete: boolean,
+) {
+  const { p } = await workspace(id);
+  if (
+    !["profile_review", "website_review", "training", "handover"].includes(
+      task,
+    ) ||
+    typeof complete !== "boolean"
+  )
+    throw Error("Invalid checklist task");
+  const r = await query(
+    `WITH changed AS(UPDATE partner_workspaces w SET checklist=jsonb_set(checklist,ARRAY[$3::text],to_jsonb($4::boolean),true) WHERE w.id=$1 AND w.partner_id=$2 AND(w.organization_id IS NULL OR EXISTS(SELECT 1 FROM partner_client_access a WHERE a.partner_id=$2 AND a.organization_id=w.organization_id AND a.revoked_at IS NULL)) RETURNING id) INSERT INTO distribution_audit(actor_id,event,affiliate_id,detail) SELECT $2,'PARTNER_CHECKLIST_UPDATED',$2,jsonb_build_object('workspace',id,'task',$3::text,'complete',$4::boolean) FROM changed RETURNING id`,
+    [id, p.id, task, complete],
+  );
+  if (!r.length) throw Error("Current client access required");
+}

@@ -1,4 +1,5 @@
 "use client";
+import { ClientServices } from "./client-services";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -10,6 +11,7 @@ import {
   partnerWorkspaceDataAction,
   savePartnerWebsiteAction,
   inviteWorkspaceOwnerAction,
+  setPartnerChecklistAction,
 } from "@/lib/actions/partner-workspace-actions";
 import { WebsiteFields } from "@/components/support/website-fields";
 import { WebsiteDraftPreview } from "@/components/support/website-draft-preview";
@@ -163,6 +165,50 @@ export function PartnerWorkspace({
               <p>{doc ? "✓" : "○"} Website content prepared</p>
               <p>{data.website?.published ? "✓" : "○"} Website published</p>
             </div>
+            <fieldset className="my-4 space-y-2">
+              <legend className="font-semibold">
+                Partner-confirmed handover tasks
+              </legend>
+              <p className="text-sm text-ink-muted">
+                These record your work; they do not activate products, mark
+                purchases paid or replace client approval.
+              </p>
+              {[
+                ["profile_review", "Business profile reviewed"],
+                ["website_review", "Website reviewed with client"],
+                ["training", "Selected tools training completed"],
+                ["handover", "Client handover completed"],
+              ].map(([task, label]) => (
+                <label key={task} className="flex gap-3">
+                  <input
+                    type="checkbox"
+                    disabled={busy}
+                    checked={Boolean(
+                      ((data.workspace.checklist as Record<string, unknown>) ||
+                        {})[task],
+                    )}
+                    onChange={async (e) => {
+                      setBusy(true);
+                      try {
+                        await setPartnerChecklistAction(
+                          id,
+                          task,
+                          e.target.checked,
+                        );
+                        await load(id);
+                      } catch {
+                        setError(
+                          "Unable to update task. Check client access and retry.",
+                        );
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  />
+                  {label}
+                </label>
+              ))}
+            </fieldset>
             {!data.workspace.organization_id && (
               <button
                 disabled={busy}
@@ -192,6 +238,9 @@ export function PartnerWorkspace({
               </label>
             )}
           </section>
+          {Boolean(data.workspace.organization_id) && (
+            <ClientServices key={id} id={id} />
+          )}
           <section className="rounded-xl border border-border p-5">
             <h2 className="text-xl font-semibold">JKTL services</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">

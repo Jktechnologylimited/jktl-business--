@@ -6,13 +6,18 @@ let cached: Resend | null = null;
 function getResend(): Resend {
   if (!cached) {
     const key = process.env.RESEND_API_KEY;
-    if (!key) throw new Error("RESEND_API_KEY is not set. Add it to .env.local — see .env.example.");
+    if (!key)
+      throw new Error(
+        "RESEND_API_KEY is not set. Add it to .env.local — see .env.example.",
+      );
     cached = new Resend(key);
   }
   return cached;
 }
 
-const FROM = process.env.RESEND_FROM_EMAIL || "JKTL Business <jktl-business@mail.ibiz.name.ng>";
+const FROM =
+  process.env.RESEND_FROM_EMAIL ||
+  "JKTL Business <jktl-business@mail.ibiz.name.ng>";
 
 type EmailResult = { ok: true } | { ok: false; error: string };
 
@@ -36,7 +41,8 @@ export async function sendProspectOutreachEmail(params: {
   text: string;
   replyTo?: string;
 }): Promise<EmailResult> {
-  if (!params.to || !params.to.includes("@")) return { ok: false, error: "No valid recipient email." };
+  if (!params.to || !params.to.includes("@"))
+    return { ok: false, error: "No valid recipient email." };
   try {
     const { error } = await getResend().emails.send({
       from: process.env.RESEND_OUTREACH_FROM_EMAIL || FROM,
@@ -49,18 +55,36 @@ export async function sendProspectOutreachEmail(params: {
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Unknown email error." };
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Unknown email error.",
+    };
   }
 }
 
-async function send(to: string, subject: string, html: string, text: string): Promise<EmailResult> {
-  if (!to || !to.includes("@")) return { ok: false, error: "No valid recipient email." };
+async function send(
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+): Promise<EmailResult> {
+  if (!to || !to.includes("@"))
+    return { ok: false, error: "No valid recipient email." };
   try {
-    const { error } = await getResend().emails.send({ from: FROM, to, subject, html, text });
+    const { error } = await getResend().emails.send({
+      from: FROM,
+      to,
+      subject,
+      html,
+      text,
+    });
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Unknown email error." };
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Unknown email error.",
+    };
   }
 }
 
@@ -71,7 +95,11 @@ function wrapper(bodyHtml: string): string {
   </div>`;
 }
 
-export async function sendWelcomeEmail(to: string, name: string, businessName: string): Promise<EmailResult> {
+export async function sendWelcomeEmail(
+  to: string,
+  name: string,
+  businessName: string,
+): Promise<EmailResult> {
   const html = wrapper(`
     <p>Hi ${name},</p>
     <p><strong>${businessName}</strong> is now set up on JKTL Business. You can sign in anytime to manage customers, bookings, sales, and more — online or off.</p>
@@ -206,17 +234,29 @@ export async function sendInvoiceEmail(params: {
     ``,
     `Invoice #${invoiceNumber} from ${businessName}`,
     ``,
-    ...lines.map((l) => `${l.quantity} x ${l.description} — ${formatKobo(l.totalKobo)}`),
+    ...lines.map(
+      (l) => `${l.quantity} x ${l.description} — ${formatKobo(l.totalKobo)}`,
+    ),
     ``,
     `Total due: ${formatKobo(totalKobo)}`,
     `Due ${formatShortDate(dueDate)}`,
     ...(payUrl ? [``, `Pay now: ${payUrl}`] : []),
-    ...(bankName ? [``, `Or transfer to ${accountName} · ${bankName} · ${accountNumber} (reference #${invoiceNumber})`] : []),
+    ...(bankName
+      ? [
+          ``,
+          `Or transfer to ${accountName} · ${bankName} · ${accountNumber} (reference #${invoiceNumber})`,
+        ]
+      : []),
     ``,
     `— ${businessName}`,
   ].join("\n");
 
-  return send(to, `Invoice #${invoiceNumber} from ${businessName} — ${formatKobo(totalKobo)}`, html, text);
+  return send(
+    to,
+    `Invoice #${invoiceNumber} from ${businessName} — ${formatKobo(totalKobo)}`,
+    html,
+    text,
+  );
 }
 
 /**
@@ -236,7 +276,15 @@ export async function sendPaymentReceiptEmail(params: {
   paidAt: string;
   reference: string;
 }): Promise<EmailResult> {
-  const { to, customerName, businessName, invoiceNumber, totalKobo, paidAt, reference } = params;
+  const {
+    to,
+    customerName,
+    businessName,
+    invoiceNumber,
+    totalKobo,
+    paidAt,
+    reference,
+  } = params;
   const html = wrapper(`
     <p style="margin:0 0 12px;font-size:15px"><strong>Payment received — thank you.</strong></p>
     <p>Hi ${customerName || "there"},</p>
@@ -248,7 +296,12 @@ export async function sendPaymentReceiptEmail(params: {
     <p style="font-size:13px;color:#5b6470">Keep this email as your receipt. ${businessName} has been notified that the invoice is settled.</p>
   `);
   const text = `Payment received — thank you.\n\n${formatKobo(totalKobo)} for invoice #${invoiceNumber} to ${businessName}, paid ${formatShortDate(paidAt)}${reference ? ` (reference ${reference})` : ""}. Keep this as your receipt.`;
-  return send(to, `Receipt — ${formatKobo(totalKobo)} paid to ${businessName}`, html, text);
+  return send(
+    to,
+    `Receipt — ${formatKobo(totalKobo)} paid to ${businessName}`,
+    html,
+    text,
+  );
 }
 
 export async function sendPaymentConfirmationEmail(params: {
@@ -291,7 +344,14 @@ export async function sendNewBookingRequestEmail(params: {
   serviceName: string;
   requestedAt: string;
 }): Promise<EmailResult> {
-  const { to, businessName, customerName, customerPhone, serviceName, requestedAt } = params;
+  const {
+    to,
+    businessName,
+    customerName,
+    customerPhone,
+    serviceName,
+    requestedAt,
+  } = params;
   const html = wrapper(`
     <p>Hi,</p>
     <p>Someone just booked through your <strong>${businessName}</strong> website:</p>
@@ -310,7 +370,8 @@ export async function sendRenewalReminderEmail(params: {
   businessName: string;
   renewalDate: string;
   priceKobo: number;
-}): Promise<EmailResult> {  const { to, businessName, renewalDate, priceKobo } = params;
+}): Promise<EmailResult> {
+  const { to, businessName, renewalDate, priceKobo } = params;
   const html = wrapper(`
     <p>Hi,</p>
     <p>Your JKTL Business plan for <strong>${businessName}</strong> renews on <strong>${formatShortDate(renewalDate)}</strong> (${formatKobo(priceKobo)}/year).</p>
@@ -339,7 +400,15 @@ export async function sendEscalationEmail(params: {
   severity: "emergency" | "urgent" | "caution" | "handoff";
   isEmergencyServices: boolean;
 }): Promise<EmailResult> {
-  const { to, businessName, patientName, patientPhone, reason, severity, isEmergencyServices } = params;
+  const {
+    to,
+    businessName,
+    patientName,
+    patientPhone,
+    reason,
+    severity,
+    isEmergencyServices,
+  } = params;
   const urgent = severity === "emergency" || severity === "urgent";
   const who = patientName || patientPhone || "A patient";
   const html = wrapper(`
@@ -356,7 +425,12 @@ export async function sendEscalationEmail(params: {
     }
   `);
   const text = `${urgent ? "Urgent: " : ""}${who} needs a person from ${businessName}. ${reason}${patientPhone ? ` Phone: ${patientPhone}.` : ""}`;
-  return send(to, `${urgent ? "Urgent — " : ""}A patient needs a person — ${businessName}`, html, text);
+  return send(
+    to,
+    `${urgent ? "Urgent — " : ""}A patient needs a person — ${businessName}`,
+    html,
+    text,
+  );
 }
 
 /**
@@ -393,11 +467,18 @@ export async function sendReceptionistOpsEmail(params: {
       <p>— The JKTL Business team</p>
     `);
     const text = `${businessName}'s communication wallet is down to ${formatKobo(balanceKobo ?? 0)}. Top up in the AI receptionist console to keep answering missed calls.`;
-    return send(to, `Communication wallet running low — ${businessName}`, html, text);
+    return send(
+      to,
+      `Communication wallet running low — ${businessName}`,
+      html,
+      text,
+    );
   }
 
   const month = params.monthIndex ? ` for month ${params.monthIndex}` : "";
-  const what = params.isInstalment ? "an instalment of your turnkey launch package" : "your monthly platform tier";
+  const what = params.isInstalment
+    ? "an instalment of your turnkey launch package"
+    : "your monthly platform tier";
   const html = wrapper(`
     <p>Hi,</p>
     <p>${what.charAt(0).toUpperCase()}${what.slice(1)} for <strong>${businessName}</strong> is due${month}: <strong>${formatKobo(amountKobo)}</strong>.</p>
@@ -409,7 +490,12 @@ export async function sendReceptionistOpsEmail(params: {
     <p>— The JKTL Business team</p>
   `);
   const text = `${what} for ${businessName} is due${month}: ${formatKobo(amountKobo)}.`;
-  return send(to, `${formatKobo(amountKobo)} due${month} — ${businessName}`, html, text);
+  return send(
+    to,
+    `${formatKobo(amountKobo)} due${month} — ${businessName}`,
+    html,
+    text,
+  );
 }
 
 /**
@@ -487,7 +573,17 @@ export async function sendAffiliateApprovedEmail(params: {
   firstYearValueKobo: number;
   payoutDay: number;
 }): Promise<EmailResult> {
-  const { to, name, signInUrl, referralLink, signupBonusKobo, subscriptionBonusKobo, recurringMonthlyKobo, firstYearValueKobo, payoutDay } = params;
+  const {
+    to,
+    name,
+    signInUrl,
+    referralLink,
+    signupBonusKobo,
+    subscriptionBonusKobo,
+    recurringMonthlyKobo,
+    firstYearValueKobo,
+    payoutDay,
+  } = params;
   const firstName = name.trim().split(/\s+/)[0] || "there";
 
   const tier = (label: string, amount: number) => `
@@ -545,7 +641,12 @@ export async function sendAffiliateApprovedEmail(params: {
     `— JKTL Business`,
   ].join("\n");
 
-  return send(to, "You're approved — your JKTL partner dashboard is ready", html, text);
+  return send(
+    to,
+    "You're approved — your JKTL partner dashboard is ready",
+    html,
+    text,
+  );
 }
 
 /**
@@ -560,7 +661,10 @@ export async function sendAffiliateApprovedEmail(params: {
  * nobody has time for. It leaves the door open, which is honest — applications
  * are judged on the plan described, and a better plan is a better application.
  */
-export async function sendAffiliateDeclinedEmail(params: { to: string; name: string }): Promise<EmailResult> {
+export async function sendAffiliateDeclinedEmail(params: {
+  to: string;
+  name: string;
+}): Promise<EmailResult> {
   const firstName = params.name.trim().split(/\s+/)[0] || "there";
   const html = wrapper(`
     <p style="margin:0 0 14px;font-size:15px"><strong>About your partner application</strong></p>
@@ -575,18 +679,160 @@ export async function sendAffiliateDeclinedEmail(params: { to: string; name: str
 }
 
 /** Domain notices contain no registrant contact/address or supplier credentials. Resend deduplicates retries. */
-export async function sendDomainOrderEmail(p:{to:string;domain:string;event:string;detail:string;key:string}):Promise<EmailResult>{
- if(!p.to||!p.to.includes('@'))return{ok:false,error:'Missing recipient'};
- const escape=(v:string)=>v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
- try{const{error}=await getResend().emails.send({from:FROM,to:p.to,subject:`${p.event}: ${p.domain}`,text:`${p.event}\n\n${p.domain}\n${p.detail}\n\nView your domain order securely at https://business.jktl.com.ng/business/domains`,html:`<div style="font-family:Arial;max-width:520px;margin:auto;background:#fdfcf8;border:1px solid #c9a84c;padding:24px;color:#060e2a"><h2>JKTL Business</h2><h3>${escape(p.event)}</h3><p><strong>${escape(p.domain)}</strong></p><p>${escape(p.detail)}</p><a href="https://business.jktl.com.ng/business/domains">View My Domains</a></div>`},{idempotencyKey:p.key});return error?{ok:false,error:'Email delivery failed'}:{ok:true};}catch{return{ok:false,error:'Email delivery unavailable'};}
+export async function sendDomainOrderEmail(p: {
+  to: string;
+  domain: string;
+  event: string;
+  detail: string;
+  key: string;
+}): Promise<EmailResult> {
+  if (!p.to || !p.to.includes("@"))
+    return { ok: false, error: "Missing recipient" };
+  const escape = (v: string) =>
+    v.replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c]!,
+    );
+  try {
+    const { error } = await getResend().emails.send(
+      {
+        from: FROM,
+        to: p.to,
+        subject: `${p.event}: ${p.domain}`,
+        text: `${p.event}\n\n${p.domain}\n${p.detail}\n\nView your domain order securely at https://business.jktl.com.ng/business/domains`,
+        html: `<div style="font-family:Arial;max-width:520px;margin:auto;background:#fdfcf8;border:1px solid #c9a84c;padding:24px;color:#060e2a"><h2>JKTL Business</h2><h3>${escape(p.event)}</h3><p><strong>${escape(p.domain)}</strong></p><p>${escape(p.detail)}</p><a href="https://business.jktl.com.ng/business/domains">View My Domains</a></div>`,
+      },
+      { idempotencyKey: p.key },
+    );
+    return error ? { ok: false, error: "Email delivery failed" } : { ok: true };
+  } catch {
+    return { ok: false, error: "Email delivery unavailable" };
+  }
 }
 
 /** Custom clients receive an activation link only after a configured pilot. */
-export async function sendCustomInvitationEmail(p:{to:string;name:string;url:string}):Promise<EmailResult>{
- const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
- return send(p.to,'Your JKTL Custom workspace is ready',`<div style="font-family:Arial;background:#fdfcf8;color:#060e2a;padding:32px"><h1>Welcome to JKTL Custom</h1><p>${escape(p.name)}, your client workspace is ready for review.</p><p>Manage your connected websites, service agreements, invoices and support in JKTL Business.</p><p><a href="${escape(p.url)}">Activate your workspace</a></p><p>This link expires in 48 hours and works once. Existing account holders sign in with their existing password. We never email passwords.</p></div>`,`Your JKTL Custom workspace for ${p.name} is ready. Activate within 48 hours: ${p.url}. This link works once. Existing account holders keep their password.`);
+export async function sendCustomInvitationEmail(p: {
+  to: string;
+  name: string;
+  url: string;
+}): Promise<EmailResult> {
+  const escape = (s: string) =>
+    s.replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c]!,
+    );
+  return send(
+    p.to,
+    "Your JKTL Custom workspace is ready",
+    `<div style="font-family:Arial;background:#fdfcf8;color:#060e2a;padding:32px"><h1>Welcome to JKTL Custom</h1><p>${escape(p.name)}, your client workspace is ready for review.</p><p>Manage your connected websites, service agreements, invoices and support in JKTL Business.</p><p><a href="${escape(p.url)}">Activate your workspace</a></p><p>This link expires in 48 hours and works once. Existing account holders sign in with their existing password. We never email passwords.</p></div>`,
+    `Your JKTL Custom workspace for ${p.name} is ready. Activate within 48 hours: ${p.url}. This link works once. Existing account holders keep their password.`,
+  );
 }
 
-export async function sendCustomNoticeEmail(p:{to:string;subject:string;detail:string;key:string;path?:string}):Promise<EmailResult>{try{if(!p.to)return{ok:false,error:'Missing recipient'};const r=await getResend().emails.send({from:FROM,to:p.to,subject:p.subject,text:`${p.detail}\n\nReview your JKTL workspace: ${(process.env.NEXT_PUBLIC_APP_URL||'https://business.jktl.com.ng')}${p.path||'/business/custom'}`},{idempotencyKey:p.key});return r.error?{ok:false,error:'Delivery failed'}:{ok:true};}catch{return{ok:false,error:'Delivery unavailable'};}}
+export async function sendCustomNoticeEmail(p: {
+  to: string;
+  subject: string;
+  detail: string;
+  key: string;
+  path?: string;
+}): Promise<EmailResult> {
+  try {
+    if (!p.to) return { ok: false, error: "Missing recipient" };
+    const r = await getResend().emails.send(
+      {
+        from: FROM,
+        to: p.to,
+        subject: p.subject,
+        text: `${p.detail}\n\nReview your JKTL workspace: ${process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng"}${p.path || "/business/custom"}`,
+      },
+      { idempotencyKey: p.key },
+    );
+    return r.error ? { ok: false, error: "Delivery failed" } : { ok: true };
+  } catch {
+    return { ok: false, error: "Delivery unavailable" };
+  }
+}
 
-export async function sendPartnerApprovedEmail(p:{to:string;name:string;signInUrl:string;referralLink:string;commissionBps:number;needsPasswordSetup?:boolean}):Promise<EmailResult>{const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));return send(p.to,'Your JKTL Partner account is approved',wrapper(`<h2>Welcome to JKTL Partners</h2><p>Hi ${escape(p.name)}, your application has been approved.</p><p>${p.needsPasswordSetup?`Your earlier application did not include a password. <a href="${escape((process.env.NEXT_PUBLIC_APP_URL||'https://business.jktl.com.ng')+'/affiliates/forgot-password')}">Request a secure password setup link</a> using your approved email address.`:`Use your existing application password to <a href="${escape(p.signInUrl)}">sign in to your partner workspace</a>.`}</p><p>Your agreed commission rate is ${p.commissionBps/100}% on qualifying purchases under your partner agreement. No signup or fixed bonus is implied.</p><p>Referral link: ${escape(p.referralLink)}</p>`),`Your JKTL Partner account is approved. ${p.needsPasswordSetup?"Request secure password setup from the programme password reset page using your approved email. ":""}Sign in: ${p.signInUrl}. Your agreed rate is ${p.commissionBps/100}% on qualifying purchases under your agreement. Referral link: ${p.referralLink}.`);}
+export async function sendPartnerApprovedEmail(p: {
+  to: string;
+  name: string;
+  signInUrl: string;
+  referralLink: string;
+  commissionBps: number;
+  needsPasswordSetup?: boolean;
+}): Promise<EmailResult> {
+  const escape = (s: string) =>
+    s.replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c]!,
+    );
+  return send(
+    p.to,
+    "Your JKTL Partner account is approved",
+    wrapper(
+      `<h2>Welcome to JKTL Partners</h2><p>Hi ${escape(p.name)}, your application has been approved.</p><p>${p.needsPasswordSetup ? `Your earlier application did not include a password. <a href="${escape((process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng") + "/affiliates/forgot-password")}">Request a secure password setup link</a> using your approved email address.` : `Use your existing application password to <a href="${escape(p.signInUrl)}">sign in to your partner workspace</a>.`}</p><p>Your agreed commission rate is ${p.commissionBps / 100}% on qualifying purchases under your partner agreement. No signup or fixed bonus is implied.</p><p>Referral link: ${escape(p.referralLink)}</p>`,
+    ),
+    `Your JKTL Partner account is approved. ${p.needsPasswordSetup ? "Request secure password setup from the programme password reset page using your approved email. " : ""}Sign in: ${p.signInUrl}. Your agreed rate is ${p.commissionBps / 100}% on qualifying purchases under your agreement. Referral link: ${p.referralLink}.`,
+  );
+}
+
+export async function sendPartnerNoticeEmail(p: {
+  to: string;
+  subject: string;
+  detail: string;
+  key: string;
+  path: string;
+}): Promise<EmailResult> {
+  const escape = (s: string) =>
+    s.replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c]!,
+    );
+  try {
+    const origin = (
+      process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng"
+    ).replace(/\/$/, "");
+    const url = origin + p.path;
+    const r = await getResend().emails.send(
+      {
+        from: FROM,
+        to: p.to,
+        subject: p.subject,
+        text: p.detail + "\n\n" + url,
+        html: `<div style="font-family:Arial,sans-serif;color:#060e2a;max-width:560px;margin:auto;padding:28px"><img src="${origin}/jktl-logo.png" width="64" height="64" alt="JKTL"><h2>JKTL Business</h2><p>${escape(p.detail)}</p><p><a href="${escape(url)}">Open your secure workspace</a></p></div>`,
+      },
+      { idempotencyKey: p.key },
+    );
+    return r.error ? { ok: false, error: "Delivery failed" } : { ok: true };
+  } catch {
+    return { ok: false, error: "Email unavailable" };
+  }
+}

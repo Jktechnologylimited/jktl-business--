@@ -1,129 +1,85 @@
-# Distribution platform implementation
+# Distribution platform
 
-## Current delivery: Stage 1 foundation only
+## Account and agreement model
 
-Migration 038 adds versioned policy records, immutable legacy enrollment snapshots,
-review flags and a governance audit trail. `/admin/distribution` links to existing
-application/payout operations, shows imported agreements and proposed policy
-versions, and lets Owner administrators create draft subscription policies or
-record reconciliation notes. Existing Affiliate managers can read this page;
-Support and ordinary business/affiliate sessions cannot access it.
+Business users apply at `/business/programs/apply` without a second password.
+Each Affiliate or Partner profile requires independent approval. Existing accounts
+are linked only after proving their programme password; matching email alone does
+not grant access. Migration 046 allows separately approved profiles for the same
+email and prevents linking a profile as the wrong programme. Existing IDs,
+passwords, referral codes and history are preserved.
 
-No draft activation action exists. No participant is enrolled in the proposed
-15% affiliate or 20% partner terms. Existing public offers, monetary balances,
-commission records, payout schedules and authentication remain unchanged.
-Replaying 038 does not refresh snapshots from changed account settings.
-New accounts created under the still-live legacy offer receive an immediate
-review-required snapshot through a database insert trigger. Before new-policy
-activation this enrollment path must be extended to require accepted new terms.
+Applications contain audience/client-service details, review stages, private audit
+reasons and separate applicant-visible messages. Rejection retains the record.
+`/admin/distribution/applications` complements existing approval operations.
 
-Snapshot review is an acknowledgement of account settings only, not proof of a
-signed agreement or approval to change terms. Historical terms cannot reliably
-be reconstructed from current mutable account fields; all imported accounts are
-flagged for review rather than assumed contractual truth.
+Migration 038's global proposed 15%/20% policies remain DRAFT. No production account
+is automatically converted. Owner administrators can offer an individually
+snapshotted agreement to a participant without existing referrals or earnings.
+The participant must accept; Owner activation requires explicit formal approval.
+Existing legacy snapshots, fixed bonuses, retention rewards and paid history are
+not recalculated. Legacy percentage/fixed-tier differences require reconciliation
+of signed obligations; current mutable settings are not proof of historical terms.
 
-## Inspection findings
+## Referral acquisition and payment finance
 
-- `affiliates`, `affiliate_sessions`, `affiliate_referrals`, `affiliate_earnings`,
-  payouts, bank verification and password reset are existing systems.
-- Partner applications use the same affiliates table with `programme=partner`.
-  Approval and `partner_terms_confirmed` gate the existing Partner dashboard.
-- Affiliate and Partner dashboards share the existing dashboard implementation.
-- Existing sessions are separate from Business customer sessions; shared-account
-  linking is required, rather than silently merging by unverified email.
-- Existing referral acquisition is first-touch per organization, protected by a
-  unique organization constraint. Any new precedence/window rule needs a cohort
-  migration and must not overwrite prior eligible attribution.
-- `accrueCommissionForOrg` currently calls the fixed-tier calculator regardless of
-  the `commission_model` selected. This is a reconciliation issue, not grounds
-  for silently rewriting existing earned amounts.
-- Existing cron-based retention rewards represent legacy contractual behavior;
-  do not replace them with proposed captured-payment-only rules for old cohorts.
-- Existing verified bank details and manual payout request paths should be reused.
-- Current public affiliate rates remain unchanged. Do not advertise new draft
-  rates before accepted policy and payment integration launch together.
+Marketing referrals use an optional, explicit-consent 30-day opaque HttpOnly
+cookie shared with Business. The capture API permits only trusted origins, limits
+requests and checks active codes. Attribution checks expiry, existing acquisition,
+prior purchases and self-referral. No cookie is created merely by landing on a
+page. Privacy preferences clear it; declining does not block signup.
 
-## Proposed calculator (not payment-connected)
+Owner-accepted Partner invitations may attribute an eligible new unpaid client to
+an active referral agreement, with disclosure. Existing attribution always wins.
+Reseller agreements never also earn referral commission.
 
-`src/lib/distribution/calculation.ts` calculates safe integer minor-unit quotes
-using BigInt intermediate arithmetic. Captured amount already excludes discounts;
-discounts must not be deducted twice. Taxes, processing fees and pass-through
-costs reduce net. Refunded, charged-back, self-referred, test or unsuccessful
-payments earn zero. Currency must be explicitly eligible. A margin reserve and
-maximum commission cap apply. Reseller-discount stacking is disabled unless
-explicitly approved. Paid service months cap the eligible amount: annual payment
-is one calculation, never twelve fictitious transactions. The caller must supply
-verified actual payment facts and atomically reserve paid months/idempotency;
-this pure calculator does not establish eligibility or implement a ledger.
+The new ledger consumes only actual verified live Paystack website subscriptions.
+Currency, captured amount, reference, transaction ID and actual processing fees
+must match the native payment. Net revenue deducts agreed included tax and
+pass-through costs; integer rounding, commission caps and margin reserve apply.
+A locked per-client service-month allocation caps rewards at the agreement's
+1–12 paid months. Annual payments earn once. Duplicate/replayed events do not
+create another payment or commission. Other products default to noncommissionable.
 
-## Remaining ordered implementation plan
+Earnings begin held, then require reconciliation before becoming available.
+Signed dispute events hold unpaid amounts; verified refunds reverse unpaid amounts
+or create an idempotent negative adjustment against paid history. Open disputes
+freeze payouts. Owner reconciliation requires provider evidence; it never guesses
+that a resolved dispute was won. Paid financial facts are immutable.
 
-1. Reconcile legacy agreement snapshots; link the authenticated Business User to
-   program profiles through explicit verification, allowing multiple programs.
-2. Extend application fields/statuses, accepted policy evidence and cohort
-   activation dates. Owner-controlled activation must coordinate public terms.
-3. Add verified captured-payment commission ledger, product rules and per-account
-   agreements; currency/product disabled by default until economics are reviewed.
-   Use transaction uniqueness and locked service-month allocation; refund and
-   chargeback adjustments must preserve paid history and create reconciled debt
-   or holds rather than silently deleting payouts.
-4. Add referral event privacy/consent, 30-day signed attribution and fraud review,
-   maintaining existing eligible acquisition records and self-referral protection.
-5. Expand Affiliate reporting and controlled payout reservation/reconciliation.
-   Preserve legacy 21st-of-month rules. No automatic bank transfers.
-6. Implement hashed, expiring client invitations and client-owner consent to
-   scoped partner relationships. Every action rechecks current grant and program
-   status; revocation must immediately stop access. Partners never own client
-   organizations or receive passwords by default.
-7. Build distinct Partner client/service dashboard, agreements and reseller
-   pricing. Prevent discount/commission stacking at verified order creation.
-8. Marketing assets, program notifications, ledger exports and existing NEW
-   registry integration, plus public launch using active-policy data only.
-9. Database-concurrency, role/tenant, refund/replay, session-link, invitation,
-   payout and browser tests before activating any policy.
+The new payout ledger reserves reviewed earnings and unsettled debt once, with a
+saved verified beneficiary snapshot. Minimum and monthly request day are Owner
+settings; existing legacy rules are unchanged. Authorized staff record actual
+manual transfer references after approval. The application does not initiate bank
+transfers. Beneficiary reveal is capability-checked and audited. Participant CSV
+statements are private and mitigate spreadsheet formula injection.
 
-## Validation and deployment
+## Reseller operations and resources
 
-`node --test tests/distribution-policies.test.mjs tests/affiliate-commission.test.mjs`
-uses isolated PGlite, not production money. It exercises replay preservation,
-legacy immutability and calculator boundaries. Build/type/lint are separate checks.
-No new environment variables. Migration 038 is included in existing prebuild.
-No production migration, bank payout, notification or policy activation is part
-of these checks. Full-platform launch remains blocked on the stages above.
+Active reseller Partners receive written per-service quotes. The actual named
+billing business owner accepts scope and billing responsibility. Fulfillment
+requires an exact paid native domain/email order or custom invoice plus actual
+supplier cost/reference. Acceptance itself never charges or provisions anything.
+Supplier margin and payment evidence are audited. GO54 procurement, licensing and
+mailbox provisioning retain their existing approved operational controls.
 
+Owner-approved HTTPS marketing resources are audience scoped. The supplied JKTL
+mark is reused in programme navigation, resource library and notification emails.
+Durable transactional notices cover applications, agreements, finance and payouts;
+processing uses existing configured email delivery. No promotional mail is sent
+by tests. Partner ticket notifications are documented in PARTNER_WORKSPACE.md.
 
-## Follow-up delivery: account connections and partner client operations
+## Deployment and verification
 
-Migration 039 adds explicit Business-user/program links. Existing approved program
-accounts are connected by proving their existing program password once; email
-matching alone never links accounts. Subsequent access uses the authenticated
-Business user and an approved linked profile to start the existing program
-session. This preserves existing credentials and permits one account per program
-per Business user. It does not yet replace public application/password flows.
+Prebuild includes additive migrations 041–046 through the repaired dollar-quote
+aware SQL batch runner. `DATABASE_URL` is required to apply them. No new mandatory
+environment variables; email, Web Push, Paystack and cron use existing settings.
+Absent delivery configuration leaves durable notices pending. Enable existing
+scheduled cron processing before relying on background reconciliation/delivery.
 
-Business → More → Programs & partner access (`/business/distribution`) lets owners
-accept private invitations, choose permissions, inspect and revoke relationships.
-The invitation is retained through Business sign-in, signup and onboarding using
-an allowlisted return destination. Partners use `/partners/clients` to generate
-one-use links expiring in seven days, track acceptance and submit service requests.
-Only hashes are stored; the generated token is returned once for private sharing.
-A current approved Partner agreement is checked on every partner mutation.
-
-Current scopes are service-summary visibility (counts only, not financial/private
-records) and service-assistance requests. Neither scope lets a partner charge,
-provision, edit website documents, change ownership or access customer messages.
-Requests go to `/admin/distribution/requests`, where authorized distribution admins
-can review/respond; completing a request is never payment or fulfillment evidence.
-Revocation clears permissions, immediately blocks new service requests and removes
-visibility of prior request replies from the partner view. Audit events record
-invitation creation, acceptance, revocation and requests/responses.
-
-Database-backed tests exercise non-owner rejection, invitation reuse, another
-partner's denial, scoped assistance, post-revocation denial and suspension. No
-invitation messages, actual customer data or live financial transactions are used.
-
-Still outstanding from the master brief: payment-connected commission ledger,
-cohort activation and accepted policy evidence, new unified application flow,
-reseller prices, product economics/rules, payout reservations and reversals,
-marketing assets, comprehensive program notifications and full browser verification.
-Do not treat this follow-up as completion or activation of the full platform.
+Tests use isolated PostgreSQL-compatible PGlite and mocked providers, exercising
+migration replay, identity links, invitation grants/revocation, proof validation,
+concurrent finance replay, holds/refunds/debt, immutable history, quote payment,
+attachments and native service isolation. They do not establish live provider
+registration, mailbox licensing, email/push delivery, real payouts or production
+migration success. Validate those with authorized test accounts in deployment.

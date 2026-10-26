@@ -29,7 +29,9 @@ async function paystackFetch<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok || body.status === false) {
-    throw new Error(body.message || `Paystack request to ${path} failed (${res.status})`);
+    throw new Error(
+      body.message || `Paystack request to ${path} failed (${res.status})`,
+    );
   }
   return body.data as T;
 }
@@ -38,9 +40,14 @@ async function paystackFetch<T>(path: string, init?: RequestInit): Promise<T> {
  * *raw* request body using the secret key, hex-encoded. Must be checked
  * against the raw bytes before the body is parsed as JSON — Paystack's
  * signature won't match a re-serialized copy of the payload. */
-export function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
+export function verifyWebhookSignature(
+  rawBody: string,
+  signature: string | null,
+): boolean {
   if (!signature) return false;
-  const expected = createHmac("sha512", secretKey()).update(rawBody).digest("hex");
+  const expected = createHmac("sha512", secretKey())
+    .update(rawBody)
+    .digest("hex");
   const a = Buffer.from(expected, "utf8");
   const b = Buffer.from(signature, "utf8");
   return a.length === b.length && timingSafeEqual(a, b);
@@ -56,7 +63,12 @@ export async function createPlan(params: {
 }): Promise<{ planCode: string }> {
   const data = await paystackFetch<{ plan_code: string }>("/plan", {
     method: "POST",
-    body: JSON.stringify({ name: params.name, amount: params.amountKobo, interval: params.interval, currency: "NGN" }),
+    body: JSON.stringify({
+      name: params.name,
+      amount: params.amountKobo,
+      interval: params.interval,
+      currency: "NGN",
+    }),
   });
   return { planCode: data.plan_code };
 }
@@ -64,8 +76,13 @@ export async function createPlan(params: {
 /** Looks for an existing Plan by exact name — used so `ensurePlanCode` in
  * db/billing.ts doesn't create a duplicate Plan if the local cache table
  * was ever cleared but the Plan still exists on Paystack's side. */
-export async function findPlanByName(name: string): Promise<{ planCode: string } | null> {
-  const data = await paystackFetch<Array<{ name: string; plan_code: string }>>(`/plan?perPage=100`, { method: "GET" });
+export async function findPlanByName(
+  name: string,
+): Promise<{ planCode: string } | null> {
+  const data = await paystackFetch<Array<{ name: string; plan_code: string }>>(
+    `/plan?perPage=100`,
+    { method: "GET" },
+  );
   const match = data.find((p) => p.name === name);
   return match ? { planCode: match.plan_code } : null;
 }
@@ -89,7 +106,11 @@ export async function initializeTransaction(params: {
   callbackUrl: string;
   metadata: Record<string, unknown>;
 }): Promise<InitializeTransactionResult> {
-  const data = await paystackFetch<{ authorization_url: string; reference: string; access_code: string }>("/transaction/initialize", {
+  const data = await paystackFetch<{
+    authorization_url: string;
+    reference: string;
+    access_code: string;
+  }>("/transaction/initialize", {
     method: "POST",
     body: JSON.stringify({
       email: params.email,
@@ -99,7 +120,11 @@ export async function initializeTransaction(params: {
       metadata: params.metadata,
     }),
   });
-  return { authorizationUrl: data.authorization_url, reference: data.reference, accessCode: data.access_code };
+  return {
+    authorizationUrl: data.authorization_url,
+    reference: data.reference,
+    accessCode: data.access_code,
+  };
 }
 
 /**
@@ -121,19 +146,33 @@ export async function initializeContractPayment(params: {
   callbackUrl: string;
   organizationId: string;
 }): Promise<InitializeTransactionResult> {
-  const data = await paystackFetch<{ authorization_url: string; reference: string; access_code: string }>("/transaction/initialize", {
+  const data = await paystackFetch<{
+    authorization_url: string;
+    reference: string;
+    access_code: string;
+  }>("/transaction/initialize", {
     method: "POST",
     body: JSON.stringify({
       email: params.email,
       amount: params.amountKobo,
       callback_url: params.callbackUrl,
-      metadata: { type: "receptionist_month", organizationId: params.organizationId, monthIndex: params.monthIndex },
+      metadata: {
+        type: "receptionist_month",
+        organizationId: params.organizationId,
+        monthIndex: params.monthIndex,
+      },
     }),
   });
-  return { authorizationUrl: data.authorization_url, reference: data.reference, accessCode: data.access_code };
+  return {
+    authorizationUrl: data.authorization_url,
+    reference: data.reference,
+    accessCode: data.access_code,
+  };
 }
 
 export interface VerifyTransactionData {
+  domain?: string;
+  fees?: number;
   id?: number | string;
   currency?: string;
   status: "success" | "failed" | "abandoned" | string;
@@ -155,8 +194,13 @@ export interface VerifyTransactionData {
   };
 }
 
-export async function verifyTransaction(reference: string): Promise<VerifyTransactionData> {
-  return paystackFetch<VerifyTransactionData>(`/transaction/verify/${encodeURIComponent(reference)}`, { method: "GET" });
+export async function verifyTransaction(
+  reference: string,
+): Promise<VerifyTransactionData> {
+  return paystackFetch<VerifyTransactionData>(
+    `/transaction/verify/${encodeURIComponent(reference)}`,
+    { method: "GET" },
+  );
 }
 
 /**
@@ -174,7 +218,11 @@ export async function initializeWalletTopUp(params: {
   callbackUrl: string;
   organizationId: string;
 }): Promise<InitializeTransactionResult> {
-  const data = await paystackFetch<{ authorization_url: string; reference: string; access_code: string }>("/transaction/initialize", {
+  const data = await paystackFetch<{
+    authorization_url: string;
+    reference: string;
+    access_code: string;
+  }>("/transaction/initialize", {
     method: "POST",
     body: JSON.stringify({
       email: params.email,
@@ -183,16 +231,25 @@ export async function initializeWalletTopUp(params: {
       metadata: { type: "wallet_topup", organizationId: params.organizationId },
     }),
   });
-  return { authorizationUrl: data.authorization_url, reference: data.reference, accessCode: data.access_code };
+  return {
+    authorizationUrl: data.authorization_url,
+    reference: data.reference,
+    accessCode: data.access_code,
+  };
 }
 
 /** Paystack's hosted "manage subscription" page — lets the owner update
  * their card or cancel, without JKTL Business needing its own card-storage
  * or cancellation UI. */
-export async function getSubscriptionManageLink(subscriptionCode: string): Promise<string> {
-  const data = await paystackFetch<{ link: string }>(`/subscription/${encodeURIComponent(subscriptionCode)}/manage/link`, {
-    method: "GET",
-  });
+export async function getSubscriptionManageLink(
+  subscriptionCode: string,
+): Promise<string> {
+  const data = await paystackFetch<{ link: string }>(
+    `/subscription/${encodeURIComponent(subscriptionCode)}/manage/link`,
+    {
+      method: "GET",
+    },
+  );
   return data.link;
 }
 
@@ -218,15 +275,18 @@ export async function chargeAuthorization(params: {
   amountKobo: number;
   metadata: Record<string, unknown>;
 }): Promise<ChargeAuthorizationResult> {
-  const data = await paystackFetch<{ reference: string; status: string }>("/transaction/charge_authorization", {
-    method: "POST",
-    body: JSON.stringify({
-      authorization_code: params.authorizationCode,
-      email: params.email,
-      amount: params.amountKobo,
-      metadata: params.metadata,
-    }),
-  });
+  const data = await paystackFetch<{ reference: string; status: string }>(
+    "/transaction/charge_authorization",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        authorization_code: params.authorizationCode,
+        email: params.email,
+        amount: params.amountKobo,
+        metadata: params.metadata,
+      }),
+    },
+  );
   if (data.status !== "success") {
     throw new Error(`Paystack declined the charge (status: ${data.status})`);
   }
@@ -257,11 +317,12 @@ export interface PaystackBank {
  * in Settings → Payments. Free, no special approval needed per Paystack's
  * docs — same secret key as everything else in this file. */
 export async function listBanks(): Promise<PaystackBank[]> {
-  const data = await paystackFetch<Array<{ name: string; code: string; active: boolean }>>(
-    "/bank?country=nigeria&currency=NGN&perPage=100",
-    { method: "GET" },
-  );
-  return data.filter((b) => b.active).map((b) => ({ code: b.code, name: b.name }));
+  const data = await paystackFetch<
+    Array<{ name: string; code: string; active: boolean }>
+  >("/bank?country=nigeria&currency=NGN&perPage=100", { method: "GET" });
+  return data
+    .filter((b) => b.active)
+    .map((b) => ({ code: b.code, name: b.name }));
 }
 
 export interface ResolvedAccount {
@@ -273,8 +334,14 @@ export interface ResolvedAccount {
  * saving payment settings so a mistyped account number is caught
  * immediately rather than silently sending a business's customers' money
  * to the wrong place. Free endpoint, per Paystack's docs. */
-export async function resolveAccountNumber(accountNumber: string, bankCode: string): Promise<ResolvedAccount> {
-  const data = await paystackFetch<{ account_number: string; account_name: string }>(
+export async function resolveAccountNumber(
+  accountNumber: string,
+  bankCode: string,
+): Promise<ResolvedAccount> {
+  const data = await paystackFetch<{
+    account_number: string;
+    account_name: string;
+  }>(
     `/bank/resolve?account_number=${encodeURIComponent(accountNumber)}&bank_code=${encodeURIComponent(bankCode)}`,
     { method: "GET" },
   );
@@ -288,7 +355,11 @@ export async function resolveAccountNumber(accountNumber: string, bankCode: stri
  * default only matters as a safety net: if a charge were ever made
  * without that override, the business keeps 100% rather than losing a
  * cut to a stale percentage. */
-export async function createSubaccount(params: { businessName: string; bankCode: string; accountNumber: string }): Promise<{ subaccountCode: string }> {
+export async function createSubaccount(params: {
+  businessName: string;
+  bankCode: string;
+  accountNumber: string;
+}): Promise<{ subaccountCode: string }> {
   const data = await paystackFetch<{ subaccount_code: string }>("/subaccount", {
     method: "POST",
     body: JSON.stringify({
@@ -303,10 +374,16 @@ export async function createSubaccount(params: { businessName: string; bankCode:
 
 /** Updates an existing Subaccount's settlement bank — used when a business
  * changes their bank details after already having one. */
-export async function updateSubaccountBank(subaccountCode: string, params: { bankCode: string; accountNumber: string }): Promise<void> {
+export async function updateSubaccountBank(
+  subaccountCode: string,
+  params: { bankCode: string; accountNumber: string },
+): Promise<void> {
   await paystackFetch(`/subaccount/${encodeURIComponent(subaccountCode)}`, {
     method: "PUT",
-    body: JSON.stringify({ settlement_bank: params.bankCode, account_number: params.accountNumber }),
+    body: JSON.stringify({
+      settlement_bank: params.bankCode,
+      account_number: params.accountNumber,
+    }),
   });
 }
 
@@ -327,7 +404,11 @@ export async function initializeInvoicePayment(params: {
   callbackUrl: string;
   metadata: Record<string, unknown>;
 }): Promise<InitializeTransactionResult> {
-  const data = await paystackFetch<{ authorization_url: string; reference: string; access_code: string }>("/transaction/initialize", {
+  const data = await paystackFetch<{
+    authorization_url: string;
+    reference: string;
+    access_code: string;
+  }>("/transaction/initialize", {
     method: "POST",
     body: JSON.stringify({
       email: params.email,
@@ -339,28 +420,106 @@ export async function initializeInvoicePayment(params: {
       metadata: params.metadata,
     }),
   });
-  return { authorizationUrl: data.authorization_url, reference: data.reference, accessCode: data.access_code };
+  return {
+    authorizationUrl: data.authorization_url,
+    reference: data.reference,
+    accessCode: data.access_code,
+  };
 }
 
 /** Versioned website products never reuse or mutate legacy plans. */
-export async function findWebsiteProviderPlan(name:string){
- for(let page=1;page<=20;page++){
-  const rows=await paystackFetch<Array<{name:string;plan_code:string;amount:number;currency:string;interval:string}>>(`/plan?perPage=100&page=${page}`);
-  const match=rows.find(row=>row.name===name);if(match)return match;if(rows.length<100)break;
- }
- return null;
+export async function findWebsiteProviderPlan(name: string) {
+  for (let page = 1; page <= 20; page++) {
+    const rows = await paystackFetch<
+      Array<{
+        name: string;
+        plan_code: string;
+        amount: number;
+        currency: string;
+        interval: string;
+      }>
+    >(`/plan?perPage=100&page=${page}`);
+    const match = rows.find((row) => row.name === name);
+    if (match) return match;
+    if (rows.length < 100) break;
+  }
+  return null;
 }
-export async function initializeWebsitePlanCheckout(params:{email:string;amountKobo:number;planCode:string;reference:string;callbackUrl:string;metadata:Record<string,unknown>}):Promise<InitializeTransactionResult>{
- const data=await paystackFetch<{authorization_url:string;reference:string;access_code:string}>("/transaction/initialize",{method:"POST",body:JSON.stringify({email:params.email,amount:params.amountKobo,currency:"NGN",plan:params.planCode,reference:params.reference,callback_url:params.callbackUrl,metadata:params.metadata})});
- return {authorizationUrl:data.authorization_url,reference:data.reference,accessCode:data.access_code};
+export async function initializeWebsitePlanCheckout(params: {
+  email: string;
+  amountKobo: number;
+  planCode: string;
+  reference: string;
+  callbackUrl: string;
+  metadata: Record<string, unknown>;
+}): Promise<InitializeTransactionResult> {
+  const data = await paystackFetch<{
+    authorization_url: string;
+    reference: string;
+    access_code: string;
+  }>("/transaction/initialize", {
+    method: "POST",
+    body: JSON.stringify({
+      email: params.email,
+      amount: params.amountKobo,
+      currency: "NGN",
+      plan: params.planCode,
+      reference: params.reference,
+      callback_url: params.callbackUrl,
+      metadata: params.metadata,
+    }),
+  });
+  return {
+    authorizationUrl: data.authorization_url,
+    reference: data.reference,
+    accessCode: data.access_code,
+  };
 }
-export async function stopWebsiteProviderSubscription(code:string,token:string){
- await paystackFetch('/subscription/disable',{method:'POST',body:JSON.stringify({code,token})});
+export async function stopWebsiteProviderSubscription(
+  code: string,
+  token: string,
+) {
+  await paystackFetch("/subscription/disable", {
+    method: "POST",
+    body: JSON.stringify({ code, token }),
+  });
 }
 
 /** A domain order is a single charge: no subscription plan, card reuse, or automatic registrar purchase. */
-export async function initializeDomainPayment(params:{email:string;amountKobo:number;reference:string;callbackUrl:string;metadata:Record<string,unknown>}):Promise<InitializeTransactionResult>{
- const data=await paystackFetch<{authorization_url:string;reference:string;access_code:string}>('/transaction/initialize',{method:'POST',body:JSON.stringify({email:params.email,amount:params.amountKobo,currency:'NGN',reference:params.reference,callback_url:params.callbackUrl,metadata:params.metadata})});
- return {authorizationUrl:data.authorization_url,reference:data.reference,accessCode:data.access_code};
+export async function initializeDomainPayment(params: {
+  email: string;
+  amountKobo: number;
+  reference: string;
+  callbackUrl: string;
+  metadata: Record<string, unknown>;
+}): Promise<InitializeTransactionResult> {
+  const data = await paystackFetch<{
+    authorization_url: string;
+    reference: string;
+    access_code: string;
+  }>("/transaction/initialize", {
+    method: "POST",
+    body: JSON.stringify({
+      email: params.email,
+      amount: params.amountKobo,
+      currency: "NGN",
+      reference: params.reference,
+      callback_url: params.callbackUrl,
+      metadata: params.metadata,
+    }),
+  });
+  return {
+    authorizationUrl: data.authorization_url,
+    reference: data.reference,
+    accessCode: data.access_code,
+  };
 }
-export async function getDomainRefund(id:string):Promise<Record<string,unknown>>{if(!/^\d{1,20}$/.test(id))throw Error('Invalid refund ID.');return paystackFetch<Record<string,unknown>>(`/refund/${encodeURIComponent(id)}`,{method:'GET'});}
+export async function getDomainRefund(
+  id: string,
+): Promise<Record<string, unknown>> {
+  if (!/^\d{1,20}$/.test(id)) throw Error("Invalid refund ID.");
+  return paystackFetch<Record<string, unknown>>(
+    `/refund/${encodeURIComponent(id)}`,
+    { method: "GET" },
+  );
+}

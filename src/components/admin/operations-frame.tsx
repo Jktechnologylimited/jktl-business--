@@ -1,4 +1,5 @@
 "use client";
+import { JktlMark } from "@/components/app/logo";
 import { ThemeControl } from "@/components/settings/theme-control";
 import { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
@@ -89,7 +90,7 @@ export function OperationsFrame({
                 : "/affiliates"
           }
         >
-          JKTL
+          <JktlMark className="size-10" /> JKTL
           <span>
             {kind === "admin"
               ? "COMMAND CENTRE"

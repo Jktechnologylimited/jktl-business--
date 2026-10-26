@@ -50,7 +50,10 @@ function LoginForm() {
       setError(result.error);
       return;
     }
-    if (params.get("next") === "distribution") { router.replace(emailDestination(params)!); return; }
+    if (["distribution", "programs"].includes(params.get("next") || "")) {
+      router.replace(emailDestination(params)!);
+      return;
+    }
     if (params.get("next") === "support") {
       router.replace("/business/help");
       return;
@@ -89,7 +92,8 @@ function LoginForm() {
   useEffect(() => {
     if (hydrated && authenticated && mode === "live") {
       const value = params.get("next");
-      if (value === "distribution") router.replace(emailDestination(params)!);
+      if (["distribution", "programs"].includes(value || ""))
+        router.replace(emailDestination(params)!);
       else if (value === "support") router.replace("/business/help");
       else if (value === "email")
         router.replace(

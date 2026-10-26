@@ -16,6 +16,10 @@ test("partner ticket history enforces assignment and owner escalation, including
     let admin = { id: agent, role: "support" };
     const query = async (s, p = []) => (await db.query(s, p)).rows;
     const deps = {
+      "next/server": { after: () => {} },
+      "@/lib/partners/notifications": {
+        processPartnerNotices: async () => ({}),
+      },
       "@/lib/custom/service": { query },
       "@/lib/partners/access": {
         approvedPartner: async () => ({ id: partner }),
