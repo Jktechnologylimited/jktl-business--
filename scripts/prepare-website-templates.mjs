@@ -1,6 +1,7 @@
 /** Apply only the additive template migration, using the deployment's existing DB binding. */
 import { readFile } from "node:fs/promises";
 import { neon } from "@neondatabase/serverless";
+import { applyMigrationBatch } from "./sql-statements.mjs";
 const url = process.env.DATABASE_URL;
 if (!url) {
   console.log(
@@ -12,15 +13,8 @@ if (!url) {
       readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
     ),
   );
-  const migration = migrations.join("\n");
-  const statements = migration
-    .split(";")
-    .map((sql) => sql.trim())
-    .filter(Boolean);
   const sql = neon(url);
-  await sql.transaction(
-    statements.map((statement) => sql.query(statement, [])),
-  );
+  await applyMigrationBatch(sql, migrations);
   await sql.query(
     "DELETE FROM website_metric_rate_limits WHERE expires_at < now()",
     [],

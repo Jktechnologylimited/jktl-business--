@@ -1,3 +1,4 @@
+import { applyMigrationBatch } from "../scripts/sql-statements.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -95,6 +96,19 @@ test("proposed percentage calculations use actual captured amounts and service m
 });
 test("migration is rerunnable, preserves financial rows and locks legacy snapshots", async () => {
   const db = new PGlite();
+  const adapter = {
+    query: (statement, params) => ({ statement, params }),
+    transaction: async (statements) => {
+      await db.exec("BEGIN");
+      try {
+        for (const s of statements) await db.query(s.statement, s.params);
+        await db.exec("COMMIT");
+      } catch (e) {
+        await db.exec("ROLLBACK");
+        throw e;
+      }
+    },
+  };
   try {
     await db.exec(
       `CREATE TABLE affiliates(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),name text,programme text,commission_model text,commission_bps int,signup_bonus_kobo bigint,subscription_bonus_kobo bigint,recurring_monthly_kobo bigint,recurring_months_cap int,partner_agreement text,partner_terms_confirmed boolean,status text); CREATE TABLE feature_registry(slug text PRIMARY KEY,name text,category text,route text UNIQUE,description text); CREATE TABLE affiliate_earnings(amount bigint); INSERT INTO affiliate_earnings VALUES(123456); INSERT INTO affiliates(name,programme,commission_model,commission_bps,status) VALUES('Original','affiliate','tiered',2000,'active'),('Agency','partner','percentage',1700,'active');`,
@@ -103,8 +117,8 @@ test("migration is rerunnable, preserves financial rows and locks legacy snapsho
       new URL("../migrations/038_distribution_policies.sql", import.meta.url),
       "utf8",
     );
-    await db.exec(sql);
-    await db.exec(sql);
+    await applyMigrationBatch(adapter, [sql]);
+    await applyMigrationBatch(adapter, [sql]);
     assert.equal(
       (await db.query("SELECT * FROM distribution_policies")).rows.length,
       4,
@@ -121,7 +135,7 @@ test("migration is rerunnable, preserves financial rows and locks legacy snapsho
       123456,
     );
     await db.exec("UPDATE affiliates SET commission_bps=4000");
-    await db.exec(sql);
+    await applyMigrationBatch(adapter, [sql]);
     assert.deepEqual(
       (
         await db.query(
