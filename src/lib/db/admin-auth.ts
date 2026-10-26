@@ -130,6 +130,9 @@ export async function destroyAdminSession(sessionId: string): Promise<void> {
 /* -------------------------------------------------------------------------- */
 
 export interface AdminTeamMember {
+  businessUserId?: string;
+  permissions?: Record<string, boolean>;
+  revokedAt?: string | null;
   id: string;
   name: string;
   email: string;
@@ -145,6 +148,11 @@ export async function listAdminTeam(): Promise<AdminTeamMember[]> {
   // not exist yet turns a page into a 500 instead of an empty list.
   const rows = await sql`SELECT * FROM admin_users ORDER BY created_at ASC`;
   return rows.map((row) => ({
+    businessUserId: row.business_user_id
+      ? String(row.business_user_id)
+      : undefined,
+    permissions: (row.permission_overrides || {}) as Record<string, boolean>,
+    revokedAt: row.staff_revoked_at ? String(row.staff_revoked_at) : null,
     id: row.id as string,
     name: (row.name as string) ?? "",
     email: (row.email as string) ?? "",
@@ -187,7 +195,13 @@ export async function createAdminUser(input: {
   if (existing[0]) throw new Error(ADMIN_EMAIL_TAKEN);
 
   const passwordHash = await bcrypt.hash(input.password, 10);
-  const rows = await sql`
+  const rows =
+    input.role === "growth_gaming_lead"
+      ? await sql.query(
+          `WITH created AS(INSERT INTO admin_users(name,email,password_hash,role,created_by,staff_assigned_at) VALUES($1,$2,$3,$4,$5,now()) RETURNING *),logged AS(INSERT INTO distribution_audit(actor_id,event,detail) SELECT $5,'STAFF_ROLE_ASSIGNED',jsonb_build_object('staff',id,'role','GROWTH_GAMING_LEAD','source','TEAM') FROM created RETURNING id) SELECT * FROM created`,
+          [input.name.trim(), email, passwordHash, input.role, input.createdBy],
+        )
+      : await sql`
     INSERT INTO admin_users (name, email, password_hash, role, created_by)
     VALUES (${input.name.trim()}, ${email}, ${passwordHash}, ${input.role}, ${input.createdBy})
     RETURNING id, name, email, role

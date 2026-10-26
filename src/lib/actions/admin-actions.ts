@@ -93,11 +93,13 @@ export async function adminLoginAction(
       ok: true,
       data: {
         path:
-          admin.role === "support"
-            ? "/admin/support"
-            : admin.role === "editor"
-              ? "/admin/content"
-              : "/admin/insights",
+          admin.role === "growth_gaming_lead"
+            ? "/admin/growth"
+            : admin.role === "support"
+              ? "/admin/support"
+              : admin.role === "editor"
+                ? "/admin/content"
+                : "/admin/insights",
       },
     };
   } catch (err) {
@@ -481,12 +483,6 @@ export async function createAdminTeamMemberAction(input: {
 }): Promise<ActionResult<AdminUser>> {
   try {
     const acting = await requireAdminCapability("manage_team");
-    if (input.role === "growth_gaming_lead")
-      return {
-        ok: false,
-        error:
-          "Assign Growth & Gaming Lead to an existing Business account in Staff management.",
-      };
     if (!input.name.trim()) return { ok: false, error: "Enter their name." };
     if (!input.email.includes("@"))
       return { ok: false, error: "Enter a valid email address." };

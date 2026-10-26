@@ -1,4 +1,4 @@
-/** Apply only the additive template migration, using the deployment's existing DB binding. */
+/** Apply additive platform migrations, using the deployment's existing DB binding. */
 import { readFile } from "node:fs/promises";
 import { neon } from "@neondatabase/serverless";
 import { applyMigrationBatch } from "./sql-statements.mjs";
@@ -29,6 +29,8 @@ if (!url) {
       "045_distribution_referrals.sql",
       "046_distribution_multi_role.sql",
       "047_growth_gaming_staff.sql",
+      "048_team_growth_role.sql",
+      "049_email_branding.sql",
     ].map((name) =>
       readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
     ),
@@ -40,6 +42,6 @@ if (!url) {
     [],
   );
   console.log(
-    "Website template schema: additive migrations 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046 and 047 applied.",
+    `Platform schema: ${migrations.length} additive migration batches applied.`,
   );
 }

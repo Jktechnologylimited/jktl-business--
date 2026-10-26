@@ -116,6 +116,7 @@ export default async function Page() {
       {tickets.map((t) => (
         <article
           key={String(t.id)}
+          id={"ticket-" + String(t.id)}
           className="space-y-3 rounded-xl border border-border p-5"
         >
           <h2 className="font-semibold">

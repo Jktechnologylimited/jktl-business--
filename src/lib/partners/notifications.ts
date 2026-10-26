@@ -33,10 +33,29 @@ export async function processPartnerNotices() {
       )[0];
       if (!t) throw Error("Ticket unavailable");
       if (e.audience === "PARTNER" && t.partner_status === "active" && email) {
+        const reply = !t.sensitive
+          ? (
+              await query(
+                "SELECT m.body,COALESCE(a.name,'JKTL Support Team') AS agent FROM partner_ticket_messages m LEFT JOIN admin_users a ON a.id::text=m.actor_id WHERE m.ticket_id=$1 AND 'message-'||m.id=$2 AND m.kind='STAFF'",
+                [t.id, e.event_key],
+              )
+            )[0]
+          : null;
         const r = await sendPartnerNoticeEmail({
           to: String(t.email),
           key: "partner-ticket-" + e.id,
-          path: "/partners/support",
+          path: "/partners/support#ticket-" + t.id,
+          category: "support",
+          ...(reply
+            ? {
+                ticket: {
+                  subject: String(t.subject),
+                  agent: String(reply.agent),
+                  reply: String(reply.body),
+                  reference: String(t.id),
+                },
+              }
+            : {}),
           subject: "JKTL Partner support update",
           detail:
             "There is an update in your JKTL Partner support conversation. Sign in to review it securely.",

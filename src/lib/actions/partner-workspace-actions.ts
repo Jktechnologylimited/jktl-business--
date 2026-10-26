@@ -114,6 +114,14 @@ export async function savePartnerWebsiteAction(input: {
       },
     );
     revalidatePath("/sites/" + String(savedProfile.subdomain));
+    if (input.publish) {
+      try {
+        const { flushMailAfterResponse } = await import("@/lib/mail/schedule");
+        flushMailAfterResponse();
+      } catch {
+        /* Durable queue remains available to scheduled maintenance. */
+      }
+    }
     return { ok: true };
   } catch (e) {
     return {

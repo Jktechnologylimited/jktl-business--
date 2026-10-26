@@ -37,21 +37,63 @@ import {
   suppressByToken,
   updateOutreachSettings,
 } from "@/lib/db/prospects";
-import { auditWebsite, isQualifiedLead, scoreWebsite } from "@/lib/prospects/audit";
-import { decideOutreach, normalizeCountryCode } from "@/lib/prospects/jurisdictions";
-import { dedupeLeads, fetchApifyLeads, fetchOutscraperLeads, inferNiche, mapApifyPlace, mapCsvRecord, mapOutscraperRow } from "@/lib/prospects/providers";
+import {
+  auditWebsite,
+  isQualifiedLead,
+  scoreWebsite,
+} from "@/lib/prospects/audit";
+import {
+  decideOutreach,
+  normalizeCountryCode,
+} from "@/lib/prospects/jurisdictions";
+import {
+  dedupeLeads,
+  fetchApifyLeads,
+  fetchOutscraperLeads,
+  inferNiche,
+  mapApifyPlace,
+  mapCsvRecord,
+  mapOutscraperRow,
+} from "@/lib/prospects/providers";
 import { getMarket } from "@/lib/markets";
 import { signup } from "@/lib/db/auth";
 import { createPasswordResetToken } from "@/lib/db/auth";
-import { attachClientAccount, claimInvite, listExistingClients, markAsExistingClient, releaseInvite, type ExistingClient } from "@/lib/db/prospects";
-import { clientInviteHtml, clientInviteSubject, clientInviteText } from "@/lib/prospects/client-invite";
+import {
+  attachClientAccount,
+  claimInvite,
+  listExistingClients,
+  markAsExistingClient,
+  releaseInvite,
+  type ExistingClient,
+} from "@/lib/db/prospects";
+import {
+  clientInviteHtml,
+  clientInviteSubject,
+  clientInviteText,
+} from "@/lib/prospects/client-invite";
 import { requireAdminCapability } from "@/lib/admin-session";
 import { buildOneSite } from "@/lib/prospects/build-site";
-import { isMessagingConfigured, purchaseNumber, releaseNumber, searchAvailableNumbers } from "@/lib/twilio";
-import { composeOutreachEmail, sourceNoteFor, unsubscribeUrlFor } from "@/lib/prospects/outreach";
+import {
+  isMessagingConfigured,
+  purchaseNumber,
+  releaseNumber,
+  searchAvailableNumbers,
+} from "@/lib/twilio";
+import {
+  composeOutreachEmail,
+  sourceNoteFor,
+  unsubscribeUrlFor,
+} from "@/lib/prospects/outreach";
 import { sendProspectOutreachEmail } from "@/lib/email";
 import type { ActionResult } from "./types";
-import type { CountryRuleRow, OutreachSettings, Prospect, ProspectInput, ProspectRun, ProspectStats } from "@/lib/prospects/types";
+import type {
+  CountryRuleRow,
+  OutreachSettings,
+  Prospect,
+  ProspectInput,
+  ProspectRun,
+  ProspectStats,
+} from "@/lib/prospects/types";
 
 /**
  * Admin actions for the lead engine. Every one starts with
@@ -117,14 +159,20 @@ export interface ImportLeadsResult {
   detail: string;
 }
 
-export async function importLeadsAction(input: ImportLeadsInput): Promise<ActionResult<ImportLeadsResult>> {
+export async function importLeadsAction(
+  input: ImportLeadsInput,
+): Promise<ActionResult<ImportLeadsResult>> {
   let runId = "";
   try {
     const admin = await requireAdminCapability("run_lead_engine");
 
     const query = input.query.trim();
     const location = input.location.trim();
-    if (!query) return { ok: false, error: "Enter what to search for, e.g. \"men's health clinic\"." };
+    if (!query)
+      return {
+        ok: false,
+        error: 'Enter what to search for, e.g. "men\'s health clinic".',
+      };
     // One synchronous run. Apify can return far more, but the request would time
     // out long before it arrived — so scale comes from running the
     // area × niche matrix across days, not from one enormous scrape. 200 is
@@ -135,44 +183,87 @@ export async function importLeadsAction(input: ImportLeadsInput): Promise<Action
     // this value decides which marketing rule applies to every lead it produces.
     const countryCode = (input.countryCode ?? "NG").toUpperCase();
     if (!getMarket(countryCode)) {
-      return { ok: false, error: `${countryCode} is not a market we operate in. Add it in AFRICA-ROLLOUT.md first.` };
+      return {
+        ok: false,
+        error: `${countryCode} is not a market we operate in. Add it in AFRICA-ROLLOUT.md first.`,
+      };
     }
     const niche = inferNiche(query, query) || "";
 
-    runId = await startRun({ source: input.source, niche, query, location, adminUserId: admin.id });
+    runId = await startRun({
+      source: input.source,
+      niche,
+      query,
+      location,
+      adminUserId: admin.id,
+    });
 
     let inputs: ProspectInput[] = [];
 
     if (input.source === "csv") {
       const { default: Papa } = await import("papaparse");
-      const parsed = Papa.parse<Record<string, unknown>>(input.csv ?? "", { header: true, skipEmptyLines: true });
+      const parsed = Papa.parse<Record<string, unknown>>(input.csv ?? "", {
+        header: true,
+        skipEmptyLines: true,
+      });
       inputs = (parsed.data ?? [])
         .map((row) => mapCsvRecord(row, query))
         .filter((row): row is ProspectInput => row !== null);
     } else if (input.source === "apify") {
       const token = process.env.APIFY_TOKEN;
       if (!token) {
-        await finishRun(runId, { status: "failed", error: "APIFY_TOKEN is not configured." });
-        return { ok: false, error: "APIFY_TOKEN is not configured. Add it to the environment, or import a CSV instead." };
+        await finishRun(runId, {
+          status: "failed",
+          error: "APIFY_TOKEN is not configured.",
+        });
+        return {
+          ok: false,
+          error:
+            "APIFY_TOKEN is not configured. Add it to the environment, or import a CSV instead.",
+        };
       }
-      const items = await fetchApifyLeads({ token, query, location, limit, countryCode });
+      const items = await fetchApifyLeads({
+        token,
+        query,
+        location,
+        limit,
+        countryCode,
+      });
       inputs = items
-        .map((item) => mapApifyPlace(item as never, query, "apify", countryCode))
+        .map((item) =>
+          mapApifyPlace(item as never, query, "apify", countryCode),
+        )
         .filter((row): row is ProspectInput => row !== null);
     } else {
       const apiKey = process.env.OUTSCRAPER_API_KEY;
       if (!apiKey) {
-        await finishRun(runId, { status: "failed", error: "OUTSCRAPER_API_KEY is not configured." });
-        return { ok: false, error: "OUTSCRAPER_API_KEY is not configured. Add it to the environment, or import a CSV instead." };
+        await finishRun(runId, {
+          status: "failed",
+          error: "OUTSCRAPER_API_KEY is not configured.",
+        });
+        return {
+          ok: false,
+          error:
+            "OUTSCRAPER_API_KEY is not configured. Add it to the environment, or import a CSV instead.",
+        };
       }
-      const rows = await fetchOutscraperLeads({ apiKey, query, location, limit, countryCode });
+      const rows = await fetchOutscraperLeads({
+        apiKey,
+        query,
+        location,
+        limit,
+        countryCode,
+      });
       inputs = rows
         .map((row) => mapOutscraperRow(row, query, "outscraper", countryCode))
         .filter((row): row is ProspectInput => row !== null);
     }
 
     const { unique, duplicates: withinBatch } = dedupeLeads(inputs);
-    const { imported, duplicates } = await importProspects(unique, input.searchArea?.trim() ?? "");
+    const { imported, duplicates } = await importProspects(
+      unique,
+      input.searchArea?.trim() ?? "",
+    );
 
     // Never cold-email an existing customer with "we built you a website" —
     // or worse, tell them their website is poor when we built it. Runs on every
@@ -185,7 +276,12 @@ export async function importLeadsAction(input: ImportLeadsInput): Promise<Action
 
     const totalDuplicates = duplicates + withinBatch;
 
-    await finishRun(runId, { status: "ok", found: inputs.length, imported, duplicates: totalDuplicates });
+    await finishRun(runId, {
+      status: "ok",
+      found: inputs.length,
+      imported,
+      duplicates: totalDuplicates,
+    });
     revalidatePath("/admin/prospects");
 
     const withEmail = unique.filter((u) => u.email).length;
@@ -208,7 +304,10 @@ export async function importLeadsAction(input: ImportLeadsInput): Promise<Action
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Import failed.";
-    if (runId) await finishRun(runId, { status: "failed", error: message }).catch(() => undefined);
+    if (runId)
+      await finishRun(runId, { status: "failed", error: message }).catch(
+        () => undefined,
+      );
     console.error(err);
     return { ok: false, error: message };
   }
@@ -228,11 +327,19 @@ export interface AuditLeadsResult {
 /** Audits up to `limit` unaudited prospects, six at a time. Sequential would
  * take minutes on a large import; unlimited concurrency would look like an
  * attack to the sites being checked. */
-export async function auditLeadsAction(limit = 25): Promise<ActionResult<AuditLeadsResult>> {
+export async function auditLeadsAction(
+  limit = 25,
+): Promise<ActionResult<AuditLeadsResult>> {
   try {
     await requireAdminCapability("run_lead_engine");
-    const batch = await listProspectsNeedingAudit(Math.min(Math.max(limit, 1), 60));
-    if (batch.length === 0) return { ok: true, data: { audited: 0, qualified: 0, rejected: 0, breakdown: {} } };
+    const batch = await listProspectsNeedingAudit(
+      Math.min(Math.max(limit, 1), 60),
+    );
+    if (batch.length === 0)
+      return {
+        ok: true,
+        data: { audited: 0, qualified: 0, rejected: 0, breakdown: {} },
+      };
 
     const breakdown: Record<string, number> = {};
     let qualified = 0;
@@ -278,10 +385,20 @@ export async function auditLeadsAction(limit = 25): Promise<ActionResult<AuditLe
       }
     }
 
-    await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
+    await Promise.all([
+      worker(),
+      worker(),
+      worker(),
+      worker(),
+      worker(),
+      worker(),
+    ]);
 
     revalidatePath("/admin/prospects");
-    return { ok: true, data: { audited: batch.length, qualified, rejected, breakdown } };
+    return {
+      ok: true,
+      data: { audited: batch.length, qualified, rejected, breakdown },
+    };
   } catch (err) {
     console.error(err);
     return { ok: false, error: "The audit run failed." };
@@ -295,7 +412,12 @@ export async function auditLeadsAction(limit = 25): Promise<ActionResult<AuditLe
 export interface BuildSitesResult {
   built: number;
   skipped: number;
-  sites: Array<{ businessName: string; url: string; contentScore: number; contentGaps: string[] }>;
+  sites: Array<{
+    businessName: string;
+    url: string;
+    contentScore: number;
+    contentGaps: string[];
+  }>;
 }
 
 /**
@@ -307,15 +429,34 @@ export interface BuildSitesResult {
  * renders a preview notice and stays out of search engines until someone
  * claims it.
  */
-export async function buildSitesAction(limit = 5): Promise<ActionResult<BuildSitesResult>> {
+export async function buildSitesAction(
+  limit = 5,
+): Promise<ActionResult<BuildSitesResult>> {
   try {
     await requireAdminCapability("run_lead_engine");
 
-    const candidates = (await listProspects({ status: "qualified", limit: Math.min(Math.max(limit, 1), 20) })).filter(
-      (p) => !p.siteOrganizationId && isQualifiedLead({ status: p.websiteStatus, score: p.websiteScore ?? 0, findings: p.auditFindings, summary: "" }),
+    const candidates = (
+      await listProspects({
+        status: "qualified",
+        limit: Math.min(Math.max(limit, 1), 20),
+      })
+    ).filter(
+      (p) =>
+        !p.siteOrganizationId &&
+        isQualifiedLead({
+          status: p.websiteStatus,
+          score: p.websiteScore ?? 0,
+          findings: p.auditFindings,
+          summary: "",
+        }),
     );
 
-    const sites: Array<{ businessName: string; url: string; contentScore: number; contentGaps: string[] }> = [];
+    const sites: Array<{
+      businessName: string;
+      url: string;
+      contentScore: number;
+      contentGaps: string[];
+    }> = [];
     let skipped = 0;
 
     for (const prospect of candidates) {
@@ -353,7 +494,10 @@ export interface SendOutreachResult {
   errors: string[];
 }
 
-export async function sendOutreachAction(prospectIds: string[] | null, limit = 10): Promise<ActionResult<SendOutreachResult>> {
+export async function sendOutreachAction(
+  prospectIds: string[] | null,
+  limit = 10,
+): Promise<ActionResult<SendOutreachResult>> {
   try {
     const admin = await requireAdminCapability("run_lead_engine");
     const settings = await getOutreachSettings();
@@ -369,14 +513,22 @@ export async function sendOutreachAction(prospectIds: string[] | null, limit = 1
           failed: 0,
           cappedOut: true,
           sentTo: [],
-          errors: [`Daily cap of ${settings.dailySendCap} already reached. Nothing was sent.`],
+          errors: [
+            `Daily cap of ${settings.dailySendCap} already reached. Nothing was sent.`,
+          ],
         },
       };
     }
 
     const targets: Prospect[] = prospectIds?.length
-      ? (await Promise.all(prospectIds.slice(0, remaining).map((id) => getProspect(id)))).filter((p): p is Prospect => p !== null)
-      : await listOutreachCandidates(Math.min(remaining, Math.max(1, Math.round(limit))));
+      ? (
+          await Promise.all(
+            prospectIds.slice(0, remaining).map((id) => getProspect(id)),
+          )
+        ).filter((p): p is Prospect => p !== null)
+      : await listOutreachCandidates(
+          Math.min(remaining, Math.max(1, Math.round(limit))),
+        );
 
     // Country rules, loaded once: an admin override from the database wins over
     // the conservative code default, and a country we cannot identify is
@@ -409,7 +561,9 @@ export async function sendOutreachAction(prospectIds: string[] | null, limit = 1
         continue;
       }
       if (!prospect.email.includes("@")) {
-        errors.push(`${prospect.businessName} has no email address — add one first.`);
+        errors.push(
+          `${prospect.businessName} has no email address — add one first.`,
+        );
         continue;
       }
       /**
@@ -419,11 +573,15 @@ export async function sendOutreachAction(prospectIds: string[] | null, limit = 1
        * lead should not be discarded merely for not having been checked yet.
        */
       if (prospect.emailStatus === "invalid") {
-        errors.push(`${prospect.businessName}: the email address failed validation — not sent.`);
+        errors.push(
+          `${prospect.businessName}: the email address failed validation — not sent.`,
+        );
         continue;
       }
       if (!prospect.siteSubdomain) {
-        errors.push(`${prospect.businessName} has no site yet — build one before emailing.`);
+        errors.push(
+          `${prospect.businessName} has no site yet — build one before emailing.`,
+        );
         continue;
       }
 
@@ -445,7 +603,10 @@ export async function sendOutreachAction(prospectIds: string[] | null, limit = 1
         includeAudit: settings.includeAudit,
         calendarLink: settings.calendarLink,
         subjectTemplate: settings.subjectTemplate,
-        unsubscribeUrl: unsubscribeUrlFor(appOrigin(), prospect.unsubscribeToken),
+        unsubscribeUrl: unsubscribeUrlFor(
+          appOrigin(),
+          prospect.unsubscribeToken,
+        ),
         sourceNote: sourceNoteFor(settings.senderBusinessName),
       });
 
@@ -455,11 +616,20 @@ export async function sendOutreachAction(prospectIds: string[] | null, limit = 1
         html: email.html,
         text: email.text,
         replyTo: settings.replyTo || undefined,
+        outreachAuthorized: true,
+        unsubscribeUrl: unsubscribeUrlFor(
+          appOrigin(),
+          prospect.unsubscribeToken,
+        ),
       });
 
       if (result.ok) {
         sent += 1;
-        sentTo.push({ businessName: prospect.businessName, email: prospect.email, subject: email.subject });
+        sentTo.push({
+          businessName: prospect.businessName,
+          email: prospect.email,
+          subject: email.subject,
+        });
         await recordOutreach({
           prospectId: prospect.id,
           toEmail: prospect.email,
@@ -512,7 +682,9 @@ export async function sendOutreachAction(prospectIds: string[] | null, limit = 1
  * the admin sees a progress bar instead of a spinner that times out. A cron then
  * advances it — see `/api/cron/build-sites`.
  */
-export async function startSiteBuildJobAction(params: { limit?: number; onlyWithPhotos?: boolean } = {}): Promise<ActionResult<SiteBuildJob>> {
+export async function startSiteBuildJobAction(
+  params: { limit?: number; onlyWithPhotos?: boolean } = {},
+): Promise<ActionResult<SiteBuildJob>> {
   try {
     await requireAdminCapability("run_lead_engine");
     const job = await startSiteBuildJob(params);
@@ -525,7 +697,10 @@ export async function startSiteBuildJobAction(params: { limit?: number; onlyWith
 }
 
 /** Builds the next slice, for an admin who would rather not wait for the cron. */
-export async function advanceSiteBuildJobAction(jobId: string, batchSize = 6): Promise<ActionResult<SiteBuildJob>> {
+export async function advanceSiteBuildJobAction(
+  jobId: string,
+  batchSize = 6,
+): Promise<ActionResult<SiteBuildJob>> {
   try {
     await requireAdminCapability("run_lead_engine");
     const job = await advanceSiteBuildJob(jobId, batchSize);
@@ -539,11 +714,23 @@ export async function advanceSiteBuildJobAction(jobId: string, batchSize = 6): P
 }
 
 export async function getSiteBuildJobAction(): Promise<
-  ActionResult<{ running: SiteBuildJob | null; jobs: SiteBuildJob[]; failures: Array<{ businessName: string; status: string; error: string; subdomain: string }> }>
+  ActionResult<{
+    running: SiteBuildJob | null;
+    jobs: SiteBuildJob[];
+    failures: Array<{
+      businessName: string;
+      status: string;
+      error: string;
+      subdomain: string;
+    }>;
+  }>
 > {
   try {
     await requireAdminCapability("run_lead_engine");
-    const [running, jobs] = await Promise.all([getRunningSiteBuildJob(), listSiteBuildJobs(6)]);
+    const [running, jobs] = await Promise.all([
+      getRunningSiteBuildJob(),
+      listSiteBuildJobs(6),
+    ]);
     const latest = jobs[0] ?? running;
     const failures = latest ? await listSiteBuildFailures(latest.id, 25) : [];
     return { ok: true, data: { running, jobs, failures } };
@@ -553,7 +740,9 @@ export async function getSiteBuildJobAction(): Promise<
   }
 }
 
-export async function cancelSiteBuildJobAction(jobId: string): Promise<ActionResult<null>> {
+export async function cancelSiteBuildJobAction(
+  jobId: string,
+): Promise<ActionResult<null>> {
   try {
     await requireAdminCapability("run_lead_engine");
     await cancelSiteBuildJob(jobId);
@@ -586,10 +775,15 @@ export interface NumberSearchResult {
  * This is what makes "every clinic gets its own line" an operation rather than
  * a support ticket — and it is the only way Option A has anything to bill.
  */
-export async function searchNumbersAction(params: { country: string; areaCode?: string; contains?: string }): Promise<ActionResult<NumberSearchResult>> {
+export async function searchNumbersAction(params: {
+  country: string;
+  areaCode?: string;
+  contains?: string;
+}): Promise<ActionResult<NumberSearchResult>> {
   try {
     await requireAdminCapability("run_lead_engine");
-    if (!isMessagingConfigured()) return { ok: false, error: "Twilio credentials are not configured." };
+    if (!isMessagingConfigured())
+      return { ok: false, error: "Twilio credentials are not configured." };
 
     const result = await searchAvailableNumbers({
       country: params.country,
@@ -604,7 +798,11 @@ export async function searchNumbersAction(params: { country: string; areaCode?: 
       data: {
         numbers: result.numbers
           .filter((n) => n.capabilities.voice)
-          .map((n) => ({ phoneNumber: n.phoneNumber, locality: n.locality, region: n.region })),
+          .map((n) => ({
+            phoneNumber: n.phoneNumber,
+            locality: n.locality,
+            region: n.region,
+          })),
       },
     };
   } catch (err) {
@@ -630,11 +828,16 @@ export async function provisionNumberAction(params: {
 }): Promise<ActionResult<{ phoneNumber: string; rentalKobo: number }>> {
   try {
     await requireAdminCapability("run_lead_engine");
-    if (!isMessagingConfigured()) return { ok: false, error: "Twilio credentials are not configured." };
+    if (!isMessagingConfigured())
+      return { ok: false, error: "Twilio credentials are not configured." };
 
     const rentalKobo = Math.round((Number(params.rentalNaira) || 0) * 100);
     if (rentalKobo <= 0) {
-      return { ok: false, error: "Set a monthly rental — a line nobody pays for is the problem this fixes." };
+      return {
+        ok: false,
+        error:
+          "Set a monthly rental — a line nobody pays for is the problem this fixes.",
+      };
     }
 
     const bought = await purchaseNumber({
@@ -660,25 +863,33 @@ export async function provisionNumberAction(params: {
     `;
 
     revalidatePath("/admin/prospects");
-    return { ok: true, data: { phoneNumber: bought.number.phoneNumber, rentalKobo } };
+    return {
+      ok: true,
+      data: { phoneNumber: bought.number.phoneNumber, rentalKobo },
+    };
   } catch (err) {
     console.error(err);
     // The most likely failure by far is the unique index on the number, which
     // means another business already has it.
-    const message = err instanceof Error && /voice_number/.test(err.message)
-      ? "That number is already assigned to another business."
-      : "Could not provision that number.";
+    const message =
+      err instanceof Error && /voice_number/.test(err.message)
+        ? "That number is already assigned to another business."
+        : "Could not provision that number.";
     return { ok: false, error: message };
   }
 }
 
 /** Gives up a number and stops billing for it. Released at Twilio so it stops
  * costing JKTL anything either. */
-export async function releaseNumberAction(organizationId: string): Promise<ActionResult<{ released: boolean }>> {
+export async function releaseNumberAction(
+  organizationId: string,
+): Promise<ActionResult<{ released: boolean }>> {
   try {
     await requireAdminCapability("run_lead_engine");
     const sql = getSql();
-    const row = (await sql`SELECT line_number_sid FROM ai_receptionist_config WHERE organization_id = ${organizationId}`)[0];
+    const row = (
+      await sql`SELECT line_number_sid FROM ai_receptionist_config WHERE organization_id = ${organizationId}`
+    )[0];
     const sid = (row?.line_number_sid as string) ?? "";
 
     if (sid && isMessagingConfigured()) {
@@ -701,7 +912,15 @@ export async function releaseNumberAction(organizationId: string): Promise<Actio
 
 /** Businesses waiting for a line, so ops has a work list rather than an inbox. */
 export async function listNumberRequestsAction(): Promise<
-  ActionResult<Array<{ organizationId: string; businessName: string; countryCode: string; note: string; requestedAt: string | null }>>
+  ActionResult<
+    Array<{
+      organizationId: string;
+      businessName: string;
+      countryCode: string;
+      note: string;
+      requestedAt: string | null;
+    }>
+  >
 > {
   try {
     await requireAdminCapability("run_lead_engine");
@@ -721,7 +940,9 @@ export async function listNumberRequestsAction(): Promise<
         businessName: (row.display_name as string) ?? "",
         countryCode: (row.country_code as string) ?? "NG",
         note: (row.line_request_note as string) ?? "",
-        requestedAt: row.line_requested_at ? new Date(row.line_requested_at as string).toISOString() : null,
+        requestedAt: row.line_requested_at
+          ? new Date(row.line_requested_at as string).toISOString()
+          : null,
       })),
     };
   } catch (err) {
@@ -734,7 +955,10 @@ export async function listNumberRequestsAction(): Promise<
 /* Small operations                                                           */
 /* -------------------------------------------------------------------------- */
 
-export async function setProspectStatusAction(id: string, status: Prospect["status"]): Promise<ActionResult<{ status: string }>> {
+export async function setProspectStatusAction(
+  id: string,
+  status: Prospect["status"],
+): Promise<ActionResult<{ status: string }>> {
   try {
     await requireAdminCapability("run_lead_engine");
     await setProspectStatus(id, status);
@@ -746,16 +970,30 @@ export async function setProspectStatusAction(id: string, status: Prospect["stat
   }
 }
 
-export async function saveOutreachSettingsAction(input: OutreachSettings): Promise<ActionResult<{ saved: true }>> {
+export async function saveOutreachSettingsAction(
+  input: OutreachSettings,
+): Promise<ActionResult<{ saved: true }>> {
   try {
     await requireAdminCapability("run_lead_engine");
-    if (!input.subjectTemplate.includes("{their_business}") && !input.subjectTemplate.includes("{my_business}")) {
-      return { ok: false, error: "The subject must include {their_business} or {my_business} — that is what personalises it." };
+    if (
+      !input.subjectTemplate.includes("{their_business}") &&
+      !input.subjectTemplate.includes("{my_business}")
+    ) {
+      return {
+        ok: false,
+        error:
+          "The subject must include {their_business} or {my_business} — that is what personalises it.",
+      };
     }
-    if (input.fromEmail && !input.fromEmail.includes("@")) return { ok: false, error: "Enter a valid from address." };
-    if (input.dailySendCap < 1 || input.dailySendCap > 500) return { ok: false, error: "Keep the daily cap between 1 and 500." };
+    if (input.fromEmail && !input.fromEmail.includes("@"))
+      return { ok: false, error: "Enter a valid from address." };
+    if (input.dailySendCap < 1 || input.dailySendCap > 500)
+      return { ok: false, error: "Keep the daily cap between 1 and 500." };
 
-    await updateOutreachSettings({ ...input, dailySendCap: Math.round(input.dailySendCap) });
+    await updateOutreachSettings({
+      ...input,
+      dailySendCap: Math.round(input.dailySendCap),
+    });
     revalidatePath("/admin/prospects");
     return { ok: true, data: { saved: true } };
   } catch (err) {
@@ -778,12 +1016,19 @@ export interface ProspectWorkbench {
  * opt-in market, and the evidence behind it. The note is required because a
  * bare timestamp proves nothing.
  */
-export async function recordConsentAction(prospectId: string, note: string): Promise<ActionResult<{ recorded: true }>> {
+export async function recordConsentAction(
+  prospectId: string,
+  note: string,
+): Promise<ActionResult<{ recorded: true }>> {
   try {
     await requireAdminCapability("run_lead_engine");
     const trimmed = note.trim();
     if (trimmed.length < 8) {
-      return { ok: false, error: "Describe how they agreed — a note is what makes the consent defensible." };
+      return {
+        ok: false,
+        error:
+          "Describe how they agreed — a note is what makes the consent defensible.",
+      };
     }
     await recordConsent(prospectId, trimmed);
     revalidatePath("/admin/prospects");
@@ -794,7 +1039,9 @@ export async function recordConsentAction(prospectId: string, note: string): Pro
   }
 }
 
-export async function clearConsentAction(prospectId: string): Promise<ActionResult<{ cleared: true }>> {
+export async function clearConsentAction(
+  prospectId: string,
+): Promise<ActionResult<{ cleared: true }>> {
   try {
     await requireAdminCapability("run_lead_engine");
     await clearConsent(prospectId);
@@ -818,7 +1065,11 @@ export async function setCountryRuleAction(
     const admin = await requireAdminCapability("run_lead_engine");
     const code = normalizeCountryCode(countryCode);
     if (!code) return { ok: false, error: "Unknown country code." };
-    if (note.trim().length < 8) return { ok: false, error: "Add the reason — the statute or the advice you are relying on." };
+    if (note.trim().length < 8)
+      return {
+        ok: false,
+        error: "Add the reason — the statute or the advice you are relying on.",
+      };
     await setCountryRule(code, rule, note.trim(), admin.id);
     revalidatePath("/admin/prospects");
     return { ok: true, data: { countryCode: code, rule } };
@@ -828,15 +1079,21 @@ export async function setCountryRuleAction(
   }
 }
 
-export async function getProspectWorkbenchAction(filters: { status?: string; websiteStatus?: string; niche?: string; search?: string } = {}): Promise<
-  ActionResult<ProspectWorkbench>
-> {
+export async function getProspectWorkbenchAction(
+  filters: {
+    status?: string;
+    websiteStatus?: string;
+    niche?: string;
+    search?: string;
+  } = {},
+): Promise<ActionResult<ProspectWorkbench>> {
   try {
     await requireAdminCapability("run_lead_engine");
     const [prospects, stats, settings, runs, countries] = await Promise.all([
       listProspects({
         status: (filters.status as Prospect["status"] | "all") ?? "all",
-        websiteStatus: (filters.websiteStatus as Prospect["websiteStatus"] | "all") ?? "all",
+        websiteStatus:
+          (filters.websiteStatus as Prospect["websiteStatus"] | "all") ?? "all",
         niche: filters.niche ?? "all",
         search: filters.search,
         limit: 200,
@@ -870,14 +1127,21 @@ export async function getProspectWorkbenchAction(filters: { status?: string; web
 
 /** Preview the exact email a prospect would receive, without sending it — the
  * single most useful thing to check before a batch goes out. */
-export async function previewOutreachAction(prospectId: string): Promise<ActionResult<{ subject: string; text: string }>> {
+export async function previewOutreachAction(
+  prospectId: string,
+): Promise<ActionResult<{ subject: string; text: string }>> {
   try {
     await requireAdminCapability("run_lead_engine");
     const prospect = await getProspect(prospectId);
     if (!prospect) return { ok: false, error: "That lead no longer exists." };
     const settings = await getOutreachSettings();
     const audit = prospect.auditFindings.length
-      ? { status: prospect.websiteStatus, score: prospect.websiteScore ?? 0, findings: prospect.auditFindings, summary: "" }
+      ? {
+          status: prospect.websiteStatus,
+          score: prospect.websiteScore ?? 0,
+          findings: prospect.auditFindings,
+          summary: "",
+        }
       : null;
 
     const email = composeOutreachEmail({
@@ -901,10 +1165,13 @@ export async function previewOutreachAction(prospectId: string): Promise<ActionR
 
 /** Used by the public unsubscribe page (no admin session — the token is the
  * whole credential, and it can only ever suppress one business). */
-export async function unsubscribeProspectAction(token: string): Promise<ActionResult<{ businessName: string }>> {
+export async function unsubscribeProspectAction(
+  token: string,
+): Promise<ActionResult<{ businessName: string }>> {
   try {
     const result = await suppressByToken(token);
-    if (!result) return { ok: false, error: "That unsubscribe link is not valid." };
+    if (!result)
+      return { ok: false, error: "That unsubscribe link is not valid." };
     return { ok: true, data: result };
   } catch (err) {
     console.error(err);
@@ -929,19 +1196,30 @@ export async function unsubscribeProspectAction(token: string): Promise<ActionRe
  * first and claiming after leaves an orphan organization when two admins work the
  * same list, and an orphan tenant has a billing record and no owner.
  */
-export async function createAccountForClientAction(prospectId: string): Promise<ActionResult<{ email: string }>> {
+export async function createAccountForClientAction(
+  prospectId: string,
+): Promise<ActionResult<{ email: string }>> {
   try {
     await requireAdminCapability("run_lead_engine");
 
     const prospect = await getProspect(prospectId);
     if (!prospect) return { ok: false, error: "That lead no longer exists." };
-    if (prospect.accountOrganizationId) return { ok: false, error: "That business already has an account." };
+    if (prospect.accountOrganizationId)
+      return { ok: false, error: "That business already has an account." };
 
     const to = (prospect.businessEmail || prospect.email).trim().toLowerCase();
-    if (!to.includes("@")) return { ok: false, error: "That business has no email address to invite." };
+    if (!to.includes("@"))
+      return {
+        ok: false,
+        error: "That business has no email address to invite.",
+      };
 
     if (!(await claimInvite(prospectId))) {
-      return { ok: false, error: "An invite for that business is already being sent. Give it a moment and reload." };
+      return {
+        ok: false,
+        error:
+          "An invite for that business is already being sent. Give it a moment and reload.",
+      };
     }
 
     try {
@@ -952,7 +1230,8 @@ export async function createAccountForClientAction(prospectId: string): Promise<
         email: to,
         password: placeholder,
         businessName: prospect.businessName,
-        businessType: (prospect.niche || "general") as import("@/lib/types").BusinessType,
+        businessType: (prospect.niche ||
+          "general") as import("@/lib/types").BusinessType,
       });
 
       const token = await createPasswordResetToken(userId);
@@ -973,6 +1252,7 @@ export async function createAccountForClientAction(prospectId: string): Promise<
         subject: clientInviteSubject(context),
         text: clientInviteText(context),
         html: clientInviteHtml(context),
+        category: "security",
       });
 
       revalidatePath("/admin/clients");
@@ -985,16 +1265,20 @@ export async function createAccountForClientAction(prospectId: string): Promise<
     }
   } catch (err) {
     console.error(err);
-    const message = err instanceof Error && /already|exists|duplicate/i.test(err.message)
-      ? "There's already a platform account with that email address."
-      : "Couldn't create that account.";
+    const message =
+      err instanceof Error && /already|exists|duplicate/i.test(err.message)
+        ? "There's already a platform account with that email address."
+        : "Couldn't create that account.";
     return { ok: false, error: message };
   }
 }
 
 /** Marks a lead as an existing JKTL client so it skips the audit and the site
  * generator, and receives the onboarding email instead of the cold sequence. */
-export async function markAsExistingClientAction(prospectId: string, businessEmail: string): Promise<ActionResult<null>> {
+export async function markAsExistingClientAction(
+  prospectId: string,
+  businessEmail: string,
+): Promise<ActionResult<null>> {
   try {
     await requireAdminCapability("run_lead_engine");
     await markAsExistingClient(prospectId, businessEmail.trim());
@@ -1006,7 +1290,9 @@ export async function markAsExistingClientAction(prospectId: string, businessEma
   }
 }
 
-export async function listExistingClientsAction(): Promise<ActionResult<ExistingClient[]>> {
+export async function listExistingClientsAction(): Promise<
+  ActionResult<ExistingClient[]>
+> {
   try {
     await requireAdminCapability("run_lead_engine");
     return { ok: true, data: await listExistingClients() };

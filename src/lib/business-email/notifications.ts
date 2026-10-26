@@ -27,7 +27,12 @@ export async function runEmailMaintenance() {
       subject: String(r.subject),
       detail: String(r.detail),
       key: `email-notice-${r.id}`,
-      path: "/business/email",
+      path: String(r.path || "/business/email"),
+      category: (["website", "payment", "business_email"].includes(
+        String(r.category),
+      )
+        ? r.category
+        : "business_email") as "website" | "payment" | "business_email",
     });
     if (result.ok) {
       await query(

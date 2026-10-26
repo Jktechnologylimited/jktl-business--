@@ -118,6 +118,9 @@ export async function POST(request: NextRequest) {
       after(async () => {
         try {
           await reconcileDistributionPayments();
+          const { runEmailMaintenance } =
+            await import("@/lib/business-email/notifications");
+          await runEmailMaintenance();
           await flushProgramNotices();
         } catch {}
       });

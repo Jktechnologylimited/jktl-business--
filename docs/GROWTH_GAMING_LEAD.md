@@ -8,26 +8,22 @@ Display name: **Growth & Gaming Lead**. Existing role naming convention uses
 SUPER_ADMIN in the brief. No duplicate superadmin role or authentication system
 is introduced.
 
-An Owner opens **Admin → Team**, searches an exact existing Business
-email, verifies the person, then assigns the role. The existing `admin_users`
-record becomes a linked staff profile, with a unique `business_user_id` foreign
-key. Its password field is a non-authenticating sentinel, not a copied customer
-hash or another credential. Existing admin accounts remain independent. Email
-matching alone never links or grants staff access; assignment targets a user ID.
+An Owner opens **Admin → Team → Add someone**, enters their colleague’s details,
+and selects **Growth & Gaming Lead** in the same Role dropdown as Affiliate Manager,
+Analyst, Support, Editor and Owner. There is no separate Growth staff creation panel.
+The member appears in the same Current accounts list, with an inline Permissions
+control. Existing disable/reset controls apply to ordinary staff credentials.
+Revocation preserves records rather than deleting financial or review history.
 
-Staff can sign in at `/admin/login` using their normal Business email/password,
-or sign into `/login` normally (without a selected product/template intent) and
-land at `/admin/growth`. Authentication uses the existing Business password and
-session. Every request reloads the current staff profile, suspension/revocation
-and permissions. Password resets remain the existing Business reset process.
-Revoking staff access preserves their ordinary Business account and audit history.
+New accounts created this way use the existing admin sign-in and password system.
+Already-linked Growth staff retain their Business credentials and session access;
+password resets for those accounts remain in Business. No existing credentials or
+accounts are migrated, merged by email, or overwritten. Migration 048 permits both
+existing linked profiles and the standard Team creation path.
 
-There is no existing Business staff-invitation service. A person without an account
-uses the normal `/signup` flow, then the Owner assigns their account. No passwords
-are emailed, no new invitation token system is invented, and an email address
-entered into staff search does not create an account automatically.
-
-Growth & Gaming is grouped under **Team**, with its workspace link on the Team page. Growth staff use the Team navigation entry to reach their own workspace; they cannot open team administration. There is no separate Growth & Gaming sidebar item.
+Growth & Gaming is grouped under **Team**, with its workspace link on the Team page.
+Growth staff use the Team navigation entry to reach their own workspace; they cannot
+open team administration. There is no separate Growth & Gaming sidebar item.
 
 ## Permissions
 

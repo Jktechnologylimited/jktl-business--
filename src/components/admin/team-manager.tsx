@@ -1,15 +1,35 @@
 "use client";
 
+import { ActionForm } from "@/components/distribution/action-form";
+import { configureGrowthStaffAction } from "@/lib/actions/growth-staff-actions";
+import { can, GROWTH_PERMISSIONS } from "@/lib/admin-permissions";
 import { useState } from "react";
-import { CheckCircle2, KeyRound, Loader2, ShieldCheck, Trash2, UserPlus, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  KeyRound,
+  Loader2,
+  ShieldCheck,
+  Trash2,
+  UserPlus,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Field } from "@/components/app/field";
 import { formatShortDate } from "@/lib/format";
 import { useToastStore } from "@/lib/toast";
-import { ROLE_DESCRIPTION, ROLE_LABEL, type AdminRole } from "@/lib/admin-permissions";
-import { createAdminTeamMemberAction, deleteAdminAccountAction, resetAdminPasswordAction, setAdminDisabledAction } from "@/lib/actions/admin-actions";
+import {
+  ROLE_DESCRIPTION,
+  ROLE_LABEL,
+  type AdminRole,
+} from "@/lib/admin-permissions";
+import {
+  createAdminTeamMemberAction,
+  deleteAdminAccountAction,
+  resetAdminPasswordAction,
+  setAdminDisabledAction,
+} from "@/lib/actions/admin-actions";
 import type { AdminTeamMember } from "@/lib/db/admin-auth";
 
 /**
@@ -27,17 +47,28 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
   const [role, setRole] = useState<AdminRole>("affiliate_manager");
   const [pending, setPending] = useState(false);
   const [busy, setBusy] = useState("");
-  const [created, setCreated] = useState<{ email: string; role: AdminRole } | null>(null);
+  const [created, setCreated] = useState<{
+    email: string;
+    role: AdminRole;
+  } | null>(null);
   /** Which account is having its password reset, and the new value — shown once. */
   const [resetting, setResetting] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [revealed, setRevealed] = useState<{ email: string; password: string } | null>(null);
+  const [revealed, setRevealed] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
     setPending(true);
     setCreated(null);
-    const result = await createAdminTeamMemberAction({ name, email, password, role });
+    const result = await createAdminTeamMemberAction({
+      name,
+      email,
+      password,
+      role,
+    });
     setPending(false);
     if (!result.ok) {
       show(result.error, "danger");
@@ -69,6 +100,19 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
 
   async function remove(member: AdminTeamMember) {
     setBusy(member.id);
+    if (member.role === "growth_gaming_lead") {
+      const form = new FormData();
+      form.set("id", member.id);
+      form.set("mode", "REVOKE");
+      try {
+        await configureGrowthStaffAction(form);
+        window.location.reload();
+      } catch {
+        show("Could not revoke access.", "danger");
+      }
+      setBusy("");
+      return;
+    }
     const result = await deleteAdminAccountAction(member.id);
     setBusy("");
     if (!result.ok) {
@@ -81,55 +125,158 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
 
   async function toggle(member: AdminTeamMember) {
     setBusy(member.id);
+    if (member.role === "growth_gaming_lead") {
+      const f = new FormData();
+      f.set("id", member.id);
+      f.set(
+        "mode",
+        member.revokedAt ? "RESTORE" : member.disabledAt ? "ENABLE" : "SUSPEND",
+      );
+      try {
+        await configureGrowthStaffAction(f);
+        window.location.reload();
+      } catch {
+        show("Could not change staff access.", "danger");
+      }
+      setBusy("");
+      return;
+    }
     const result = await setAdminDisabledAction(member.id, !member.disabledAt);
     setBusy("");
     if (!result.ok) {
       show(result.error, "danger");
       return;
     }
-    show(member.disabledAt ? "Account re-enabled." : "Account disabled and signed out everywhere.");
+    show(
+      member.disabledAt
+        ? "Account re-enabled."
+        : "Account disabled and signed out everywhere.",
+    );
     window.location.reload();
   }
 
   return (
     <div className="flex flex-col gap-4">
       <section className="rounded-2xl border border-border bg-paper p-4">
-        <h2 className="font-display text-sm font-semibold text-ink">Current accounts</h2>
+        <h2 className="font-display text-sm font-semibold text-ink">
+          Current accounts
+        </h2>
         <ul className="mt-3 divide-y divide-border">
           {team.map((member) => (
-            <li key={member.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+            <li
+              key={member.id}
+              className="flex flex-wrap items-center justify-between gap-3 py-3"
+            >
               <div className="min-w-0">
                 <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
-                  <ShieldCheck className="size-3.5 text-primary" /> {member.name}
-                  {member.disabledAt ? <span className="text-xs text-danger">· disabled</span> : null}
+                  <ShieldCheck className="size-3.5 text-primary" />{" "}
+                  {member.name}
+                  {member.disabledAt ? (
+                    <span className="text-xs text-danger">· disabled</span>
+                  ) : null}
                 </p>
                 <p className="text-xs text-ink-muted">{member.email}</p>
                 <p className="text-[11px] text-ink-faint">
                   {ROLE_LABEL[member.role]} ·{" "}
-                  {member.lastLoginAt ? `last signed in ${formatShortDate(member.lastLoginAt)}` : "never signed in"}
+                  {member.lastLoginAt
+                    ? `last signed in ${formatShortDate(member.lastLoginAt)}`
+                    : "never signed in"}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={busy === member.id}
-                  onClick={() => setResetting(resetting === member.id ? "" : member.id)}
+                  disabled={
+                    busy === member.id || Boolean(member.businessUserId)
+                  }
+                  onClick={() =>
+                    setResetting(resetting === member.id ? "" : member.id)
+                  }
                 >
                   <KeyRound className="size-3.5" /> Reset password
                 </Button>
-                <Button size="sm" variant="outline" disabled={busy === member.id} onClick={() => void toggle(member)}>
-                  {busy === member.id ? <Loader2 className="size-3.5 animate-spin" /> : member.disabledAt ? <CheckCircle2 className="size-3.5" /> : <XCircle className="size-3.5" />}
-                  {member.disabledAt ? "Re-enable" : "Disable"}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy === member.id}
+                  onClick={() => void toggle(member)}
+                >
+                  {busy === member.id ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : member.disabledAt ? (
+                    <CheckCircle2 className="size-3.5" />
+                  ) : (
+                    <XCircle className="size-3.5" />
+                  )}
+                  {member.revokedAt
+                    ? "Restore role"
+                    : member.disabledAt
+                      ? "Re-enable"
+                      : "Disable"}
                 </Button>
-                <Button size="sm" variant="ghost" disabled={busy === member.id} onClick={() => void remove(member)}>
-                  <Trash2 className="size-3.5" /> Delete
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy === member.id}
+                  onClick={() => void remove(member)}
+                >
+                  <Trash2 className="size-3.5" />{" "}
+                  {member.role === "growth_gaming_lead"
+                    ? "Revoke access"
+                    : "Delete"}
                 </Button>
               </div>
+              {member.role === "growth_gaming_lead" && (
+                <details className="w-full">
+                  <summary className="cursor-pointer text-sm font-semibold text-ink">
+                    Permissions
+                  </summary>
+                  <ActionForm
+                    action={configureGrowthStaffAction}
+                    className="mt-3 space-y-3"
+                  >
+                    <input type="hidden" name="id" value={member.id} />
+                    <input type="hidden" name="mode" value="PERMISSIONS" />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {GROWTH_PERMISSIONS.map((p) => (
+                        <label className="flex gap-2 text-sm" key={p}>
+                          <input
+                            type="checkbox"
+                            name="permissions"
+                            value={p}
+                            defaultChecked={can(
+                              member.role,
+                              p,
+                              member.permissions,
+                            )}
+                          />
+                          {p.replace("growth_", "").replaceAll("_", " ")}
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-ink-muted">
+                      Banking, payouts, pricing and team administration remain
+                      restricted.
+                    </p>
+                    <Button type="submit" size="sm">
+                      Save permissions
+                    </Button>
+                  </ActionForm>
+                </details>
+              )}
+              {member.businessUserId && (
+                <p className="w-full text-xs text-ink-muted">
+                  Uses their existing Business password.
+                </p>
+              )}
               {resetting === member.id ? (
                 <div className="mt-2 flex w-full flex-wrap items-end gap-2 rounded-xl border border-border bg-surface p-2.5">
                   <div className="min-w-40 flex-1">
-                    <label className="text-[11px] font-medium text-ink-muted" htmlFor={`pw-${member.id}`}>
+                    <label
+                      className="text-[11px] font-medium text-ink-muted"
+                      htmlFor={`pw-${member.id}`}
+                    >
                       New password for {member.email}
                     </label>
                     <PasswordInput
@@ -139,8 +286,17 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
                       onChange={(e) => setNewPassword(e.target.value)}
                     />
                   </div>
-                  <Button size="sm" disabled={busy === member.id || newPassword.length < 8} onClick={() => void resetPassword(member)}>
-                    {busy === member.id ? <Loader2 className="size-3.5 animate-spin" /> : <KeyRound className="size-3.5" />} Set password
+                  <Button
+                    size="sm"
+                    disabled={busy === member.id || newPassword.length < 8}
+                    onClick={() => void resetPassword(member)}
+                  >
+                    {busy === member.id ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <KeyRound className="size-3.5" />
+                    )}{" "}
+                    Set password
                   </Button>
                 </div>
               ) : null}
@@ -150,9 +306,15 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
 
         {revealed ? (
           <p className="mt-3 rounded-xl bg-primary-soft px-3 py-2.5 text-xs text-ink">
-            <strong className="font-semibold">Password changed for {revealed.email}.</strong> Give them{" "}
-            <code className="rounded bg-paper px-1.5 py-0.5 font-mono">{revealed.password}</code> directly. They were
-            signed out everywhere, and it is not emailed by design.
+            <strong className="font-semibold">
+              Password changed for {revealed.email}.
+            </strong>{" "}
+            Give them{" "}
+            <code className="rounded bg-paper px-1.5 py-0.5 font-mono">
+              {revealed.password}
+            </code>{" "}
+            directly. They were signed out everywhere, and it is not emailed by
+            design.
           </p>
         ) : null}
       </section>
@@ -164,25 +326,61 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
 
         {created ? (
           <p className="mt-3 rounded-xl bg-primary-soft px-3 py-2.5 text-xs text-ink">
-            <strong className="font-semibold">Account created for {created.email}.</strong> Give them the password you
-            typed, in person or over a call. It is not emailed, by design — an emailed password sits in a mailbox
+            <strong className="font-semibold">
+              Account created for {created.email}.
+            </strong>{" "}
+            Give them the password you typed, in person or over a call. It is
+            not emailed, by design — an emailed password sits in a mailbox
             forever. They can change it after signing in.
           </p>
         ) : null}
 
         <form onSubmit={create} className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Name" htmlFor="team-name">
-            <Input id="team-name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input
+              id="team-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
           </Field>
           <Field label="Email" htmlFor="team-email">
-            <Input id="team-email" type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input
+              id="team-email"
+              type="email"
+              autoComplete="off"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </Field>
-          <Field label="Password" htmlFor="team-password" hint="At least 8 characters. Share it directly, not by email.">
-            <PasswordInput id="team-password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <Field
+            label="Password"
+            htmlFor="team-password"
+            hint="At least 8 characters. Share it directly, not by email."
+          >
+            <PasswordInput
+              id="team-password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </Field>
           <Field label="Role" htmlFor="team-role" hint={ROLE_DESCRIPTION[role]}>
-            <Select id="team-role" value={role} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as AdminRole)}>
-              <option value="affiliate_manager">{ROLE_LABEL.affiliate_manager}</option>
+            <Select
+              id="team-role"
+              value={role}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setRole(e.target.value as AdminRole)
+              }
+            >
+              <option value="growth_gaming_lead">
+                {ROLE_LABEL.growth_gaming_lead}
+              </option>
+              <option value="affiliate_manager">
+                {ROLE_LABEL.affiliate_manager}
+              </option>
               <option value="support">{ROLE_LABEL.support}</option>
               <option value="editor">{ROLE_LABEL.editor}</option>
               <option value="analyst">{ROLE_LABEL.analyst}</option>
@@ -191,7 +389,11 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
           </Field>
           <div className="sm:col-span-2">
             <Button type="submit" disabled={pending}>
-              {pending ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
+              {pending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <UserPlus className="size-4" />
+              )}
               {pending ? "Creating…" : "Create account"}
             </Button>
           </div>

@@ -1,3 +1,5 @@
+import { brandEmail, type MailContext } from "@/lib/mail/service";
+import { escapeHtml, mailAction } from "@/lib/mail/layout";
 import { Resend } from "resend";
 import { formatKobo, formatShortDate, formatTime } from "@/lib/format";
 
@@ -39,17 +41,44 @@ export async function sendProspectOutreachEmail(params: {
   subject: string;
   html: string;
   text: string;
+  category?: "security" | "marketing";
+  outreachAuthorized?: boolean;
+  unsubscribeUrl?: string;
   replyTo?: string;
 }): Promise<EmailResult> {
   if (!params.to || !params.to.includes("@"))
     return { ok: false, error: "No valid recipient email." };
   try {
+    const rendered = await brandEmail(
+      params.to,
+      params.subject,
+      params.html,
+      params.text,
+      {
+        category: params.category || "marketing",
+        outreachAuthorized: params.outreachAuthorized,
+        unsubscribeUrl: params.unsubscribeUrl,
+      },
+    );
+    if (!rendered.permitted)
+      return {
+        ok: false,
+        error:
+          "Marketing preferences or required sender postal address prevent this send.",
+      };
     const { error } = await getResend().emails.send({
       from: process.env.RESEND_OUTREACH_FROM_EMAIL || FROM,
       to: params.to,
       subject: params.subject,
-      html: params.html,
-      text: params.text,
+      ...(rendered.preferencesUrl
+        ? {
+            headers: {
+              "List-Unsubscribe": "<" + rendered.preferencesUrl + ">",
+            },
+          }
+        : {}),
+      html: rendered.html,
+      text: rendered.text,
       ...(params.replyTo ? { reply_to: params.replyTo } : {}),
     });
     if (error) return { ok: false, error: error.message };
@@ -67,17 +96,32 @@ async function send(
   subject: string,
   html: string,
   text: string,
+  context: MailContext = {},
+  key?: string,
 ): Promise<EmailResult> {
   if (!to || !to.includes("@"))
     return { ok: false, error: "No valid recipient email." };
   try {
-    const { error } = await getResend().emails.send({
-      from: FROM,
-      to,
-      subject,
-      html,
-      text,
-    });
+    const rendered = await brandEmail(to, subject, html, text, context);
+    if (!rendered.permitted)
+      return { ok: false, error: "Marketing preferences prevent this send." };
+    const { error } = await getResend().emails.send(
+      {
+        from: FROM,
+        to,
+        subject,
+        ...(context.category === "marketing" && rendered.preferencesUrl
+          ? {
+              headers: {
+                "List-Unsubscribe": "<" + rendered.preferencesUrl + ">",
+              },
+            }
+          : {}),
+        html: rendered.html,
+        text: rendered.text,
+      },
+      key ? { idempotencyKey: key } : undefined,
+    );
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (err) {
@@ -88,11 +132,8 @@ async function send(
   }
 }
 
-function wrapper(bodyHtml: string): string {
-  return `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;color:#12151b">
-    <div style="background:#0f6e5c;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;font-weight:700;font-size:18px">JKTL Business</div>
-    <div style="border:1px solid #e4e7eb;border-top:none;border-radius:0 0 12px 12px;padding:24px">${bodyHtml}</div>
-  </div>`;
+function wrapper(bodyHtml: string) {
+  return bodyHtml;
 }
 
 export async function sendWelcomeEmail(
@@ -101,12 +142,14 @@ export async function sendWelcomeEmail(
   businessName: string,
 ): Promise<EmailResult> {
   const html = wrapper(`
-    <p>Hi ${name},</p>
-    <p><strong>${businessName}</strong> is now set up on JKTL Business. You can sign in anytime to manage customers, bookings, sales, and more — online or off.</p>
-    <p>— The JKTL Business team</p>
+    <p>Hi ${escapeHtml(name)},</p>
+    <p><strong>${escapeHtml(businessName)}</strong> is now set up on JKTL Business. You can sign in anytime to manage customers, bookings, sales, and more — online or off.</p>
+
   `);
   const text = `Hi ${name},\n\n${businessName} is now set up on JKTL Business.\n\n— The JKTL Business team`;
-  return send(to, `Welcome to JKTL Business, ${businessName}!`, html, text);
+  return send(to, `Welcome to JKTL Business, ${businessName}!`, html, text, {
+    category: "onboarding",
+  });
 }
 
 export async function sendBookingConfirmationEmail(params: {
@@ -118,15 +161,17 @@ export async function sendBookingConfirmationEmail(params: {
 }): Promise<EmailResult> {
   const { to, customerName, businessName, serviceName, startsAt } = params;
   const html = wrapper(`
-    <p>Hi ${customerName},</p>
-    <p>Your booking with <strong>${businessName}</strong> is confirmed:</p>
+    <p>Hi ${escapeHtml(customerName)},</p>
+    <p>Your booking with <strong>${escapeHtml(businessName)}</strong> is confirmed:</p>
     <p style="background:#f5f6f8;border-radius:8px;padding:12px 16px;margin:16px 0">
-      ${serviceName}<br/>${formatShortDate(startsAt)} at ${formatTime(startsAt)}
+      ${escapeHtml(serviceName)}<br/>${formatShortDate(startsAt)} at ${formatTime(startsAt)}
     </p>
     <p>See you then!</p>
   `);
   const text = `Hi ${customerName},\n\nYour booking with ${businessName} is confirmed: ${serviceName} on ${formatShortDate(startsAt)} at ${formatTime(startsAt)}.`;
-  return send(to, `Booking confirmed with ${businessName}`, html, text);
+  return send(to, `Booking confirmed with ${businessName}`, html, text, {
+    category: "service",
+  });
 }
 
 export async function sendInvoiceEmail(params: {
@@ -162,7 +207,7 @@ export async function sendInvoiceEmail(params: {
   const rows = lines
     .map(
       (line) => `<tr>
-        <td style="padding:8px 0;border-bottom:1px solid #e4e7eb;color:#12151b">${line.description}</td>
+        <td style="padding:8px 0;border-bottom:1px solid #e4e7eb;color:#12151b">${escapeHtml(line.description)}</td>
         <td style="padding:8px 0;border-bottom:1px solid #e4e7eb;color:#5b6470;text-align:right">${line.quantity}</td>
         <td style="padding:8px 0 8px 12px;border-bottom:1px solid #e4e7eb;color:#12151b;text-align:right;white-space:nowrap">${formatKobo(line.totalKobo)}</td>
       </tr>`,
@@ -173,18 +218,18 @@ export async function sendInvoiceEmail(params: {
   <div style="border:1px solid #e4e7eb;border-radius:14px;overflow:hidden">
     <div style="display:flex;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #e4e7eb">
       <div>
-        <div style="font-size:16px;font-weight:700">${businessName}</div>
-        ${businessPhone ? `<div style="font-size:12px;color:#5b6470">${businessPhone}</div>` : ""}
+        <div style="font-size:16px;font-weight:700">${escapeHtml(businessName)}</div>
+        ${businessPhone ? `<div style="font-size:12px;color:#5b6470">${escapeHtml(businessPhone)}</div>` : ""}
       </div>
       <div style="text-align:right">
         <div style="font-size:14px;font-weight:700">Invoice</div>
-        <div style="font-size:12px;color:#5b6470">#${invoiceNumber}</div>
+        <div style="font-size:12px;color:#5b6470">#${escapeHtml(invoiceNumber)}</div>
       </div>
     </div>
 
     <div style="padding:20px 24px">
-      <p style="margin:0 0 4px">Hi ${customerName || "there"},</p>
-      <p style="margin:0;color:#3b4451">Please find invoice <strong>#${invoiceNumber}</strong> from ${businessName} below.</p>
+      <p style="margin:0 0 4px">Hi ${escapeHtml(customerName || "there")},</p>
+      <p style="margin:0;color:#3b4451">Please find invoice <strong>#${escapeHtml(invoiceNumber)}</strong> from ${escapeHtml(businessName)} below.</p>
 
       <table style="width:100%;border-collapse:collapse;margin:18px 0 0;font-size:14px">
         <thead>
@@ -206,9 +251,9 @@ export async function sendInvoiceEmail(params: {
       ${
         payUrl
           ? `<p style="margin:22px 0 6px">
-        <a href="${payUrl}" style="background:#0f6e5c;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">Pay ${formatKobo(totalKobo)} now</a>
+        <a href="${escapeHtml(payUrl)}" style="background:#112055;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">Pay ${formatKobo(totalKobo)} now</a>
       </p>
-      <p style="margin:0;font-size:12px;color:#7b838d">Card payment, secured by Paystack. ${businessName} is notified the moment it clears.</p>`
+      <p style="margin:0;font-size:12px;color:#7b838d">Card payment, secured by Paystack. ${escapeHtml(businessName)} is notified the moment it clears.</p>`
           : ""
       }
 
@@ -216,14 +261,14 @@ export async function sendInvoiceEmail(params: {
         bankName
           ? `<div style="margin-top:20px;background:#f5f6f8;border-radius:10px;padding:12px 16px;font-size:13px;color:#3b4451">
         <strong>Or pay by bank transfer</strong><br/>
-        ${accountName} · ${bankName} · ${accountNumber}<br/>
-        <span style="font-size:12px;color:#7b838d">Use #${invoiceNumber} as the reference.</span>
+        ${escapeHtml(accountName)} · ${escapeHtml(bankName)} · ${escapeHtml(accountNumber)}<br/>
+        <span style="font-size:12px;color:#7b838d">Use #${escapeHtml(invoiceNumber)} as the reference.</span>
       </div>`
           : ""
       }
 
       <p style="margin:22px 0 0;color:#5b6470;font-size:13px">Any questions, just reply to this email.</p>
-      <p style="margin:4px 0 0;font-size:13px">— ${businessName}</p>
+      <p style="margin:4px 0 0;font-size:13px">— ${escapeHtml(businessName)}</p>
     </div>
   </div>
   <p style="text-align:center;font-size:11px;color:#a6adb6;margin-top:14px">Sent with JKTL Business</p>
@@ -256,6 +301,7 @@ export async function sendInvoiceEmail(params: {
     `Invoice #${invoiceNumber} from ${businessName} — ${formatKobo(totalKobo)}`,
     html,
     text,
+    { category: "payment" },
   );
 }
 
@@ -287,13 +333,13 @@ export async function sendPaymentReceiptEmail(params: {
   } = params;
   const html = wrapper(`
     <p style="margin:0 0 12px;font-size:15px"><strong>Payment received — thank you.</strong></p>
-    <p>Hi ${customerName || "there"},</p>
-    <p>We've received your payment for invoice <strong>#${invoiceNumber}</strong> to ${businessName}.</p>
-    <p style="background:#eaf5f1;border-radius:10px;padding:14px 16px;margin:16px 0">
+    <p>Hi ${escapeHtml(customerName || "there")},</p>
+    <p>We've received your payment for invoice <strong>#${escapeHtml(invoiceNumber)}</strong> to ${escapeHtml(businessName)}.</p>
+    <p style="background:#f5f0df;border-radius:10px;padding:14px 16px;margin:16px 0">
       <span style="font-size:22px;font-weight:700">${formatKobo(totalKobo)}</span><br/>
       <span style="font-size:13px;color:#3b4451">Paid ${formatShortDate(paidAt)}${reference ? ` · Reference ${reference}` : ""}</span>
     </p>
-    <p style="font-size:13px;color:#5b6470">Keep this email as your receipt. ${businessName} has been notified that the invoice is settled.</p>
+    <p style="font-size:13px;color:#5b6470">Keep this email as your receipt. ${escapeHtml(businessName)} has been notified that the invoice is settled.</p>
   `);
   const text = `Payment received — thank you.\n\n${formatKobo(totalKobo)} for invoice #${invoiceNumber} to ${businessName}, paid ${formatShortDate(paidAt)}${reference ? ` (reference ${reference})` : ""}. Keep this as your receipt.`;
   return send(
@@ -301,6 +347,7 @@ export async function sendPaymentReceiptEmail(params: {
     `Receipt — ${formatKobo(totalKobo)} paid to ${businessName}`,
     html,
     text,
+    { category: "payment" },
   );
 }
 
@@ -313,11 +360,13 @@ export async function sendPaymentConfirmationEmail(params: {
 }): Promise<EmailResult> {
   const { to, customerName, businessName, invoiceNumber, totalKobo } = params;
   const html = wrapper(`
-    <p>Hi ${customerName},</p>
-    <p>This confirms <strong>${businessName}</strong> received your payment of <strong>${formatKobo(totalKobo)}</strong> for invoice ${invoiceNumber}. Thank you!</p>
+    <p>Hi ${escapeHtml(customerName)},</p>
+    <p>This confirms <strong>${escapeHtml(businessName)}</strong> received your payment of <strong>${formatKobo(totalKobo)}</strong> for invoice ${escapeHtml(invoiceNumber)}. Thank you!</p>
   `);
   const text = `Hi ${customerName},\n\nThis confirms ${businessName} received your payment of ${formatKobo(totalKobo)} for invoice ${invoiceNumber}. Thank you!`;
-  return send(to, `Payment received — ${invoiceNumber}`, html, text);
+  return send(to, `Payment received — ${invoiceNumber}`, html, text, {
+    category: "payment",
+  });
 }
 
 export async function sendPasswordResetEmail(params: {
@@ -327,13 +376,15 @@ export async function sendPasswordResetEmail(params: {
 }): Promise<EmailResult> {
   const { to, name, resetUrl } = params;
   const html = wrapper(`
-    <p>Hi ${name},</p>
+    <p>Hi ${escapeHtml(name)},</p>
     <p>We got a request to reset your JKTL Business password. This link works for 1 hour:</p>
-    <p style="margin:20px 0"><a href="${resetUrl}" style="background:#0f6e5c;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Reset password</a></p>
+    <p style="margin:20px 0"><a href="${escapeHtml(resetUrl)}" style="background:#112055;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Reset password</a></p>
     <p style="font-size:13px;color:#5b6675">If you didn't request this, you can safely ignore this email — your password won't change.</p>
   `);
   const text = `Hi ${name},\n\nWe got a request to reset your JKTL Business password. This link works for 1 hour:\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`;
-  return send(to, "Reset your JKTL Business password", html, text);
+  return send(to, "Reset your JKTL Business password", html, text, {
+    category: "security",
+  });
 }
 
 export async function sendNewBookingRequestEmail(params: {
@@ -354,15 +405,17 @@ export async function sendNewBookingRequestEmail(params: {
   } = params;
   const html = wrapper(`
     <p>Hi,</p>
-    <p>Someone just booked through your <strong>${businessName}</strong> website:</p>
+    <p>Someone just booked through your <strong>${escapeHtml(businessName)}</strong> website:</p>
     <p style="background:#f5f6f8;border-radius:8px;padding:12px 16px;margin:16px 0">
-      ${serviceName}<br/>${formatShortDate(requestedAt)} at ${formatTime(requestedAt)}<br/>
-      ${customerName}${customerPhone ? ` · ${customerPhone}` : ""}
+      ${escapeHtml(serviceName)}<br/>${formatShortDate(requestedAt)} at ${formatTime(requestedAt)}<br/>
+      ${escapeHtml(customerName)}${customerPhone ? ` · ${customerPhone}` : ""}
     </p>
     <p>It's saved as a pending booking — open JKTL Business to confirm it.</p>
   `);
   const text = `New booking request for ${businessName}: ${serviceName} on ${formatShortDate(requestedAt)} at ${formatTime(requestedAt)} — ${customerName}${customerPhone ? ` (${customerPhone})` : ""}. It's pending in JKTL Business.`;
-  return send(to, `New booking request — ${businessName}`, html, text);
+  return send(to, `New booking request — ${businessName}`, html, text, {
+    category: "service",
+  });
 }
 
 export async function sendRenewalReminderEmail(params: {
@@ -374,11 +427,13 @@ export async function sendRenewalReminderEmail(params: {
   const { to, businessName, renewalDate, priceKobo } = params;
   const html = wrapper(`
     <p>Hi,</p>
-    <p>Your JKTL Business plan for <strong>${businessName}</strong> renews on <strong>${formatShortDate(renewalDate)}</strong> (${formatKobo(priceKobo)}/year).</p>
+    <p>Your JKTL Business plan for <strong>${escapeHtml(businessName)}</strong> renews on <strong>${formatShortDate(renewalDate)}</strong> (${formatKobo(priceKobo)}/year).</p>
     <p>No action needed if your details are up to date.</p>
   `);
   const text = `Your JKTL Business plan for ${businessName} renews on ${formatShortDate(renewalDate)} (${formatKobo(priceKobo)}/year).`;
-  return send(to, `Your plan renews soon — ${businessName}`, html, text);
+  return send(to, `Your plan renews soon — ${businessName}`, html, text, {
+    category: "subscription",
+  });
 }
 
 /**
@@ -412,10 +467,10 @@ export async function sendEscalationEmail(params: {
   const urgent = severity === "emergency" || severity === "urgent";
   const who = patientName || patientPhone || "A patient";
   const html = wrapper(`
-    <p>${urgent ? "<strong>Urgent:</strong> " : ""}${who} needs a person from ${businessName}.</p>
+    <p>${urgent ? "<strong>Urgent:</strong> " : ""}${escapeHtml(who)} needs a person from ${escapeHtml(businessName)}.</p>
     <p style="background:#f5f6f8;border-radius:8px;padding:12px 16px;margin:16px 0">
-      ${reason}<br/>
-      ${patientPhone ? `Phone: ${patientPhone}<br/>` : ""}
+      ${escapeHtml(reason)}<br/>
+      ${patientPhone ? `Phone: ${escapeHtml(patientPhone)}<br/>` : ""}
       Raised by the AI booking assistant
     </p>
     ${
@@ -430,6 +485,7 @@ export async function sendEscalationEmail(params: {
     `${urgent ? "Urgent — " : ""}A patient needs a person — ${businessName}`,
     html,
     text,
+    { category: "internal" },
   );
 }
 
@@ -461,10 +517,10 @@ export async function sendReceptionistOpsEmail(params: {
   if (kind === "low_balance") {
     const html = wrapper(`
       <p>Hi,</p>
-      <p><strong>${businessName}</strong>'s AI receptionist communication wallet is down to <strong>${formatKobo(balanceKobo ?? 0)}</strong>.</p>
+      <p><strong>${escapeHtml(businessName)}</strong>'s AI receptionist communication wallet is down to <strong>${formatKobo(balanceKobo ?? 0)}</strong>.</p>
       <p>When it runs out, the assistant stops texting patients back and starts recording the calls it could not answer instead — those calls are not recovered.</p>
       <p>Top up from the AI receptionist console to keep answering missed calls.</p>
-      <p>— The JKTL Business team</p>
+
     `);
     const text = `${businessName}'s communication wallet is down to ${formatKobo(balanceKobo ?? 0)}. Top up in the AI receptionist console to keep answering missed calls.`;
     return send(
@@ -472,6 +528,7 @@ export async function sendReceptionistOpsEmail(params: {
       `Communication wallet running low — ${businessName}`,
       html,
       text,
+      { category: "internal" },
     );
   }
 
@@ -481,13 +538,13 @@ export async function sendReceptionistOpsEmail(params: {
     : "your monthly platform tier";
   const html = wrapper(`
     <p>Hi,</p>
-    <p>${what.charAt(0).toUpperCase()}${what.slice(1)} for <strong>${businessName}</strong> is due${month}: <strong>${formatKobo(amountKobo)}</strong>.</p>
+    <p>${what.charAt(0).toUpperCase()}${what.slice(1)} for <strong>${escapeHtml(businessName)}</strong> is due${month}: <strong>${formatKobo(amountKobo)}</strong>.</p>
     ${
       params.isInstalment
         ? "<p>This is one of six instalments covering the ₦650,000 turnkey package. Once they finish, the platform tier is ₦59,000 a month. You can cancel at any time — there is no minimum term.</p>"
         : "<p>This covers the assistant, the dashboard, ongoing model updates and live database sync. Your communication wallet is billed separately and stays under your control.</p>"
     }
-    <p>— The JKTL Business team</p>
+
   `);
   const text = `${what} for ${businessName} is due${month}: ${formatKobo(amountKobo)}.`;
   return send(
@@ -495,6 +552,7 @@ export async function sendReceptionistOpsEmail(params: {
     `${formatKobo(amountKobo)} due${month} — ${businessName}`,
     html,
     text,
+    { category: "internal" },
   );
 }
 
@@ -521,14 +579,14 @@ export async function sendAffiliatePasswordResetEmail(params: {
 
   const html = wrapper(`
     <p style="margin:0 0 12px;font-size:15px"><strong>Reset your partner password</strong></p>
-    <p>Hi ${firstName},</p>
+    <p>Hi ${escapeHtml(firstName)},</p>
     <p>We received a request to reset the password on your JKTL Business partner account.</p>
     <p style="margin:22px 0">
-      <a href="${resetUrl}" style="background:#0f6e5c;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">Set a new password</a>
+      <a href="${escapeHtml(resetUrl)}" style="background:#112055;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">Set a new password</a>
     </p>
     <p style="font-size:13px;color:#5b6470">This link works for ${expiresInMinutes} minutes, and only once.</p>
     <p style="font-size:13px;color:#5b6470">If you did not ask for this, you can ignore this email — your password has not changed, and nobody can use the link without opening this message.</p>
-    <p style="font-size:12px;color:#9aa1a9;margin-top:18px;word-break:break-all">If the button does not work, paste this into your browser:<br/>${resetUrl}</p>
+    <p style="font-size:12px;color:#9aa1a9;margin-top:18px;word-break:break-all">If the button does not work, paste this into your browser:<br/>${escapeHtml(resetUrl)}</p>
   `);
 
   const text = [
@@ -542,7 +600,9 @@ export async function sendAffiliatePasswordResetEmail(params: {
     `If you did not ask for this, ignore this email — your password has not changed.`,
   ].join("\n");
 
-  return send(to, "Reset your JKTL Business partner password", html, text);
+  return send(to, "Reset your JKTL Business partner password", html, text, {
+    category: "security",
+  });
 }
 
 /* -------------------------------------------------------------------------- */
@@ -594,16 +654,16 @@ export async function sendAffiliateApprovedEmail(params: {
 
   const html = wrapper(`
     <p style="margin:0 0 14px;font-size:16px"><strong>You're approved — welcome to the partner programme.</strong></p>
-    <p>Hi ${firstName},</p>
+    <p>Hi ${escapeHtml(firstName)},</p>
     <p>Your application has been approved. You can sign in right now with the email and password you applied with.</p>
 
     <p style="margin:20px 0 6px">
-      <a href="${signInUrl}" style="background:#0f6e5c;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">Sign in to your dashboard</a>
+      <a href="${escapeHtml(signInUrl)}" style="background:#112055;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">Sign in to your dashboard</a>
     </p>
     <p style="font-size:13px;color:#5b6470;margin:0">Use <strong>${to}</strong> — the email you applied with.</p>
 
     <p style="margin:22px 0 6px;font-size:14px"><strong>Your referral link</strong></p>
-    <p style="background:#f5f6f8;border-radius:10px;padding:12px 14px;font-size:13px;word-break:break-all;margin:0">${referralLink}</p>
+    <p style="background:#f5f6f8;border-radius:10px;padding:12px 14px;font-size:13px;word-break:break-all;margin:0">${escapeHtml(referralLink)}</p>
     <p style="font-size:12px;color:#7b838d;margin:6px 0 0">Share this anywhere. Clicks are tracked for 30 days, and a business that comes through it stays yours for as long as they remain a customer.</p>
 
     <p style="margin:22px 0 8px;font-size:14px"><strong>What one referral is worth</strong></p>
@@ -619,7 +679,7 @@ export async function sendAffiliateApprovedEmail(params: {
     <p style="font-size:12px;color:#7b838d;margin:8px 0 0">The first payment is shown in your dashboard as soon as your referral creates an account, and becomes withdrawable when they subscribe. Payout requests open from the ${payoutDay}st of each month.</p>
 
     <p style="margin:22px 0 0;font-size:13px;color:#5b6470">Your dashboard has ready-made messages you can send on WhatsApp, and a playbook if you have never promoted anything before.</p>
-    <p style="margin:4px 0 0">— JKTL Business</p>
+
   `);
 
   const text = [
@@ -646,6 +706,7 @@ export async function sendAffiliateApprovedEmail(params: {
     "You're approved — your JKTL partner dashboard is ready",
     html,
     text,
+    { category: "affiliate" },
   );
 }
 
@@ -668,17 +729,19 @@ export async function sendAffiliateDeclinedEmail(params: {
   const firstName = params.name.trim().split(/\s+/)[0] || "there";
   const html = wrapper(`
     <p style="margin:0 0 14px;font-size:15px"><strong>About your partner application</strong></p>
-    <p>Hi ${firstName},</p>
+    <p>Hi ${escapeHtml(firstName)},</p>
     <p>Thank you for applying to the JKTL Business partner programme. We are not taking your application forward on this occasion.</p>
     <p>It is a judgement on the plan you described rather than on you — we keep the programme small and work closely with the partners we approve. You are welcome to apply again if your plans change.</p>
     <p style="font-size:13px;color:#5b6470">If you think this was a mistake, reply to this email and a person will read it.</p>
-    <p style="margin:18px 0 0">— JKTL Business</p>
+
   `);
   const text = `Hi ${firstName},\n\nThank you for applying to the JKTL Business partner programme. We are not taking your application forward on this occasion.\n\nIt is a judgement on the plan you described rather than on you. You are welcome to apply again if your plans change.\n\nIf you think this was a mistake, reply to this email and a person will read it.\n\n— JKTL Business`;
-  return send(params.to, "About your JKTL partner application", html, text);
+  return send(params.to, "About your JKTL partner application", html, text, {
+    category: "affiliate",
+  });
 }
 
-/** Domain notices contain no registrant contact/address or supplier credentials. Resend deduplicates retries. */
+/** Durable domain notices retain their existing provider idempotency key. */
 export async function sendDomainOrderEmail(p: {
   to: string;
   domain: string;
@@ -686,35 +749,15 @@ export async function sendDomainOrderEmail(p: {
   detail: string;
   key: string;
 }): Promise<EmailResult> {
-  if (!p.to || !p.to.includes("@"))
-    return { ok: false, error: "Missing recipient" };
-  const escape = (v: string) =>
-    v.replace(
-      /[&<>"']/g,
-      (c) =>
-        ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;",
-        })[c]!,
-    );
-  try {
-    const { error } = await getResend().emails.send(
-      {
-        from: FROM,
-        to: p.to,
-        subject: `${p.event}: ${p.domain}`,
-        text: `${p.event}\n\n${p.domain}\n${p.detail}\n\nView your domain order securely at https://business.jktl.com.ng/business/domains`,
-        html: `<div style="font-family:Arial;max-width:520px;margin:auto;background:#fdfcf8;border:1px solid #c9a84c;padding:24px;color:#060e2a"><h2>JKTL Business</h2><h3>${escape(p.event)}</h3><p><strong>${escape(p.domain)}</strong></p><p>${escape(p.detail)}</p><a href="https://business.jktl.com.ng/business/domains">View My Domains</a></div>`,
-      },
-      { idempotencyKey: p.key },
-    );
-    return error ? { ok: false, error: "Email delivery failed" } : { ok: true };
-  } catch {
-    return { ok: false, error: "Email delivery unavailable" };
-  }
+  const url = "https://business.jktl.com.ng/business/domains";
+  return send(
+    p.to,
+    `${p.event}: ${p.domain}`,
+    `<p><strong>${escapeHtml(p.domain)}</strong></p><p>${escapeHtml(p.detail)}</p>${mailAction("View My Domains", url)}`,
+    `${p.event}\n\n${p.domain}\n${p.detail}\n\n${url}`,
+    { category: "domain", ownedProducts: ["domains"] },
+    p.key,
+  );
 }
 
 /** Custom clients receive an activation link only after a configured pilot. */
@@ -740,6 +783,7 @@ export async function sendCustomInvitationEmail(p: {
     "Your JKTL Custom workspace is ready",
     `<div style="font-family:Arial;background:#fdfcf8;color:#060e2a;padding:32px"><h1>Welcome to JKTL Custom</h1><p>${escape(p.name)}, your client workspace is ready for review.</p><p>Manage your connected websites, service agreements, invoices and support in JKTL Business.</p><p><a href="${escape(p.url)}">Activate your workspace</a></p><p>This link expires in 48 hours and works once. Existing account holders sign in with their existing password. We never email passwords.</p></div>`,
     `Your JKTL Custom workspace for ${p.name} is ready. Activate within 48 hours: ${p.url}. This link works once. Existing account holders keep their password.`,
+    { category: "security" },
   );
 }
 
@@ -749,22 +793,22 @@ export async function sendCustomNoticeEmail(p: {
   detail: string;
   key: string;
   path?: string;
+  category?: MailContext["category"];
 }): Promise<EmailResult> {
-  try {
-    if (!p.to) return { ok: false, error: "Missing recipient" };
-    const r = await getResend().emails.send(
-      {
-        from: FROM,
-        to: p.to,
-        subject: p.subject,
-        text: `${p.detail}\n\nReview your JKTL workspace: ${process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng"}${p.path || "/business/custom"}`,
-      },
-      { idempotencyKey: p.key },
-    );
-    return r.error ? { ok: false, error: "Delivery failed" } : { ok: true };
-  } catch {
-    return { ok: false, error: "Delivery unavailable" };
-  }
+  const url =
+    (process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng") +
+    (p.path || "/business/custom");
+  return send(
+    p.to,
+    p.subject,
+    `<p>${escapeHtml(p.detail)}</p>${mailAction("Review your workspace", url)}`,
+    `${p.detail}\n\n${url}`,
+    {
+      category: p.category || "service",
+      ownedProducts: p.path === "/business/email" ? ["business-email"] : [],
+    },
+    p.key,
+  );
 }
 
 export async function sendPartnerApprovedEmail(p: {
@@ -794,6 +838,7 @@ export async function sendPartnerApprovedEmail(p: {
       `<h2>Welcome to JKTL Partners</h2><p>Hi ${escape(p.name)}, your application has been approved.</p><p>${p.needsPasswordSetup ? `Your earlier application did not include a password. <a href="${escape((process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng") + "/affiliates/forgot-password")}">Request a secure password setup link</a> using your approved email address.` : `Use your existing application password to <a href="${escape(p.signInUrl)}">sign in to your partner workspace</a>.`}</p><p>Your agreed commission rate is ${p.commissionBps / 100}% on qualifying purchases under your partner agreement. No signup or fixed bonus is implied.</p><p>Referral link: ${escape(p.referralLink)}</p>`,
     ),
     `Your JKTL Partner account is approved. ${p.needsPasswordSetup ? "Request secure password setup from the programme password reset page using your approved email. " : ""}Sign in: ${p.signInUrl}. Your agreed rate is ${p.commissionBps / 100}% on qualifying purchases under your agreement. Referral link: ${p.referralLink}.`,
+    { category: "partner" },
   );
 }
 
@@ -803,36 +848,47 @@ export async function sendPartnerNoticeEmail(p: {
   detail: string;
   key: string;
   path: string;
+  category?: MailContext["category"];
+  ticket?: { subject: string; agent: string; reply: string; reference: string };
 }): Promise<EmailResult> {
-  const escape = (s: string) =>
-    s.replace(
-      /[&<>"']/g,
-      (c) =>
-        ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;",
-        })[c]!,
-    );
+  const origin = (
+    process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng"
+  ).replace(/\/$/, "");
+  const url = origin + p.path;
+  const t = p.ticket;
+  const body = t
+    ? `<p>Ticket: <strong>${escapeHtml(t.subject)}</strong></p><p>From ${escapeHtml(t.agent)}</p><p style="white-space:pre-wrap">${escapeHtml(t.reply)}</p><p>Reference: ${escapeHtml(t.reference)}</p>`
+    : `<p>${escapeHtml(p.detail)}</p>`;
+  return send(
+    p.to,
+    p.subject,
+    body + mailAction("Open your secure workspace", url),
+    t
+      ? `${t.subject}\nFrom ${t.agent}\n\n${t.reply}\n\nReference: ${t.reference}\n${url}`
+      : p.detail + "\n\n" + url,
+    { category: p.category || "partner", ownedProducts: ["partners"] },
+    p.key,
+  );
+}
+
+/** Admin-only preview delivery; the caller limits recipient, rate and permissions. */
+export async function sendMailPreview(
+  to: string,
+  rendered: { html: string; text: string },
+  subject: string,
+) {
   try {
-    const origin = (
-      process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng"
-    ).replace(/\/$/, "");
-    const url = origin + p.path;
-    const r = await getResend().emails.send(
-      {
-        from: FROM,
-        to: p.to,
-        subject: p.subject,
-        text: p.detail + "\n\n" + url,
-        html: `<div style="font-family:Arial,sans-serif;color:#060e2a;max-width:560px;margin:auto;padding:28px"><img src="${origin}/jktl-logo.png" width="64" height="64" alt="JKTL"><h2>JKTL Business</h2><p>${escape(p.detail)}</p><p><a href="${escape(url)}">Open your secure workspace</a></p></div>`,
-      },
-      { idempotencyKey: p.key },
-    );
-    return r.error ? { ok: false, error: "Delivery failed" } : { ok: true };
+    const result = await getResend().emails.send({
+      from: FROM,
+      to,
+      subject: "[JKTL TEST PREVIEW] " + subject,
+      html: rendered.html,
+      text: rendered.text,
+    });
+    return result.error
+      ? { ok: false, error: "Preview delivery failed" }
+      : { ok: true };
   } catch {
-    return { ok: false, error: "Email unavailable" };
+    return { ok: false, error: "Preview delivery unavailable" };
   }
 }

@@ -251,6 +251,12 @@ export async function confirmWebsitePlanPaymentAction(reference: string) {
       data as unknown as Record<string, unknown>,
       organizationId,
     );
+    try {
+      const { flushMailAfterResponse } = await import("@/lib/mail/schedule");
+      flushMailAfterResponse();
+    } catch {
+      /* Durable queue remains available to scheduled maintenance. */
+    }
     return { ok: true as const };
   } catch (e) {
     return failure(e);

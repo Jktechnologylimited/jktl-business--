@@ -5,8 +5,20 @@ import { useEffect, useState } from "react";
 import { BellOff } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { useToastStore } from "@/lib/toast";
-import { isPushSupported, isIOS, isStandalone, notificationPermission, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
-import { getNotificationPrefsAction, updateNotificationPrefsAction, saveSubscriptionAction, removeSubscriptionAction } from "@/lib/actions/push-actions";
+import {
+  isPushSupported,
+  isIOS,
+  isStandalone,
+  notificationPermission,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push-client";
+import {
+  getNotificationPrefsAction,
+  updateNotificationPrefsAction,
+  saveSubscriptionAction,
+  removeSubscriptionAction,
+} from "@/lib/actions/push-actions";
 import type { NotificationPrefs } from "@/lib/db/push";
 
 const DEMO_PREFS: NotificationPrefs = {
@@ -20,14 +32,48 @@ const DEMO_PREFS: NotificationPrefs = {
   platformAnnouncements: true,
 };
 
-const CATEGORY_TOGGLES: Array<{ key: keyof Omit<NotificationPrefs, "pushEnabled">; label: string; description: string }> = [
-  { key: "bookingNotifications", label: "New bookings", description: "Notify me when a booking comes in" },
-  { key: "lowStockAlerts", label: "Low-stock alerts", description: "Notify me when a product drops to its threshold" },
-  { key: "invoiceSentAlerts", label: "Invoice sent", description: "Confirm when a request for payment has gone out" },
-  { key: "invoicePaidAlerts", label: "Payment received", description: "The moment a customer pays an invoice — money arriving without you chasing it" },
-  { key: "payoutAlerts", label: "Setup tips & money advice", description: "Occasional prompts to finish setting up — like adding a card so you get paid while you sleep" },
-  { key: "dailySummary", label: "Daily summary", description: "A morning recap of yesterday's numbers" },
-  { key: "platformAnnouncements", label: "Platform updates", description: "Downtime notices and promotions from JKTL" },
+const CATEGORY_TOGGLES: Array<{
+  key: keyof Omit<NotificationPrefs, "pushEnabled">;
+  label: string;
+  description: string;
+}> = [
+  {
+    key: "bookingNotifications",
+    label: "New bookings",
+    description: "Notify me when a booking comes in",
+  },
+  {
+    key: "lowStockAlerts",
+    label: "Low-stock alerts",
+    description: "Notify me when a product drops to its threshold",
+  },
+  {
+    key: "invoiceSentAlerts",
+    label: "Invoice sent",
+    description: "Confirm when a request for payment has gone out",
+  },
+  {
+    key: "invoicePaidAlerts",
+    label: "Payment received",
+    description:
+      "The moment a customer pays an invoice — money arriving without you chasing it",
+  },
+  {
+    key: "payoutAlerts",
+    label: "Setup tips & money advice",
+    description:
+      "Occasional prompts to finish setting up — like adding a card so you get paid while you sleep",
+  },
+  {
+    key: "dailySummary",
+    label: "Daily summary",
+    description: "A morning recap of yesterday's numbers",
+  },
+  {
+    key: "platformAnnouncements",
+    label: "Platform updates",
+    description: "Downtime notices and promotions from JKTL",
+  },
 ];
 
 /** Plain-text reason shown as the toggle's own error message when push
@@ -36,8 +82,10 @@ const CATEGORY_TOGGLES: Array<{ key: keyof Omit<NotificationPrefs, "pushEnabled"
  * and only from iOS 16.4 onward). See unsupportedPushNote() below for the
  * longer version with a link into Help, shown under the panel itself. */
 function unsupportedPushReason(): string {
-  if (!isIOS()) return "Push notifications aren't available here — this needs a supported browser and the installed app (not the dev server).";
-  if (!isStandalone()) return "On iPhone, push only works once JKTL Business is added to your home screen — open it from there and try again.";
+  if (!isIOS())
+    return "Push notifications aren't available here — this needs a supported browser and the installed app (not the dev server).";
+  if (!isStandalone())
+    return "On iPhone, push only works once JKTL Business is added to your home screen — open it from there and try again.";
   return "This iPhone's iOS version is too old for push notifications — iOS 16.4 or later is needed.";
 }
 
@@ -70,11 +118,19 @@ export function NotificationsPanel({ mode }: { mode: "demo" | "live" }) {
     setError("");
     if (mode !== "live") {
       setPrefs((p) => ({ ...p, pushEnabled: next }));
-      showToast(next ? "Push enabled — you're in demo mode, so nothing actually sends" : "Push disabled");
+      showToast(
+        next
+          ? "Push enabled — you're in demo mode, so nothing actually sends"
+          : "Push disabled",
+      );
       return;
     }
     if (!supported) {
-      setError(permission === "denied" ? "Notifications are blocked for this site in your browser settings." : unsupportedPushReason());
+      setError(
+        permission === "denied"
+          ? "Notifications are blocked for this site in your browser settings."
+          : unsupportedPushReason(),
+      );
       return;
     }
 
@@ -103,7 +159,9 @@ export function NotificationsPanel({ mode }: { mode: "demo" | "live" }) {
     } else {
       const endpoint = await unsubscribeFromPush();
       if (endpoint) await removeSubscriptionAction(endpoint);
-      const result = await updateNotificationPrefsAction({ pushEnabled: false });
+      const result = await updateNotificationPrefsAction({
+        pushEnabled: false,
+      });
       setPending(false);
       if (result.ok) {
         setPrefs(result.data);
@@ -114,7 +172,10 @@ export function NotificationsPanel({ mode }: { mode: "demo" | "live" }) {
     }
   }
 
-  async function toggleCategory(key: keyof Omit<NotificationPrefs, "pushEnabled">, value: boolean) {
+  async function toggleCategory(
+    key: keyof Omit<NotificationPrefs, "pushEnabled">,
+    value: boolean,
+  ) {
     const next = { ...prefs, [key]: value };
     setPrefs(next);
     if (mode !== "live") return;
@@ -127,13 +188,27 @@ export function NotificationsPanel({ mode }: { mode: "demo" | "live" }) {
 
   return (
     <section className="rounded-2xl border border-border p-4">
-      <h2 className="font-display text-sm font-semibold text-ink">Notifications</h2>
-      <p className="mt-1 text-xs text-ink-muted">Real push notifications to this device — no email required.</p>
+      <h2 className="font-display text-sm font-semibold text-ink">
+        Notifications
+      </h2>
+      <p className="mt-1 text-xs text-ink-muted">
+        Real push notifications to this device — no email required.
+      </p>
+      <a
+        href="/business/email-preferences"
+        className="mt-3 inline-block text-sm underline"
+      >
+        Manage optional email promotions
+      </a>
 
       <div className="mt-1 divide-y divide-border">
         <Toggle
           label="Push notifications"
-          description={mode === "live" && loading ? "Loading…" : "Turn on to receive alerts on this device"}
+          description={
+            mode === "live" && loading
+              ? "Loading…"
+              : "Turn on to receive alerts on this device"
+          }
           checked={prefs.pushEnabled}
           onChange={togglePush}
           disabled={pending || (mode === "live" && loading)}
@@ -157,14 +232,26 @@ export function NotificationsPanel({ mode }: { mode: "demo" | "live" }) {
           <span>
             {isIOS() ? (
               !isStandalone() ? (
-                <>On iPhone, push only works once JKTL Business is added to your home screen and opened from there — not from a Safari tab.</>
+                <>
+                  On iPhone, push only works once JKTL Business is added to your
+                  home screen and opened from there — not from a Safari tab.
+                </>
               ) : (
-                <>This iPhone&apos;s iOS version is too old for push — iOS 16.4 or later is needed, with no workaround for earlier versions.</>
+                <>
+                  This iPhone&apos;s iOS version is too old for push — iOS 16.4
+                  or later is needed, with no workaround for earlier versions.
+                </>
               )
             ) : (
-              <>Push needs the installed app (add to home screen) or a supported desktop browser.</>
+              <>
+                Push needs the installed app (add to home screen) or a supported
+                desktop browser.
+              </>
             )}{" "}
-            <Link href="/business/help" className="font-medium text-primary underline underline-offset-2">
+            <Link
+              href="/business/help"
+              className="font-medium text-primary underline underline-offset-2"
+            >
               See the Help guide
             </Link>
             .

@@ -48,6 +48,14 @@ export async function saveWebsiteTemplateAction(input: {
     revalidatePath("/business/website");
     revalidatePath("/business/website/template");
     revalidatePath(`/sites/${profile.subdomain}`);
+    if (input.published) {
+      try {
+        const { flushMailAfterResponse } = await import("@/lib/mail/schedule");
+        flushMailAfterResponse();
+      } catch {
+        /* Durable queue remains available to scheduled maintenance. */
+      }
+    }
     return { ok: true, data: profile };
   } catch (error) {
     if (isSchemaOutOfDateError(error))

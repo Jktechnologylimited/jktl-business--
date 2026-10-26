@@ -19,7 +19,7 @@ export async function configureGrowthStaffAction(f: FormData) {
   const a = await growth("manage_team"),
     target = uuid(f.get("id")),
     mode = field(f, "mode", 20);
-  if (!["PERMISSIONS", "SUSPEND", "ENABLE", "REVOKE"].includes(mode))
+  if (!["PERMISSIONS", "SUSPEND", "ENABLE", "REVOKE", "RESTORE"].includes(mode))
     throw Error("Choose a staff action");
   const enabled = f.getAll("permissions").map(String);
   if (
@@ -30,7 +30,7 @@ export async function configureGrowthStaffAction(f: FormData) {
     GROWTH_PERMISSIONS.map((p) => [p, enabled.includes(p)]),
   );
   const r = await query(
-    `WITH changed AS(UPDATE admin_users SET permission_overrides=CASE WHEN $2='PERMISSIONS' THEN $3::jsonb ELSE permission_overrides END,disabled_at=CASE WHEN $2 IN('SUSPEND','REVOKE') THEN now() WHEN $2='ENABLE' AND staff_revoked_at IS NULL THEN NULL ELSE disabled_at END,staff_revoked_at=CASE WHEN $2='REVOKE' THEN now() ELSE staff_revoked_at END WHERE id=$1 AND role='growth_gaming_lead' AND($2<>'ENABLE' OR staff_revoked_at IS NULL) RETURNING id),ended AS(DELETE FROM admin_sessions WHERE admin_user_id=$1 AND EXISTS(SELECT 1 FROM changed)) INSERT INTO distribution_audit(actor_id,event,detail) SELECT $4,'STAFF_'||$2,jsonb_build_object('staff',id,'permissions',CASE WHEN $2='PERMISSIONS' THEN $3::jsonb ELSE '{}'::jsonb END) FROM changed RETURNING id`,
+    `WITH changed AS(UPDATE admin_users SET permission_overrides=CASE WHEN $2='PERMISSIONS' THEN $3::jsonb ELSE permission_overrides END,disabled_at=CASE WHEN $2 IN('SUSPEND','REVOKE') THEN now() WHEN $2='RESTORE' OR $2='ENABLE' AND staff_revoked_at IS NULL THEN NULL ELSE disabled_at END,staff_revoked_at=CASE WHEN $2='REVOKE' THEN now() WHEN $2='RESTORE' THEN NULL ELSE staff_revoked_at END WHERE id=$1 AND role='growth_gaming_lead' AND($2<>'ENABLE' OR staff_revoked_at IS NULL) RETURNING id),ended AS(DELETE FROM admin_sessions WHERE admin_user_id=$1 AND EXISTS(SELECT 1 FROM changed)) INSERT INTO distribution_audit(actor_id,event,detail) SELECT $4,'STAFF_'||$2,jsonb_build_object('staff',id,'permissions',CASE WHEN $2='PERMISSIONS' THEN $3::jsonb ELSE '{}'::jsonb END) FROM changed RETURNING id`,
     [target, mode, JSON.stringify(overrides), a.id],
   );
   if (!r.length) throw Error("Staff profile unavailable");

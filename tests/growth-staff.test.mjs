@@ -154,6 +154,27 @@ test("Growth staff use existing identity, least privilege, approved publishing, 
       )
     )[0];
     assert.equal(profile.role, "growth_gaming_lead");
+    const native = await auth.createAdminUser({
+      name: "Native Growth",
+      email: "native-growth@example.test",
+      password: "native-staff-password",
+      role: "growth_gaming_lead",
+      createdBy: ownerId,
+    });
+    assert.equal(
+      (
+        await auth.verifyAdminLogin(
+          "native-growth@example.test",
+          "native-staff-password",
+        )
+      ).role,
+      "growth_gaming_lead",
+    );
+    const nativeSession = await auth.createAdminSession(native.id);
+    assert.equal(
+      (await auth.validateAdminSession(nativeSession)).id,
+      native.id,
+    );
     let signedIn = null;
     const staffSignIn = load("../src/lib/growth/auth.ts", {
       "server-only": {},

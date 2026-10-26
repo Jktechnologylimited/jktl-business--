@@ -41,6 +41,7 @@ export type GrowthPermission = (typeof GROWTH_PERMISSIONS)[number];
 export type AdminCapability =
   | GrowthPermission
   | "growth_workspace"
+  | "manage_communications"
   | "manage_support"
   | "publish_reviews"
   | "manage_email"
@@ -171,6 +172,11 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
+  {
+    href: "/admin/communications",
+    label: "Communications",
+    capability: "manage_communications",
+  },
   {
     href: "/admin/partner-support",
     label: "Partner support",

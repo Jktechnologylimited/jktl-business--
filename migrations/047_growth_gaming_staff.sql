@@ -6,7 +6,6 @@ ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS permission_overrides jsonb NOT 
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS staff_assigned_at timestamptz;
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS staff_revoked_at timestamptz;
 ALTER TABLE admin_users DROP CONSTRAINT IF EXISTS growth_staff_identity_check;
-ALTER TABLE admin_users ADD CONSTRAINT growth_staff_identity_check CHECK(role<>'growth_gaming_lead' OR business_user_id IS NOT NULL);
 ALTER TABLE prospects ADD COLUMN IF NOT EXISTS assigned_staff_id uuid REFERENCES admin_users(id);
 CREATE INDEX IF NOT EXISTS prospects_assigned_staff ON prospects(assigned_staff_id,created_at DESC);
 ALTER TABLE jktl_publications ADD COLUMN IF NOT EXISTS growth_category text CHECK(growth_category IN('marketing','social','games','community','landing'));
