@@ -36,6 +36,8 @@ export default async function Layout({
           </div>
           <div className="flex items-center gap-5 text-sm"><ThemeControl />
             <Link href="https://jktl.com.ng/partners">Programme</Link>
+            <Link href="/partners/clients">Clients</Link>
+            <Link href="/business/distribution">Business account</Link>
             <form action={affiliateLogoutAction}>
               <button>Sign out</button>
             </form>

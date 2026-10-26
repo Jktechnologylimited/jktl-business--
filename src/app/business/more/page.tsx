@@ -54,6 +54,7 @@ export default function MorePage() {
           Build a Nigerian neighbourhood. Play with your existing JKTL account.
         </p>
       </Link>
+      <Link href="/business/distribution" className="rounded-2xl border border-border bg-surface p-5"><strong>Programs & partner access</strong><p className="mt-1 text-sm text-ink-muted">Connect your program dashboard and manage client-approved partner relationships.</p></Link>
       {groups.map((group) => (
         <div key={group.name} className="flex flex-col gap-2.5">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">

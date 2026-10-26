@@ -90,3 +90,40 @@ legacy immutability and calculator boundaries. Build/type/lint are separate chec
 No new environment variables. Migration 038 is included in existing prebuild.
 No production migration, bank payout, notification or policy activation is part
 of these checks. Full-platform launch remains blocked on the stages above.
+
+
+## Follow-up delivery: account connections and partner client operations
+
+Migration 039 adds explicit Business-user/program links. Existing approved program
+accounts are connected by proving their existing program password once; email
+matching alone never links accounts. Subsequent access uses the authenticated
+Business user and an approved linked profile to start the existing program
+session. This preserves existing credentials and permits one account per program
+per Business user. It does not yet replace public application/password flows.
+
+Business → More → Programs & partner access (`/business/distribution`) lets owners
+accept private invitations, choose permissions, inspect and revoke relationships.
+The invitation is retained through Business sign-in, signup and onboarding using
+an allowlisted return destination. Partners use `/partners/clients` to generate
+one-use links expiring in seven days, track acceptance and submit service requests.
+Only hashes are stored; the generated token is returned once for private sharing.
+A current approved Partner agreement is checked on every partner mutation.
+
+Current scopes are service-summary visibility (counts only, not financial/private
+records) and service-assistance requests. Neither scope lets a partner charge,
+provision, edit website documents, change ownership or access customer messages.
+Requests go to `/admin/distribution/requests`, where authorized distribution admins
+can review/respond; completing a request is never payment or fulfillment evidence.
+Revocation clears permissions, immediately blocks new service requests and removes
+visibility of prior request replies from the partner view. Audit events record
+invitation creation, acceptance, revocation and requests/responses.
+
+Database-backed tests exercise non-owner rejection, invitation reuse, another
+partner's denial, scoped assistance, post-revocation denial and suspension. No
+invitation messages, actual customer data or live financial transactions are used.
+
+Still outstanding from the master brief: payment-connected commission ledger,
+cohort activation and accepted policy evidence, new unified application flow,
+reseller prices, product economics/rules, payout reservations and reversals,
+marketing assets, comprehensive program notifications and full browser verification.
+Do not treat this follow-up as completion or activation of the full platform.

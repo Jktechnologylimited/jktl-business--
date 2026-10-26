@@ -1,5 +1,5 @@
 "use client";
-import { emailIntent } from "@/lib/product-intent";
+import { emailIntent, emailDestination } from "@/lib/product-intent";
 import { gameReturnUrl } from "@/lib/game-routing";
 import { SignInFrame } from "@/components/auth/SignInFrame";
 import { LanguageSwitcher, T } from "@/components/i18n/LanguageProvider";
@@ -50,6 +50,7 @@ function LoginForm() {
       setError(result.error);
       return;
     }
+    if (params.get("next") === "distribution") { router.replace(emailDestination(params)!); return; }
     if (params.get("next") === "support") {
       router.replace("/business/help");
       return;
@@ -88,7 +89,8 @@ function LoginForm() {
   useEffect(() => {
     if (hydrated && authenticated && mode === "live") {
       const value = params.get("next");
-      if (value === "support") router.replace("/business/help");
+      if (value === "distribution") router.replace(emailDestination(params)!);
+      else if (value === "support") router.replace("/business/help");
       else if (value === "email")
         router.replace(
           "/business/email" +

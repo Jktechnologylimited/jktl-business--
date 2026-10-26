@@ -1,6 +1,13 @@
 type Params = Pick<URLSearchParams, "get">;
 /** Only a known product destination is carried through account creation; never an arbitrary redirect. */
 export function emailIntent(params: Params) {
+  if (params.get("next") === "distribution") {
+    const invite = params.get("invite") || "";
+    return (
+      "?next=distribution" +
+      (/^[a-f0-9]{64}$/.test(invite) ? "&invite=" + invite : "")
+    );
+  }
   if (params.get("next") === "support") return "?next=support";
   if (params.get("next") !== "email") return "";
   const plan = params.get("emailPlan") || params.get("plan") || "";
@@ -12,6 +19,13 @@ export function emailIntent(params: Params) {
   );
 }
 export function emailDestination(params: Params) {
+  if (params.get("next") === "distribution") {
+    const invite = params.get("invite") || "";
+    return (
+      "/business/distribution" +
+      (/^[a-f0-9]{64}$/.test(invite) ? "?invite=" + invite : "")
+    );
+  }
   if (params.get("next") === "support") return "/business/help";
   const intent = emailIntent(params);
   if (!intent) return null;
