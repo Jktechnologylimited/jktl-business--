@@ -49,6 +49,7 @@ export function OperationsFrame({
     return () => window.removeEventListener("keydown", escape);
   }, [open]);
   const icons: Record<string, typeof Users> = {
+    "/admin/distribution": Handshake,
     "/admin/support": LifeBuoy,
     "/admin/reviews": Star,
     "/admin": Users,
