@@ -172,11 +172,6 @@ export interface AdminNavItem {
  */
 export const ADMIN_NAV: AdminNavItem[] = [
   {
-    href: "/admin/growth",
-    label: "Growth & Gaming",
-    capability: "growth_workspace",
-  },
-  {
     href: "/admin/partner-support",
     label: "Partner support",
     capability: "manage_support",
@@ -253,12 +248,24 @@ export const ADMIN_NAV: AdminNavItem[] = [
     label: "Website refunds",
     capability: "manage_team",
   },
-  { href: "/admin/team", label: "Staff management", capability: "manage_team" },
+  { href: "/admin/team", label: "Team", capability: "manage_team" },
 ];
 
 export function navFor(
   role: AdminRole,
   overrides: Record<string, boolean> = {},
 ): AdminNavItem[] {
-  return ADMIN_NAV.filter((item) => can(role, item.capability, overrides));
+  return ADMIN_NAV.flatMap((item): AdminNavItem[] => {
+    // The same Team entry opens the member workspace without granting team administration.
+    if (
+      item.href === "/admin/team" &&
+      !can(role, "manage_team", overrides) &&
+      can(role, "growth_workspace", overrides)
+    ) {
+      return [
+        { ...item, href: "/admin/growth", capability: "growth_workspace" },
+      ];
+    }
+    return can(role, item.capability, overrides) ? [item] : [];
+  });
 }

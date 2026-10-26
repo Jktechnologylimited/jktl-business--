@@ -8,7 +8,7 @@ Display name: **Growth & Gaming Lead**. Existing role naming convention uses
 SUPER_ADMIN in the brief. No duplicate superadmin role or authentication system
 is introduced.
 
-An Owner opens **Admin → Staff management**, searches an exact existing Business
+An Owner opens **Admin → Team**, searches an exact existing Business
 email, verifies the person, then assigns the role. The existing `admin_users`
 record becomes a linked staff profile, with a unique `business_user_id` foreign
 key. Its password field is a non-authenticating sentinel, not a copied customer
@@ -26,6 +26,8 @@ There is no existing Business staff-invitation service. A person without an acco
 uses the normal `/signup` flow, then the Owner assigns their account. No passwords
 are emailed, no new invitation token system is invented, and an email address
 entered into staff search does not create an account automatically.
+
+Growth & Gaming is grouped under **Team**, with its workspace link on the Team page. Growth staff use the Team navigation entry to reach their own workspace; they cannot open team administration. There is no separate Growth & Gaming sidebar item.
 
 ## Permissions
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { GrowthStaffManager } from "@/components/admin/growth-staff-manager";
 import { PageHeader } from "@/components/app/page-header";
 import { TeamManager } from "@/components/admin/team-manager";
@@ -24,7 +25,13 @@ export default async function AdminTeamPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Staff management" />
+      <PageHeader title="Team" />
+      <Link
+        href="/admin/growth"
+        className="self-start rounded-lg border border-border p-3 text-sm"
+      >
+        Open Growth & Gaming workspace →
+      </Link>
       <GrowthStaffManager search={params.account || ""} />
       <p className="-mt-2 text-sm text-ink-muted">
         People who can sign in here. Each has a role that decides what they can
