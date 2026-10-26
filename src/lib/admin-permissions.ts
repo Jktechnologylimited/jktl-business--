@@ -134,6 +134,7 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
+ {href:"/admin/partner-support",label:"Partner support",capability:"manage_support"},
   { href: "/admin/distribution", label: "Distribution", capability: "manage_affiliates" },
   {
     href: "/admin/support",

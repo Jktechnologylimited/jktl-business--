@@ -18,6 +18,9 @@ export default async function Clients() {
     `SELECT q.id,q.product,q.status,q.reply FROM partner_service_requests q JOIN partner_client_access r ON r.id=q.relationship_id WHERE r.partner_id=$1 AND r.revoked_at IS NULL ORDER BY q.created_at DESC LIMIT 50`,
     [p.id],
   );
+  const products = await query(
+    "SELECT slug,name FROM feature_registry WHERE partner_mode<>'UNAVAILABLE' AND 'REQUEST_SETUP'=ANY(partner_actions) ORDER BY name",
+  );
   return (
     <div className="space-y-7 text-ink">
       <h1 className="text-3xl font-semibold">Your clients</h1>
@@ -72,15 +75,10 @@ export default async function Clients() {
                       name="product"
                       className="ml-3 rounded border border-border bg-paper p-2"
                     >
-                      {[
-                        "website",
-                        "domain",
-                        "email",
-                        "training",
-                        "custom",
-                        "managed-services",
-                      ].map((v) => (
-                        <option key={v}>{v}</option>
+                      {products.map((v) => (
+                        <option key={String(v.slug)} value={String(v.slug)}>
+                          {String(v.name)}
+                        </option>
                       ))}
                     </select>
                   </label>

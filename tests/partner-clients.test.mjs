@@ -12,7 +12,7 @@ test("partner invites require current agreement, owner acceptance, single use an
   const db = new PGlite();
   try {
     await db.exec(
-      `CREATE TABLE users(id uuid PRIMARY KEY);CREATE TABLE organizations(id uuid PRIMARY KEY);CREATE TABLE affiliates(id uuid PRIMARY KEY,programme text,status text,partner_terms_confirmed boolean);CREATE TABLE distribution_audit(id bigserial,actor_id text,event text,affiliate_id uuid,detail jsonb);CREATE TABLE feature_registry(slug text PRIMARY KEY,name text,category text,route text UNIQUE,description text);INSERT INTO users VALUES('${user}');INSERT INTO organizations VALUES('${org}');INSERT INTO affiliates VALUES('${pid}','partner','active',true),('${other}','partner','active',true);`,
+      `CREATE TABLE admin_users(id uuid PRIMARY KEY);CREATE TABLE users(id uuid PRIMARY KEY);CREATE TABLE organizations(id uuid PRIMARY KEY);CREATE TABLE affiliates(id uuid PRIMARY KEY,programme text,status text,partner_terms_confirmed boolean);CREATE TABLE distribution_audit(id bigserial,actor_id text,event text,affiliate_id uuid,detail jsonb);CREATE TABLE feature_registry(slug text PRIMARY KEY,name text,category text,route text UNIQUE,description text);INSERT INTO users VALUES('${user}');INSERT INTO organizations VALUES('${org}');INSERT INTO affiliates VALUES('${pid}','partner','active',true),('${other}','partner','active',true);`,
     );
     const query = async (s, p = []) => (await db.query(s, p)).rows;
     await applyMigrationBatch(
@@ -37,8 +37,13 @@ test("partner invites require current agreement, owner acceptance, single use an
           ),
           "utf8",
         ),
+        readFileSync(
+          new URL("../migrations/040_partner_workspace.sql", import.meta.url),
+          "utf8",
+        ),
       ],
     );
+    await db.exec("INSERT INTO feature_registry(slug,name,category,route,description,partner_mode,partner_actions) VALUES('website-builder','Website','Product','/business/website','Website','SELF_SERVICE',ARRAY['REQUEST_SETUP'])");
     let partnerId = pid,
       isOwner = true;
     const deps = {
@@ -139,11 +144,24 @@ test("partner invites require current agreement, owner acceptance, single use an
   }
 });
 
-test('invitation intent survives authentication without accepting arbitrary redirects',async()=>{
- const {emailIntent,emailDestination}=await import('../src/lib/product-intent.ts');
- const token='a'.repeat(64);const p=new URLSearchParams({next:'distribution',invite:token});
- assert.equal(emailIntent(p),'?next=distribution&invite='+token);
- assert.equal(emailDestination(p),'/business/distribution?invite='+token);
- assert.equal(emailDestination(new URLSearchParams({next:'distribution',invite:'https://evil.example'})),'/business/distribution');
- assert.equal(emailDestination(new URLSearchParams({next:'https://evil.example'})),null);
+test("invitation intent survives authentication without accepting arbitrary redirects", async () => {
+  const { emailIntent, emailDestination } =
+    await import("../src/lib/product-intent.ts");
+  const token = "a".repeat(64);
+  const p = new URLSearchParams({ next: "distribution", invite: token });
+  assert.equal(emailIntent(p), "?next=distribution&invite=" + token);
+  assert.equal(emailDestination(p), "/business/distribution?invite=" + token);
+  assert.equal(
+    emailDestination(
+      new URLSearchParams({
+        next: "distribution",
+        invite: "https://evil.example",
+      }),
+    ),
+    "/business/distribution",
+  );
+  assert.equal(
+    emailDestination(new URLSearchParams({ next: "https://evil.example" })),
+    null,
+  );
 });

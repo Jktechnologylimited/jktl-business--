@@ -74,7 +74,7 @@ export default async function Page({
                   {CLIENT_SCOPES.map((scope) => (
                     <label key={scope} className="flex gap-3">
                       <input type="checkbox" name="scopes" value={scope} />
-                      {scope === "VIEW_ALLOWED_SERVICES"
+                      {scope === "MANAGE_WEBSITE_CONTENT" ? "Edit website content for this business" : scope === "PUBLISH_WEBSITE" ? "Publish this business website" : scope === "VIEW_ALLOWED_SERVICES"
                         ? "View the services you authorize"
                         : "Request service assistance from JKTL on your behalf"}
                     </label>

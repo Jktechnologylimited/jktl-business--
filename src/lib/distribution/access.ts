@@ -1,5 +1,7 @@
 export const CLIENT_SCOPES = [
   "VIEW_ALLOWED_SERVICES",
+  "MANAGE_WEBSITE_CONTENT",
+  "PUBLISH_WEBSITE",
   "REQUEST_SERVICE_CHANGES",
 ] as const;
 export function clientScopes(value: unknown): string[] {
