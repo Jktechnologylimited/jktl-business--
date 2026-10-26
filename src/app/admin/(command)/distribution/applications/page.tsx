@@ -9,6 +9,9 @@ export default async function Page() {
   const rows = await query(
     "SELECT id,name,programme,status,application_stage,application_data,application_note,applicant_message FROM affiliates ORDER BY created_at DESC LIMIT 100",
   );
+  const growthReviews = await query(
+    "SELECT affiliate_id,recommendation,note,created_at FROM growth_application_reviews ORDER BY created_at DESC LIMIT 200",
+  );
   return (
     <div className="space-y-5 text-ink">
       <h1 className="text-3xl font-semibold">Program applications</h1>
@@ -37,6 +40,14 @@ export default async function Page() {
           <pre className="whitespace-pre-wrap break-words text-xs">
             {JSON.stringify(r.application_data, null, 2)}
           </pre>
+          {growthReviews
+            .filter((g) => g.affiliate_id === r.id)
+            .map((g, i) => (
+              <p key={i} className="rounded border border-border p-3 text-sm">
+                Growth recommendation: {String(g.recommendation)} ·{" "}
+                {String(g.created_at)} · {String(g.note)}
+              </p>
+            ))}
           <ActionForm
             action={manageProgramApplicationAction}
             className="grid gap-3"

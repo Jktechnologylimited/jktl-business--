@@ -11,9 +11,7 @@ import { Field } from "@/components/app/field";
 import { JktlMark } from "@/components/app/logo";
 import { adminLoginAction } from "@/lib/actions/admin-actions";
 
-/** Deliberately its own login page, entirely separate from `/login` — a
- * command-center credential is not a business account with extra
- * privileges, it's a different account altogether (see migrations/009). */
+/** Existing admin credentials and explicitly linked Business staff share this entry point. */
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -35,38 +33,59 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <SignInFrame kind="admin"><div className="mx-auto flex max-w-sm flex-col justify-center">
-      <div className="flex items-center gap-2.5">
-        <JktlMark className="size-9" />
-        <div>
-          <div className="font-display text-base font-bold tracking-tight text-ink">JKTL Business</div>
-          <div className="flex items-center gap-1 text-xs font-medium text-ink-muted">
-            <ShieldCheck className="size-3.5" /> Command center
+    <SignInFrame kind="admin">
+      <div className="mx-auto flex max-w-sm flex-col justify-center">
+        <div className="flex items-center gap-2.5">
+          <JktlMark className="size-9" />
+          <div>
+            <div className="font-display text-base font-bold tracking-tight text-ink">
+              JKTL Business
+            </div>
+            <div className="flex items-center gap-1 text-xs font-medium text-ink-muted">
+              <ShieldCheck className="size-3.5" /> Command center
+            </div>
           </div>
         </div>
+
+        <h1 className="mt-10 font-display text-2xl font-bold tracking-tight text-ink">
+          Staff & admin sign in
+        </h1>
+        <p className="mt-1.5 text-sm text-ink-muted">
+          Growth & Gaming staff use their normal JKTL Business credentials.
+          Existing administrators use their admin credentials.
+        </p>
+
+        <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
+          <Field label="Email" htmlFor="admin-email">
+            <Input
+              id="admin-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </Field>
+          <Field label="Password" htmlFor="admin-password">
+            <PasswordInput
+              id="admin-password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </Field>
+          {error ? <p className="text-sm text-danger">{error}</p> : null}
+          <Button
+            type="submit"
+            size="lg"
+            className="mt-1 w-full"
+            disabled={pending}
+          >
+            {pending ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
       </div>
-
-      <h1 className="mt-10 font-display text-2xl font-bold tracking-tight text-ink">Admin sign in</h1>
-      <p className="mt-1.5 text-sm text-ink-muted">Internal access only — not a business account login.</p>
-
-      <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
-        <Field label="Email" htmlFor="admin-email">
-          <Input id="admin-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </Field>
-        <Field label="Password" htmlFor="admin-password">
-          <PasswordInput
-            id="admin-password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </Field>
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
-        <Button type="submit" size="lg" className="mt-1 w-full" disabled={pending}>
-          {pending ? "Signing in…" : "Sign in"}
-        </Button>
-      </form>
-    </div></SignInFrame>
+    </SignInFrame>
   );
 }

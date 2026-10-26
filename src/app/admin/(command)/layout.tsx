@@ -31,7 +31,7 @@ export default async function AdminLayout({
     <OperationsFrame
       name={admin.name}
       role={ROLE_LABEL[admin.role]}
-      nav={navFor(admin.role)}
+      nav={navFor(admin.role, admin.permissions)}
       logout={adminLogoutAction}
     >
       {children}

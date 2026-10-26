@@ -25,18 +25,28 @@ const ADMIN_SESSION_DAYS = 7;
  */
 function mapAdminUser(row: Record<string, unknown>): AdminUser {
   const raw = row.role;
-  const role = raw === undefined || raw === null ? "owner" : normaliseRole(raw as string);
+  const role =
+    raw === undefined || raw === null ? "owner" : normaliseRole(raw as string);
   return {
     id: row.id as string,
     name: (row.name as string) ?? "",
     email: (row.email as string) ?? "",
     role,
     // `disabled_at` is also from migration 027; absent means not disabled.
-    disabled: Boolean(row.disabled_at),
+    disabled: Boolean(row.disabled_at || row.staff_revoked_at),
+    businessUserId: row.business_user_id
+      ? String(row.business_user_id)
+      : undefined,
+    permissions:
+      row.permission_overrides && typeof row.permission_overrides === "object"
+        ? (row.permission_overrides as Record<string, boolean>)
+        : {},
   };
 }
 
 export interface AdminUser {
+  businessUserId?: string;
+  permissions?: Record<string, boolean>;
   id: string;
   name: string;
   email: string;
@@ -47,14 +57,19 @@ export interface AdminUser {
   disabled: boolean;
 }
 
-export async function verifyAdminLogin(email: string, password: string): Promise<AdminUser | null> {
+export async function verifyAdminLogin(
+  email: string,
+  password: string,
+): Promise<AdminUser | null> {
   const sql = getSql();
-  const rows = await sql`SELECT * FROM admin_users WHERE email = ${email.toLowerCase()}`;
+  const rows =
+    await sql`SELECT * FROM admin_users WHERE email = ${email.toLowerCase()}`;
   const row = rows[0];
   // A disabled account cannot sign in, and a row from before migration 027 has no
   // role — `normaliseRole` gives it 'analyst', which is safe for a legacy row only
   // because the migration backfills 'owner' first.
-  if (row?.disabled_at) return null;
+  if (row?.disabled_at || row?.business_user_id || row?.staff_revoked_at)
+    return null;
   if (!row) return null;
 
   const ok = await bcrypt.compare(password, row.password_hash as string);
@@ -63,22 +78,28 @@ export async function verifyAdminLogin(email: string, password: string): Promise
   // Bookkeeping, and deliberately unable to fail the sign-in. This threw for
   // every admin whose database predated migration 027, which meant nobody could
   // sign in at all because a timestamp column was missing.
-  await sql`UPDATE admin_users SET last_login_at = now() WHERE id = ${row.id}`.catch((err) => {
-    console.error("admin-auth: could not record last_login_at:", err);
-  });
+  await sql`UPDATE admin_users SET last_login_at = now() WHERE id = ${row.id}`.catch(
+    (err) => {
+      console.error("admin-auth: could not record last_login_at:", err);
+    },
+  );
   return mapAdminUser(row);
 }
 
 export async function createAdminSession(adminUserId: string): Promise<string> {
   const sql = getSql();
-  const expiresAt = new Date(Date.now() + ADMIN_SESSION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(
+    Date.now() + ADMIN_SESSION_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString();
   const rows = await sql`
     INSERT INTO admin_sessions (admin_user_id, expires_at) VALUES (${adminUserId}, ${expiresAt}) RETURNING id
   `;
   return rows[0].id as string;
 }
 
-export async function validateAdminSession(sessionId: string): Promise<AdminUser | null> {
+export async function validateAdminSession(
+  sessionId: string,
+): Promise<AdminUser | null> {
   const sql = getSql();
   // `au.*` rather than a column list: migration 027 added `role`, and naming it
   // explicitly makes the query fail outright on a database that has not been
@@ -94,7 +115,8 @@ export async function validateAdminSession(sessionId: string): Promise<AdminUser
   if (!row) return null;
   // Disabling an account must end its existing sessions too, not just block new
   // sign-ins. Caught here so a live session cannot outlive the disable.
-  if (row.disabled_at) return null;
+  if (row.disabled_at || row.staff_revoked_at || row.business_user_id)
+    return null;
   return mapAdminUser(row);
 }
 
@@ -126,10 +148,17 @@ export async function listAdminTeam(): Promise<AdminTeamMember[]> {
     id: row.id as string,
     name: (row.name as string) ?? "",
     email: (row.email as string) ?? "",
-    role: row.role === undefined || row.role === null ? "owner" : normaliseRole(row.role as string),
+    role:
+      row.role === undefined || row.role === null
+        ? "owner"
+        : normaliseRole(row.role as string),
     createdAt: new Date(row.created_at as string).toISOString(),
-    lastLoginAt: row.last_login_at ? new Date(row.last_login_at as string).toISOString() : null,
-    disabledAt: row.disabled_at ? new Date(row.disabled_at as string).toISOString() : null,
+    lastLoginAt: row.last_login_at
+      ? new Date(row.last_login_at as string).toISOString()
+      : null,
+    disabledAt: row.disabled_at
+      ? new Date(row.disabled_at as string).toISOString()
+      : null,
   }));
 }
 
@@ -153,7 +182,8 @@ export async function createAdminUser(input: {
   const sql = getSql();
   const email = input.email.trim().toLowerCase();
 
-  const existing = await sql`SELECT id FROM admin_users WHERE email = ${email} LIMIT 1`;
+  const existing =
+    await sql`SELECT id FROM admin_users WHERE email = ${email} LIMIT 1`;
   if (existing[0]) throw new Error(ADMIN_EMAIL_TAKEN);
 
   const passwordHash = await bcrypt.hash(input.password, 10);
@@ -175,7 +205,11 @@ export async function createAdminUser(input: {
  * An owner cannot disable themselves: locking the last owner out of the command
  * centre is not recoverable from inside the app.
  */
-export async function setAdminDisabled(adminUserId: string, disabled: boolean, actingAdminId: string): Promise<void> {
+export async function setAdminDisabled(
+  adminUserId: string,
+  disabled: boolean,
+  actingAdminId: string,
+): Promise<void> {
   if (adminUserId === actingAdminId && disabled) {
     throw new Error("You cannot disable your own account.");
   }
@@ -184,7 +218,8 @@ export async function setAdminDisabled(adminUserId: string, disabled: boolean, a
     UPDATE admin_users SET disabled_at = ${disabled ? new Date().toISOString() : null}
     WHERE id = ${adminUserId}
   `;
-  if (disabled) await sql`DELETE FROM admin_sessions WHERE admin_user_id = ${adminUserId}`;
+  if (disabled)
+    await sql`DELETE FROM admin_sessions WHERE admin_user_id = ${adminUserId}`;
 }
 
 /** Refuses to remove the last enabled owner — the command centre would become
@@ -205,11 +240,21 @@ export async function countEnabledOwners(): Promise<number> {
  * never emailed — and every existing session is destroyed, because a password
  * change that leaves the old session alive has not changed anything.
  */
-export async function setAdminPassword(adminUserId: string, newPassword: string, actingAdminId: string): Promise<void> {
+export async function setAdminPassword(
+  adminUserId: string,
+  newPassword: string,
+  actingAdminId: string,
+): Promise<void> {
   if (adminUserId === actingAdminId) {
     throw new Error("Use your own account settings to change your password.");
   }
   const sql = getSql();
+  const linked =
+    await sql`SELECT business_user_id FROM admin_users WHERE id=${adminUserId}`;
+  if (linked[0]?.business_user_id)
+    throw Error(
+      "This staff member uses their Business password. Use the Business password reset process.",
+    );
   const passwordHash = await bcrypt.hash(newPassword, 10);
   await sql`UPDATE admin_users SET password_hash = ${passwordHash} WHERE id = ${adminUserId}`;
   await sql`DELETE FROM admin_sessions WHERE admin_user_id = ${adminUserId}`;
@@ -225,19 +270,38 @@ export async function setAdminPassword(adminUserId: string, newPassword: string,
  * Records they created (broadcasts, payouts) are attributed by foreign key with
  * `ON DELETE SET NULL`, so the audit trail survives the account.
  */
-export async function deleteAdminUser(adminUserId: string, actingAdminId: string): Promise<void> {
-  if (adminUserId === actingAdminId) throw new Error("You cannot delete your own account.");
+export async function deleteAdminUser(
+  adminUserId: string,
+  actingAdminId: string,
+): Promise<void> {
+  if (adminUserId === actingAdminId)
+    throw new Error("You cannot delete your own account.");
   const sql = getSql();
 
-  const rows = await sql`SELECT role, disabled_at FROM admin_users WHERE id = ${adminUserId}`;
+  const rows =
+    await sql`SELECT role, disabled_at FROM admin_users WHERE id = ${adminUserId}`;
   const target = rows[0];
   if (!target) return;
 
   if (target.role === "owner" && !target.disabled_at) {
     const owners = await countEnabledOwners();
-    if (owners <= 1) throw new Error("That's the last owner. Promote someone else first, or you'd lock yourself out.");
+    if (owners <= 1)
+      throw new Error(
+        "That's the last owner. Promote someone else first, or you'd lock yourself out.",
+      );
   }
 
   await sql`DELETE FROM admin_sessions WHERE admin_user_id = ${adminUserId}`;
   await sql`DELETE FROM admin_users WHERE id = ${adminUserId}`;
+}
+
+/** No email matching or second password: this profile is assigned by an Owner. */
+export async function linkedBusinessStaff(
+  userId: string,
+): Promise<AdminUser | null> {
+  const rows = await getSql().query(
+    "SELECT a.id,a.name,a.email,a.role,a.disabled_at,a.business_user_id,a.permission_overrides,a.staff_revoked_at FROM admin_users a JOIN users u ON u.id=a.business_user_id WHERE a.business_user_id=$1 AND a.role='growth_gaming_lead' AND a.disabled_at IS NULL AND a.staff_revoked_at IS NULL",
+    [userId],
+  );
+  return rows[0] ? mapAdminUser(rows[0]) : null;
 }

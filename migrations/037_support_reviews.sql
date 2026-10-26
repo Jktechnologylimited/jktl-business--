@@ -1,5 +1,5 @@
 ALTER TABLE admin_users DROP CONSTRAINT IF EXISTS admin_users_role_check;
-ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_check CHECK(role IN('owner','affiliate_manager','analyst','editor','support'));
+ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_check CHECK(role IN('owner','affiliate_manager','analyst','editor','support','growth_gaming_lead'));
 CREATE TABLE IF NOT EXISTS support_cases(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
  requester_id uuid NOT NULL REFERENCES users(id), subject text NOT NULL CHECK(length(subject) BETWEEN 3 AND 160),

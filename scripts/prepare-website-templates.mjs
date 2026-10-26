@@ -28,6 +28,7 @@ if (!url) {
       "044_partner_product_requests.sql",
       "045_distribution_referrals.sql",
       "046_distribution_multi_role.sql",
+      "047_growth_gaming_staff.sql",
     ].map((name) =>
       readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
     ),
@@ -39,6 +40,6 @@ if (!url) {
     [],
   );
   console.log(
-    "Website template schema: additive migrations 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045 and 046 applied.",
+    "Website template schema: additive migrations 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046 and 047 applied.",
   );
 }

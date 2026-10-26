@@ -14,15 +14,33 @@
  *                        reports that let them do it without asking.
  *   analyst            — read-only insight. No state-changing action anywhere.
  *
- * Roles rather than customer-configurable permission flags: a permission
- * matrix nobody maintains is worse than a role that is occasionally too coarse.
+ * Existing operational roles retain their capabilities. Growth staff may have
+ * supported workspace permissions individually enabled or revoked by an Owner.
  */
 
 export type AdminRole =
-  "owner" | "affiliate_manager" | "analyst" | "editor" | "support";
+  | "owner"
+  | "affiliate_manager"
+  | "analyst"
+  | "editor"
+  | "support"
+  | "growth_gaming_lead";
 
+export const GROWTH_PERMISSIONS = [
+  "growth_marketing",
+  "growth_publish_approved",
+  "growth_leads",
+  "growth_applications",
+  "growth_resources",
+  "growth_games",
+  "growth_community",
+  "growth_analytics",
+] as const;
+export type GrowthPermission = (typeof GROWTH_PERMISSIONS)[number];
 /** A capability, not a page. Pages are composed from these. */
 export type AdminCapability =
+  | GrowthPermission
+  | "growth_workspace"
   | "manage_support"
   | "publish_reviews"
   | "manage_email"
@@ -41,6 +59,7 @@ export type AdminCapability =
   | "run_daily_job";
 
 const MATRIX: Record<AdminRole, AdminCapability[]> = {
+  growth_gaming_lead: ["growth_workspace", ...GROWTH_PERMISSIONS],
   support: ["manage_support"],
   owner: [
     "manage_support",
@@ -75,13 +94,28 @@ const MATRIX: Record<AdminRole, AdminCapability[]> = {
   ],
 };
 
-export function can(role: AdminRole, capability: AdminCapability): boolean {
+export function can(
+  role: AdminRole,
+  capability: AdminCapability,
+  overrides: Record<string, boolean> = {},
+): boolean {
+  if (role === "owner") return true;
+  if (
+    role === "growth_gaming_lead" &&
+    (GROWTH_PERMISSIONS as readonly string[]).includes(capability)
+  ) {
+    const override = overrides[capability];
+    return override === undefined
+      ? MATRIX[role].includes(capability)
+      : override === true;
+  }
   return MATRIX[role]?.includes(capability) ?? false;
 }
 
 /** Unknown roles get nothing. A role typo in the database must fail closed. */
 export function normaliseRole(role: string | null | undefined): AdminRole {
-  return role === "owner" ||
+  return role === "growth_gaming_lead" ||
+    role === "owner" ||
     role === "affiliate_manager" ||
     role === "analyst" ||
     role === "editor" ||
@@ -91,6 +125,7 @@ export function normaliseRole(role: string | null | undefined): AdminRole {
 }
 
 export const ROLE_LABEL: Record<AdminRole, string> = {
+  growth_gaming_lead: "Growth & Gaming Lead",
   support: "Support",
   owner: "Owner",
   editor: "Editor",
@@ -99,6 +134,8 @@ export const ROLE_LABEL: Record<AdminRole, string> = {
 };
 
 export const ROLE_DESCRIPTION: Record<AdminRole, string> = {
+  growth_gaming_lead:
+    "Marketing execution, customer acquisition, affiliate and partner growth, community engagement, and approved JKTL Games content. No financial, infrastructure or staff-management authority.",
   support:
     "Help customers through the support queue. Limited, customer-authorized website assistance; sensitive requests go to an owner. No payments, private customer records, passwords or team access.",
   editor:
@@ -134,8 +171,21 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
- {href:"/admin/partner-support",label:"Partner support",capability:"manage_support"},
-  { href: "/admin/distribution", label: "Distribution", capability: "manage_affiliates" },
+  {
+    href: "/admin/growth",
+    label: "Growth & Gaming",
+    capability: "growth_workspace",
+  },
+  {
+    href: "/admin/partner-support",
+    label: "Partner support",
+    capability: "manage_support",
+  },
+  {
+    href: "/admin/distribution",
+    label: "Distribution",
+    capability: "manage_affiliates",
+  },
   {
     href: "/admin/support",
     label: "Support inbox",
@@ -203,9 +253,12 @@ export const ADMIN_NAV: AdminNavItem[] = [
     label: "Website refunds",
     capability: "manage_team",
   },
-  { href: "/admin/team", label: "Team", capability: "manage_team" },
+  { href: "/admin/team", label: "Staff management", capability: "manage_team" },
 ];
 
-export function navFor(role: AdminRole): AdminNavItem[] {
-  return ADMIN_NAV.filter((item) => can(role, item.capability));
+export function navFor(
+  role: AdminRole,
+  overrides: Record<string, boolean> = {},
+): AdminNavItem[] {
+  return ADMIN_NAV.filter((item) => can(role, item.capability, overrides));
 }

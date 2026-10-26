@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { flushProgramNotices } from "@/lib/distribution/notifications";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { signInGrowthStaff } from "@/lib/growth/auth";
 import { verifyAdminLogin } from "@/lib/db/admin-auth";
 import {
   startAdminSession,
@@ -78,6 +79,10 @@ export async function adminLoginAction(
 ): Promise<ActionResult<{ path: string }>> {
   try {
     const admin = await verifyAdminLogin(email, password);
+    if (!admin) {
+      const path = await signInGrowthStaff(email, password);
+      if (path) return { ok: true, data: { path } };
+    }
     if (!admin)
       return {
         ok: false,
@@ -476,6 +481,12 @@ export async function createAdminTeamMemberAction(input: {
 }): Promise<ActionResult<AdminUser>> {
   try {
     const acting = await requireAdminCapability("manage_team");
+    if (input.role === "growth_gaming_lead")
+      return {
+        ok: false,
+        error:
+          "Assign Growth & Gaming Lead to an existing Business account in Staff management.",
+      };
     if (!input.name.trim()) return { ok: false, error: "Enter their name." };
     if (!input.email.includes("@"))
       return { ok: false, error: "Enter a valid email address." };

@@ -1,4 +1,5 @@
 "use client";
+import { growthDestinationAction } from "@/lib/actions/growth-auth-actions";
 import { emailIntent, emailDestination } from "@/lib/product-intent";
 import { gameReturnUrl } from "@/lib/game-routing";
 import { SignInFrame } from "@/components/auth/SignInFrame";
@@ -86,7 +87,11 @@ function LoginForm() {
       router.push("/play/tycoon");
       return;
     }
-    router.push(nextTemplate ? templateEditorPath(nextTemplate) : "/business");
+    const staffPath = nextTemplate ? null : await growthDestinationAction();
+    router.push(
+      staffPath ||
+        (nextTemplate ? templateEditorPath(nextTemplate) : "/business"),
+    );
   }
 
   useEffect(() => {
