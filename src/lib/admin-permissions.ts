@@ -22,9 +22,15 @@ export type AdminRole =
   | "owner"
   | "affiliate_manager"
   | "analyst"
+  | "writer"
   | "editor"
   | "support"
   | "growth_gaming_lead";
+
+export const EDITORIAL_PERMISSIONS = [
+  "publish_releases",
+  "publish_sensitive_updates",
+] as const;
 
 export const GROWTH_PERMISSIONS = [
   "growth_marketing",
@@ -39,6 +45,8 @@ export const GROWTH_PERMISSIONS = [
 export type GrowthPermission = (typeof GROWTH_PERMISSIONS)[number];
 /** A capability, not a page. Pages are composed from these. */
 export type AdminCapability =
+  | (typeof EDITORIAL_PERMISSIONS)[number]
+  | "review_content"
   | GrowthPermission
   | "growth_workspace"
   | "manage_communications"
@@ -80,7 +88,13 @@ const MATRIX: Record<AdminRole, AdminCapability[]> = {
     "manage_team",
     "run_daily_job",
   ],
-  editor: ["manage_content", "manage_features", "publish_reviews"],
+  writer: ["manage_content"],
+  editor: [
+    "manage_content",
+    "review_content",
+    "manage_features",
+    "publish_reviews",
+  ],
   affiliate_manager: [
     // The point of the role: approve partners, pay them, and see the numbers
     // needed to do both without asking the owner.
@@ -102,6 +116,11 @@ export function can(
 ): boolean {
   if (role === "owner") return true;
   if (
+    role === "editor" &&
+    (EDITORIAL_PERMISSIONS as readonly string[]).includes(capability)
+  )
+    return overrides[capability] === true;
+  if (
     role === "growth_gaming_lead" &&
     (GROWTH_PERMISSIONS as readonly string[]).includes(capability)
   ) {
@@ -119,6 +138,7 @@ export function normaliseRole(role: string | null | undefined): AdminRole {
     role === "owner" ||
     role === "affiliate_manager" ||
     role === "analyst" ||
+    role === "writer" ||
     role === "editor" ||
     role === "support"
     ? role
@@ -129,6 +149,7 @@ export const ROLE_LABEL: Record<AdminRole, string> = {
   growth_gaming_lead: "Growth & Gaming Lead",
   support: "Support",
   owner: "Owner",
+  writer: "Writer",
   editor: "Editor",
   affiliate_manager: "Affiliate manager",
   analyst: "Analyst (read-only)",
@@ -139,8 +160,10 @@ export const ROLE_DESCRIPTION: Record<AdminRole, string> = {
     "Marketing execution, customer acquisition, affiliate and partner growth, community engagement, and approved JKTL Games content. No financial, infrastructure or team management authority.",
   support:
     "Help customers through the support queue. Limited, customer-authorized website assistance; sensitive requests go to an owner. No payments, private customer records, passwords or team access.",
+  writer:
+    "Create and submit your own Columns, Blog, Releases and Updates. Manage your author profile. No publishing or unrelated team access.",
   editor:
-    "Create, edit, publish and unpublish Blog and Releases & Updates, and manage NEW badges. No access to money or business accounts.",
+    "Review assigned content and publish approved Blog and Columns. Official releases and sensitive updates require extra permission and Owner authorization.",
   owner:
     "Everything: businesses, broadcasts, the lead engine, money and team accounts.",
   affiliate_manager:
@@ -224,7 +247,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   },
   {
     href: "/admin/content",
-    label: "Blog & updates",
+    label: "Editorial",
     capability: "manage_content",
   },
   { href: "/admin/insights", label: "Insights", capability: "view_insights" },

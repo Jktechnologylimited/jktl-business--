@@ -97,7 +97,7 @@ export async function adminLoginAction(
             ? "/admin/growth"
             : admin.role === "support"
               ? "/admin/support"
-              : admin.role === "editor"
+              : admin.role === "editor" || admin.role === "writer"
                 ? "/admin/content"
                 : "/admin/insights",
       },

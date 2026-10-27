@@ -892,3 +892,36 @@ export async function sendMailPreview(
     return { ok: false, error: "Preview delivery unavailable" };
   }
 }
+
+/** Editorial events reuse the shared transactional renderer and provider. No drafts in email. */
+export async function sendEditorialNotice(
+  to: string,
+  event: string,
+  title: string,
+  key: string,
+) {
+  const label = event.replaceAll("_", " ");
+  return send(
+    to,
+    `JKTL Editorial: ${label}`,
+    `<p>${escapeHtml(title)}</p><p>Editorial status: <strong>${escapeHtml(label)}</strong>.</p>${mailAction("Open Editorial", "https://business.jktl.com.ng/admin/content")}`,
+    `${title}\nEditorial status: ${label}.\nOpen Editorial: https://business.jktl.com.ng/admin/content`,
+    { category: "internal" },
+    "editorial-" + key,
+  );
+}
+export async function sendEditorialInvitation(
+  to: string,
+  name: string,
+  url: string,
+  key: string,
+) {
+  return send(
+    to,
+    "You’re invited to the JKTL Editorial Team",
+    `<p>Hi ${escapeHtml(name)},</p><p>You have been invited to the JKTL Editorial Team. Set your own password to accept. This link expires in 7 days.</p>${mailAction("Accept invitation", url)}`,
+    `Hi ${name},\nJoin the JKTL Editorial Team: ${url}\nThis link expires in 7 days.`,
+    { category: "internal" },
+    "editorial-invite-" + key,
+  );
+}

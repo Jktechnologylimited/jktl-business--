@@ -1,6 +1,6 @@
 -- Extend existing staff records; authentication remains on the linked Business user.
 ALTER TABLE admin_users DROP CONSTRAINT IF EXISTS admin_users_role_check;
-ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_check CHECK(role IN('owner','affiliate_manager','analyst','editor','support','growth_gaming_lead'));
+ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_check CHECK(role IN('owner','affiliate_manager','analyst','writer','editor','support','growth_gaming_lead'));
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS business_user_id uuid UNIQUE REFERENCES users(id);
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS permission_overrides jsonb NOT NULL DEFAULT '{}';
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS staff_assigned_at timestamptz;

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { PUBLICATION_KINDS, type PublicationKind } from "@/lib/publications";
 import { publishedArticles } from "@/lib/db/publications";
 export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const kind = req.nextUrl.searchParams.get("kind");
   const slug = req.nextUrl.searchParams.get("slug") ?? undefined;
   if (
-    (kind !== "blog" && kind !== "release") ||
+    !PUBLICATION_KINDS.includes(kind as PublicationKind) ||
     (slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))
   )
     return NextResponse.json(
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
       { status: 400 },
     );
   try {
-    const articles = await publishedArticles(kind, slug);
+    const articles = await publishedArticles(kind as PublicationKind, slug);
     if (slug && !articles.length)
       return NextResponse.json(
         { error: "Not found." },

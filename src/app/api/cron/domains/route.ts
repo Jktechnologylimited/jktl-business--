@@ -1,3 +1,4 @@
+import { runEditorialMaintenance } from "@/lib/editorial-operations";
 import {
   monitorAffiliateActivity,
   remindAffiliateInvitations,
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest) {
       cleanReferralVisits(),
       monitorAffiliateActivity(),
       remindAffiliateInvitations(),
+      runEditorialMaintenance(),
     ]);
     // Queue producers finish before the shared notice delivery pass.
     results.push(...(await Promise.allSettled([flushProgramNotices()])));

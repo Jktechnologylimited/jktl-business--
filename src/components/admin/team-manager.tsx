@@ -3,6 +3,10 @@
 import { ActionForm } from "@/components/distribution/action-form";
 import { configureGrowthStaffAction } from "@/lib/actions/growth-staff-actions";
 import { can, GROWTH_PERMISSIONS } from "@/lib/admin-permissions";
+import {
+  EditorialPermissions,
+  EditorialInvite,
+} from "./editorial-team-controls";
 import { useState } from "react";
 import {
   CheckCircle2,
@@ -157,6 +161,7 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <EditorialInvite />
       <section className="rounded-2xl border border-border bg-paper p-4">
         <h2 className="font-display text-sm font-semibold text-ink">
           Current accounts
@@ -227,6 +232,9 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
                     : "Delete"}
                 </Button>
               </div>
+              {["writer", "editor"].includes(member.role) && (
+                <EditorialPermissions member={member} />
+              )}
               {member.role === "growth_gaming_lead" && (
                 <details className="w-full">
                   <summary className="cursor-pointer text-sm font-semibold text-ink">
@@ -382,6 +390,7 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
                 {ROLE_LABEL.affiliate_manager}
               </option>
               <option value="support">{ROLE_LABEL.support}</option>
+              <option value="writer">{ROLE_LABEL.writer}</option>
               <option value="editor">{ROLE_LABEL.editor}</option>
               <option value="analyst">{ROLE_LABEL.analyst}</option>
               <option value="owner">{ROLE_LABEL.owner}</option>
