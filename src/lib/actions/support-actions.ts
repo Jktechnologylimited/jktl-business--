@@ -288,7 +288,7 @@ async function supportDeviceActionCore(subscription: unknown, remove = false) {
     );
   else
     await query(
-      `INSERT INTO support_push_subscriptions(endpoint,admin_id,session_id,p256dh,auth) SELECT $1,$2,id,$4,$5 FROM admin_sessions WHERE id=$3 AND admin_user_id=$2 AND expires_at>now() ON CONFLICT(endpoint) DO UPDATE SET admin_id=excluded.admin_id,session_id=excluded.session_id,p256dh=excluded.p256dh,auth=excluded.auth`,
+      `INSERT INTO support_push_subscriptions(endpoint,admin_id,session_id,p256dh,auth) SELECT $1,$2,id,$4,$5 FROM admin_sessions WHERE id=$3 AND admin_user_id=$2 AND expires_at>now() ON CONFLICT(endpoint) DO UPDATE SET admin_id=excluded.admin_id,business_session_id=NULL,session_id=excluded.session_id,p256dh=excluded.p256dh,auth=excluded.auth`,
       [sub.endpoint, a.id, session, sub.p256dh, sub.auth],
     );
   return { ok: true as const };

@@ -18,8 +18,8 @@ export async function processPartnerNotices() {
     `INSERT INTO partner_notice_outbox(event_key,ticket_id,audience) SELECT 'overdue-'||t.id||'-'||extract(epoch FROM t.updated_at)::text,t.id,'STAFF' FROM partner_tickets t CROSS JOIN partner_support_settings s WHERE t.status IN('OPEN','ASSIGNED','IN_PROGRESS') AND t.updated_at<now()-make_interval(hours=>s.response_hours) ON CONFLICT DO NOTHING`,
   );
   const events = await query(
-    `WITH picked AS(SELECT id FROM partner_notice_outbox WHERE delivered_at IS NULL AND attempts<10 AND($1 OR audience='PARTNER') AND(lease_until IS NULL OR lease_until<now()) ORDER BY id LIMIT 15 FOR UPDATE SKIP LOCKED) UPDATE partner_notice_outbox o SET attempts=attempts+1,lease_until=now()+interval '5 minutes' FROM picked WHERE o.id=picked.id RETURNING o.*`,
-    [push],
+    `WITH picked AS(SELECT id FROM partner_notice_outbox WHERE delivered_at IS NULL AND attempts<10 AND(($1 AND push_sent_at IS NULL) OR($2 AND email_sent_at IS NULL)) AND(lease_until IS NULL OR lease_until<now()) ORDER BY id LIMIT 15 FOR UPDATE SKIP LOCKED) UPDATE partner_notice_outbox o SET attempts=attempts+1,lease_until=now()+interval '5 minutes' FROM picked WHERE o.id=picked.id RETURNING o.*`,
+    [push, email],
   );
   let delivered = 0,
     failed = 0;
@@ -27,93 +27,141 @@ export async function processPartnerNotices() {
     try {
       const t = (
         await query(
-          "SELECT t.*,p.email,p.status AS partner_status FROM partner_tickets t JOIN affiliates p ON p.id=t.partner_id WHERE t.id=$1",
+          "SELECT t.*,p.email,p.status AS partner_status,p.programme FROM partner_tickets t JOIN affiliates p ON p.id=t.partner_id WHERE t.id=$1",
           [e.ticket_id],
         )
       )[0];
       if (!t) throw Error("Ticket unavailable");
-      if (e.audience === "PARTNER" && t.partner_status === "active" && email) {
-        const reply = !t.sensitive
-          ? (
-              await query(
-                "SELECT m.body,COALESCE(a.name,'JKTL Support Team') AS agent FROM partner_ticket_messages m LEFT JOIN admin_users a ON a.id::text=m.actor_id WHERE m.ticket_id=$1 AND 'message-'||m.id=$2 AND m.kind='STAFF'",
-                [t.id, e.event_key],
-              )
-            )[0]
-          : null;
-        const r = await sendPartnerNoticeEmail({
-          to: String(t.email),
-          key: "partner-ticket-" + e.id,
-          path: "/partners/support#ticket-" + t.id,
-          category: "support",
-          ...(reply
-            ? {
-                ticket: {
-                  subject: String(t.subject),
-                  agent: String(reply.agent),
-                  reply: String(reply.body),
-                  reference: String(t.id),
-                },
-              }
-            : {}),
-          subject: "JKTL Partner support update",
-          detail:
-            "There is an update in your JKTL Partner support conversation. Sign in to review it securely.",
-        });
-        if (!r.ok) throw Error("Email retry required");
-      }
-      if (push) {
-        const subscriptions =
-          e.audience === "PARTNER"
-            ? await query(
-                `SELECT s.endpoint,s.p256dh,s.auth FROM partner_push_subscriptions s JOIN affiliate_sessions a ON a.id=s.session_id JOIN affiliates p ON p.id=s.affiliate_id WHERE p.id=$1 AND a.affiliate_id=p.id AND a.expires_at>now() AND p.status='active' AND p.programme='partner' AND p.partner_terms_confirmed=true`,
-                [t.partner_id],
-              )
-            : await query(
-                `SELECT s.endpoint,s.p256dh,s.auth FROM support_push_subscriptions s JOIN admin_sessions x ON x.id=s.session_id AND x.admin_user_id=s.admin_id JOIN admin_users a ON a.id=s.admin_id WHERE x.expires_at>now() AND a.disabled_at IS NULL AND(a.role='owner' OR(a.role='support' AND $1=false AND($2::uuid IS NULL OR a.id=$2)))`,
-                [t.sensitive, t.assigned_to],
-              );
-        for (const s of subscriptions)
-          try {
-            await webpush.sendNotification(
-              {
-                endpoint: String(s.endpoint),
-                keys: { p256dh: String(s.p256dh), auth: String(s.auth) },
-              },
-              JSON.stringify({
-                title: "JKTL Partners",
-                body: "A support conversation needs attention.",
-                icon: "/icon-192.png",
-                url:
-                  e.audience === "PARTNER"
-                    ? "/partners/support"
-                    : "/admin/partner-support",
-              }),
-            );
-          } catch (err) {
-            if (
-              [404, 410].includes(
-                Number((err as { statusCode?: number }).statusCode),
-              )
-            )
-              await query(
-                "DELETE FROM " +
-                  (e.audience === "PARTNER"
-                    ? "partner_push_subscriptions"
-                    : "support_push_subscriptions") +
-                  " WHERE endpoint=$1",
-                [s.endpoint],
-              );
-            else throw err;
+      let channelFailed = false;
+      try {
+        if (e.audience === "PARTNER" && email && !e.email_sent_at) {
+          const reply = !t.sensitive
+            ? (
+                await query(
+                  "SELECT m.body,COALESCE(a.name,'JKTL Support Team') AS agent FROM partner_ticket_messages m LEFT JOIN admin_users a ON a.id::text=m.actor_id WHERE m.ticket_id=$1 AND 'message-'||m.id=$2 AND m.kind='STAFF'",
+                  [t.id, e.event_key],
+                )
+              )[0]
+            : null;
+          const r = await sendPartnerNoticeEmail({
+            to: String(t.email),
+            key: "partner-ticket-" + e.id,
+            path:
+              (t.programme === "affiliate"
+                ? "/affiliates/support"
+                : "/partners/support") +
+              "#ticket-" +
+              t.id,
+            category: "support",
+            ...(reply
+              ? {
+                  ticket: {
+                    subject: String(t.subject),
+                    agent: String(reply.agent),
+                    reply: String(reply.body),
+                    reference: String(t.id),
+                  },
+                }
+              : {}),
+            subject: "JKTL support update",
+            detail:
+              "There is an update in your JKTL support conversation. Sign in to review it securely.",
+          });
+          if (!r.ok) throw Error("Email retry required");
+          await query(
+            "UPDATE partner_notice_outbox SET email_sent_at=now() WHERE id=$1",
+            [e.id],
+          );
+        }
+        if (e.audience === "STAFF" && email && !e.email_sent_at) {
+          const recipients = await query(
+            `SELECT email FROM admin_users a WHERE a.disabled_at IS NULL AND(a.role='owner' OR(a.role IN('support','affiliate_manager','growth_gaming_lead') AND $1=false AND($2::uuid IS NULL OR a.id=$2) AND(a.role='support' OR $3='affiliate') AND(a.role<>'growth_gaming_lead' OR a.staff_revoked_at IS NULL AND COALESCE((a.permission_overrides->>'growth_community')::boolean,true))))`,
+            [t.sensitive, t.assigned_to, t.programme],
+          );
+          if (!recipients.length) throw Error("No authorized Team recipients");
+          for (const recipient of recipients) {
+            const r = await sendPartnerNoticeEmail({
+              to: String(recipient.email),
+              subject: "JKTL support conversation needs attention",
+              detail:
+                "A programme support conversation needs authorized review. Open your secure Team support queue.",
+              path: "/admin/partner-support",
+              key:
+                "programme-ticket-team-" + e.id + "-" + String(recipient.email),
+              category: "internal",
+            });
+            if (!r.ok) throw Error("Team email retry required");
           }
+          await query(
+            "UPDATE partner_notice_outbox SET email_sent_at=now() WHERE id=$1",
+            [e.id],
+          );
+        }
+      } catch {
+        channelFailed = true;
       }
-      // Staff-only events require push configuration; do not discard them when only email is set.
-      if (e.audience === "STAFF" && !push) continue;
-      await query(
-        "UPDATE partner_notice_outbox SET delivered_at=now(),lease_until=NULL WHERE id=$1",
+      try {
+        if (push && !e.push_sent_at) {
+          const subscriptions =
+            e.audience === "PARTNER"
+              ? await query(
+                  `SELECT s.endpoint,s.p256dh,s.auth FROM partner_push_subscriptions s JOIN affiliate_sessions a ON a.id=s.session_id JOIN affiliates p ON p.id=s.affiliate_id WHERE p.id=$1 AND a.affiliate_id=p.id AND a.expires_at>now() AND p.status='active' AND (p.programme='affiliate' OR p.programme='partner' AND p.partner_terms_confirmed=true)`,
+                  [t.partner_id],
+                )
+              : await query(
+                  `SELECT s.endpoint,s.p256dh,s.auth FROM support_push_subscriptions s JOIN admin_users a ON a.id=s.admin_id LEFT JOIN admin_sessions x ON x.id=s.session_id AND x.admin_user_id=s.admin_id LEFT JOIN sessions bs ON bs.id=s.business_session_id AND bs.user_id=a.business_user_id WHERE (x.expires_at>now() OR bs.expires_at>now() AND a.role='growth_gaming_lead' AND a.staff_revoked_at IS NULL) AND a.disabled_at IS NULL AND(a.role='owner' OR(a.role IN('support','affiliate_manager','growth_gaming_lead') AND (a.role='support' OR $3='affiliate') AND(a.role<>'growth_gaming_lead' OR a.staff_revoked_at IS NULL AND COALESCE((a.permission_overrides->>'growth_community')::boolean,true)) AND $1=false AND($2::uuid IS NULL OR a.id=$2)))`,
+                  [t.sensitive, t.assigned_to, t.programme],
+                );
+          for (const s of subscriptions)
+            try {
+              await webpush.sendNotification(
+                {
+                  endpoint: String(s.endpoint),
+                  keys: { p256dh: String(s.p256dh), auth: String(s.auth) },
+                },
+                JSON.stringify({
+                  title: "JKTL Support",
+                  body: "A support conversation needs attention.",
+                  icon: "/icon-192.png",
+                  url:
+                    e.audience === "PARTNER"
+                      ? t.programme === "affiliate"
+                        ? "/affiliates/support"
+                        : "/partners/support"
+                      : "/admin/partner-support",
+                }),
+              );
+            } catch (err) {
+              if (
+                [404, 410].includes(
+                  Number((err as { statusCode?: number }).statusCode),
+                )
+              )
+                await query(
+                  "DELETE FROM " +
+                    (e.audience === "PARTNER"
+                      ? "partner_push_subscriptions"
+                      : "support_push_subscriptions") +
+                    " WHERE endpoint=$1",
+                  [s.endpoint],
+                );
+              else throw err;
+            }
+        }
+        if (push && !e.push_sent_at)
+          await query(
+            "UPDATE partner_notice_outbox SET push_sent_at=now() WHERE id=$1",
+            [e.id],
+          );
+      } catch {
+        channelFailed = true;
+      }
+      if (channelFailed) throw Error("Notification channel retry required");
+      const completed = await query(
+        "UPDATE partner_notice_outbox SET delivered_at=CASE WHEN email_sent_at IS NOT NULL AND push_sent_at IS NOT NULL THEN now() ELSE NULL END,lease_until=NULL WHERE id=$1 RETURNING delivered_at",
         [e.id],
       );
-      delivered++;
+      if (completed[0]?.delivered_at) delivered++;
     } catch {
       failed++;
     }

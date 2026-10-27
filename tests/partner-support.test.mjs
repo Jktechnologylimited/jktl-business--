@@ -11,7 +11,7 @@ test("partner ticket history enforces assignment and owner escalation, including
   const db = new PGlite();
   try {
     await db.exec(
-      `CREATE TABLE partner_tickets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),partner_id uuid,workspace_id uuid,subject text,category text,priority text,sensitive boolean,status text DEFAULT 'OPEN',assigned_to uuid,updated_at timestamptz DEFAULT now());CREATE TABLE partner_ticket_messages(id bigserial,ticket_id uuid,actor_id text,kind text,body text);`,
+      `CREATE TABLE affiliates(id uuid PRIMARY KEY,programme text);INSERT INTO affiliates VALUES('${partner}','partner');CREATE TABLE partner_tickets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),partner_id uuid,workspace_id uuid,subject text,category text,priority text,sensitive boolean,status text DEFAULT 'OPEN',assigned_to uuid,updated_at timestamptz DEFAULT now());CREATE TABLE partner_ticket_messages(id bigserial,ticket_id uuid,actor_id text,kind text,body text);`,
     );
     let admin = { id: agent, role: "support" };
     const query = async (s, p = []) => (await db.query(s, p)).rows;
@@ -22,8 +22,11 @@ test("partner ticket history enforces assignment and owner escalation, including
       },
       "@/lib/custom/service": { query },
       "@/lib/partners/access": {
-        approvedPartner: async () => ({ id: partner }),
+        approvedProgramme: async () => ({ id: partner }),
         workspace: async () => {},
+      },
+      "@/lib/partners/support-access": {
+        programmeSupportAgent: async () => admin,
       },
       "@/lib/admin-session": { requireAdminCapability: async () => admin },
       "@/lib/support/model": { sensitive },
@@ -97,6 +100,27 @@ test("partner ticket history enforces assignment and owner escalation, including
       (await query("SELECT * FROM partner_tickets WHERE category='Billing'"))[0]
         .sensitive,
     );
+    // Growth can answer routine Affiliate tickets, but cannot enter Partner
+    // client cases or sensitive financial conversations.
+    f.set("category", "General Assistance");
+    await a.createPartnerTicketAction(f);
+    const routine = (
+      await query(
+        "SELECT id FROM partner_tickets WHERE sensitive=false ORDER BY updated_at DESC LIMIT 1",
+      )
+    )[0].id;
+    r.set("id", routine);
+    r.delete("internal");
+    admin = { id: agent, role: "growth_gaming_lead" };
+    await assert.rejects(a.staffPartnerTicketAction(r));
+    await query("UPDATE affiliates SET programme='affiliate' WHERE id=$1", [
+      partner,
+    ]);
+    await a.staffPartnerTicketAction(r);
+    await query("UPDATE partner_tickets SET sensitive=true WHERE id=$1", [
+      routine,
+    ]);
+    await assert.rejects(a.staffPartnerTicketAction(r));
   } finally {
     await db.close();
   }

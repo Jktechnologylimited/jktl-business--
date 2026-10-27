@@ -121,6 +121,9 @@ test("Support permissions, handoff, customer consent, reviews and push use actua
   );
   await db.exec(migration);
   await db.exec(migration);
+  await db.exec(
+    "ALTER TABLE support_push_subscriptions ADD COLUMN business_session_id uuid",
+  );
   let session = { organizationId: org, userId: user },
     admin = { id: agent, role: "support" },
     ai = false,

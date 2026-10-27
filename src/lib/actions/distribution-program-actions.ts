@@ -116,26 +116,74 @@ export async function manageProgramApplicationAction(f: FormData) {
 }
 export async function saveDistributionAssetAction(f: FormData) {
   const a = await requireAdminCapability("manage_team");
+  await rate("resource-save:" + a.id, 30);
   const title = String(f.get("title") || "").trim(),
     description = String(f.get("description") || "").trim(),
     url = new URL(String(f.get("url"))),
-    audience = String(f.get("audience"));
+    audience = String(f.get("audience")),
+    kind = String(f.get("kind") || "LINK"),
+    product = String(f.get("product") || "general"),
+    copy = String(f.get("copy") || "").trim(),
+    id = String(f.get("id") || "");
   if (
     title.length < 3 ||
     title.length > 160 ||
     description.length > 2000 ||
+    url.href.length > 2000 ||
     url.protocol !== "https:" ||
     url.username ||
     url.password ||
     !["AFFILIATE", "PARTNER", "BOTH"].includes(audience) ||
+    !["LINK", "GRAPHIC", "SOCIAL", "DM", "EMAIL", "FOLLOW_UP"].includes(kind) ||
+    ![
+      "general",
+      "website-builder",
+      "templates",
+      "domains",
+      "business-email",
+      "business-tools",
+    ].includes(product) ||
+    copy.length > 10000 ||
     f.get("approved") !== "on"
   )
-    throw Error("Provide an approved HTTPS resource and visibility");
-  await query(
-    `WITH added AS(INSERT INTO distribution_assets(title,description,url,audience,created_by) VALUES($1,$2,$3,$4,$5) RETURNING id) INSERT INTO distribution_audit(actor_id,event,detail) SELECT $5,'MARKETING_ASSET_APPROVED',jsonb_build_object('asset',id,'url',$3::text) FROM added`,
-    [title, description, url.href, audience, a.id],
-  );
+    throw Error(
+      "Provide an approved HTTPS resource, accurate copy and visibility",
+    );
+  const rows = id
+    ? await query(
+        `WITH changed AS(UPDATE distribution_assets SET title=$2,description=$3,url=$4,audience=$5,kind=$6,product=$7,copy=$8,featured=$9,archived=$10,enabled=CASE WHEN $10 THEN false ELSE enabled END WHERE id=$1 RETURNING id) INSERT INTO distribution_audit(actor_id,event,detail) SELECT $11,'MARKETING_ASSET_EDITED',jsonb_build_object('asset',id,'archived',$10::boolean) FROM changed RETURNING id`,
+        [
+          id,
+          title,
+          description,
+          url.href,
+          audience,
+          kind,
+          product,
+          copy,
+          f.get("featured") === "on",
+          f.get("archived") === "on",
+          a.id,
+        ],
+      )
+    : await query(
+        `WITH added AS(INSERT INTO distribution_assets(title,description,url,audience,created_by,kind,product,copy,featured) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id) INSERT INTO distribution_audit(actor_id,event,detail) SELECT $5,'MARKETING_ASSET_APPROVED',jsonb_build_object('asset',id,'url',$3::text) FROM added RETURNING id`,
+        [
+          title,
+          description,
+          url.href,
+          audience,
+          a.id,
+          kind,
+          product,
+          copy,
+          f.get("featured") === "on",
+        ],
+      );
+  if (!rows.length) throw Error("Current approved resource required");
   revalidatePath("/admin/distribution/resources");
+  revalidatePath("/affiliates/resources");
+  revalidatePath("/partners/resources");
 }
 export async function createPartnerQuoteAction(f: FormData) {
   const a = await requireAdminCapability("manage_team");
@@ -224,4 +272,40 @@ export async function toggleDistributionAssetAction(f: FormData) {
   revalidatePath("/admin/distribution/resources");
   revalidatePath("/partners/resources");
   revalidatePath("/affiliates/resources");
+}
+
+/** Real reseller checkout using the existing verified custom-invoice payment engine. */
+export async function payPartnerQuoteAction(f: FormData) {
+  const s = await owner();
+  await rate("reseller-checkout:" + s.userId, 10);
+  const id = String(f.get("id"));
+  const rows = await query(
+    `WITH eligible AS(SELECT q.* FROM partner_commercial_quotes q JOIN distribution_contracts c ON c.id=q.contract_id JOIN affiliates a ON a.id=c.affiliate_id JOIN partner_service_requests r ON r.id=q.request_id JOIN partner_client_access x ON x.id=r.relationship_id WHERE q.id=$1 AND q.status='ACCEPTED' AND q.billing_organization_id=$2 AND c.status='ACTIVE' AND c.model='RESELLER' AND a.status='active' AND a.partner_terms_confirmed=true AND x.revoked_at IS NULL FOR UPDATE OF q),client AS(INSERT INTO custom_clients(organization_id,user_id,pilot_ready) SELECT billing_organization_id,$3,true FROM eligible WHERE invoice_id IS NULL ON CONFLICT(organization_id) DO UPDATE SET organization_id=excluded.organization_id RETURNING organization_id),project AS(INSERT INTO custom_projects(organization_id,name,website_url,description,billing_only) SELECT c.organization_id,'Reseller service order','',e.scope,true FROM client c CROSS JOIN eligible e RETURNING id,organization_id),service AS(INSERT INTO custom_services(project_id,organization_id,name,category,description,amount_kobo,interval,starts_on,next_due_on,status,accepted_by,accepted_at) SELECT p.id,p.organization_id,'Accepted reseller quote','OTHER',e.scope,e.amount_kobo,'ONCE',(now() AT TIME ZONE 'Africa/Lagos')::date,(now() AT TIME ZONE 'Africa/Lagos')::date,'ACTIVE',$3,e.accepted_at FROM project p CROSS JOIN eligible e RETURNING *),invoice AS(INSERT INTO custom_invoices(service_id,organization_id,project_id,due_on,description,amount_kobo) SELECT id,organization_id,project_id,next_due_on,description,amount_kobo FROM service RETURNING id),attached AS(UPDATE partner_commercial_quotes q SET invoice_id=i.id FROM invoice i WHERE q.id=$1 RETURNING q.invoice_id),logged AS(INSERT INTO distribution_audit(actor_id,event,detail) SELECT $3,'RESELLER_INVOICE_CREATED',jsonb_build_object('quote',$1::uuid,'invoice',invoice_id) FROM attached RETURNING id) SELECT invoice_id FROM attached UNION ALL SELECT invoice_id FROM eligible WHERE invoice_id IS NOT NULL`,
+    [id, s.organizationId, s.userId],
+  );
+  if (!rows.length)
+    throw Error(
+      "Current billing owner, accepted quote and client authorization required",
+    );
+  const { initializeInvoice } = await import("@/lib/custom/service");
+  const url = await initializeInvoice(
+    String(rows[0].invoice_id),
+    s.organizationId,
+    s.userId,
+  );
+  const { redirect } = await import("next/navigation");
+  redirect(url);
+}
+export async function verifyPartnerQuotePaymentAction(f: FormData) {
+  const s = await owner();
+  await rate("reseller-verify:" + s.userId, 10);
+  const rows = await query(
+    `SELECT i.reference FROM partner_commercial_quotes q JOIN custom_invoices i ON i.id=q.invoice_id WHERE q.id=$1 AND q.billing_organization_id=$2 AND i.organization_id=$2`,
+    [String(f.get("id")), s.organizationId],
+  );
+  if (!rows[0]?.reference)
+    throw Error("No checkout reference is available for this quote");
+  const { verifyInvoice } = await import("@/lib/custom/service");
+  await verifyInvoice(String(rows[0].reference));
+  revalidatePath("/business/distribution");
 }

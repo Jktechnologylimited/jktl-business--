@@ -8,7 +8,7 @@ export async function GET() {
     return new Response("Sign in required", { status: 401 });
   }
   const rows = await query(
-    "SELECT reference,product,currency,net_kobo,rate_bps,amount_kobo,status,created_at FROM distribution_ledger WHERE affiliate_id=$1 ORDER BY created_at DESC LIMIT 10000",
+    "SELECT l.reference,l.product,l.currency,l.net_kobo,l.rate_bps,l.amount_kobo,l.status,COALESCE((SELECT r->>'kind' FROM distribution_contracts c CROSS JOIN jsonb_array_elements(COALESCE(c.terms->'productRules','[]')) r WHERE c.id=l.contract_id AND r->>'product'=l.product LIMIT 1),'PERCENTAGE') commission_kind,l.created_at FROM distribution_ledger l WHERE l.affiliate_id=$1 ORDER BY l.created_at DESC LIMIT 10000",
     [p.id],
   );
   const keys = [
@@ -17,6 +17,7 @@ export async function GET() {
     "currency",
     "net_kobo",
     "rate_bps",
+    "commission_kind",
     "amount_kobo",
     "status",
     "created_at",

@@ -1,4 +1,6 @@
-import { CommercialDashboard } from "@/components/distribution/commercial-dashboard";
+import { requireAffiliateSession } from "@/lib/affiliate-session";
+import { query } from "@/lib/custom/service";
+import { AffiliateOverview } from "@/components/distribution/affiliate-overview";
 import Link from "next/link";
 import { BookOpen, ExternalLink, Gift } from "lucide-react";
 const EARNING_LABEL: Record<string, string> = {
@@ -32,7 +34,15 @@ export default async function AffiliateDashboardPage() {
     return <p className="text-sm text-danger">{result.error}</p>;
   }
   const data = result.data;
-  if (data.commissionModel === "policy") return <CommercialDashboard />;
+  if (data.commissionModel === "policy") return <AffiliateOverview />;
+  const identity = await requireAffiliateSession();
+  const visits =
+    (
+      await query(
+        "SELECT qualified_visit_count FROM affiliate_activity WHERE affiliate_id=$1",
+        [identity.id],
+      )
+    )[0]?.qualified_visit_count || 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -129,6 +139,19 @@ export default async function AffiliateDashboardPage() {
       </Link>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatTile
+          label="Valid referral visits"
+          value={Number(visits).toLocaleString()}
+        />
+        <StatTile label="Account status" value={identity.status} />
+        <StatTile
+          label="Paying customers"
+          value={String(
+            data.referredBusinesses.filter(
+              (b) => b.subscriptionStatus === "active",
+            ).length,
+          )}
+        />
         <StatTile
           label="Referred businesses"
           value={data.referredBusinesses.length.toLocaleString()}

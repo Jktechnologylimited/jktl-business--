@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { acceptPartnerQuoteAction } from "@/lib/actions/distribution-program-actions";
+import {
+  payPartnerQuoteAction,
+  verifyPartnerQuotePaymentAction,
+  acceptPartnerQuoteAction,
+} from "@/lib/actions/distribution-program-actions";
 import { ActionForm } from "@/components/distribution/action-form";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
@@ -43,7 +47,7 @@ export default async function Page({
   const isOwner = members.length > 0;
   const quotes = isOwner
     ? await query(
-        `SELECT q.id,q.amount_kobo,q.scope,q.billing_party,q.status,q.expires_at FROM partner_commercial_quotes q JOIN partner_service_requests r ON r.id=q.request_id JOIN partner_client_access x ON x.id=r.relationship_id WHERE x.revoked_at IS NULL AND(q.billing_party='CUSTOMER' AND x.organization_id=$1 OR q.billing_party='PARTNER' AND EXISTS(SELECT 1 FROM distribution_account_links l WHERE l.user_id=$2 AND l.affiliate_id=x.partner_id)) ORDER BY q.created_at DESC LIMIT 50`,
+        `SELECT q.id,q.amount_kobo,q.scope,q.billing_party,q.status,q.expires_at,q.billing_organization_id FROM partner_commercial_quotes q JOIN partner_service_requests r ON r.id=q.request_id JOIN partner_client_access x ON x.id=r.relationship_id WHERE x.revoked_at IS NULL AND(q.billing_party='CUSTOMER' AND x.organization_id=$1 OR q.billing_party='PARTNER' AND EXISTS(SELECT 1 FROM distribution_account_links l WHERE l.user_id=$2 AND l.affiliate_id=x.partner_id)) ORDER BY q.created_at DESC LIMIT 50`,
         [s.organizationId, s.userId],
       )
     : [];
@@ -98,6 +102,23 @@ export default async function Page({
                   </button>
                 </ActionForm>
               )}
+              {q.status === "ACCEPTED" &&
+                q.billing_organization_id === s.organizationId && (
+                  <div className="flex flex-wrap gap-3">
+                    <form action={payPartnerQuoteAction}>
+                      <input type="hidden" name="id" value={String(q.id)} />
+                      <button className="rounded-lg bg-primary p-3 text-on-primary">
+                        Pay accepted quote
+                      </button>
+                    </form>
+                    <ActionForm action={verifyPartnerQuotePaymentAction}>
+                      <input type="hidden" name="id" value={String(q.id)} />
+                      <button className="rounded-lg border border-border p-3">
+                        Check payment
+                      </button>
+                    </ActionForm>
+                  </div>
+                )}
             </article>
           ))}
         </section>

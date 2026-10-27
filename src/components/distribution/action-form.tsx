@@ -1,4 +1,5 @@
 "use client";
+import { unstable_rethrow } from "next/navigation";
 import { useActionState, type ReactNode } from "react";
 export function ActionForm({
   action,
@@ -17,6 +18,7 @@ export function ActionForm({
         await action(f);
         return { message: success, error: false };
       } catch (e) {
+        unstable_rethrow(e);
         const message =
           e instanceof Error &&
           /^(Choose|Complete|Only|Read|Confirm|Check|Use|An existing|Application|No |Current|Invitation|Agreement|Payout|Commission|Activation|Could not|Verify|Sign in|Invalid|This product|Ticket|Provide|Accept|Record|Review|A reconciliation)/.test(

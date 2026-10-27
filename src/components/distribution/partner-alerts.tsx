@@ -2,10 +2,12 @@
 import { useState } from "react";
 import {
   savePartnerPushAction,
+  saveTeamProgrammePushAction,
+  removeTeamProgrammePushAction,
   removePartnerPushAction,
 } from "@/lib/actions/partner-operations-actions";
 import { AddToHomeScreenGuide } from "@/components/help/add-to-home-screen-guide";
-export function PartnerAlerts() {
+export function PartnerAlerts({ team = false }: { team?: boolean }) {
   const [status, setStatus] = useState(""),
     [busy, setBusy] = useState(false);
   async function enable() {
@@ -37,12 +39,12 @@ export function PartnerAlerts() {
         });
       }
       const json = sub.toJSON();
-      await savePartnerPushAction({
+      await (team ? saveTeamProgrammePushAction : savePartnerPushAction)({
         endpoint: sub.endpoint,
         p256dh: json.keys?.p256dh,
         auth: json.keys?.auth,
       });
-      setStatus("Support alerts enabled for this signed-in device.");
+      setStatus("Programme alerts enabled for this signed-in device.");
     } catch (e) {
       setStatus(e instanceof Error ? e.message : "Unable to enable alerts.");
     } finally {
@@ -55,10 +57,12 @@ export function PartnerAlerts() {
       const reg = await navigator.serviceWorker.getRegistration();
       const sub = await reg?.pushManager.getSubscription();
       if (sub) {
-        await removePartnerPushAction(sub.endpoint);
+        await (team ? removeTeamProgrammePushAction : removePartnerPushAction)(
+          sub.endpoint,
+        );
         await sub.unsubscribe();
       }
-      setStatus("Partner support alerts disabled for this device.");
+      setStatus("Programme alerts disabled for this device.");
     } catch {
       setStatus("Could not update alerts. Please retry.");
     } finally {
@@ -68,13 +72,13 @@ export function PartnerAlerts() {
   return (
     <details className="rounded-xl border border-border p-5">
       <summary className="font-semibold">
-        Install JKTL & support notifications
+        Install JKTL & programme notifications
       </summary>
       <div className="mt-4 space-y-4">
         <AddToHomeScreenGuide />
         <p className="text-sm">
           Install JKTL for convenient access. Browser alerts require your
-          permission and an active Partner session; email updates use your
+          permission and an active programme session; email updates use your
           program email.
         </p>
         <div className="flex flex-wrap gap-3">

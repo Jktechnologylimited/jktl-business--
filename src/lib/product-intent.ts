@@ -1,6 +1,12 @@
 type Params = Pick<URLSearchParams, "get">;
 /** Only a known product destination is carried through account creation; never an arbitrary redirect. */
 export function emailIntent(params: Params) {
+  if (params.get("next") === "affiliate-invite") {
+    const token = params.get("invite") || "";
+    return /^[a-f0-9]{64}$/.test(token)
+      ? "?next=affiliate-invite&invite=" + token
+      : "";
+  }
   if (params.get("next") === "programs") {
     const program = params.get("program");
     return (
@@ -28,6 +34,12 @@ export function emailIntent(params: Params) {
   );
 }
 export function emailDestination(params: Params) {
+  if (params.get("next") === "affiliate-invite") {
+    const token = params.get("invite") || "";
+    return /^[a-f0-9]{64}$/.test(token)
+      ? "/affiliates/invitation?token=" + token
+      : null;
+  }
   if (params.get("next") === "programs") {
     const program = params.get("program");
     return (

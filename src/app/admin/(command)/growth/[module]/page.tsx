@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MarketingUploadForm } from "@/components/distribution/marketing-upload-form";
 import { notFound } from "next/navigation";
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { growth, query } from "@/lib/growth/service";
@@ -281,6 +282,7 @@ export default async function Page({
             Submit resource for approval
           </button>
         </ActionForm>
+        <MarketingUploadForm draft />
         {resources.map((r, i) => (
           <article key={i} className="rounded-xl border border-border p-5">
             <h3 className="font-semibold">
@@ -426,6 +428,9 @@ export default async function Page({
   return (
     <section className="space-y-4 text-ink">
       <h2 className="text-2xl font-semibold">Support & collaboration</h2>
+      <Link className="underline" href="/admin/partner-support">
+        Help Affiliates with general programme questions
+      </Link>
       <p>
         Use your existing Business support inbox to request product guidance,
         campaign assistance, game deployment help, report bugs or escalate

@@ -45,3 +45,18 @@ export async function product(slug: string, action: string) {
   if (!r) throw Error("This product action is not available to partners");
   return r;
 }
+
+/** Ticket/alert access only. Workspace access still requires approvedPartner. */
+export async function approvedProgramme() {
+  const p = await requireAffiliateSession();
+  if (
+    !(
+      await query(
+        "SELECT 1 FROM affiliates WHERE id=$1 AND status='active' AND(programme='affiliate' OR programme='partner' AND partner_terms_confirmed=true)",
+        [p.id],
+      )
+    ).length
+  )
+    throw Error("Approved programme account required");
+  return p;
+}

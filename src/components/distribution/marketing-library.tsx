@@ -1,35 +1,35 @@
 import { requireAffiliateSession } from "@/lib/affiliate-session";
 import { query } from "@/lib/custom/service";
+import { MaterialCards } from "./material-cards";
 export async function MarketingLibrary() {
   const p = await requireAffiliateSession();
   const rows = await query(
-    "SELECT id,title,description,url FROM distribution_assets WHERE enabled=true AND(audience='BOTH' OR audience=upper($1)) ORDER BY created_at DESC",
+    "SELECT id,title,description,url,kind,product,copy,featured FROM distribution_assets WHERE enabled=true AND archived=false AND(audience='BOTH' OR audience=upper($1)) ORDER BY featured DESC,created_at DESC",
     [p.programme || "affiliate"],
   );
   return (
     <div className="space-y-5 text-ink">
-      <h1 className="text-3xl font-semibold">Approved marketing resources</h1>
+      <h1 className="text-3xl font-semibold">Marketing Materials</h1>
       <p>
-        Use the JKTL logo and approved descriptions. Do not alter product
-        claims, imply unapproved pricing or promise guaranteed earnings.
+        Use approved JKTL branding and accurate product descriptions. Review
+        current availability and pricing before sharing. Include the referral
+        disclosure and contact only people you are permitted to message.
       </p>
-      {rows.map((r) => (
-        <article
-          key={String(r.id)}
-          className="rounded-xl border border-border p-5"
-        >
-          <h2 className="font-semibold">{String(r.title)}</h2>
-          <p className="my-3">{String(r.description)}</p>
-          <a
-            href={String(r.url)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            Open approved resource
-          </a>
-        </article>
-      ))}
+      <MaterialCards
+        items={rows.map((r) => ({
+          id: String(r.id),
+          title: String(r.title),
+          description: String(r.description),
+          url: String(r.url),
+          kind: String(r.kind),
+          product: String(r.product),
+          copy: String(r.copy),
+          featured: Boolean(r.featured),
+        }))}
+        referralUrl={
+          "https://jktl.com.ng/?ref=" + encodeURIComponent(p.referralCode)
+        }
+      />
     </div>
   );
 }

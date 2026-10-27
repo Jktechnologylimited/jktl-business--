@@ -53,10 +53,11 @@ export default async function AffiliateLayout({
         { href: "/affiliates", label: "Overview" },
         {
           href: "/affiliates/commercial",
-          label: "Agreements & verified earnings",
+          label: "Referrals & Earnings",
         },
-        { href: "/affiliates/resources", label: "Marketing resources" },
-        { href: "/affiliates/playbook", label: "Growth playbook" },
+        { href: "/affiliates/resources", label: "Marketing Materials" },
+        { href: "/affiliates/support", label: "Support" },
+        { href: "/affiliates/settings", label: "Settings" },
       ]}
       logout={affiliateLogoutAction}
     >

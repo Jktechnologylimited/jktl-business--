@@ -51,7 +51,11 @@ function LoginForm() {
       setError(result.error);
       return;
     }
-    if (["distribution", "programs"].includes(params.get("next") || "")) {
+    if (
+      ["distribution", "programs", "affiliate-invite"].includes(
+        params.get("next") || "",
+      )
+    ) {
       router.replace(emailDestination(params)!);
       return;
     }
@@ -97,7 +101,9 @@ function LoginForm() {
   useEffect(() => {
     if (hydrated && authenticated && mode === "live") {
       const value = params.get("next");
-      if (["distribution", "programs"].includes(value || ""))
+      if (
+        ["distribution", "programs", "affiliate-invite"].includes(value || "")
+      )
         router.replace(emailDestination(params)!);
       else if (value === "support") router.replace("/business/help");
       else if (value === "email")

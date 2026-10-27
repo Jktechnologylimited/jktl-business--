@@ -2,13 +2,13 @@
 import { after } from "next/server";
 import { processPartnerNotices } from "@/lib/partners/notifications";
 import { query } from "@/lib/custom/service";
-import { approvedPartner, workspace } from "@/lib/partners/access";
-import { requireAdminCapability } from "@/lib/admin-session";
+import { approvedProgramme, workspace } from "@/lib/partners/access";
+import { programmeSupportAgent } from "@/lib/partners/support-access";
 import { sensitive } from "@/lib/support/model";
 import { rate } from "@/lib/support/service";
 import { revalidatePath } from "next/cache";
 export async function createPartnerTicketAction(f: FormData) {
-  const p = await approvedPartner();
+  const p = await approvedProgramme();
   await rate("partner-ticket:" + p.id, 10);
   const subject = String(f.get("subject") || "").trim(),
     body = String(f.get("body") || "").trim(),
@@ -33,7 +33,9 @@ export async function createPartnerTicketAction(f: FormData) {
       subject,
       category,
       priority,
-      category === "Billing" || sensitive(subject + " " + body),
+      ["Billing", "Commissions", "Payouts", "Account Access"].includes(
+        category,
+      ) || sensitive(subject + " " + body),
       body,
     ],
   );
@@ -43,9 +45,10 @@ export async function createPartnerTicketAction(f: FormData) {
     } catch {}
   });
   revalidatePath("/partners/support");
+  revalidatePath("/affiliates/support");
 }
 export async function partnerTicketReplyAction(f: FormData) {
-  const p = await approvedPartner();
+  const p = await approvedProgramme();
   await rate("partner-ticket-reply:" + p.id, 40);
   const body = String(f.get("body") || "").trim();
   if (body.length < 1 || body.length > 5000) throw Error("Message required");
@@ -59,9 +62,10 @@ export async function partnerTicketReplyAction(f: FormData) {
     } catch {}
   });
   revalidatePath("/partners/support");
+  revalidatePath("/affiliates/support");
 }
 export async function staffPartnerTicketAction(f: FormData) {
-  const a = await requireAdminCapability("manage_support");
+  const a = await programmeSupportAgent();
   const id = String(f.get("id")),
     body = String(f.get("body") || "").trim(),
     status = String(f.get("status")),
@@ -81,7 +85,7 @@ export async function staffPartnerTicketAction(f: FormData) {
   )
     throw Error("Response and status required");
   const result = await query(
-    `WITH allowed AS(UPDATE partner_tickets SET assigned_to=$2,status=$3,updated_at=now() WHERE id=$1 AND($4='owner' OR(sensitive=false AND(assigned_to IS NULL OR assigned_to=$2))) RETURNING id),msg AS(INSERT INTO partner_ticket_messages(ticket_id,actor_id,kind,body) SELECT id,$2,CASE WHEN $5 THEN 'NOTE' ELSE 'STAFF' END,$6 FROM allowed RETURNING ticket_id) INSERT INTO partner_ticket_messages(ticket_id,actor_id,kind,body) SELECT ticket_id,$2,'EVENT',$3 FROM msg RETURNING id`,
+    `WITH allowed AS(UPDATE partner_tickets SET assigned_to=$2,status=$3,updated_at=now() WHERE id=$1 AND($4 IN('owner','support') OR EXISTS(SELECT 1 FROM affiliates p WHERE p.id=partner_tickets.partner_id AND p.programme='affiliate')) AND($4='owner' OR(sensitive=false AND(assigned_to IS NULL OR assigned_to=$2))) RETURNING id),msg AS(INSERT INTO partner_ticket_messages(ticket_id,actor_id,kind,body) SELECT id,$2,CASE WHEN $5 THEN 'NOTE' ELSE 'STAFF' END,$6 FROM allowed RETURNING ticket_id) INSERT INTO partner_ticket_messages(ticket_id,actor_id,kind,body) SELECT ticket_id,$2,'EVENT',$3 FROM msg RETURNING id`,
     [id, a.id, status, a.role, internal, body],
   );
   if (!result.length)

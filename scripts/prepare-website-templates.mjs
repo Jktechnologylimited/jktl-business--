@@ -31,6 +31,11 @@ if (!url) {
       "047_growth_gaming_staff.sql",
       "048_team_growth_role.sql",
       "049_email_branding.sql",
+      "050_distribution_completion.sql",
+      "051_affiliate_operations.sql",
+      "052_affiliate_materials.sql",
+      "053_affiliate_campaigns.sql",
+      "054_distribution_product_rules.sql",
     ].map((name) =>
       readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
     ),

@@ -1,3 +1,4 @@
+import { PartnerAlerts } from "@/components/distribution/partner-alerts";
 import Link from "next/link";
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { query } from "@/lib/custom/service";
@@ -36,6 +37,7 @@ export default async function Distribution() {
   return (
     <div className="space-y-8 text-ink">
       <header>
+        <PartnerAlerts team />
         <h1 className="text-3xl font-semibold">Distribution</h1>
         <p className="mt-3 text-ink-muted">
           Affiliate and Partner policy governance. Proposed policies remain

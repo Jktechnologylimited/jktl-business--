@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { PGlite } from "@electric-sql/pglite";
 import ts from "typescript";
 import { readFileSync } from "node:fs";
+import * as productRules from "../src/lib/distribution/product-rules.ts";
 import { DEFAULT_TERMS } from "../src/lib/affiliate-commission.ts";
 import { applyMigrationBatch } from "../scripts/sql-statements.mjs";
 function load(file, deps) {
@@ -36,7 +37,7 @@ test("accepted new-cohort finance uses verified live payments, bounded service m
   const db = new PGlite();
   try {
     await db.exec(
-      `CREATE TABLE affiliates(id uuid PRIMARY KEY,name text,email text,programme text,status text,commission_model text,commission_bps int,signup_bonus_kobo bigint,subscription_bonus_kobo bigint,recurring_monthly_kobo bigint,bank_verified_at timestamptz,bank_code text,bank_name text,account_number text,account_name text);INSERT INTO affiliates VALUES('${affiliate}','Agency','agency@example.test','partner','active','tiered',2000,2000000,4000000,350000,now(),'001','Bank','0123456789','Agency');CREATE TABLE organizations(id uuid PRIMARY KEY);INSERT INTO organizations VALUES('${org}');CREATE TABLE users(id uuid PRIMARY KEY,email text);INSERT INTO users VALUES('${user}','client@example.test');CREATE TABLE organization_members(organization_id uuid,user_id uuid);INSERT INTO organization_members VALUES('${org}','${user}');CREATE TABLE affiliate_referrals(affiliate_id uuid,organization_id uuid);CREATE TABLE affiliate_earnings(affiliate_id uuid);CREATE TABLE distribution_account_links(user_id uuid,affiliate_id uuid);CREATE TABLE partner_service_requests(id uuid PRIMARY KEY);CREATE TABLE distribution_policies(id uuid PRIMARY KEY,state text,program text);INSERT INTO distribution_policies VALUES('${policy}','DRAFT','PARTNER');CREATE TABLE distribution_audit(id bigserial,actor_id text,event text,affiliate_id uuid,detail jsonb);CREATE TABLE website_plan_payments(reference text PRIMARY KEY,organization_id uuid,plan_id text,interval text,amount_kobo bigint,currency text,paid_at timestamptz,period_end timestamptz,provider_transaction_id text UNIQUE);CREATE TABLE website_plan_refund_requests(payment_reference text,status text);`,
+      `CREATE TABLE affiliates(id uuid PRIMARY KEY,name text,email text,programme text,status text,commission_model text,commission_bps int,signup_bonus_kobo bigint,subscription_bonus_kobo bigint,recurring_monthly_kobo bigint,bank_verified_at timestamptz,bank_code text,bank_name text,account_number text,account_name text);INSERT INTO affiliates VALUES('${affiliate}','Agency','agency@example.test','partner','active','tiered',2000,2000000,4000000,350000,now(),'001','Bank','0123456789','Agency');CREATE TABLE affiliate_sessions(id uuid PRIMARY KEY,affiliate_id uuid,created_at timestamptz DEFAULT now(),expires_at timestamptz);CREATE TABLE organizations(id uuid PRIMARY KEY);INSERT INTO organizations VALUES('${org}');CREATE TABLE users(id uuid PRIMARY KEY,email text);INSERT INTO users VALUES('${user}','client@example.test');CREATE TABLE organization_members(organization_id uuid,user_id uuid);INSERT INTO organization_members VALUES('${org}','${user}');CREATE TABLE affiliate_referrals(affiliate_id uuid,organization_id uuid);CREATE TABLE affiliate_earnings(affiliate_id uuid);CREATE TABLE distribution_account_links(user_id uuid,affiliate_id uuid);CREATE TABLE partner_service_requests(id uuid PRIMARY KEY);CREATE TABLE distribution_policies(id uuid PRIMARY KEY,state text,program text);INSERT INTO distribution_policies VALUES('${policy}','DRAFT','PARTNER');CREATE TABLE distribution_audit(id bigserial,actor_id text,event text,affiliate_id uuid,detail jsonb);CREATE TABLE website_plan_payments(reference text PRIMARY KEY,organization_id uuid,plan_id text,interval text,amount_kobo bigint,currency text,paid_at timestamptz,period_end timestamptz,provider_transaction_id text UNIQUE);CREATE TABLE website_plan_refund_requests(payment_reference text,status text);`,
     );
     const query = async (s, p = []) => {
       try {
@@ -73,8 +74,18 @@ test("accepted new-cohort finance uses verified live payments, bounded service m
         "utf8",
       ),
     ]);
+    await applyMigrationBatch(adapter, [
+      readFileSync(
+        new URL(
+          "../migrations/054_distribution_product_rules.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    ]);
     let role = "owner";
     const deps = {
+      "@/lib/distribution/product-rules": productRules,
       "next/server": { after: () => {} },
       "@/lib/distribution/notifications": {
         flushProgramNotices: async () => ({}),
@@ -110,6 +121,9 @@ test("accepted new-cohort finance uses verified live payments, bounded service m
     role = "support";
     await assert.rejects(a.offerDistributionContractAction(f));
     role = "owner";
+    await query(
+      "UPDATE distribution_finance_settings SET minimum_payout_kobo=1,payout_day=1",
+    );
     await a.offerDistributionContractAction(f);
     const contract = (await query("SELECT * FROM distribution_contracts"))[0];
     const consent = new FormData();
@@ -137,6 +151,7 @@ test("accepted new-cohort finance uses verified live payments, bounded service m
     const verified = new Map();
     const engine = load("../src/lib/distribution/finance.ts", {
       "server-only": {},
+      "./product-rules": productRules,
       "@/lib/custom/service": { query },
       "@/lib/paystack": {
         verifyTransaction: async (ref) => ({ ...verified.get(ref), domain }),
@@ -226,12 +241,18 @@ test("accepted new-cohort finance uses verified live payments, bounded service m
     manage.set("id", payout.id);
     manage.set("status", "PAID");
     await assert.rejects(a.manageDistributionPayoutAction(manage));
+    await query("UPDATE affiliates SET status='suspended' WHERE id=$1", [
+      affiliate,
+    ]);
     manage.set("status", "APPROVED");
     await a.manageDistributionPayoutAction(manage);
     manage.set("status", "PAID");
     manage.set("confirmed", "on");
     manage.set("bankReference", "TEST-TRANSFER-01");
     await a.manageDistributionPayoutAction(manage);
+    await query("UPDATE affiliates SET status='active' WHERE id=$1", [
+      affiliate,
+    ]);
     assert.equal(
       (await query("SELECT status FROM distribution_payouts"))[0].status,
       "PAID",

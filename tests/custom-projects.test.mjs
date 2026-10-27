@@ -60,6 +60,10 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
       "utf8",
     ),
   );
+  // Migration 050 adds a billing-only flag to the existing project store.
+  await db.exec(
+    "ALTER TABLE custom_projects ADD COLUMN billing_only boolean NOT NULL DEFAULT false",
+  );
   const sql = Object.assign(
     (strings, ...values) =>
       q(

@@ -36,7 +36,7 @@ test("partner attachments stay protected and notices preserve history, opt-in an
   };
   try {
     await db.exec(
-      `CREATE TABLE affiliates(id uuid PRIMARY KEY,status text,programme text,partner_terms_confirmed boolean,email text);INSERT INTO affiliates VALUES('${p}','active','partner',true,'partner@example.test'),('${other}','active','partner',true,'other@example.test');CREATE TABLE affiliate_sessions(id uuid PRIMARY KEY,affiliate_id uuid,expires_at timestamptz);INSERT INTO affiliate_sessions VALUES('${session}','${p}',now()+interval '1 day');CREATE TABLE admin_users(id uuid PRIMARY KEY,role text,disabled_at timestamptz);INSERT INTO admin_users VALUES('${agent}','support',NULL);CREATE TABLE admin_sessions(id uuid PRIMARY KEY,admin_user_id uuid,expires_at timestamptz);CREATE TABLE support_push_subscriptions(endpoint text PRIMARY KEY,p256dh text,auth text,admin_id uuid,session_id uuid);CREATE TABLE partner_tickets(id uuid PRIMARY KEY,partner_id uuid,sensitive boolean DEFAULT false,status text DEFAULT 'OPEN',assigned_to uuid,updated_at timestamptz DEFAULT now());INSERT INTO partner_tickets(id,partner_id) VALUES('${ticket}','${p}');CREATE TABLE partner_ticket_messages(id bigserial PRIMARY KEY,ticket_id uuid,actor_id text,kind text,body text);CREATE TABLE distribution_audit(id bigserial,actor_id text,event text,detail jsonb);`,
+      `CREATE TABLE affiliates(id uuid PRIMARY KEY,status text,programme text,partner_terms_confirmed boolean,email text);INSERT INTO affiliates VALUES('${p}','active','partner',true,'partner@example.test'),('${other}','active','partner',true,'other@example.test');CREATE TABLE affiliate_sessions(id uuid PRIMARY KEY,affiliate_id uuid,expires_at timestamptz);INSERT INTO affiliate_sessions VALUES('${session}','${p}',now()+interval '1 day');CREATE TABLE admin_users(id uuid PRIMARY KEY,email text DEFAULT 'support@example.test',role text,disabled_at timestamptz,permission_overrides jsonb DEFAULT '{}',business_user_id uuid,staff_revoked_at timestamptz);INSERT INTO admin_users(id,role,disabled_at) VALUES('${agent}','support',NULL);CREATE TABLE admin_sessions(id uuid PRIMARY KEY,admin_user_id uuid,expires_at timestamptz);CREATE TABLE sessions(id uuid PRIMARY KEY,user_id uuid,expires_at timestamptz);CREATE TABLE support_push_subscriptions(endpoint text PRIMARY KEY,p256dh text,auth text,admin_id uuid,session_id uuid,business_session_id uuid);CREATE TABLE partner_tickets(id uuid PRIMARY KEY,partner_id uuid,sensitive boolean DEFAULT false,status text DEFAULT 'OPEN',assigned_to uuid,updated_at timestamptz DEFAULT now());INSERT INTO partner_tickets(id,partner_id) VALUES('${ticket}','${p}');CREATE TABLE partner_ticket_messages(id bigserial PRIMARY KEY,ticket_id uuid,actor_id text,kind text,body text);CREATE TABLE distribution_audit(id bigserial,actor_id text,event text,detail jsonb);`,
     );
     const query = async (s, params = []) => (await db.query(s, params)).rows;
     const adapter = {
@@ -58,12 +58,18 @@ test("partner attachments stay protected and notices preserve history, opt-in an
     );
     await applyMigrationBatch(adapter, [migration]);
     await applyMigrationBatch(adapter, [migration]);
+    await db.exec(
+      "ALTER TABLE partner_notice_outbox ADD COLUMN email_sent_at timestamptz;ALTER TABLE partner_notice_outbox ADD COLUMN push_sent_at timestamptz;",
+    );
     let current = p,
       owner = false;
     const deps = {
+      "@/lib/partners/support-access": {
+        programmeSupportAgent: async () => ({ id: agent, role: "owner" }),
+      },
       "@/lib/custom/service": { query },
       "@/lib/partners/access": {
-        approvedPartner: async () => ({ id: current }),
+        approvedProgramme: async () => ({ id: current }),
       },
       "@/lib/admin-session": {
         requireAdminCapability: async () => {
@@ -160,7 +166,8 @@ test("partner attachments stay protected and notices preserve history, opt-in an
     delete process.env.RESEND_API_KEY;
     delete process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     delete process.env.VAPID_PRIVATE_KEY;
-    let sent = 0;
+    let sent = 0,
+      failEmail = false;
     const notices = load("../src/lib/partners/notifications.ts", {
       "server-only": {},
       "web-push": {
@@ -172,7 +179,9 @@ test("partner attachments stay protected and notices preserve history, opt-in an
         },
       },
       "@/lib/custom/service": { query },
-      "@/lib/email": { sendPartnerNoticeEmail: async () => ({ ok: true }) },
+      "@/lib/email": {
+        sendPartnerNoticeEmail: async () => ({ ok: !failEmail }),
+      },
     });
     assert.equal((await notices.processPartnerNotices()).configured, false);
     assert.equal(
@@ -187,14 +196,57 @@ test("partner attachments stay protected and notices preserve history, opt-in an
     await notices.processPartnerNotices();
     assert.equal(
       (await query("SELECT attempts FROM partner_notice_outbox"))[0].attempts,
-      0,
-      "staff notices wait for push configuration",
+      1,
+      "Team email is sent independently of push configuration",
     );
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY = "fixture";
     process.env.VAPID_PRIVATE_KEY = "fixture";
     const result = await notices.processPartnerNotices();
     assert.equal(result.failed, 0);
     assert.equal(sent, 0, "no staff devices means no fabricated push");
+    const teamSession = "10000000-0000-4000-8000-000000000099";
+    await query(
+      "INSERT INTO admin_sessions(id,admin_user_id,expires_at) VALUES($1,$2,now()+interval '1 day')",
+      [teamSession, agent],
+    );
+    await query(
+      "INSERT INTO support_push_subscriptions(endpoint,p256dh,auth,admin_id,session_id) VALUES('https://fcm.googleapis.com/team','fixture','fixture',$1,$2)",
+      [agent, teamSession],
+    );
+    await query(
+      "INSERT INTO partner_ticket_messages(ticket_id,actor_id,kind,body) VALUES($1,$2,'PARTNER','Please help with my website')",
+      [ticket, p],
+    );
+    failEmail = true;
+    assert.equal((await notices.processPartnerNotices()).failed, 1);
+    assert.equal(sent, 1, "Push succeeds during an email outage");
+    const partial = (
+      await query(
+        "SELECT * FROM partner_notice_outbox ORDER BY id DESC LIMIT 1",
+      )
+    )[0];
+    assert.ok(partial.push_sent_at);
+    assert.equal(partial.email_sent_at, null);
+    assert.equal(partial.delivered_at, null);
+    failEmail = false;
+    await query(
+      "UPDATE partner_notice_outbox SET lease_until=now()-interval '1 minute' WHERE id=$1",
+      [partial.id],
+    );
+    assert.equal((await notices.processPartnerNotices()).failed, 0);
+    assert.equal(
+      sent,
+      1,
+      "Email retries do not resend completed push delivery",
+    );
+    assert.ok(
+      (
+        await query(
+          "SELECT delivered_at FROM partner_notice_outbox WHERE id=$1",
+          [partial.id],
+        )
+      )[0].delivered_at,
+    );
   } finally {
     for (const [k, v] of Object.entries(saved)) {
       const name = {

@@ -13,11 +13,11 @@ export async function CommercialDashboard() {
   const [contracts, ledger, payouts, adjustments, settings] = await Promise.all(
     [
       query(
-        "SELECT id,terms,model,status,accepted_at,activated_at FROM distribution_contracts WHERE affiliate_id=$1 ORDER BY created_at DESC",
+        "SELECT c.id,c.terms,c.model,c.status,c.accepted_at,c.activated_at,COALESCE((c.terms->>'payoutMinimumKobo')::bigint,t.minimum_kobo) payout_minimum,COALESCE((c.terms->>'payoutRequestDay')::int,t.request_day) request_day,COALESCE((c.terms->>'payoutPaymentDay')::int,t.payment_day) payment_day FROM distribution_contracts c LEFT JOIN distribution_contract_payout_terms t ON t.contract_id=c.id WHERE c.affiliate_id=$1 ORDER BY c.created_at DESC",
         [a.id],
       ),
       query(
-        "SELECT reference,product,currency,net_kobo,rate_bps,amount_kobo,status,eligible_months,available_at,created_at FROM distribution_ledger WHERE affiliate_id=$1 ORDER BY created_at DESC LIMIT 100",
+        "SELECT l.reference,l.product,l.currency,l.net_kobo,l.rate_bps,l.amount_kobo,l.status,COALESCE((SELECT r->>'kind' FROM distribution_contracts c CROSS JOIN jsonb_array_elements(COALESCE(c.terms->'productRules','[]')) r WHERE c.id=l.contract_id AND r->>'product'=l.product LIMIT 1),'PERCENTAGE') commission_kind,eligible_months,l.available_at,l.created_at FROM distribution_ledger l WHERE l.affiliate_id=$1 ORDER BY l.created_at DESC LIMIT 100",
         [a.id],
       ),
       query(
@@ -46,15 +46,66 @@ export async function CommercialDashboard() {
           [a.id],
         )
       : [];
+  const applicable = contracts.find(
+    (c) => c.status === "ACTIVE" || c.status === "SUSPENDED",
+  );
+  const day = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Africa/Lagos",
+      day: "numeric",
+    }).format(new Date()),
+  );
+  const opening = Number(
+    applicable?.request_day || settings[0]?.payout_day || 21,
+  );
+  const lagosParts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Africa/Lagos",
+      year: "numeric",
+      month: "numeric",
+    })
+      .formatToParts(new Date())
+      .map((p) => [p.type, p.value]),
+  );
+  const nextWindow = new Date(
+    Date.UTC(Number(lagosParts.year), Number(lagosParts.month) - 1, opening),
+  ).toLocaleDateString("en-NG", { timeZone: "Africa/Lagos" });
+  const referrals = await query(
+    "SELECT r.organization_id,r.created_at FROM affiliate_referrals r WHERE r.affiliate_id=$1 ORDER BY r.created_at DESC LIMIT 100",
+    [a.id],
+  );
   return (
     <div className="space-y-6 text-ink">
       <h1 className="text-3xl font-semibold">Agreements & verified earnings</h1>
+      <nav className="flex flex-wrap gap-4" aria-label="Earnings sections">
+        <a className="underline" href="#referrals">
+          Referrals
+        </a>
+        <a className="underline" href="#commissions">
+          Commissions & agreements
+        </a>
+        <a className="underline" href="#payouts">
+          Payouts
+        </a>
+      </nav>
+      <section id="referrals" className="space-y-2">
+        <h2 className="text-xl font-semibold">Referred customers</h2>
+        {!referrals.length && <p>No referred customers yet.</p>}
+        {referrals.map((r) => (
+          <p key={String(r.organization_id)}>
+            Business {String(r.organization_id).slice(0, 8)} ·{" "}
+            {new Date(String(r.created_at)).toLocaleDateString("en-NG")}
+          </p>
+        ))}
+      </section>
+      <div id="commissions" />
       <CopyReferralLink
         link={
           "https://jktl.com.ng/?ref=" +
           encodeURIComponent(String(bank?.referral_code || ""))
         }
       />
+      <div id="payouts" />
       <PolicyBankForm
         bank={{
           bankCode: String(bank?.bank_code || ""),
@@ -95,16 +146,49 @@ export async function CommercialDashboard() {
           <h2 className="font-semibold">
             {String(c.model)} · {String(c.status)}
           </h2>
+          {c.payout_minimum != null && (
+            <p className="text-sm">
+              Payout minimum: ₦
+              {(Number(c.payout_minimum) / 100).toLocaleString("en-NG")} ·
+              Requests open from day {String(c.request_day)} · Expected payment
+              day {String(c.payment_day)}.
+            </p>
+          )}
           <AgreementTerms
             terms={c.terms as Record<string, unknown>}
             reseller={c.model === "RESELLER"}
           />
+          {Array.isArray((c.terms as Record<string, unknown>).productRules) &&
+            (
+              (c.terms as Record<string, unknown>).productRules as Record<
+                string,
+                unknown
+              >[]
+            ).map((r) => (
+              <p className="text-sm" key={String(r.product)}>
+                {String(r.product).replaceAll("_", " ")}:{" "}
+                {r.kind === "FIXED"
+                  ? "₦" + (Number(r.fixedKobo) / 100).toLocaleString("en-NG")
+                  : Number(r.rateBps) / 100 + "% of eligible net revenue"}{" "}
+                ·{" "}
+                {r.recurring
+                  ? "First " + r.paidMonths + " paid months"
+                  : "One reward per eligible payment"}{" "}
+                · Maximum ₦{(Number(r.capKobo) / 100).toLocaleString("en-NG")}{" "}
+                per payment · Retained margin ₦
+                {(Number(r.marginReserveKobo) / 100).toLocaleString("en-NG")} ·
+                Included tax {Number(r.taxBps) / 100}%. Actual supplier costs
+                and processing fees are excluded.
+              </p>
+            ))}
           <p className="text-sm">
             Referral rewards apply to actual eligible captured payments for the
             agreed number of paid service months per referred organization (up
             to 12). Annual payments earn once. Refunds, disputes and
-            pass-through costs affect eligibility. Reseller pricing does not
-            also earn a referral commission.
+            pass-through costs affect eligibility. Recurring rewards, including
+            fixed rewards, are prorated when only part of a payment’s service
+            months remains eligible. Reseller pricing does not also earn a
+            referral commission.
           </p>
           {c.status === "OFFERED" && (
             <ActionForm
@@ -161,8 +245,11 @@ export async function CommercialDashboard() {
             </p>
             <p className="text-sm">
               Eligible net ₦{(Number(l.net_kobo) / 100).toLocaleString("en-NG")}{" "}
-              · {Number(l.rate_bps) / 100}% · {String(l.eligible_months)}{" "}
-              service months
+              ·{" "}
+              {l.commission_kind === "FIXED"
+                ? "Fixed reward"
+                : Number(l.rate_bps) / 100 + "%"}{" "}
+              · {String(l.eligible_months)} service months
             </p>
           </article>
         ))}
@@ -170,13 +257,25 @@ export async function CommercialDashboard() {
       <section>
         <h2 className="text-xl font-semibold">Payouts</h2>
         <p className="my-3 text-sm">
-          Requests open from day {String(settings[0]?.payout_day || 21)} of each
-          month (Nigeria time). Minimum ₦
+          Requests open from day{" "}
+          {String(applicable?.request_day || settings[0]?.payout_day || 21)} of
+          each month (Nigeria time). Minimum ₦
           {(
-            Number(settings[0]?.minimum_payout_kobo || 1000000) / 100
+            Number(
+              applicable?.payout_minimum ||
+                settings[0]?.minimum_payout_kobo ||
+                5000000,
+            ) / 100
           ).toLocaleString("en-NG")}
           . Verified bank details and reviewed available earnings are required.
           Transfer confirmation follows team review.
+        </p>
+        <p className="text-sm">
+          {day >= opening
+            ? "The request window is open today."
+            : "Next request window: " + nextWindow + "."}{" "}
+          Expected monthly payment day: {String(applicable?.payment_day || 28)}.
+          Actual transfers require separate confirmation.
         </p>
         <ActionForm action={requestDistributionPayoutAction}>
           <button className="rounded-lg border border-border p-3">

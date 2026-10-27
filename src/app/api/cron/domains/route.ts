@@ -1,3 +1,7 @@
+import {
+  monitorAffiliateActivity,
+  remindAffiliateInvitations,
+} from "@/lib/distribution/activity";
 import { cleanReferralVisits } from "@/lib/distribution/referrals";
 import { flushProgramNotices } from "@/lib/distribution/notifications";
 import { reconcileDistributionPayments } from "@/lib/distribution/finance";
@@ -31,9 +35,12 @@ export async function GET(req: NextRequest) {
       runEmailMaintenance(),
       processPartnerNotices(),
       reconcileDistributionPayments(),
-      flushProgramNotices(),
       cleanReferralVisits(),
+      monitorAffiliateActivity(),
+      remindAffiliateInvitations(),
     ]);
+    // Queue producers finish before the shared notice delivery pass.
+    results.push(...(await Promise.allSettled([flushProgramNotices()])));
     const failed = results.some(
       (r) =>
         r.status === "rejected" ||

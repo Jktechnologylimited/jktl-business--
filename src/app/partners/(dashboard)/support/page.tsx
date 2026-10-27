@@ -1,6 +1,6 @@
 import { PartnerAlerts } from "@/components/distribution/partner-alerts";
 import { uploadPartnerAttachmentAction } from "@/lib/actions/partner-operations-actions";
-import { approvedPartner } from "@/lib/partners/access";
+import { approvedProgramme } from "@/lib/partners/access";
 import { query } from "@/lib/custom/service";
 import {
   createPartnerTicketAction,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/actions/partner-ticket-actions";
 export const dynamic = "force-dynamic";
 export default async function Page() {
-  const p = await approvedPartner();
+  const p = await approvedProgramme();
   const tickets = await query(
     "SELECT id,subject,status,priority FROM partner_tickets WHERE partner_id=$1 ORDER BY updated_at DESC LIMIT 50",
     [p.id],
@@ -17,17 +17,22 @@ export default async function Page() {
     "SELECT m.ticket_id,m.kind,m.body,m.created_at FROM partner_ticket_messages m JOIN partner_tickets t ON t.id=m.ticket_id WHERE t.partner_id=$1 AND m.kind<>'NOTE' ORDER BY m.id",
     [p.id],
   );
-  const clients = await query(
-    "SELECT id,business_name FROM partner_workspaces WHERE partner_id=$1",
-    [p.id],
-  );
+  const clients =
+    p.programme === "partner"
+      ? await query(
+          "SELECT id,business_name FROM partner_workspaces WHERE partner_id=$1",
+          [p.id],
+        )
+      : [];
   const attachments = await query(
     "SELECT f.id,f.ticket_id,f.file_name,f.size FROM partner_ticket_attachments f JOIN partner_tickets t ON t.id=f.ticket_id WHERE t.partner_id=$1 ORDER BY f.created_at DESC LIMIT 200",
     [p.id],
   );
   return (
     <div className="space-y-6 text-ink">
-      <h1 className="text-3xl font-semibold">Partner support</h1>
+      <h1 className="text-3xl font-semibold">
+        {p.programme === "affiliate" ? "Affiliate support" : "Partner support"}
+      </h1>
       <PartnerAlerts />
       <p>
         Get help with client setup and JKTL products. Never include passwords,
@@ -68,21 +73,31 @@ export default async function Page() {
             name="category"
             className="ml-3 rounded border border-border bg-paper p-2"
           >
-            {[
-              "Website Setup",
-              "Website Templates",
-              "Website Publishing",
-              "Domain Registration",
-              "DNS Configuration",
-              "Business Email",
-              "Hosting",
-              "Billing",
-              "Client Onboarding",
-              "AI Tools",
-              "Technical Issue",
-              "Product Question",
-              "General Assistance",
-            ].map((v) => (
+            {(p.programme === "affiliate"
+              ? [
+                  "Account Access",
+                  "Referral Tracking",
+                  "Commissions",
+                  "Payouts",
+                  "Promotional Materials",
+                  "General",
+                ]
+              : [
+                  "Website Setup",
+                  "Website Templates",
+                  "Website Publishing",
+                  "Domain Registration",
+                  "DNS Configuration",
+                  "Business Email",
+                  "Hosting",
+                  "Billing",
+                  "Client Onboarding",
+                  "AI Tools",
+                  "Technical Issue",
+                  "Product Question",
+                  "General Assistance",
+                ]
+            ).map((v) => (
               <option key={v}>{v}</option>
             ))}
           </select>
@@ -131,7 +146,9 @@ export default async function Page() {
               >
                 <strong>{m.kind === "STAFF" ? "TEAM" : String(m.kind)}</strong>
                 <br />
-                {m.kind === "EVENT" && m.body === "Staff assignment updated" ? "Team assignment updated" : String(m.body)}
+                {m.kind === "EVENT" && m.body === "Staff assignment updated"
+                  ? "Team assignment updated"
+                  : String(m.body)}
               </p>
             ))}
           <div>

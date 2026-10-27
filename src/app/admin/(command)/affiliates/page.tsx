@@ -1,7 +1,11 @@
+import Link from "next/link";
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { PageHeader } from "@/components/app/page-header";
 import { AffiliateManager } from "@/components/admin/affiliate-manager";
-import { listAffiliatesWithStats, listPendingPayoutRequests } from "@/lib/db/affiliates";
+import {
+  listAffiliatesWithStats,
+  listPendingPayoutRequests,
+} from "@/lib/db/affiliates";
 
 export const dynamic = "force-dynamic";
 
@@ -21,17 +25,29 @@ export default async function AdminAffiliatesPage() {
   // convenience, and this is the check that holds if the URL is typed directly.
   await guardAdminPage("manage_affiliates");
 
-  const [affiliates, payoutRequests] = await Promise.all([listAffiliatesWithStats(), listPendingPayoutRequests()]);
+  const [affiliates, payoutRequests] = await Promise.all([
+    listAffiliatesWithStats(),
+    listPendingPayoutRequests(),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeader title="Affiliates" />
       <p className="-mt-2 text-sm text-ink-muted">
-        Affiliates and agencies earn a recurring commission on the Website & Hosting subscription revenue of
-        businesses that sign up through their referral link, for as long as that business stays subscribed. Payouts
-        are manual — you pay the affiliate yourself and log it here so their balance reflects it.
+        Manage accounts, accepted agreements, referrals and earned payouts.
+        Existing entitlements follow each participant’s agreement. New proposals
+        require participant acceptance and formal activation. Transfers are
+        recorded only after the actual bank payment is confirmed.
       </p>
-      <AffiliateManager initialAffiliates={affiliates.filter(a=>a.programme!=="partner")} initialPayoutRequests={payoutRequests} origin={appOrigin()} />
+      <Link className="underline" href="/admin/affiliates/invitations">
+        Invite an Affiliate
+      </Link>
+      <div id="accounts" />
+      <AffiliateManager
+        initialAffiliates={affiliates.filter((a) => a.programme !== "partner")}
+        initialPayoutRequests={payoutRequests}
+        origin={appOrigin()}
+      />
     </div>
   );
 }

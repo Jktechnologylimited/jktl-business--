@@ -5,6 +5,8 @@ import { requireAdminCapability } from "@/lib/admin-session";
 import { query } from "@/lib/custom/service";
 import { WEBSITE_PLANS } from "@/lib/website-pricing";
 import {
+  requestDistributionPayoutForAffiliateAction,
+  recordProductCostAction,
   offerDistributionContractAction,
   activateDistributionContractAction,
   reviewDistributionCommissionAction,
@@ -20,7 +22,7 @@ export default async function Page() {
   const a = await requireAdminCapability("record_payouts");
   const [people, policies, contracts, ledger, payouts] = await Promise.all([
     query(
-      "SELECT id,name,programme FROM affiliates WHERE commission_model<>'policy' AND NOT EXISTS(SELECT 1 FROM affiliate_referrals r WHERE r.affiliate_id=affiliates.id) AND NOT EXISTS(SELECT 1 FROM affiliate_earnings e WHERE e.affiliate_id=affiliates.id) ORDER BY name",
+      "SELECT id,name,programme FROM affiliates WHERE NOT EXISTS(SELECT 1 FROM distribution_contracts c WHERE c.affiliate_id=affiliates.id AND c.status IN('OFFERED','ACCEPTED','ACTIVE')) AND NOT EXISTS(SELECT 1 FROM affiliate_referrals r WHERE r.affiliate_id=affiliates.id) AND NOT EXISTS(SELECT 1 FROM affiliate_earnings e WHERE e.affiliate_id=affiliates.id) ORDER BY name",
     ),
     query(
       "SELECT id,name,program FROM distribution_policies WHERE state='DRAFT'",
@@ -41,6 +43,11 @@ export default async function Page() {
   const flags = await query(
     "SELECT reference,reason,created_at FROM distribution_fraud_flags ORDER BY created_at DESC LIMIT 100",
   );
+  const totals = (
+    await query(
+      "SELECT ((SELECT COALESCE(sum(amount_kobo),0) FROM distribution_ledger WHERE status NOT IN('REVERSED','REJECTED'))+(SELECT COALESCE(sum(amount_kobo),0) FROM distribution_adjustments)) acquisition_cost,(SELECT COALESCE(sum(amount_kobo),0) FROM distribution_verified_payments) revenue,(SELECT COALESCE(sum(amount_kobo),0) FROM distribution_ledger WHERE status IN('PENDING','UNDER_REVIEW')) pending,(SELECT COALESCE(sum(amount_kobo),0) FROM distribution_ledger WHERE status IN('AVAILABLE','RESERVED')) owed,(SELECT COALESCE(sum(amount_kobo),0) FROM distribution_payouts WHERE status IN('REQUESTED','APPROVED')) requests,(SELECT COALESCE(sum(amount_kobo),0) FROM distribution_payouts WHERE status='PAID') paid,(SELECT COALESCE(sum(amount_kobo),0) FROM distribution_ledger WHERE status='REVERSED') reversed,(SELECT COALESCE(sum(commission_kobo),0) FROM affiliate_earnings WHERE status='pending') legacy_held,(SELECT COALESCE(sum(amount_kobo),0) FROM distribution_adjustments WHERE payout_id IS NULL) outstanding_adjustments",
+    )
+  )[0];
   const schedule = (
     await query("SELECT * FROM distribution_finance_settings WHERE id=true")
   )[0];
@@ -52,6 +59,32 @@ export default async function Page() {
         commissions and payout records remain in their existing ledgers. No
         transfers are executed automatically.
       </p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          [
+            "Commission acquisition cost (net adjustments)",
+            totals.acquisition_cost,
+          ],
+          ["Verified attributed revenue", totals.revenue],
+          ["Held commissions", totals.pending],
+          ["Available / reserved obligations", totals.owed],
+          ["Open payout requests", totals.requests],
+          ["Confirmed payouts", totals.paid],
+          ["Reversed commissions", totals.reversed],
+          ["Legacy held bonus obligations", totals.legacy_held],
+          ["Unsettled refund adjustments", totals.outstanding_adjustments],
+        ].map(([label, value]) => (
+          <article
+            key={String(label)}
+            className="rounded border border-border bg-paper p-4"
+          >
+            <p className="text-sm text-ink-muted">{String(label)}</p>
+            <strong>
+              ₦{(Number(value || 0) / 100).toLocaleString("en-NG")}
+            </strong>
+          </article>
+        ))}
+      </div>
       <ActionForm
         action={async () => {
           "use server";
@@ -59,9 +92,110 @@ export default async function Page() {
         }}
       >
         <button className="rounded-lg border border-border p-3">
-          Reconcile verified website payments & refunds
+          Reconcile verified product payments & refunds
         </button>
       </ActionForm>
+      <details className="rounded-xl border border-border p-5">
+        <summary>Request an earned payout on a participant’s behalf</summary>
+        <p className="my-3 text-sm">
+          Use this to honor valid earned obligations, including after Affiliate
+          privileges are suspended. Verified bank details, the accepted payout
+          schedule, financial review and separate transfer confirmation remain
+          required.
+        </p>
+        <ActionForm
+          action={requestDistributionPayoutForAffiliateAction}
+          className="grid gap-3"
+        >
+          <label>
+            Participant ID
+            <input className={input} name="affiliate" required />
+          </label>
+          <label>
+            Reviewed reason
+            <textarea
+              className={input}
+              name="reason"
+              minLength={20}
+              maxLength={2000}
+              required
+            />
+          </label>
+          <label>
+            <input type="checkbox" name="reviewed" required />I reviewed the
+            earned obligation and saved beneficiary
+          </label>
+          <button className={input}>Request payout for review</button>
+        </ActionForm>
+      </details>
+      {a.role === "owner" && (
+        <details className="rounded-xl border border-border p-5">
+          <summary>Record actual product cost evidence</summary>
+          <ActionForm
+            action={recordProductCostAction}
+            className="mt-4 grid gap-3"
+          >
+            <label>
+              Verified JKTL payment reference
+              <input
+                className={input}
+                name="reference"
+                required
+                maxLength={200}
+              />
+            </label>
+            <label>
+              Product
+              <select className={input} name="product">
+                {[
+                  "business_email",
+                  "domain_registration",
+                  "custom_project",
+                ].map((v) => (
+                  <option key={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Actual supplier / fulfillment cost (kobo)
+              <input
+                className={input}
+                name="cost"
+                type="number"
+                min={0}
+                max={2000000000}
+                required
+              />
+            </label>
+            <label>
+              Supplier receipt or cost reference
+              <input
+                className={input}
+                name="supplier"
+                required
+                minLength={3}
+                maxLength={200}
+              />
+            </label>
+            <label>
+              Verification evidence
+              <textarea
+                className={input}
+                name="evidence"
+                required
+                minLength={20}
+                maxLength={3000}
+              />
+            </label>
+            <label>
+              <input name="actual" type="checkbox" required />I verified this
+              actual cost against the supplier or fulfillment evidence. It is
+              not a guessed price-list cost.
+            </label>
+            <button className={input}>Save verified cost evidence</button>
+          </ActionForm>
+        </details>
+      )}
       {a.role === "owner" && (
         <details className="rounded-xl border border-border p-5">
           <summary>Offer a new-cohort commercial agreement</summary>
@@ -123,6 +257,80 @@ export default async function Page() {
                 />
               </label>
             ))}
+            <fieldset className="space-y-4 md:col-span-2">
+              <legend>Additional eligible products</legend>
+              <p className="text-sm">
+                All choices start disabled. Rewards require actual successful
+                payments and verified supplier cost evidence. Each rate and cap
+                becomes part of the agreement accepted by the participant.
+              </p>
+              {[
+                ["business_email", "Business Email"],
+                ["domain_registration", "Domains"],
+                ["custom_project", "Custom projects"],
+              ].map(([product, label]) => (
+                <details
+                  key={product}
+                  className="rounded border border-border p-4"
+                >
+                  <summary>{label}</summary>
+                  <label className="my-3 block">
+                    <input type="checkbox" name={"rule-" + product} />
+                    Include {label} in this offer
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label>
+                      Reward type
+                      <select
+                        name={"rule-" + product + "-kind"}
+                        className={input}
+                      >
+                        <option value="PERCENTAGE">
+                          Percentage of eligible net revenue
+                        </option>
+                        <option value="FIXED">
+                          Fixed amount per eligible payment
+                        </option>
+                      </select>
+                    </label>
+                    {[
+                      [
+                        "rate",
+                        "Percentage (%)",
+                        product === "custom_project" ? 5 : 15,
+                      ],
+                      ["fixed", "Fixed reward (₦)", 0],
+                      ["months", "Eligible paid months (maximum 12)", 12],
+                      ["tax", "Included tax (%)", 0],
+                      ["reserve", "Minimum retained margin (₦)", 0],
+                      ["cap", "Maximum reward per payment (₦)", 1000000],
+                    ].map(([key, title, value]) => (
+                      <label key={String(key)}>
+                        {String(title)}
+                        <input
+                          name={"rule-" + product + "-" + key}
+                          type="number"
+                          min={0}
+                          step={key === "months" ? 1 : 0.01}
+                          defaultValue={Number(value)}
+                          className={input}
+                        />
+                      </label>
+                    ))}
+                    {product !== "domain_registration" && (
+                      <label>
+                        <input
+                          type="checkbox"
+                          name={"rule-" + product + "-recurring"}
+                          defaultChecked={product === "business_email"}
+                        />
+                        Recurring rewards within the agreed paid-month limit
+                      </label>
+                    )}
+                  </div>
+                </details>
+              ))}
+            </fieldset>
             <fieldset className="space-y-2">
               <legend>Eligible website plans</legend>
               {WEBSITE_PLANS.filter((p) => p.id !== "free").map((p) => (
@@ -182,6 +390,17 @@ export default async function Page() {
                 max={28}
                 name="day"
                 defaultValue={Number(schedule?.payout_day || 21)}
+                className={input}
+              />
+            </label>
+            <label>
+              Expected monthly payment day
+              <input
+                type="number"
+                min={1}
+                max={28}
+                name="paymentDay"
+                defaultValue={Number(schedule?.payment_day || 28)}
                 className={input}
               />
             </label>

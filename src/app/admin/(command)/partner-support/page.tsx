@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { PartnerAlerts } from "@/components/distribution/partner-alerts";
 import {
   assignPartnerTicketAction,
   partnerResponseTargetAction,
   retryPartnerNoticesAction,
 } from "@/lib/actions/partner-operations-actions";
-import { guardAdminPage } from "@/lib/admin-page-guard";
-import { requireAdminCapability } from "@/lib/admin-session";
+import { programmeSupportAgent } from "@/lib/partners/support-access";
+
 import { query } from "@/lib/custom/service";
 import { staffPartnerTicketAction } from "@/lib/actions/partner-ticket-actions";
 export const dynamic = "force-dynamic";
@@ -15,10 +16,9 @@ export default async function Page({
   searchParams: Promise<{ status?: string; priority?: string; q?: string }>;
 }) {
   const filters = await searchParams;
-  await guardAdminPage("manage_support");
-  const a = await requireAdminCapability("manage_support");
+  const a = await programmeSupportAgent();
   const tickets = await query(
-    `SELECT t.*,p.name,(t.updated_at<now()-make_interval(hours=>(SELECT response_hours FROM partner_support_settings WHERE id=true))) AS overdue FROM partner_tickets t JOIN affiliates p ON p.id=t.partner_id WHERE ($1='owner' OR(t.sensitive=false AND(t.assigned_to IS NULL OR t.assigned_to=$2))) AND($3='' OR t.status=$3) AND($4='' OR t.priority=$4) AND($5='' OR p.name ILIKE '%'||$5||'%' OR t.category ILIKE '%'||$5||'%') ORDER BY t.updated_at DESC LIMIT 100`,
+    `SELECT t.*,p.name,(t.updated_at<now()-make_interval(hours=>(SELECT response_hours FROM partner_support_settings WHERE id=true))) AS overdue FROM partner_tickets t JOIN affiliates p ON p.id=t.partner_id WHERE ($1 IN('owner','support') OR p.programme='affiliate') AND ($1='owner' OR(t.sensitive=false AND(t.assigned_to IS NULL OR t.assigned_to=$2))) AND($3='' OR t.status=$3) AND($4='' OR t.priority=$4) AND($5='' OR p.name ILIKE '%'||$5||'%' OR t.category ILIKE '%'||$5||'%') ORDER BY t.updated_at DESC LIMIT 100`,
     [
       a.role,
       a.id,
@@ -28,7 +28,7 @@ export default async function Page({
     ],
   );
   const messages = await query(
-    `SELECT m.* FROM partner_ticket_messages m JOIN partner_tickets t ON t.id=m.ticket_id WHERE $1='owner' OR(t.sensitive=false AND(t.assigned_to IS NULL OR t.assigned_to=$2)) ORDER BY m.id`,
+    `SELECT m.* FROM partner_ticket_messages m JOIN partner_tickets t ON t.id=m.ticket_id WHERE ($1 IN('owner','support') OR EXISTS(SELECT 1 FROM affiliates p WHERE p.id=t.partner_id AND p.programme='affiliate')) AND($1='owner' OR(t.sensitive=false AND(t.assigned_to IS NULL OR t.assigned_to=$2))) ORDER BY m.id`,
     [a.role, a.id],
   );
   const settings = (
@@ -39,16 +39,17 @@ export default async function Page({
   const staff =
     a.role === "owner"
       ? await query(
-          "SELECT id,name,role FROM admin_users WHERE disabled_at IS NULL AND role IN('owner','support') ORDER BY name",
+          "SELECT id,name,role FROM admin_users WHERE disabled_at IS NULL AND role IN('owner','support','affiliate_manager','growth_gaming_lead') ORDER BY name",
         )
       : [];
   const attachments = await query(
-    `SELECT f.id,f.ticket_id,f.file_name FROM partner_ticket_attachments f JOIN partner_tickets t ON t.id=f.ticket_id WHERE $1='owner' OR(t.sensitive=false AND(t.assigned_to IS NULL OR t.assigned_to=$2)) ORDER BY f.created_at DESC LIMIT 200`,
+    `SELECT f.id,f.ticket_id,f.file_name FROM partner_ticket_attachments f JOIN partner_tickets t ON t.id=f.ticket_id WHERE ($1 IN('owner','support') OR EXISTS(SELECT 1 FROM affiliates p WHERE p.id=t.partner_id AND p.programme='affiliate')) AND($1='owner' OR(t.sensitive=false AND(t.assigned_to IS NULL OR t.assigned_to=$2))) ORDER BY f.created_at DESC LIMIT 200`,
     [a.role, a.id],
   );
   return (
     <div className="space-y-5 text-ink">
-      <h1 className="text-3xl font-semibold">Partner support queue</h1>
+      <h1 className="text-3xl font-semibold">Programme support queue</h1>
+      <PartnerAlerts team />
       <Link href="/admin/support" className="underline">
         Install JKTL and enable team notifications
       </Link>
@@ -88,7 +89,7 @@ export default async function Page({
           </select>
         </label>
         <label>
-          Partner or category
+          Affiliate, Partner or category
           <input
             name="q"
             defaultValue={filters.q}
@@ -155,7 +156,10 @@ export default async function Page({
                 key={String(m.id)}
                 className="whitespace-pre-wrap break-words rounded bg-surface p-3"
               >
-                {m.kind === "STAFF" ? "TEAM" : String(m.kind)}: {m.kind === "EVENT" && m.body === "Staff assignment updated" ? "Team assignment updated" : String(m.body)}
+                {m.kind === "STAFF" ? "TEAM" : String(m.kind)}:{" "}
+                {m.kind === "EVENT" && m.body === "Staff assignment updated"
+                  ? "Team assignment updated"
+                  : String(m.body)}
               </p>
             ))}
           <div>
@@ -165,7 +169,7 @@ export default async function Page({
                 <a
                   className="my-2 block underline"
                   key={String(f.id)}
-                  href={"/api/partners/attachments/" + f.id}
+                  href={"/admin/api/programme-attachments/" + f.id}
                 >
                   {String(f.file_name)}
                 </a>

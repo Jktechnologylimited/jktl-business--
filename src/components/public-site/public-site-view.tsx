@@ -692,7 +692,9 @@ function TemplatePublicSite(props: Parameters<typeof LegacyPublicSiteView>[0] & 
 export function PublicSiteView(props: Parameters<typeof LegacyPublicSiteView>[0]) {
   const template = getWebsiteTemplate(props.profile.websiteTemplateId);
   if (template && props.profile.websiteDocument) {
-    try { const content = parseWebsiteDocument(props.profile.websiteDocument); return <TemplatePublicSite {...props} template={template} content={content}/>; } catch { /* Invalid/stale template content uses the original website. */ }
+    let content: ReturnType<typeof parseWebsiteDocument> | undefined;
+    try { content = parseWebsiteDocument(props.profile.websiteDocument); } catch { /* Invalid/stale content uses the original website. */ }
+    if(content) return <TemplatePublicSite {...props} template={template} content={content}/>;
   }
   return <LegacyPublicSiteView {...props}/>;
 }

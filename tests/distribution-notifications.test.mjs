@@ -10,6 +10,13 @@ test("program notices stay queued without delivery configuration and isolate ret
     fail = true;
   const deps = {
     "server-only": {},
+    "./push": {
+      flushProgrammePush: async () => ({
+        configured: false,
+        delivered: 0,
+        failed: 0,
+      }),
+    },
     "@/lib/custom/service": {
       query: async (s, p) => {
         queried++;

@@ -40,7 +40,7 @@ export async function customWorkspaceAction() {
     const [projects, services, invoices, requests, clients] = await Promise.all(
       [
         query(
-          "SELECT id,name,website_url,status,cms_tested_at,analytics_url,domain_asset_id,description,revision FROM custom_projects WHERE organization_id=$1 ORDER BY created_at",
+          "SELECT id,name,website_url,status,cms_tested_at,analytics_url,domain_asset_id,description,revision FROM custom_projects WHERE organization_id=$1 AND billing_only=false ORDER BY created_at",
           [s.organizationId],
         ),
         query(
