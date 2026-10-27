@@ -77,7 +77,7 @@ function LoginForm() {
       return;
     }
     if (params.get("next") === "domains") {
-      router.push("/business/domains");
+      router.push(emailDestination(params)!);
       return;
     }
     const returnGame = params.get("next");
@@ -113,7 +113,7 @@ function LoginForm() {
               ? "?plan=" + encodeURIComponent(params.get("emailPlan")!)
               : ""),
         );
-      else if (value === "domains") router.replace("/business/domains");
+      else if (value === "domains") router.replace(emailDestination(params)!);
       else if (value === "custom") router.replace("/business/custom");
       else if (value === "tycoon") router.replace("/play/tycoon");
       else {

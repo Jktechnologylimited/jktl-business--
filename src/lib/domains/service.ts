@@ -1,4 +1,6 @@
 import "server-only";
+import { lookupDomain } from "./lookup";
+import { requireDomainPurchases } from "./discovery";
 import { randomUUID } from "node:crypto";
 import { getSql } from "@/lib/db/client";
 import { requireSession } from "@/lib/session";
@@ -29,6 +31,7 @@ export async function checkAvailability(
   org: string,
   label: unknown,
   extension: string,
+  fresh = false,
 ) {
   await rateLimit(query, org, "search", 15, 60);
   const price = (
@@ -47,7 +50,7 @@ export async function checkAvailability(
       [org, domain, price.revision],
     )
   )[0];
-  if (existing)
+  if (existing && !fresh)
     return {
       check: existing,
       price: {
@@ -64,42 +67,10 @@ export async function checkAvailability(
       .length
   )
     status = "UNAVAILABLE";
-  else if (
-    process.env.DOMAIN_AVAILABILITY_URL &&
-    process.env.DOMAIN_AVAILABILITY_API_KEY
-  ) {
-    try {
-      const url = new URL(process.env.DOMAIN_AVAILABILITY_URL);
-      if (url.protocol !== "https:" || url.username || url.password)
-        throw Error("Invalid provider");
-      url.searchParams.set("domain", domain);
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${process.env.DOMAIN_AVAILABILITY_API_KEY}`,
-        },
-        cache: "no-store",
-        signal: AbortSignal.timeout(8000),
-        redirect: "error",
-      });
-      if (!res.ok) throw Error("Lookup failed");
-      const data = await res.json();
-      if (data.domain !== domain || typeof data.available !== "boolean")
-        throw Error("Invalid lookup");
-      if (data.available === false) status = "UNAVAILABLE";
-      else if (
-        data.premium === false &&
-        (data.registrationPriceKobo === undefined ||
-          (Number.isSafeInteger(data.registrationPriceKobo) &&
-            data.registrationPriceKobo > 0 &&
-            data.registrationPriceKobo <= Number(price.registration_price))) &&
-        (!data.currency || data.currency === "NGN")
-      )
-        status = "AVAILABLE";
-      source = "provider";
-    } catch {
-      status = "UNKNOWN";
-      source = "manual";
-    }
+  else {
+    const result = await lookupDomain(domain, price);
+    status = result.status;
+    source = result.source;
   }
   const rows = await query(
     `INSERT INTO domain_checks(organization_id,domain,extension,status,source,price_revision,checked_at,valid_until) VALUES($1,$2,$3,$4,$5,$6,CASE WHEN $4<>'UNKNOWN' THEN now() ELSE NULL END,CASE WHEN $4<>'UNKNOWN' THEN now()+interval '10 minutes' ELSE NULL END) ON CONFLICT(organization_id,domain) DO UPDATE SET status=EXCLUDED.status,source=EXCLUDED.source,checked_at=EXCLUDED.checked_at,valid_until=EXCLUDED.valid_until,price_revision=EXCLUDED.price_revision RETURNING *`,
@@ -118,6 +89,37 @@ export async function checkAvailability(
   };
 }
 export async function initializeOrder(id: string, org: string) {
+  await requireDomainPurchases(query);
+  const pending = (
+    await query(
+      "SELECT * FROM domain_orders WHERE id=$1 AND organization_id=$2 AND status='PENDING_PAYMENT'",
+      [id, org],
+    )
+  )[0];
+  if (!pending) throw Error("Domain order not found.");
+  const latest = (
+    await query(
+      "SELECT * FROM domain_prices WHERE extension=$1 AND enabled=true",
+      [pending.extension],
+    )
+  )[0];
+  if (!latest || Number(latest.revision) !== Number(pending.price_revision))
+    throw Error(
+      "Current prices changed. Contact support to review this existing order before paying.",
+    );
+  if (pending.kind === "REGISTER") {
+    const check = await checkAvailability(
+      org,
+      pending.domain,
+      String(pending.extension),
+      true,
+    );
+    if (check.check.status !== "AVAILABLE")
+      throw Error(
+        "Availability could not be confirmed. Your order is retained; no new checkout was started.",
+      );
+  }
+
   const row = (
     await query(
       `UPDATE domain_orders SET checkout_state='initializing',updated_at=now() WHERE id=$1 AND organization_id=$2 AND status='PENDING_PAYMENT' AND checkout_state='reserved' RETURNING *`,

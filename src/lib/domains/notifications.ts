@@ -59,6 +59,12 @@ export async function runDomainMaintenance() {
   const reminders = await enqueueDomainReminders();
   const notices = await flushDomainNotifications(15);
   await sql`DELETE FROM domain_rate_limits WHERE expires_at<now()`;
+  if (
+    (
+      await sql`SELECT to_regclass('public.domain_public_searches') AS present`
+    )[0]?.present
+  )
+    await sql`DELETE FROM domain_public_searches WHERE updated_at<now()-interval '1 day' AND(lease_until IS NULL OR lease_until<now())`;
   if (notices.failed)
     throw Error(
       `${notices.failed} domain notices will retry. Check transactional email configuration.`,

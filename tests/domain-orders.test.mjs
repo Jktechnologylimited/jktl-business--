@@ -56,9 +56,18 @@ async function fixture() {
       "utf8",
     ),
   );
+  await db.exec(
+    readFileSync(
+      new URL("../migrations/056_domain_discovery.sql", import.meta.url),
+      "utf8",
+    ),
+  );
+  await db.exec(
+    "UPDATE domain_purchase_controls SET readonly_verified_at=now(),e2e_verified_at=now(),purchases_enabled=true",
+  );
   const q = async (sql, args) => (await db.query(sql, args)).rows;
   await q(
-    `UPDATE domain_prices SET registration_price=500000,renewal_price=650000,enabled=true,max_years=5 WHERE extension='.com.ng'`,
+    `UPDATE domain_prices SET registration_price=500000,renewal_price=650000,registration_cost=300000,renewal_cost=400000,enabled=true,max_years=5 WHERE extension='.com.ng'`,
     [],
   );
   let tx = 100;
@@ -554,7 +563,18 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
       },
       getDomainRefund: async () => null,
     };
+    const lookup = load("../src/lib/domains/lookup.ts", { "server-only": {} });
+    const discovery = load("../src/lib/domains/discovery.ts", {
+      "server-only": {},
+      "node:crypto": crypto,
+      "@/lib/db/client": { getSql: () => sql },
+      "./model": model,
+      "./store": store,
+      "./lookup": lookup,
+    });
     const service = load("../src/lib/domains/service.ts", {
+      "./lookup": lookup,
+      "./discovery": discovery,
       "server-only": {},
       "node:crypto": crypto,
       "@/lib/db/client": { getSql: () => sql },
@@ -610,6 +630,7 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
       "@/lib/business-email/service": { handleEmailEvent: async () => false },
       "@/lib/custom/service": { handleCustomEvent: async () => false },
       "@/lib/domains/service": service,
+      "@/lib/domains/discovery": discovery,
       "@/lib/domains/contacts": contacts,
       "@/lib/domains/model": model,
       "@/lib/domains/store": store,
@@ -675,6 +696,9 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
             domain: name + ".com.ng",
             available,
             premium,
+            reserved: false,
+            eligible: true,
+            registrationPriceKobo: 300000,
             currency: "NGN",
           };
           const r = await actions.searchDomainsAction(name, ".com.ng");
@@ -693,10 +717,65 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
         delete process.env.DOMAIN_AVAILABILITY_API_KEY;
       },
     );
+    await t.test(
+      "paused purchases refuse checkout and uninitialized reserved orders can be cancelled without a provider call",
+      async () => {
+        await f.q(
+          "UPDATE domain_purchase_controls SET purchases_enabled=false",
+        );
+        const raw = {
+          domain: "manual.com.ng",
+          extension: ".com.ng",
+          kind: "REGISTER",
+          years: 1,
+          priceRevision: 1,
+          registrant: contact,
+          consent: true,
+          termsVersion: model.DOMAIN_TERMS,
+        };
+        const blocked = await actions.createDomainOrderAction(raw);
+        assert.equal(blocked.ok, false);
+        assert.match(blocked.error, /temporarily unavailable/);
+        assert.equal(initializations, 0);
+        const unpaid = await f.order("never-initialized.com.ng");
+        const resumed = await actions.resumeDomainOrderAction(unpaid.id);
+        assert.equal(resumed.ok, false);
+        assert.equal(initializations, 0);
+        const count = verifications;
+        assert.equal(
+          (await actions.cancelDomainOrderAction(unpaid.id)).ok,
+          true,
+        );
+        assert.equal(verifications, count);
+        assert.equal(
+          (
+            await f.q("SELECT status FROM domain_orders WHERE id=$1", [
+              unpaid.id,
+            ])
+          )[0].status,
+          "CANCELLED",
+        );
+        await f.q("UPDATE domain_purchase_controls SET purchases_enabled=true");
+      },
+    );
     let order;
     await t.test(
       "one-off checkout snapshots prices, encrypts contact and refuses a duplicate charge",
       async () => {
+        process.env.DOMAIN_AVAILABILITY_URL =
+          "https://availability.example.test/check";
+        process.env.DOMAIN_AVAILABILITY_API_KEY = "test-only-key";
+        globalThis.fetch = async (url) =>
+          Response.json({
+            domain: new URL(url).searchParams.get("domain"),
+            available: true,
+            premium: false,
+            reserved: false,
+            eligible: true,
+            registrationPriceKobo: 300000,
+            currency: "NGN",
+          });
+
         const r = await actions.createDomainOrderAction({
           domain: "manual.com.ng",
           extension: ".com.ng",

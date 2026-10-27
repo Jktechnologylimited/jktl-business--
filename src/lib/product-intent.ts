@@ -1,6 +1,22 @@
 type Params = Pick<URLSearchParams, "get">;
 /** Only a known product destination is carried through account creation; never an arbitrary redirect. */
+export function selectedDomain(params: Params) {
+  const value = (params.get("domain") || "").trim().toLowerCase();
+  return value.length <= 253 &&
+    /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/.test(value) &&
+    value !== "jktl.com.ng" &&
+    !value.endsWith(".jktl.com.ng")
+    ? value
+    : "";
+}
 export function emailIntent(params: Params) {
+  if (params.get("next") === "domains") {
+    const domain = selectedDomain(params);
+    return (
+      "?next=domains" + (domain ? "&domain=" + encodeURIComponent(domain) : "")
+    );
+  }
+
   if (params.get("next") === "affiliate-invite") {
     const token = params.get("invite") || "";
     return /^[a-f0-9]{64}$/.test(token)
@@ -34,6 +50,14 @@ export function emailIntent(params: Params) {
   );
 }
 export function emailDestination(params: Params) {
+  if (params.get("next") === "domains") {
+    const domain = selectedDomain(params);
+    return (
+      "/business/domains" +
+      (domain ? "?domain=" + encodeURIComponent(domain) : "")
+    );
+  }
+
   if (params.get("next") === "affiliate-invite") {
     const token = params.get("invite") || "";
     return /^[a-f0-9]{64}$/.test(token)

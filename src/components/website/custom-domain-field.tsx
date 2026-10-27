@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Loader2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,17 +40,32 @@ export function CustomDomainField({
   const [domainInput, setDomainInput] = useState(profile.customDomain);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const [instructions, setInstructions] = useState<{ recordName: string; recordValue: string } | null>(null);
+  const [instructions, setInstructions] = useState<{
+    recordName: string;
+    recordValue: string;
+  } | null>(null);
   const [upgrading, setUpgrading] = useState(false);
 
   if (!subscriptionActive) {
     return (
       <div className="border-t border-border pt-4">
         <p className="text-sm font-medium text-ink">Custom domain</p>
+        <Link
+          href="/business/domains"
+          className="mt-2 inline-block text-sm underline"
+        >
+          Search for a domain →
+        </Link>
         <p className="mt-1 text-xs text-ink-muted">
-          Point your own domain (e.g. www.yourbusiness.com) at this site instead of your jktl.com.ng address.
+          Point your own domain (e.g. www.yourbusiness.com) at this site instead
+          of your jktl.com.ng address.
         </p>
-        <Button size="sm" variant="outline" className="mt-2" onClick={() => setUpgrading(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-2"
+          onClick={() => setUpgrading(true)}
+        >
           Upgrade
         </Button>
         <UpgradeSheet
@@ -72,9 +88,18 @@ export function CustomDomainField({
 
     if (mode !== "live") {
       const domain = domainInput.trim().toLowerCase();
-      setWebsiteProfile({ ...profile, customDomain: domain, customDomainVerified: false });
-      setInstructions({ recordName: verificationRecordName(domain), recordValue: "jktl-domain-verify=demo-mode-token" });
-      showToast("Saved — you're in demo mode, so nothing was actually verified");
+      setWebsiteProfile({
+        ...profile,
+        customDomain: domain,
+        customDomainVerified: false,
+      });
+      setInstructions({
+        recordName: verificationRecordName(domain),
+        recordValue: "jktl-domain-verify=demo-mode-token",
+      });
+      showToast(
+        "Saved — you're in demo mode, so nothing was actually verified",
+      );
       return;
     }
 
@@ -87,7 +112,10 @@ export function CustomDomainField({
       return;
     }
     setWebsiteProfile(result.data.profile);
-    setInstructions({ recordName: result.data.recordName, recordValue: result.data.recordValue });
+    setInstructions({
+      recordName: result.data.recordName,
+      recordValue: result.data.recordValue,
+    });
   }
 
   async function verify() {
@@ -95,7 +123,9 @@ export function CustomDomainField({
 
     if (mode !== "live") {
       setWebsiteProfile({ ...profile, customDomainVerified: true });
-      showToast("Verified — you're in demo mode, so nothing was actually checked");
+      showToast(
+        "Verified — you're in demo mode, so nothing was actually checked",
+      );
       return;
     }
 
@@ -117,7 +147,11 @@ export function CustomDomainField({
     setInstructions(null);
 
     if (mode !== "live") {
-      setWebsiteProfile({ ...profile, customDomain: "", customDomainVerified: false });
+      setWebsiteProfile({
+        ...profile,
+        customDomain: "",
+        customDomainVerified: false,
+      });
       setDomainInput("");
       return;
     }
@@ -138,7 +172,10 @@ export function CustomDomainField({
     <div className="flex flex-col gap-3 border-t border-border pt-4">
       <div>
         <p className="text-sm font-medium text-ink">Custom domain</p>
-        <p className="mt-1 text-xs text-ink-muted">Point your own domain at this site instead of your jktl.com.ng address.</p>
+        <p className="mt-1 text-xs text-ink-muted">
+          Point your own domain at this site instead of your jktl.com.ng
+          address.
+        </p>
       </div>
 
       {!profile.customDomain ? (
@@ -150,7 +187,11 @@ export function CustomDomainField({
             autoCapitalize="off"
             autoCorrect="off"
           />
-          <Button size="sm" onClick={start} disabled={pending || !domainInput.trim()}>
+          <Button
+            size="sm"
+            onClick={start}
+            disabled={pending || !domainInput.trim()}
+          >
             {pending ? <Loader2 className="size-4 animate-spin" /> : null}
             Start
           </Button>
@@ -160,40 +201,67 @@ export function CustomDomainField({
           <span className="flex items-center gap-1.5 text-sm font-medium text-ink">
             <Check className="size-4 text-primary" /> {profile.customDomain}
           </span>
-          <button type="button" onClick={remove} disabled={pending} className="text-ink-muted hover:text-danger" aria-label="Remove">
+          <button
+            type="button"
+            onClick={remove}
+            disabled={pending}
+            className="text-ink-muted hover:text-danger"
+            aria-label="Remove"
+          >
             <X className="size-4" />
           </button>
         </div>
       ) : (
         <div className="flex flex-col gap-3 rounded-xl border border-border-strong p-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-ink">{profile.customDomain}</span>
-            <button type="button" onClick={remove} disabled={pending} className="text-ink-muted hover:text-danger" aria-label="Cancel">
+            <span className="text-sm font-medium text-ink">
+              {profile.customDomain}
+            </span>
+            <button
+              type="button"
+              onClick={remove}
+              disabled={pending}
+              className="text-ink-muted hover:text-danger"
+              aria-label="Cancel"
+            >
               <X className="size-4" />
             </button>
           </div>
 
           {instructions ? (
             <div className="rounded-lg bg-surface p-3 text-xs">
-              <p className="text-ink-muted">Add this DNS TXT record at your domain registrar, then verify:</p>
+              <p className="text-ink-muted">
+                Add this DNS TXT record at your domain registrar, then verify:
+              </p>
               <dl className="mt-2 flex flex-col gap-1 font-mono">
                 <div>
                   <dt className="text-ink-faint">Name</dt>
-                  <dd className="break-all text-ink">{instructions.recordName}</dd>
+                  <dd className="break-all text-ink">
+                    {instructions.recordName}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-ink-faint">Value</dt>
-                  <dd className="break-all text-ink">{instructions.recordValue}</dd>
+                  <dd className="break-all text-ink">
+                    {instructions.recordValue}
+                  </dd>
                 </div>
               </dl>
             </div>
           ) : (
-            <p className="text-xs text-ink-muted">Verification is pending — DNS can take a few minutes to propagate.</p>
+            <p className="text-xs text-ink-muted">
+              Verification is pending — DNS can take a few minutes to propagate.
+            </p>
           )}
 
           <div className="flex gap-2">
             {!instructions ? (
-              <Button size="sm" variant="outline" onClick={start} disabled={pending}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={start}
+                disabled={pending}
+              >
                 Show instructions again
               </Button>
             ) : null}
@@ -209,8 +277,9 @@ export function CustomDomainField({
 
       {profile.customDomainVerified ? (
         <p className="text-xs text-ink-muted">
-          Verified — now add <span className="font-mono">{profile.customDomain}</span> to your Vercel project (Domains → Add) so
-          it actually goes live.
+          Verified — now add{" "}
+          <span className="font-mono">{profile.customDomain}</span> to your
+          Vercel project (Domains → Add) so it actually goes live.
         </p>
       ) : null}
     </div>

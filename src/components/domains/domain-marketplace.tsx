@@ -24,6 +24,7 @@ export type DomainData = {
   assets: Row[];
   checks: Row[];
   tasks: Row[];
+  purchasesEnabled?: boolean;
 };
 const blank = (): DomainData => ({
   prices: [],
@@ -106,6 +107,16 @@ export function DomainMarketplace({
     const result = await customerDomainsAction();
     if (result.ok) {
       setData(result.data);
+      const requested =
+        new URLSearchParams(window.location.search).get("domain") || "";
+      const chosen = result.data.prices
+        .slice()
+        .sort((a, b) => String(b.extension).length - String(a.extension).length)
+        .find((p) => requested.endsWith(String(p.extension)));
+      if (requested && chosen) {
+        setDomain(requested);
+        setExtension(String(chosen.extension));
+      }
       setExtension((current) =>
         result.data.prices.some((p) => p.extension === current)
           ? current
@@ -216,9 +227,18 @@ export function DomainMarketplace({
             <Link href="/login?next=domains">
               Sign in as the business owner
             </Link>{" "}
-            to search and order. Demo accounts cannot make purchases.
+            to purchase and manage domains. You can search without an account.
+            Demo accounts cannot make purchases.
           </aside>
         )}
+        {authenticated &&
+          mode === "live" &&
+          data.purchasesEnabled === false && (
+            <p className={styles.notice}>
+              Domain checkout is temporarily unavailable. You can search, view
+              your existing domains and contact support.
+            </p>
+          )}
         {unavailable && (
           <p className={styles.notice}>
             The domain catalogue is being prepared. Please check back shortly or
@@ -232,7 +252,32 @@ export function DomainMarketplace({
             onSubmit={async (e) => {
               e.preventDefault();
               if (!authenticated || mode !== "live") {
-                setMessage("Sign in as the business owner to search domains.");
+                await run(async () => {
+                  const response = await fetch("/api/public/domain-search", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: domain, extension }),
+                  });
+                  const result = await response.json();
+                  if (!response.ok)
+                    return {
+                      ok: false,
+                      error:
+                        result.error || "Availability could not be confirmed.",
+                    };
+                  setData((current) => ({
+                    ...current,
+                    checks: result.results.map((r: Row) => ({
+                      id: r.domain,
+                      domain: r.domain,
+                      extension: r.extension,
+                      status: r.status,
+                      checked_at: new Date().toISOString(),
+                      valid_until: new Date(Date.now() + 60000).toISOString(),
+                    })),
+                  }));
+                  return { ok: true };
+                }, "Search updated. Availability is checked again before payment.");
                 return;
               }
               await run(
@@ -291,21 +336,31 @@ export function DomainMarketplace({
                   <strong>{text(c, "domain")}</strong>
                   <span className={styles.status}>
                     {text(c, "status") === "UNKNOWN"
-                      ? "Checking for availability"
+                      ? "Availability not confirmed"
                       : text(c, "status")}
                   </span>
                 </div>
                 <p className={styles.note}>
                   {c.checked_at
                     ? `Checked ${new Date(String(c.checked_at)).toLocaleString("en-NG", { timeZone: "Africa/Lagos" })}. Availability can change before registration.`
-                    : "Checking for availability. Refresh to see the latest result."}
+                    : "We could not confirm availability. Try again shortly."}
                 </p>
                 {c.status === "AVAILABLE" &&
-                  new Date(text(c, "valid_until")).getTime() > now && (
-                    <button onClick={() => choose(c)}>
+                  new Date(text(c, "valid_until")).getTime() > now &&
+                  (!authenticated || mode !== "live" ? (
+                    <Link
+                      href={`/login?next=domains&domain=${encodeURIComponent(String(c.domain))}`}
+                    >
+                      Get Domain →
+                    </Link>
+                  ) : (
+                    <button
+                      disabled={data.purchasesEnabled === false}
+                      onClick={() => choose(c)}
+                    >
                       Review domain order
                     </button>
-                  )}
+                  ))}
               </article>
             ))}
           </div>

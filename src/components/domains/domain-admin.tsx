@@ -2,6 +2,7 @@
 import { useState } from "react";
 import {
   adminDomainsAction,
+  saveDomainPurchaseControlsAction,
   saveDomainPriceAction,
   confirmDomainAvailabilityAction,
   fulfillDomainOrderAction,
@@ -17,6 +18,7 @@ type Data = {
   checks: Row[];
   tasks: Row[];
   audit: Row[];
+  controls?: { purchasesEnabled: boolean; automationEnabled: boolean };
 };
 const text = (r: Row, k: string) => String(r[k] ?? "");
 export function DomainAdmin({ initial }: { initial: Data }) {
@@ -55,6 +57,35 @@ export function DomainAdmin({ initial }: { initial: Data }) {
         purchasing through the supplier, and record the actual confirmation.
         Never request a second customer payment for an existing order.
       </p>
+      <section className={styles.section}>
+        <h2>Purchase safeguards</h2>
+        <p>
+          New purchases:{" "}
+          {data.controls?.purchasesEnabled ? "Enabled" : "Paused"}. Automated
+          registration:{" "}
+          {data.controls?.automationEnabled ? "Enabled" : "Disabled"}.
+        </p>
+        <p className={styles.note}>
+          Searches remain available when purchasing is paused. Go54
+          authentication, pricing and the end-to-end purchase flow must be
+          verified before live registration can be enabled.
+        </p>
+        <button
+          disabled={busy}
+          onClick={() =>
+            void run(
+              () =>
+                saveDomainPurchaseControlsAction({
+                  purchasesEnabled: false,
+                  automationEnabled: false,
+                }),
+              "New domain purchases paused. Existing domains are retained.",
+            )
+          }
+        >
+          Pause new purchases & automation
+        </button>
+      </section>
       <nav className={styles.adminTabs}>
         {[
           ["orders", "Orders & refunds"],
@@ -129,6 +160,7 @@ export function DomainAdmin({ initial }: { initial: Data }) {
                   <th>Extension</th>
                   <th>Registration</th>
                   <th>Renewal</th>
+                  <th>Recorded cost / estimated gross profit</th>
                   <th>Status</th>
                   <th>Updated</th>
                   <th />
@@ -145,6 +177,11 @@ export function DomainAdmin({ initial }: { initial: Data }) {
                     </td>
                     <td>
                       {p.renewal_price ? money(p.renewal_price) : "Not priced"}
+                    </td>
+                    <td>
+                      {Number(p.registration_cost) > 0
+                        ? `${money(p.registration_cost)} / ${money(Number(p.registration_price) - Number(p.registration_cost))}`
+                        : "Cost not confirmed"}
                     </td>
                     <td>{p.enabled ? "Enabled" : "Disabled"}</td>
                     <td>

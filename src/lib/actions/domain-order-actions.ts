@@ -1,5 +1,9 @@
 "use server";
 import { after } from "next/server";
+import {
+  requireDomainPurchases,
+  purchaseControls,
+} from "@/lib/domains/discovery";
 import { resolveTxt, resolveCname, resolve4 } from "node:dns/promises";
 import { requireAdminCapability } from "@/lib/admin-session";
 import {
@@ -45,7 +49,7 @@ function failure(e: unknown) {
     e instanceof Error && "code" in e ? String(e.code) : "request",
   );
   const safe =
-    /^(Enter |Use |Check |Choose |Only |Your |This |The order|The domain|The registrar|Too many|Upgrade |Payment is |Availability|Domain order not found|Order not found|Record |Explain |Registration |Secure domain|Payment setup|Checkout |Sign in|Not signed|Could not|Invalid domain|That domain|No |A |Reload |Expired|Current |Website |Hosting |Transfer |Complete |You must)/.test(
+    /^(Enter |Use |Check |Choose |Only |Your |This |The order|The domain|The registrar|Too many|Upgrade |Payment is |Availability|Domain checkout|Domain order not found|Order not found|Record |Explain |Registration |Secure domain|Payment setup|Checkout |Sign in|Not signed|Could not|Invalid domain|That domain|No |A |Reload |Expired|Current |Website |Hosting |Transfer |Complete |You must)/.test(
       message,
     );
   return {
@@ -97,7 +101,14 @@ export async function customerDomainsAction() {
     ]);
     return {
       ok: true as const,
-      data: { prices, orders, assets, checks, tasks },
+      data: {
+        prices,
+        orders,
+        assets,
+        checks,
+        tasks,
+        purchasesEnabled: (await purchaseControls(query)).purchasesEnabled,
+      },
     };
   } catch (e) {
     return failure(e);
@@ -136,6 +147,15 @@ export async function createDomainOrderAction(raw: {
       raw.years,
       price.max_years,
     );
+    await requireDomainPurchases(query);
+    if (
+      Number(
+        raw.kind === "REGISTER" ? price.registration_cost : price.renewal_cost,
+      ) < 1
+    )
+      throw Error(
+        "Current supplier cost is not confirmed. Checkout is unavailable.",
+      );
     const encrypted = encryptContact(parseRegistrant(raw.registrant));
     const id = orderIdentity();
     const email = await ownerEmail(s.userId);
@@ -209,6 +229,16 @@ export async function cancelDomainOrderAction(id: string) {
       )
     )[0];
     if (!row) throw Error("Order not found.");
+    if (row.checkout_state === "reserved" && !row.authorization_url) {
+      const cancelled = await query(
+        `WITH changed AS(UPDATE domain_orders SET status='CANCELLED',revision=revision+1,updated_at=now() WHERE id=$1 AND organization_id=$2 AND status='PENDING_PAYMENT' AND checkout_state='reserved' AND authorization_url IS NULL RETURNING *) INSERT INTO domain_audit(organization_id,order_id,actor_id,actor_type,event) SELECT organization_id,id,$3,'customer','UNINITIALIZED_CANCELLED' FROM changed RETURNING id`,
+        [id, s.organizationId, s.userId],
+      );
+      if (cancelled.length) return { ok: true as const };
+      throw Error(
+        "Reload the order; checkout may have started in another tab.",
+      );
+    }
     const data = await verifyTransaction(String(row.reference));
     if (data.status === "success") {
       await verifyDomainReference(String(row.reference));
@@ -264,7 +294,14 @@ export async function adminDomainsAction() {
     });
     return {
       ok: true as const,
-      data: { prices, orders: safe, checks, tasks, audit },
+      data: {
+        prices,
+        orders: safe,
+        checks,
+        tasks,
+        audit,
+        controls: await purchaseControls(query),
+      },
     };
   } catch (e) {
     return failure(e);
@@ -641,6 +678,46 @@ export async function verifyDomainRefundAction(id: string, refundId: string) {
       throw Error("The refund does not belong to this order.");
     await recordRefund(query, data);
     await flush();
+    return { ok: true as const };
+  } catch (e) {
+    return failure(e);
+  }
+}
+
+export async function saveDomainPurchaseControlsAction(raw: {
+  purchasesEnabled: boolean;
+  automationEnabled: boolean;
+}) {
+  try {
+    const a = await requireAdminCapability("manage_domains");
+    if (
+      typeof raw.purchasesEnabled !== "boolean" ||
+      typeof raw.automationEnabled !== "boolean" ||
+      (raw.automationEnabled && !raw.purchasesEnabled)
+    )
+      throw Error("Choose valid purchase settings.");
+    const current = await purchaseControls(query);
+    if (raw.purchasesEnabled && !current.purchasesEnabled) {
+      const row = (
+        await query(
+          "SELECT readonly_verified_at,e2e_verified_at FROM domain_purchase_controls WHERE id=true",
+          [],
+        )
+      )[0];
+      if (!row?.readonly_verified_at || !row.e2e_verified_at)
+        throw Error(
+          "Complete the read-only Go54 authentication and end-to-end purchase verification before enabling purchases.",
+        );
+    }
+    // The registrar write adapter is intentionally unavailable until the official contract is accessible and verified.
+    if (raw.automationEnabled)
+      throw Error(
+        "Complete the documented registrar integration before enabling automated registration.",
+      );
+    await query(
+      `WITH changed AS(UPDATE domain_purchase_controls SET purchases_enabled=$1,automation_enabled=$2,updated_by=$3,updated_at=now() WHERE id=true RETURNING *) INSERT INTO domain_audit(actor_id,actor_type,event,detail) SELECT $3,'admin','PURCHASE_CONTROLS_UPDATED',jsonb_build_object('purchasesEnabled',$1::boolean,'automationEnabled',$2::boolean) FROM changed`,
+      [raw.purchasesEnabled, raw.automationEnabled, a.id],
+    );
     return { ok: true as const };
   } catch (e) {
     return failure(e);

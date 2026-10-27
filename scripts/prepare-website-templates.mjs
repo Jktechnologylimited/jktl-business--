@@ -37,6 +37,7 @@ if (!url) {
       "053_affiliate_campaigns.sql",
       "054_distribution_product_rules.sql",
       "055_editorial_team.sql",
+      "056_domain_discovery.sql",
     ].map((name) =>
       readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
     ),

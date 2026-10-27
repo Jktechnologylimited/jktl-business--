@@ -28,18 +28,24 @@ export function normalizeOrderDomain(
   input: unknown,
   extension: string,
 ): string {
-  if (typeof input !== "string" || input.length > 253)
+  if (
+    typeof input !== "string" ||
+    typeof extension !== "string" ||
+    input.length > 253 ||
+    extension.length > 128
+  )
     throw Error("Enter a domain name.");
   let s = input.trim().toLowerCase();
   if (s.endsWith(extension)) s = s.slice(0, -extension.length);
   if (
     !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(s) ||
-    !/^\.[a-z]{2,}(\.[a-z]{2,})?$/.test(extension)
+    !/^\.[a-z]{2,63}(\.[a-z]{2,63})?$/.test(extension)
   )
     throw Error(
       "Use a name with letters, numbers and hyphens only, without a URL or subdomain.",
     );
   const domain = s + extension;
+  if (domain.length > 253) throw Error("Use a shorter domain name.");
   const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "jktl.com.ng";
   if (domain === root || domain.endsWith("." + root))
     throw Error("JKTL platform addresses cannot be purchased.");

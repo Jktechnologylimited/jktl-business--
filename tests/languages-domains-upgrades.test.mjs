@@ -38,7 +38,7 @@ test('domain reseller input and configurable retail prices never invent availabi
 });
 test('every Product, Solutions and Resources item has a public page instead of a shared anchor',{skip:!paired},async()=>{
  const {navigation}=await import('../../jktl-main/data/navigation.ts');const {featurePages}=await import('../../jktl-main/data/feature-pages.ts');
- const existing=new Set(['/templates','/case-studies','/landing-pages','/products/domains','/products/business-email','/products/business-tools','/products/add-ons','/products/custom-websites','/products/managed-services','/industries','/about','/blog','/columns','/releases','/updates','/affiliates','/partners','/games/business-tycoon','/games','/contact','/pricing','/how-it-works']);
+ const existing=new Set(['/templates','/case-studies','/landing-pages','/products/domains','/domains','/products/business-email','/products/business-tools','/products/add-ons','/products/custom-websites','/products/managed-services','/industries','/about','/blog','/columns','/releases','/updates','/affiliates','/partners','/games/business-tycoon','/games','/contact','/pricing','/how-it-works']);
  const pages=new Set(featurePages.map(page=>`/${page.section}/${page.slug}`));const destinations=[];
  for(const menu of Object.values(navigation))for(const item of [...menu.groups.flatMap(group=>group.items),...menu.aside.items]){assert.ok(!item.href.includes('#'),item.title);assert.ok(item.href.startsWith('/'),item.title);assert.ok(existing.has(item.href)||pages.has(item.href),item.href);destinations.push(item.href);}
  assert.equal(new Set(destinations).size,destinations.length,'Each menu item has its own destination');
