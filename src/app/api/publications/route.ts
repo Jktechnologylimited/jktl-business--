@@ -5,7 +5,13 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const kind = req.nextUrl.searchParams.get("kind");
   const slug = req.nextUrl.searchParams.get("slug") ?? undefined;
+  const rawOffset = req.nextUrl.searchParams.get("offset") || "0";
+  const offset = Number(rawOffset);
   if (
+    !/^\d{1,6}$/.test(rawOffset) ||
+    !Number.isSafeInteger(offset) ||
+    offset < 0 ||
+    offset > 100000 ||
     !PUBLICATION_KINDS.includes(kind as PublicationKind) ||
     (slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))
   )
@@ -14,14 +20,21 @@ export async function GET(req: NextRequest) {
       { status: 400 },
     );
   try {
-    const articles = await publishedArticles(kind as PublicationKind, slug);
+    const articles = await publishedArticles(
+      kind as PublicationKind,
+      slug,
+      offset,
+    );
     if (slug && !articles.length)
       return NextResponse.json(
         { error: "Not found." },
         { status: 404, headers: { "Cache-Control": "no-store" } },
       );
     return NextResponse.json(
-      { articles },
+      {
+        articles,
+        nextOffset: !slug && articles.length === 200 ? offset + 200 : null,
+      },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch {

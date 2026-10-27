@@ -19,11 +19,15 @@ export async function listEditorial(actor?: EditorialActor) {
       : await sql`SELECT * FROM jktl_publications ORDER BY updated_at DESC LIMIT 200`
   ).map(mapPublication);
 }
-export async function publishedArticles(kind: PublicationKind, slug?: string) {
+export async function publishedArticles(
+  kind: PublicationKind,
+  slug?: string,
+  offset = 0,
+) {
   const sql = getSql();
   const rows = await sql.query(
-    `SELECT p.*,ep.slug author_slug,ep.display_name profile_name,ep.bio author_bio,ep.avatar_url author_avatar FROM jktl_publications p LEFT JOIN editorial_profiles ep ON ep.user_id=p.created_by WHERE p.kind=$1 AND p.status='published' AND p.published_at<=now() AND ($2::text IS NULL OR p.slug=$2) ORDER BY p.featured DESC,p.published_at DESC LIMIT 200`,
-    [kind, slug || null],
+    `SELECT p.*,ep.slug author_slug,ep.display_name profile_name,ep.bio author_bio,ep.avatar_url author_avatar FROM jktl_publications p LEFT JOIN editorial_profiles ep ON ep.user_id=p.created_by WHERE p.kind=$1 AND p.status='published' AND p.published_at<=now() AND ($2::text IS NULL OR p.slug=$2) ORDER BY p.featured DESC,p.published_at DESC,p.id DESC LIMIT 200 OFFSET $3`,
+    [kind, slug || null, slug ? 0 : offset],
   );
   return rows.map((r) => {
     const p = mapPublication(r);

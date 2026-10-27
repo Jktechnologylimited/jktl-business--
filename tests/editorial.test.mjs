@@ -561,9 +561,53 @@ test("editorial invitations reuse Team accounts with hashed, expiring, single-us
     await db.close();
   }
 });
-test('revoking official publishing also prevents unauthorized withdrawal or demotion of a sensitive publication',()=>{
- const p={...parsePublication({...base,kind:'release'}),id:'00000000-0000-4000-8000-000000000010',createdBy:editor.id,assignedTo:editor.id,approvedBy:owner.id,status:'published',revision:4};
- assert.throws(()=>checkEditorialChange(editor,{...p,status:'submitted'},p),/cannot withdraw/);
- const flagged={...p,kind:'update',sensitive:true,status:'submitted'};
- assert.throws(()=>checkEditorialChange(editor,{...flagged,sensitive:false,status:'approved'},flagged),/only be removed by an Owner/);
+test("revoking official publishing also prevents unauthorized withdrawal or demotion of a sensitive publication", () => {
+  const p = {
+    ...parsePublication({ ...base, kind: "release" }),
+    id: "00000000-0000-4000-8000-000000000010",
+    createdBy: editor.id,
+    assignedTo: editor.id,
+    approvedBy: owner.id,
+    status: "published",
+    revision: 4,
+  };
+  assert.throws(
+    () => checkEditorialChange(editor, { ...p, status: "submitted" }, p),
+    /cannot withdraw/,
+  );
+  const flagged = {
+    ...p,
+    kind: "update",
+    sensitive: true,
+    status: "submitted",
+  };
+  assert.throws(
+    () =>
+      checkEditorialChange(
+        editor,
+        { ...flagged, sensitive: false, status: "approved" },
+        flagged,
+      ),
+    /only be removed by an Owner/,
+  );
+});
+test("published feed pagination enumerates existing articles beyond the first 200 without exposing draft bodies", async () => {
+  const { db, store } = await fixture();
+  try {
+    await db.query(
+      `INSERT INTO jktl_publications(slug,kind,title,excerpt,body,author,status,published_at,created_by) SELECT 'published-'||n,'blog','Published article '||n,'Useful business advice.','A detailed public article body.','JKTL Team','published',now()-n*interval '1 minute',$1::uuid FROM generate_series(1,201)n`,
+      [owner.id],
+    );
+    const first = await store.publishedArticles("blog"),
+      next = await store.publishedArticles("blog", undefined, 200);
+    assert.equal(first.length, 200);
+    assert.equal(next.length, 1);
+    assert.equal(new Set([...first, ...next].map((p) => p.id)).size, 201);
+    assert.equal(next[0].body, "");
+    assert.ok(
+      (await store.publishedArticles("blog", next[0].slug, 200))[0].body,
+    );
+  } finally {
+    await db.close();
+  }
 });
