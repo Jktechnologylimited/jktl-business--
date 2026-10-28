@@ -242,14 +242,14 @@ test("public search shares authoritative prices, redacts private data, caches lo
       /platform addresses/,
     );
     await f.q("UPDATE domain_prices SET enabled=false WHERE extension='.com'");
-    await assert.rejects(
-      f.service.publicDomainSearch(
-        { name: "mybrand", extension: ".com" },
-        "192.0.2.4",
-        f.q,
-      ),
-      /enabled extension/,
+    const unsupported = await f.service.publicDomainSearch(
+      { name: "mybrand", extension: ".com" },
+      "192.0.2.4",
+      f.q,
     );
+    assert.equal(unsupported.availabilityStatus, "UNSUPPORTED");
+    assert.deepEqual(unsupported.results, []);
+    assert.equal(unsupported.purchasesEnabled, false);
     await f.db.exec(
       readFileSync(
         new URL("../migrations/056_domain_discovery.sql", import.meta.url),

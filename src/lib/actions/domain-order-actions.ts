@@ -1,4 +1,5 @@
 "use server";
+import { can } from "@/lib/admin-permissions";
 import { after } from "next/server";
 import {
   requireDomainPurchases,
@@ -83,7 +84,7 @@ export async function customerDomainsAction() {
     const [prices, orders, assets, checks, tasks] = await Promise.all([
       publicPrices(),
       query(
-        `SELECT id,domain,extension,kind,asset_id,years,status,amount_kobo,renewal_kobo,currency,reference,authorization_url,checkout_state,registered_at,expires_at,nameservers,failure_reason,refunded_kobo,revision,paid_at,created_at FROM domain_orders WHERE organization_id=$1 ORDER BY created_at DESC LIMIT 100`,
+        `SELECT id,domain,extension,kind,asset_id,years,status,fulfillment_stage,amount_kobo,renewal_kobo,currency,reference,authorization_url,checkout_state,registered_at,expires_at,nameservers,failure_reason,refunded_kobo,revision,paid_at,created_at FROM domain_orders WHERE organization_id=$1 ORDER BY created_at DESC LIMIT 100`,
         [s.organizationId],
       ),
       query(
@@ -263,22 +264,31 @@ export async function cancelDomainOrderAction(id: string) {
 }
 export async function adminDomainsAction() {
   try {
-    await requireAdminCapability("manage_domains");
+    const operator = await requireAdminCapability("fulfill_domains");
+    const manager = can(operator.role, "manage_domains", operator.permissions);
     const [prices, orders, checks, tasks, audit] = await Promise.all([
-      query("SELECT * FROM domain_prices ORDER BY extension", []),
+      manager
+        ? query("SELECT * FROM domain_prices ORDER BY extension", [])
+        : Promise.resolve([]),
       query(
-        `SELECT o.*,p.provider_transaction,b.display_name FROM domain_orders o LEFT JOIN domain_payments p ON p.reference=o.reference LEFT JOIN business_profiles b ON b.organization_id=o.organization_id ORDER BY o.created_at DESC LIMIT 150`,
-        [],
+        `SELECT o.*,p.provider_transaction,b.display_name FROM domain_orders o LEFT JOIN domain_payments p ON p.reference=o.reference LEFT JOIN business_profiles b ON b.organization_id=o.organization_id WHERE ($1::boolean OR o.assigned_to=$2::uuid) ORDER BY o.created_at DESC LIMIT 150`,
+        [manager, operator.id],
       ),
-      query(
-        `SELECT c.*,b.display_name FROM domain_checks c LEFT JOIN business_profiles b ON b.organization_id=c.organization_id WHERE c.status='UNKNOWN' ORDER BY c.created_at LIMIT 100`,
-        [],
-      ),
-      query(
-        `SELECT t.*,COALESCE(a.domain,o.domain) AS domain,a.connection_status,a.connection_token,a.hosting_reference FROM domain_tasks t LEFT JOIN domain_assets a ON a.id=t.asset_id LEFT JOIN domain_orders o ON o.id=t.order_id WHERE t.status IN('OPEN','PROCESSING') ORDER BY t.created_at LIMIT 100`,
-        [],
-      ),
-      query("SELECT * FROM domain_audit ORDER BY id DESC LIMIT 100", []),
+      manager
+        ? query(
+            `SELECT c.*,b.display_name FROM domain_checks c LEFT JOIN business_profiles b ON b.organization_id=c.organization_id WHERE c.status='UNKNOWN' ORDER BY c.created_at LIMIT 100`,
+            [],
+          )
+        : Promise.resolve([]),
+      manager
+        ? query(
+            `SELECT t.*,COALESCE(a.domain,o.domain) AS domain,a.connection_status,a.connection_token,a.hosting_reference FROM domain_tasks t LEFT JOIN domain_assets a ON a.id=t.asset_id LEFT JOIN domain_orders o ON o.id=t.order_id WHERE t.status IN('OPEN','PROCESSING') ORDER BY t.created_at LIMIT 100`,
+            [],
+          )
+        : Promise.resolve([]),
+      manager
+        ? query("SELECT * FROM domain_audit ORDER BY id DESC LIMIT 100", [])
+        : Promise.resolve([]),
     ]);
     const safe = orders.map((row) => {
       let contact = null;
@@ -300,7 +310,28 @@ export async function adminDomainsAction() {
         checks,
         tasks,
         audit,
-        controls: await purchaseControls(query),
+        controls: manager ? await purchaseControls(query) : undefined,
+        manager,
+        team: manager
+          ? await query(
+              "SELECT id,name,email FROM admin_users WHERE disabled_at IS NULL AND role IN('owner','support') ORDER BY name",
+              [],
+            )
+          : [],
+        assets: manager
+          ? await query(
+              "SELECT id,domain,organization_id,registered_at,expires_at,connection_status FROM domain_assets ORDER BY expires_at LIMIT 150",
+              [],
+            )
+          : [],
+        defaultMode: manager
+          ? (
+              await query(
+                "SELECT default_fulfillment_mode FROM domain_purchase_controls WHERE id=true",
+                [],
+              )
+            )[0]?.default_fulfillment_mode
+          : "MANUAL",
       },
     };
   } catch (e) {
@@ -392,11 +423,25 @@ export async function fulfillDomainOrderAction(input: {
   nameservers?: string;
 }) {
   try {
-    const a = await requireAdminCapability("manage_domains");
+    const a = await requireAdminCapability("fulfill_domains");
+    if (
+      !can(a.role, "manage_domains", a.permissions) &&
+      !(
+        await query(
+          "SELECT id FROM domain_orders WHERE id=$1 AND assigned_to=$2",
+          [uuid(input.id), a.id],
+        )
+      ).length
+    )
+      throw Error("Only assigned team members can fulfill this order.");
     uuid(input.id);
     if (!Number.isSafeInteger(input.revision) || input.revision < 1)
       throw Error("Reload this order.");
-    await changeOrder(query, { ...input, admin: a.id });
+    await changeOrder(query, {
+      ...input,
+      admin: a.id,
+      assignedOnly: !can(a.role, "manage_domains", a.permissions),
+    });
     await flush();
     return { ok: true as const };
   } catch (e) {

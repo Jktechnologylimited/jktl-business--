@@ -1,4 +1,5 @@
 "use client";
+import { ReconcileOperation } from "./fulfillment-tools";
 import { useCallback, useEffect, useState } from "react";
 import {
   registrarDashboardAction,
@@ -339,13 +340,17 @@ export function RegistrarPanel() {
             <>
               <h3>Registrar transaction reconciliation</h3>
               {data.operations.map((op) => (
-                <p key={String(op.id)}>
-                  {String(op.domain)} · {String(op.kind)} · {String(op.state)} ·{" "}
-                  {String(
-                    op.transaction_reference || "No confirmed transaction",
-                  )}
-                  . {String(op.reason || "")}
-                </p>
+                <div key={String(op.id)}>
+                  <p>
+                    {String(op.domain)} · {String(op.kind)} · {String(op.state)}{" "}
+                    ·{" "}
+                    {String(
+                      op.transaction_reference || "No confirmed transaction",
+                    )}
+                    . {String(op.reason || "")}
+                  </p>
+                  <ReconcileOperation operation={op} done={reload} />
+                </div>
               ))}
             </>
           ) : null}

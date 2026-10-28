@@ -80,7 +80,14 @@ export function go54Form(input: Record<string, FormValue>): string {
 }
 
 export function configuredGo54Credentials(): Go54Credentials {
-  const email = process.env.GO54_RESELLER_EMAIL || "";
+  const email =
+    process.env.GO54_API_EMAIL || process.env.GO54_RESELLER_EMAIL || "";
+  if (
+    process.env.GO54_API_EMAIL &&
+    process.env.GO54_RESELLER_EMAIL &&
+    process.env.GO54_API_EMAIL !== process.env.GO54_RESELLER_EMAIL
+  )
+    throw Error("Conflicting Go54 email configuration.");
   const apiKey = process.env.GO54_API_KEY || "";
   if (!email || !apiKey) throw Error("Go54 credentials are not configured.");
   return { email, apiKey };

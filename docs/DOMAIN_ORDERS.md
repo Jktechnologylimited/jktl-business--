@@ -1,3 +1,5 @@
+For the latest fulfillment modes, assignment, partner permissions and production gates, see [Domain automation with manual fallback](DOMAIN_FULFILLMENT.md).
+
 # Pay-per-order domains
 
 Business owns the catalogue, customer orders, Paystack verification, domain records, audit and manual fulfillment queue. Main links to the live Business marketplace and reads its retail-only public `/api/public/domain-prices` catalogue with a short cache; it never receives supplier costs or a Business database connection. There is **no JKTL customer wallet, supplier auto-purchase, recurring domain debit or WHOIS harvesting**. The private GO54 reseller-balance snapshot is an operator record of the underlying supplier account, not customer funds. See [current GO54 contract and implementation status](GO54_INTEGRATION_STATUS.md) for authentication, pricing transport, markup controls, migration 057 and the remaining registrar API blockers.

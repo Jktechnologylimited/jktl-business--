@@ -35,7 +35,16 @@ export function normalizeOrderDomain(
     extension.length > 128
   )
     throw Error("Enter a domain name.");
-  let s = input.trim().toLowerCase();
+  let s = input.trim().normalize("NFC").toLowerCase();
+  // URL implements IDNA in both browser and server runtimes. Reject URL syntax
+  // before conversion so ports, paths, credentials and percent escapes cannot
+  // become a different domain than the customer entered.
+  if (/[\s/:@?#%\\]/u.test(s)) throw Error("Use a domain name without a URL.");
+  try {
+    s = new URL("https://" + s).hostname;
+  } catch {
+    throw Error("Enter a valid internationalized domain name.");
+  }
   if (s.endsWith(extension)) s = s.slice(0, -extension.length);
   if (
     !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(s) ||
@@ -156,3 +165,42 @@ export const money = (v: unknown) =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(
     Number(v) / 100,
   );
+
+/** Public discovery vocabulary; AVAILABLE remains an internal checkout proof. */
+export function domainAvailabilityStatus(
+  result: { status: string; registryStatus?: string },
+  supported = true,
+) {
+  if (!supported) return "UNSUPPORTED";
+  if (result.status === "UNAVAILABLE" || result.registryStatus === "REGISTERED")
+    return "REGISTERED";
+  if (result.status === "AVAILABLE" || result.registryStatus === "NOT_FOUND")
+    return "APPEARS_AVAILABLE";
+  return "UNKNOWN";
+}
+export function domainProgress(order: Record<string, unknown>): string {
+  const stage = ["PAID", "PROCESSING"].includes(String(order.status))
+    ? String(order.fulfillment_stage || order.status)
+    : String(order.status);
+  return (
+    (
+      {
+        PENDING_PAYMENT: "Awaiting payment",
+        PAID: "Payment confirmed",
+        PROCESSING: "Preparing your domain",
+        VERIFYING_AVAILABILITY: "Checking your domain",
+        PENDING_REGISTRATION: "Preparing registration",
+        REGISTERING: "Registration in progress",
+        RECONCILIATION_REQUIRED:
+          "Confirming the registrar result — no second payment is needed",
+        MANUAL_REVIEW: "The JKTL team is reviewing your order",
+        ACTIVE: "Domain active",
+        FAILED:
+          "We could not complete this order — contact support for your options",
+        REFUND_PENDING: "Refund review in progress",
+        REFUNDED: "Refund confirmed",
+        CANCELLED: "Order cancelled",
+      } as Record<string, string>
+    )[stage] || "Order under review"
+  );
+}

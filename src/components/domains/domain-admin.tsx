@@ -9,6 +9,7 @@ import {
   completeDomainTaskAction,
   verifyDomainRefundAction,
 } from "@/lib/actions/domain-order-actions";
+import { FulfillmentSettings, ManualOrderTools } from "./fulfillment-tools";
 import { money } from "@/lib/domains/model";
 import styles from "./domains.module.css";
 import { RegistrarPanel } from "./registrar-panel";
@@ -19,6 +20,10 @@ type Data = {
   checks: Row[];
   tasks: Row[];
   audit: Row[];
+  manager?: boolean;
+  team?: Row[];
+  assets?: Row[];
+  defaultMode?: unknown;
   controls?: { purchasesEnabled: boolean; automationEnabled: boolean };
 };
 const text = (r: Row, k: string) => String(r[k] ?? "");
@@ -53,53 +58,72 @@ export function DomainAdmin({ initial }: { initial: Data }) {
     <div className={styles.page}>
       <h1 className="text-3xl font-semibold">Domain operations</h1>
       <p className={styles.adminNote}>
-        Manual supplier fulfillment only. A verified Paystack payment is not a
-        registration. Recheck availability and registry eligibility before
-        purchasing through the supplier, and record the actual confirmation.
-        Never request a second customer payment for an existing order.
+        One order with automatic or manual fulfillment. A verified Paystack
+        payment is not a registration. Recheck availability and registry
+        eligibility before purchasing through the supplier, and record the
+        actual confirmation. Never request a second customer payment for an
+        existing order.
       </p>
-      <section className={styles.section}>
-        <h2>Purchase safeguards</h2>
-        <p>
-          New purchases:{" "}
-          {data.controls?.purchasesEnabled ? "Enabled" : "Paused"}. Automated
-          registration:{" "}
-          {data.controls?.automationEnabled ? "Enabled" : "Disabled"}.
-        </p>
-        <p className={styles.note}>
-          Searches remain available when purchasing is paused. Go54
-          authentication, pricing and the end-to-end purchase flow must be
-          verified before live registration can be enabled.
-        </p>
-        <button
-          disabled={busy}
-          onClick={() =>
-            void run(
-              () =>
-                saveDomainPurchaseControlsAction({
-                  purchasesEnabled: false,
-                  automationEnabled: false,
-                }),
-              "New domain purchases paused. Existing domains are retained.",
-            )
-          }
-        >
-          Pause new purchases & automation
-        </button>
-      </section>
-      <RegistrarPanel />
+      {data.manager && (
+        <section className={styles.section}>
+          <h2>Purchase safeguards</h2>
+          <p>
+            New purchases:{" "}
+            {data.controls?.purchasesEnabled ? "Enabled" : "Paused"}. Automated
+            registration:{" "}
+            {data.controls?.automationEnabled ? "Enabled" : "Disabled"}.
+          </p>
+          <p className={styles.note}>
+            Searches remain available when purchasing is paused. Go54
+            authentication, pricing and the end-to-end purchase flow must be
+            verified before live registration can be enabled.
+          </p>
+          <button
+            disabled={busy}
+            onClick={() =>
+              void run(
+                () =>
+                  saveDomainPurchaseControlsAction({
+                    purchasesEnabled: false,
+                    automationEnabled: false,
+                  }),
+                "New domain purchases paused. Existing domains are retained.",
+              )
+            }
+          >
+            Pause new purchases & automation
+          </button>
+        </section>
+      )}
+      {data.manager && (
+        <FulfillmentSettings
+          mode={String(data.defaultMode || "MANUAL")}
+          prices={data.prices}
+          busy={busy}
+          run={run}
+        />
+      )}
+      {data.manager && <RegistrarPanel />}
       <nav className={styles.adminTabs}>
         {[
-          ["orders", "Orders & refunds"],
+          ["orders", "Domain orders"],
+          ["manual", "Manual fulfillment"],
+          ["assets", "Registered domains"],
           ["checks", "Availability checks"],
           ["prices", "Pricing"],
           ["tasks", "DNS & support tasks"],
           ["audit", "Audit trail"],
-        ].map(([id, label]) => (
-          <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>
-            {label}
-          </button>
-        ))}
+        ]
+          .filter(([id]) => data.manager || ["orders", "manual"].includes(id))
+          .map(([id, label]) => (
+            <button
+              key={id}
+              aria-pressed={tab === id}
+              onClick={() => setTab(id)}
+            >
+              {label}
+            </button>
+          ))}
       </nav>
       <p role="status" className={styles.feedback}>
         {message}
@@ -213,108 +237,142 @@ export function DomainAdmin({ initial }: { initial: Data }) {
           )}
         </section>
       )}
-      {tab === "orders" && (
+      {tab === "assets" && (
+        <section className={styles.adminList}>
+          <h2>Registered domains</h2>
+          {data.assets?.map((a) => (
+            <p key={text(a, "id")}>
+              {text(a, "domain")} · Expires {text(a, "expires_at")} ·{" "}
+              {text(a, "connection_status")}
+            </p>
+          ))}
+        </section>
+      )}
+      {["orders", "manual"].includes(tab) && (
         <section className={styles.adminList}>
           <h2 className="text-xl font-semibold">Orders — latest 150</h2>
-          {data.orders.map((o) => (
-            <details key={text(o, "id") + "-" + text(o, "revision")}>
-              <summary>
-                <strong>{text(o, "domain")}</strong> · {text(o, "kind")} ·{" "}
-                {text(o, "status")} · {money(o.amount_kobo)} ·{" "}
-                {text(o, "display_name")}
-              </summary>
-              <dl>
-                {[
-                  ["Order ID", "id"],
-                  ["Payment reference", "reference"],
-                  ["Verified transaction", "provider_transaction"],
-                  ["Paid at", "paid_at"],
-                  ["Period (years)", "years"],
-                  ["Supplier reference", "supplier_reference"],
-                  ["Recorded registration", "registered_at"],
-                  ["Recorded expiry", "expires_at"],
-                  ["Failure / refund reason", "failure_reason"],
-                ].map(([label, key]) => (
-                  <div key={key} style={{ display: "contents" }}>
-                    <dt>{label}</dt>
-                    <dd>{text(o, key) || "—"}</dd>
-                  </div>
-                ))}
-              </dl>
-              {o.paid_at ? (
-                <>
-                  <h3>Registrant contact — authorized fulfillment use only</h3>
-                  {o.registrant ? (
-                    <dl>
-                      {Object.entries(
-                        o.registrant as Record<string, string>,
-                      ).map(([k, v]) => (
-                        <div key={k} style={{ display: "contents" }}>
-                          <dt>{k}</dt>
-                          <dd>{v || "—"}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  ) : (
-                    <p className={styles.notice}>
-                      Encrypted contact could not be read. Check secure
-                      contact-key configuration before proceeding.
-                    </p>
+          {data.orders
+            .filter(
+              (o) =>
+                tab !== "manual" ||
+                ["MANUAL_REVIEW", "RECONCILIATION_REQUIRED"].includes(
+                  String(o.fulfillment_stage),
+                ),
+            )
+            .map((o) => (
+              <details key={text(o, "id") + "-" + text(o, "revision")}>
+                <summary>
+                  <strong>{text(o, "domain")}</strong> · {text(o, "kind")} ·{" "}
+                  {text(o, "status")} · {money(o.amount_kobo)} ·{" "}
+                  {text(o, "display_name")}
+                </summary>
+                <dl>
+                  {[
+                    ["Order ID", "id"],
+                    ["Payment reference", "reference"],
+                    ["Verified transaction", "provider_transaction"],
+                    ["Paid at", "paid_at"],
+                    ["Period (years)", "years"],
+                    ["Supplier reference", "supplier_reference"],
+                    ["Recorded registration", "registered_at"],
+                    ["Recorded expiry", "expires_at"],
+                    ["Failure / refund reason", "failure_reason"],
+                  ].map(([label, key]) => (
+                    <div key={key} style={{ display: "contents" }}>
+                      <dt>{label}</dt>
+                      <dd>{text(o, key) || "—"}</dd>
+                    </div>
+                  ))}
+                </dl>
+                {o.paid_at ? (
+                  <>
+                    <h3>
+                      Registrant contact — authorized fulfillment use only
+                    </h3>
+                    {o.registrant ? (
+                      <dl>
+                        {Object.entries(
+                          o.registrant as Record<string, string>,
+                        ).map(([k, v]) => (
+                          <div key={k} style={{ display: "contents" }}>
+                            <dt>{k}</dt>
+                            <dd>{v || "—"}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    ) : (
+                      <p className={styles.notice}>
+                        Encrypted contact could not be read. Check secure
+                        contact-key configuration before proceeding.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p>
+                    Unpaid order. Do not register it or disclose registrant
+                    contact.
+                  </p>
+                )}
+                {data.manager &&
+                  ["PAID", "PROCESSING"].includes(text(o, "status")) && (
+                    <ManualOrderTools
+                      order={o}
+                      team={data.team || []}
+                      busy={busy}
+                      run={run}
+                    />
                   )}
-                </>
-              ) : (
-                <p>
-                  Unpaid order. Do not register it or disclose registrant
-                  contact.
-                </p>
-              )}
-              {["PAID", "PROCESSING", "FAILED"].includes(text(o, "status")) && (
-                <FulfilForm
-                  order={o}
-                  busy={busy}
-                  submit={(input) =>
-                    run(
-                      () => fulfillDomainOrderAction(input),
-                      "Order updated and notification queued. No supplier purchase was made by the application.",
-                    )
-                  }
-                />
-              )}
-              {o.status === "REFUND_PENDING" && (
-                <div className={styles.notice}>
-                  <h3>Full-refund queue</h3>
-                  <p>
-                    Verified paid amount: {money(o.amount_kobo)}.
-                    Provider-confirmed refunded amount: {money(o.refunded_kobo)}
-                    .
-                  </p>
-                  <p>
-                    Use this order’s transaction in the existing Paystack
-                    dashboard to issue the remaining refund. Do not refund a
-                    subscription or another transaction. The signed refund
-                    webhook confirms each partial/full refund.
-                  </p>
-                  <a
-                    href="https://dashboard.paystack.com/#/transactions"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Open Paystack transactions ↗
-                  </a>
-                  <RefundForm
-                    id={text(o, "id")}
-                    busy={busy}
-                    submit={(refundId) =>
-                      run(
-                        () => verifyDomainRefundAction(text(o, "id"), refundId),
-                        "Provider refund checked. The order is refunded only when the full amount is confirmed.",
-                      )
-                    }
-                  />
-                </div>
-              )}
-            </details>
-          ))}
+                {o.fulfillment_stage !== "RECONCILIATION_REQUIRED" &&
+                  ["PAID", "PROCESSING", "FAILED"].includes(
+                    text(o, "status"),
+                  ) && (
+                    <FulfilForm
+                      order={o}
+                      busy={busy}
+                      submit={(input) =>
+                        run(
+                          () => fulfillDomainOrderAction(input),
+                          "Order updated and notification queued. No supplier purchase was made by the application.",
+                        )
+                      }
+                    />
+                  )}
+                {o.status === "REFUND_PENDING" && (
+                  <div className={styles.notice}>
+                    <h3>Full-refund queue</h3>
+                    <p>
+                      Verified paid amount: {money(o.amount_kobo)}.
+                      Provider-confirmed refunded amount:{" "}
+                      {money(o.refunded_kobo)}.
+                    </p>
+                    <p>
+                      Use this order’s transaction in the existing Paystack
+                      dashboard to issue the remaining refund. Do not refund a
+                      subscription or another transaction. The signed refund
+                      webhook confirms each partial/full refund.
+                    </p>
+                    <a
+                      href="https://dashboard.paystack.com/#/transactions"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open Paystack transactions ↗
+                    </a>
+                    <RefundForm
+                      id={text(o, "id")}
+                      busy={busy}
+                      submit={(refundId) =>
+                        run(
+                          () =>
+                            verifyDomainRefundAction(text(o, "id"), refundId),
+                          "Provider refund checked. The order is refunded only when the full amount is confirmed.",
+                        )
+                      }
+                    />
+                  </div>
+                )}
+              </details>
+            ))}
         </section>
       )}
       {tab === "tasks" && (

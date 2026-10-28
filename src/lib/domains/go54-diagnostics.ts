@@ -103,6 +103,7 @@ export async function recordGo54Diagnostic(
         sanitizeGo54Payload(diagnostic.payload, diagnostic.operation, [
           process.env.GO54_API_KEY || "",
           process.env.GO54_RESELLER_EMAIL || "",
+          process.env.GO54_API_EMAIL || "",
         ]),
       ),
       diagnostic.observedAt,

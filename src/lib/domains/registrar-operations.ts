@@ -16,7 +16,7 @@ export async function claimPaidRegistrarAttempt(q: Query, orderId: string) {
       SELECT $2,id,kind,domain,1+COALESCE((SELECT max(attempt) FROM domain_registrar_operations WHERE order_id=$1),0)
       FROM locked WHERE NOT EXISTS(SELECT 1 FROM domain_registrar_operations WHERE order_id=$1 AND state<>'NOT_APPLIED')
       ON CONFLICT DO NOTHING RETURNING *),
-    processing AS(UPDATE domain_orders SET status='PROCESSING',revision=revision+1,updated_at=now()
+    processing AS(UPDATE domain_orders SET status='PROCESSING',fulfillment_stage='VERIFYING_AVAILABILITY',revision=revision+1,updated_at=now()
       WHERE id IN(SELECT order_id FROM added)),
     audited AS(INSERT INTO domain_audit(order_id,actor_type,event,detail)
       SELECT order_id,'system','REGISTRAR_ATTEMPT_CLAIMED',jsonb_build_object('operation',id,'attempt',attempt) FROM added)
@@ -80,11 +80,12 @@ export async function markRegistrarSubmitted(
       "Fresh eligibility, availability and an authenticated sufficient reseller balance are required.",
     );
   const rows = await q(
-    `WITH gate AS(UPDATE domain_registrar_state SET inflight_operation_id=$1 WHERE id=true AND inflight_operation_id IS NULL
+    `WITH locked_order AS(SELECT o.id FROM domain_orders o JOIN domain_registrar_operations r ON r.order_id=o.id WHERE r.id=$1 AND o.fulfillment_stage NOT IN('MANUAL_REVIEW','RECONCILIATION_REQUIRED') FOR UPDATE OF o), gate AS(UPDATE domain_registrar_state SET inflight_operation_id=$1 WHERE id=true AND inflight_operation_id IS NULL AND EXISTS(SELECT 1 FROM locked_order)
       AND EXISTS(SELECT 1 FROM domain_registrar_operations r JOIN domain_orders o ON o.id=r.order_id JOIN domain_payments p ON p.reference=o.reference
-        WHERE r.id=$1 AND r.state='PRECHECK' AND r.domain=$3 AND r.kind=$4 AND o.years=$5 AND o.status='PROCESSING' AND p.amount_kobo=o.amount_kobo AND o.amount_kobo>=$2) RETURNING id),
+        WHERE r.id=$1 AND r.state='PRECHECK' AND r.domain=$3 AND r.kind=$4 AND o.years=$5 AND o.status='PROCESSING' AND o.fulfillment_stage NOT IN('MANUAL_REVIEW','RECONCILIATION_REQUIRED') AND p.amount_kobo=o.amount_kobo AND o.amount_kobo>=$2) RETURNING id),
     changed AS(UPDATE domain_registrar_operations SET state='SUBMITTED',reserved_cost_kobo=$2,submitted_at=now(),updated_at=now()
-      WHERE id=$1 AND state='PRECHECK' AND EXISTS(SELECT 1 FROM gate) RETURNING *)
+      WHERE id=$1 AND state='PRECHECK' AND EXISTS(SELECT 1 FROM gate) RETURNING *),
+    staged AS(UPDATE domain_orders SET fulfillment_stage='REGISTERING',fulfillment_revision=fulfillment_revision+1 WHERE id IN(SELECT order_id FROM changed))
     INSERT INTO domain_audit(order_id,actor_type,event,detail)
       SELECT order_id,'system','REGISTRAR_SUBMISSION_STARTED',jsonb_build_object('operation',id) FROM changed RETURNING id`,
     [operationId, costKobo, proof.domain, proof.kind, proof.years],
@@ -98,7 +99,7 @@ export async function markRegistrarSubmitted(
 export async function markRegistrarUnknown(q: Query, operationId: string) {
   await q(
     `WITH changed AS(UPDATE domain_registrar_operations SET state='UNKNOWN',reason='Registrar outcome requires reconciliation',updated_at=now()
-    WHERE id=$1 AND state='SUBMITTED' RETURNING *)
+    WHERE id=$1 AND state='SUBMITTED' RETURNING *), staged AS(UPDATE domain_orders SET fulfillment_stage='RECONCILIATION_REQUIRED',fulfillment_revision=fulfillment_revision+1 WHERE id IN(SELECT order_id FROM changed))
     INSERT INTO domain_audit(order_id,actor_type,event,detail)
     SELECT order_id,'system','REGISTRAR_OUTCOME_UNKNOWN',jsonb_build_object('operation',id) FROM changed`,
     [operationId],
@@ -204,7 +205,7 @@ export async function recordRegistrarConfirmation(
 export async function finalizeRegistrarConfirmation(
   q: Query,
   operationId: string,
-  adminId: string,
+  adminId: string | null,
 ) {
   const op = (
     await q(

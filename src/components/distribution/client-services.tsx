@@ -1,4 +1,5 @@
 "use client";
+import { PartnerDomainOrder } from "@/components/domains/partner-domain-order";
 import { useEffect, useState } from "react";
 import {
   partnerProductStatusAction,
@@ -61,6 +62,11 @@ export function ClientServices({ id }: { id: string }) {
   return (
     <section className="space-y-5 rounded-xl border border-border p-5">
       <h2 className="text-xl font-semibold">Client products & provisioning</h2>
+      <PartnerDomainOrder
+        workspaceId={id}
+        prices={data.prices}
+        assets={data.domains}
+      />
       {error && (
         <p role="alert" className="text-danger">
           {error}

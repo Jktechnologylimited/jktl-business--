@@ -1,4 +1,5 @@
 import "server-only";
+import { dispatchDomainOrder } from "./fulfillment";
 import { lookupDomain } from "./lookup";
 import { requireDomainPurchases } from "./discovery";
 import { randomUUID } from "node:crypto";
@@ -6,7 +7,11 @@ import { getSql } from "@/lib/db/client";
 import { requireSession } from "@/lib/session";
 import { getUser } from "@/lib/db/organizations";
 import { initializeDomainPayment, verifyTransaction } from "@/lib/paystack";
-import { normalizeOrderDomain, type Query } from "./model";
+import {
+  normalizeOrderDomain,
+  domainAvailabilityStatus,
+  type Query,
+} from "./model";
 import { rateLimit, recordPayment, recordRefund } from "./store";
 export const query: Query = (text, params) => getSql().query(text, params);
 export async function domainOwner() {
@@ -43,7 +48,8 @@ export async function checkAvailability(
   if (!price) throw Error("This extension is not currently offered.");
   const domain = normalizeOrderDomain(label, extension);
   let status = "UNKNOWN",
-    source = "manual";
+    source = "manual",
+    availabilityStatus = "UNKNOWN";
   const existing = (
     await query(
       `SELECT * FROM domain_checks WHERE organization_id=$1 AND domain=$2 AND valid_until>now() AND price_revision=$3`,
@@ -65,16 +71,26 @@ export async function checkAvailability(
   if (
     (await query("SELECT 1 FROM domain_assets WHERE domain=$1", [domain]))
       .length
-  )
+  ) {
     status = "UNAVAILABLE";
-  else {
+    availabilityStatus = "REGISTERED";
+  } else {
     const result = await lookupDomain(domain, price);
     status = result.status;
     source = result.source;
+    availabilityStatus = domainAvailabilityStatus(result);
   }
   const rows = await query(
-    `INSERT INTO domain_checks(organization_id,domain,extension,status,source,price_revision,checked_at,valid_until) VALUES($1,$2,$3,$4,$5,$6,CASE WHEN $4<>'UNKNOWN' THEN now() ELSE NULL END,CASE WHEN $4<>'UNKNOWN' THEN now()+interval '10 minutes' ELSE NULL END) ON CONFLICT(organization_id,domain) DO UPDATE SET status=EXCLUDED.status,source=EXCLUDED.source,checked_at=EXCLUDED.checked_at,valid_until=EXCLUDED.valid_until,price_revision=EXCLUDED.price_revision RETURNING *`,
-    [org, domain, extension, status, source, price.revision],
+    `INSERT INTO domain_checks(organization_id,domain,extension,status,source,price_revision,availability_status,checked_at,valid_until) VALUES($1,$2,$3,$4,$5,$6,$7,CASE WHEN $4<>'UNKNOWN' THEN now() ELSE NULL END,CASE WHEN $4<>'UNKNOWN' THEN now()+interval '10 minutes' ELSE NULL END) ON CONFLICT(organization_id,domain) DO UPDATE SET status=EXCLUDED.status,source=EXCLUDED.source,availability_status=EXCLUDED.availability_status,checked_at=EXCLUDED.checked_at,valid_until=EXCLUDED.valid_until,price_revision=EXCLUDED.price_revision RETURNING *`,
+    [
+      org,
+      domain,
+      extension,
+      status,
+      source,
+      price.revision,
+      availabilityStatus,
+    ],
   );
   return {
     check: rows[0],
@@ -183,12 +199,15 @@ export async function verifyDomainReference(ref: string) {
   if (
     (await query("SELECT 1 FROM domain_payments WHERE reference=$1", [ref]))
       .length
-  )
+  ) {
+    await dispatchDomainOrder(query, String(row.id));
     return { paid: true, status: "verified" };
+  }
   const verified = await verifyTransaction(ref);
   if (verified.status !== "success")
     return { paid: false, status: verified.status };
   await recordPayment(query, verified as unknown as Record<string, unknown>);
+  await dispatchDomainOrder(query, String(row.id));
   return { paid: true, status: "verified" };
 }
 export async function handleDomainEvent(

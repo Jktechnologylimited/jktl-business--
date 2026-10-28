@@ -1,4 +1,5 @@
 import "server-only";
+import { dispatchPaidDomainOrders } from "./fulfillment";
 import { getSql } from "@/lib/db/client";
 import { sendDomainOrderEmail, sendPartnerNoticeEmail } from "@/lib/email";
 import { flushRegistrarAlerts } from "./registrar-admin";
@@ -57,6 +58,11 @@ export async function runDomainMaintenance() {
   const present =
     await sql`SELECT to_regclass('public.domain_orders') AS present`;
   if (!present[0]?.present) return "Domain schema not installed";
+  const fulfillmentInstalled = (
+    await sql`SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name='domain_orders' AND column_name='fulfillment_stage') AS present`
+  )[0]?.present;
+  if (fulfillmentInstalled)
+    await dispatchPaidDomainOrders((text, params) => sql.query(text, params));
   const reminders = await enqueueDomainReminders();
   const notices = await flushDomainNotifications(15);
   const registrarInstalled = (

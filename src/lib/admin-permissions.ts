@@ -55,6 +55,7 @@ export type AdminCapability =
   | "manage_email"
   | "manage_features"
   | "manage_custom"
+  | "fulfill_domains"
   | "manage_domains"
   | "manage_content"
   | "view_businesses"
@@ -69,7 +70,7 @@ export type AdminCapability =
 
 const MATRIX: Record<AdminRole, AdminCapability[]> = {
   growth_gaming_lead: ["growth_workspace", ...GROWTH_PERMISSIONS],
-  support: ["manage_support"],
+  support: ["manage_support", "fulfill_domains"],
   owner: [
     "manage_support",
     "publish_reviews",
@@ -243,7 +244,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   {
     href: "/admin/domains",
     label: "Domain orders",
-    capability: "manage_domains",
+    capability: "fulfill_domains",
   },
   {
     href: "/admin/content",

@@ -4,6 +4,8 @@
 
 ## Latest update
 
+The subsequent [automation and manual-fallback update](DOMAIN_FULFILLMENT.md) extends the existing order with assignment, detailed stages, safe reconciliation and explicit partner purchase grants. Automatic orchestration is mock-tested; live provider mapping and purchases remain disabled.
+
 Public documentation access was restored on 28 October 2026. Published request bindings for registration, renewal, transfer, nameservers, locks, EPP, contacts and synchronization are now implemented and mock-tested. Response fields remain unverified; retrieval GET/POST conflicts are configurable and live POSTs remain disabled. See [verified request contracts and JSON diagnostics](GO54_REQUEST_CONTRACTS.md) for the current details. The initial access failure described below is historical.
 
 ## Scope and current release state

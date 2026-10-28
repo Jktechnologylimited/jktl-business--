@@ -15,7 +15,12 @@ import {
   requestDomainRefundAction,
   requestOrderSupportAction,
 } from "@/lib/actions/domain-order-actions";
-import { DOMAIN_TERMS, money, type Registrant } from "@/lib/domains/model";
+import {
+  DOMAIN_TERMS,
+  money,
+  domainProgress,
+  type Registrant,
+} from "@/lib/domains/model";
 import styles from "./domains.module.css";
 type Row = Record<string, unknown>;
 export type DomainData = {
@@ -335,9 +340,11 @@ export function DomainMarketplace({
                 <div>
                   <strong>{text(c, "domain")}</strong>
                   <span className={styles.status}>
-                    {text(c, "status") === "UNKNOWN"
-                      ? "Availability not confirmed"
-                      : text(c, "status")}
+                    {c.availability_status === "APPEARS_AVAILABLE"
+                      ? "Appears available — eligibility and pricing still need confirmation"
+                      : text(c, "status") === "UNKNOWN"
+                        ? "Availability not confirmed"
+                        : text(c, "status")}
                   </span>
                 </div>
                 <p className={styles.note}>
@@ -699,7 +706,7 @@ export function DomainMarketplace({
               <article key={text(o, "id")}>
                 <h3>{text(o, "domain")}</h3>
                 <span className={styles.status}>
-                  {text(o, "kind")} · {text(o, "status")}
+                  {text(o, "kind")} · {domainProgress(o)}
                 </span>
                 <p>
                   {Number(o.years)} year(s) · {money(o.amount_kobo)}

@@ -273,6 +273,7 @@ async function fixture() {
     "034_domain_orders.sql",
     "056_domain_discovery.sql",
     "057_registrar_operations.sql",
+    "059_domain_fulfillment.sql",
   ])
     await db.exec(
       readFileSync(new URL("../migrations/" + name, import.meta.url), "utf8"),

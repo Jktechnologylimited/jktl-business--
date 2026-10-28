@@ -55,7 +55,7 @@ export async function partnerProductStatusAction(id: string) {
       [w.organization_id, p.id],
     ),
     query(
-      `SELECT id,domain,kind,status FROM domain_orders WHERE organization_id=$1 AND ${domainGrant} ORDER BY created_at DESC LIMIT 30`,
+      `SELECT id,domain,kind,status,fulfillment_stage FROM domain_orders WHERE organization_id=$1 AND ${domainGrant} ORDER BY created_at DESC LIMIT 30`,
       [w.organization_id, p.id],
     ),
     query(

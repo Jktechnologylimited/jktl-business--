@@ -3,7 +3,7 @@ import { adminDomainsAction } from "@/lib/actions/domain-order-actions";
 import { DomainAdmin } from "@/components/domains/domain-admin";
 export const dynamic = "force-dynamic";
 export default async function Page() {
-  await guardAdminPage("manage_domains");
+  await guardAdminPage("fulfill_domains");
   const result = await adminDomainsAction();
   if (!result.ok)
     return (

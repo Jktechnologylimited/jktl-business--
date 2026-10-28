@@ -1,7 +1,11 @@
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { getSql } from "@/lib/db/client";
-import { normalizeOrderDomain, type Query } from "./model";
+import {
+  normalizeOrderDomain,
+  domainAvailabilityStatus,
+  type Query,
+} from "./model";
 import { rateLimit } from "./store";
 import { lookupDomain, type DomainLookup } from "./lookup";
 export const domainQuery: Query = (text, params) =>
@@ -65,6 +69,13 @@ export async function publicDomainSearch(
     : typeof raw.extension === "string"
       ? raw.extension
       : ".com.ng";
+  if (!prices.some((p) => p.extension === extension))
+    return {
+      results: [],
+      purchasesEnabled: false,
+      availabilityStatus: "UNSUPPORTED",
+      message: "This extension is not currently supported.",
+    };
   const domain = normalizeOrderDomain(raw.name, extension),
     label = domain.slice(0, -extension.length);
   if (!prices.some((p) => p.extension === extension))
@@ -135,6 +146,7 @@ export async function publicDomainSearch(
         domain: candidate,
         extension: String(price.extension),
         status: result.status,
+        availabilityStatus: domainAvailabilityStatus(result),
         ...(result.registryStatus
           ? { registryStatus: result.registryStatus }
           : {}),

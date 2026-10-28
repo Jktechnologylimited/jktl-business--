@@ -48,7 +48,7 @@ const contact = {
 async function fixture() {
   const db = new PGlite();
   await db.exec(
-    `CREATE TABLE organizations(id uuid PRIMARY KEY);CREATE TABLE admin_users(id uuid PRIMARY KEY);CREATE TABLE organization_members(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),organization_id uuid,user_id uuid,role text,active boolean,email text);CREATE TABLE business_profiles(organization_id uuid PRIMARY KEY,display_name text,subdomain text,published boolean,custom_domain text DEFAULT '',custom_domain_token text DEFAULT '',custom_domain_verified boolean DEFAULT false);INSERT INTO organizations(id) VALUES('${orgA}'),('${orgB}');INSERT INTO admin_users(id) VALUES('${adminId}');INSERT INTO organization_members(organization_id,user_id,role,active,email) VALUES('${orgA}','${userA}','owner',true,'owner@example.test');INSERT INTO business_profiles(organization_id,display_name,subdomain,published) VALUES('${orgA}','Example Business','example',true),('${orgB}','Other Business','other',true);`,
+    `CREATE TABLE organizations(id uuid PRIMARY KEY);CREATE TABLE admin_users(id uuid PRIMARY KEY,name text,email text,role text,disabled_at timestamptz);CREATE TABLE organization_members(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),organization_id uuid,user_id uuid,role text,active boolean,email text);CREATE TABLE business_profiles(organization_id uuid PRIMARY KEY,display_name text,subdomain text,published boolean,custom_domain text DEFAULT '',custom_domain_token text DEFAULT '',custom_domain_verified boolean DEFAULT false);INSERT INTO organizations(id) VALUES('${orgA}'),('${orgB}');INSERT INTO admin_users(id) VALUES('${adminId}');INSERT INTO organization_members(organization_id,user_id,role,active,email) VALUES('${orgA}','${userA}','owner',true,'owner@example.test');INSERT INTO business_profiles(organization_id,display_name,subdomain,published) VALUES('${orgA}','Example Business','example',true),('${orgB}','Other Business','other',true);`,
   );
   await db.exec(
     readFileSync(
@@ -65,6 +65,12 @@ async function fixture() {
   await db.exec(
     readFileSync(
       new URL("../migrations/057_registrar_operations.sql", import.meta.url),
+      "utf8",
+    ),
+  );
+  await db.exec(
+    readFileSync(
+      new URL("../migrations/059_domain_fulfillment.sql", import.meta.url),
       "utf8",
     ),
   );
@@ -585,6 +591,7 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
       "./lookup": lookup,
     });
     const service = load("../src/lib/domains/service.ts", {
+      "./fulfillment": { dispatchDomainOrder: async () => {} },
       "./lookup": lookup,
       "./discovery": discovery,
       "server-only": {},
@@ -627,6 +634,7 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
       };
     };
     const actions = load("../src/lib/actions/domain-order-actions.ts", {
+      "@/lib/admin-permissions": { can },
       "next/server": { after },
       "node:dns/promises": {
         resolveTxt: async () => txt,
@@ -636,7 +644,7 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
       "@/lib/admin-session": {
         requireAdminCapability: async (cap) => {
           if (!can(role, cap)) throw Error("Your role cannot manage domains.");
-          return { id: adminId };
+          return { id: adminId, role, permissions: {} };
         },
       },
       "@/lib/business-email/service": { handleEmailEvent: async () => false },
@@ -1152,6 +1160,7 @@ test("renewal reminders use 30/14/7/1 day dates and durable idempotent notice re
     let success = false,
       sends = [];
     const n = load("../src/lib/domains/notifications.ts", {
+      "./fulfillment": { dispatchPaidDomainOrders: async () => 0 },
       "./registrar-admin": {
         flushRegistrarAlerts: async () => ({ sent: 0, failed: 0 }),
       },
