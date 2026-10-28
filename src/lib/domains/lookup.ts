@@ -1,8 +1,10 @@
 import "server-only";
+import { registryLookup } from "./registry";
 export type DomainLookup = {
   status: "AVAILABLE" | "UNAVAILABLE" | "UNKNOWN";
   costKobo: number | null;
-  source: "provider" | "none";
+  source: "provider" | "registry" | "none";
+  registryStatus?: "REGISTERED" | "NOT_FOUND" | "UNKNOWN";
 };
 /** Adapter for the already configured read-only lookup contract. This is not a guessed Go54 API. */
 export async function lookupDomain(
@@ -18,7 +20,7 @@ export async function lookupDomain(
     !process.env.DOMAIN_AVAILABILITY_URL ||
     !process.env.DOMAIN_AVAILABILITY_API_KEY
   )
-    return unknown;
+    return registryFallback(domain);
   try {
     const url = new URL(process.env.DOMAIN_AVAILABILITY_URL);
     if (url.protocol !== "https:" || url.username || url.password)
@@ -58,4 +60,16 @@ export async function lookupDomain(
   } catch {
     return unknown;
   }
+}
+
+async function registryFallback(domain: string): Promise<DomainLookup> {
+  const result = await registryLookup(domain);
+  if (result.status === "UNKNOWN")
+    return { status: "UNKNOWN", costKobo: null, source: "none" };
+  return {
+    status: result.status === "REGISTERED" ? "UNAVAILABLE" : "UNKNOWN",
+    costKobo: null,
+    source: "registry",
+    registryStatus: result.status,
+  };
 }

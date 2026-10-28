@@ -63,6 +63,12 @@ async function fixture() {
     ),
   );
   await db.exec(
+    readFileSync(
+      new URL("../migrations/057_registrar_operations.sql", import.meta.url),
+      "utf8",
+    ),
+  );
+  await db.exec(
     "UPDATE domain_purchase_controls SET readonly_verified_at=now(),e2e_verified_at=now(),purchases_enabled=true",
   );
   const q = async (sql, args) => (await db.query(sql, args)).rows;
@@ -563,7 +569,13 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
       },
       getDomainRefund: async () => null,
     };
-    const lookup = load("../src/lib/domains/lookup.ts", { "server-only": {} });
+    const registry = load("../src/lib/domains/registry.ts", {
+      "server-only": {},
+    });
+    const lookup = load("../src/lib/domains/lookup.ts", {
+      "server-only": {},
+      "./registry": registry,
+    });
     const discovery = load("../src/lib/domains/discovery.ts", {
       "server-only": {},
       "node:crypto": crypto,
@@ -1140,6 +1152,9 @@ test("renewal reminders use 30/14/7/1 day dates and durable idempotent notice re
     let success = false,
       sends = [];
     const n = load("../src/lib/domains/notifications.ts", {
+      "./registrar-admin": {
+        flushRegistrarAlerts: async () => ({ sent: 0, failed: 0 }),
+      },
       "server-only": {},
       "@/lib/db/client": { getSql: () => sql },
       "@/lib/email": {

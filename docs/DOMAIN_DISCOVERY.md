@@ -1,5 +1,7 @@
 # Shared domain discovery and purchase safeguards
 
+Current update: [GO54 integration status](GO54_INTEGRATION_STATUS.md) records the supplied official authentication specification, confirmed GET pricing endpoint, private controls, independent RDAP service, transaction ledger and exact contracts still awaiting documentation. The earlier access notes below describe the previous implementation stage; current capability confirmations supersede its uncertainty about wholesale pricing. GO54 has no availability endpoint or sandbox according to the latest supplied confirmation. Automated registrar purchases remain disabled.
+
 ## Delivered in this change
 
 Main's canonical domain page is `/domains`. The existing `/products/domains` URL redirects there. Main reads the existing Business `domain_prices` source, never Go54 or another registrar directly. Enabled extensions and current registration/annual-renewal prices appear automatically; there is no production fallback to a second environment price list. Resources/navigation and sitemap point to the canonical page. Search results remain UI state, with no indexable page per name.
@@ -25,7 +27,7 @@ It is included in the existing Business prebuild migration runner. Migration rep
 
 The server enforces the purchase switch when creating and resuming checkout. Current prices must match the order's accepted revision, supplier costs must be known, and registration availability is checked freshly before a Paystack checkout is issued. A reserved order that never reached payment initialization can be cancelled atomically. An initializing/uncertain payment must still be reconciled; it is not blindly cancelled or retried. Existing verified paid orders retain manual fulfillment/refund review. No automatic refund, recurring customer billing or customer wallet was added.
 
-## Go54: blocked, not delivered
+## Go54: original access limitation and current contract status
 
 The official URLs supplied in the brief were attempted with direct HTTPS requests and Chromium:
 
@@ -37,13 +39,13 @@ The workspace network proxy returned HTTP 403 for direct requests and `ERR_TUNNE
 
 Consequently:
 
-- **No Go54 authentication request was sent.** The exact UTC HMAC token canonicalization, request location and endpoints have not been guessed.
-- Go54-native availability and wholesale-price capabilities are **unverified**, not assumed supported or unsupported.
+- **No live Go54 authentication request was sent.** The exact HMAC specification has since been supplied by the user and implemented with mocked tests. Current status is in GO54_INTEGRATION_STATUS.md.
+- Latest confirmation: GO54 has no availability endpoint or sandbox. Support confirmed wholesale GET `/tlds/pricing`; its response mapping and the wallet endpoint still need verification. Other confirmed capabilities need their exact operation contracts.
 - No Go54 registration, renewal, transfer, wallet debit or other purchase request was sent.
 - No automatic registrar provisioning or Vercel attachment was added. Existing manual reconciliation and verified DNS/hosting workflow remain available.
 - No live or Paystack sandbox transaction was created. Payment and registration-state tests use existing mocks and local PostgreSQL-compatible fixtures.
 
-Before live purchases can be enabled, make the official documentation accessible (or supply an export), and expose the already configured credential variables securely to the execution environment. Then implement the documented server-only Go54 client with its exact existing variable names; perform a real read-only authentication test; verify available domains, actual supplier costs and restrictions; implement idempotent registration/renewal with uncertain-outcome reconciliation; verify a sandbox or mocked end-to-end workflow; and check the deployed database, mail and connection bindings. A real paid test domain needs explicit authorization. Keep both switches off until those checks are complete.
+Before live purchases can be enabled, make the official documentation accessible (or supply an export), and expose the already configured credential variables securely to the execution environment. Then finish the remaining documented server-only Go54 operation bindings; perform a real read-only authentication test; verify available domains, actual supplier costs and restrictions; implement idempotent registration/renewal with uncertain-outcome reconciliation; verify a sandbox or mocked end-to-end workflow; and check the deployed database, mail and connection bindings. A real paid test domain needs explicit authorization. Keep both switches off until those checks are complete.
 
 ## Configuration
 

@@ -135,6 +135,9 @@ export async function publicDomainSearch(
         domain: candidate,
         extension: String(price.extension),
         status: result.status,
+        ...(result.registryStatus
+          ? { registryStatus: result.registryStatus }
+          : {}),
         registrationKobo: Number(price.registration_price),
         renewalKobo: Number(price.renewal_price),
         periodYears: 1,

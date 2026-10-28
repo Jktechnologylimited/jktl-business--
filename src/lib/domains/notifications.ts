@@ -1,6 +1,7 @@
 import "server-only";
 import { getSql } from "@/lib/db/client";
-import { sendDomainOrderEmail } from "@/lib/email";
+import { sendDomainOrderEmail, sendPartnerNoticeEmail } from "@/lib/email";
+import { flushRegistrarAlerts } from "./registrar-admin";
 import { getNotificationPrefs } from "@/lib/db/push";
 import { sendPush } from "@/lib/push";
 export async function enqueueDomainReminders() {
@@ -58,6 +59,15 @@ export async function runDomainMaintenance() {
   if (!present[0]?.present) return "Domain schema not installed";
   const reminders = await enqueueDomainReminders();
   const notices = await flushDomainNotifications(15);
+  const registrarInstalled = (
+    await sql`SELECT to_regclass('public.domain_registrar_alerts') AS present`
+  )[0]?.present;
+  const registrarAlerts = registrarInstalled
+    ? await flushRegistrarAlerts(
+        (text, params) => sql.query(text, params),
+        sendPartnerNoticeEmail,
+      )
+    : { sent: 0, failed: 0 };
   await sql`DELETE FROM domain_rate_limits WHERE expires_at<now()`;
   if (
     (
@@ -65,9 +75,9 @@ export async function runDomainMaintenance() {
     )[0]?.present
   )
     await sql`DELETE FROM domain_public_searches WHERE updated_at<now()-interval '1 day' AND(lease_until IS NULL OR lease_until<now())`;
-  if (notices.failed)
+  if (notices.failed || registrarAlerts.failed)
     throw Error(
-      `${notices.failed} domain notices will retry. Check transactional email configuration.`,
+      `${notices.failed + registrarAlerts.failed} domain notices will retry. Check transactional email configuration.`,
     );
   return `${reminders} renewal reminders queued; ${notices.sent} notices sent`;
 }

@@ -28,7 +28,11 @@ function load(file, deps) {
   return mod.exports;
 }
 const store = load("../src/lib/domains/store.ts", { "./model": model });
-const lookup = load("../src/lib/domains/lookup.ts", { "server-only": {} });
+const registry = load("../src/lib/domains/registry.ts", { "server-only": {} });
+const lookup = load("../src/lib/domains/lookup.ts", {
+  "server-only": {},
+  "./registry": registry,
+});
 async function fixture() {
   const db = new PGlite();
   await db.exec(

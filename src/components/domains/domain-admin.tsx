@@ -11,6 +11,7 @@ import {
 } from "@/lib/actions/domain-order-actions";
 import { money } from "@/lib/domains/model";
 import styles from "./domains.module.css";
+import { RegistrarPanel } from "./registrar-panel";
 type Row = Record<string, unknown>;
 type Data = {
   prices: Row[];
@@ -86,6 +87,7 @@ export function DomainAdmin({ initial }: { initial: Data }) {
           Pause new purchases & automation
         </button>
       </section>
+      <RegistrarPanel />
       <nav className={styles.adminTabs}>
         {[
           ["orders", "Orders & refunds"],
