@@ -1,3 +1,5 @@
+Latest update: [central Emails, invitations and Reply-To](EMAIL_MANAGEMENT.md) supersedes the older navigation and invitation workflow descriptions below.
+
 # JKTL Editorial Team
 
 Business owns the existing `jktl_publications` table, one editor, one shared editorial media library, Team identities, and the existing branded Resend sender. Main reads only published content through Business's public HTTP APIs. No second CMS, authentication database, email provider, deployment trigger, or incident/status system is introduced.

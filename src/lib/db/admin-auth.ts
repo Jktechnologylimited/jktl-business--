@@ -314,7 +314,7 @@ export async function linkedBusinessStaff(
   userId: string,
 ): Promise<AdminUser | null> {
   const rows = await getSql().query(
-    "SELECT a.id,a.name,a.email,a.role,a.disabled_at,a.business_user_id,a.permission_overrides,a.staff_revoked_at FROM admin_users a JOIN users u ON u.id=a.business_user_id WHERE a.business_user_id=$1 AND a.role='growth_gaming_lead' AND a.disabled_at IS NULL AND a.staff_revoked_at IS NULL",
+    "SELECT a.id,a.name,a.email,a.role,a.disabled_at,a.business_user_id,a.permission_overrides,a.staff_revoked_at FROM admin_users a JOIN users u ON u.id=a.business_user_id WHERE a.business_user_id=$1 AND a.role IN('owner','affiliate_manager','analyst','writer','editor','support','growth_gaming_lead') AND a.disabled_at IS NULL AND a.staff_revoked_at IS NULL",
     [userId],
   );
   return rows[0] ? mapAdminUser(rows[0]) : null;

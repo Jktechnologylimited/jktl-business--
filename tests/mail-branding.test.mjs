@@ -4,7 +4,10 @@ import { PGlite } from "@electric-sql/pglite";
 import ts from "typescript";
 import { readFileSync, readdirSync } from "node:fs";
 import { applyMigrationBatch } from "../scripts/sql-statements.mjs";
-import * as layout from "../src/lib/mail/layout.ts";
+import { uncertainProviderRejection } from "../src/lib/mail/provider-outcome.ts";
+import * as permissions from "../src/lib/admin-permissions.ts";
+import * as addresses from "../src/lib/mail/addresses.ts";
+const layout = load("../src/lib/mail/layout.ts", { "./addresses": addresses });
 function load(file, deps) {
   const m = { exports: {} };
   new Function(
@@ -154,13 +157,30 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       )[0].n,
       1,
     );
-    await query("INSERT INTO website_plan_payments(reference,organization_id,plan_id,interval,amount_kobo,currency,paid_at,period_end,provider_transaction_id) VALUES('test-paid-email',$1,'growth','monthly',500000,'NGN',now(),now()+interval '1 month','mock-provider-proof') ON CONFLICT DO NOTHING",[org]);
-    assert.equal((await query("SELECT count(*)::int n FROM email_outbox WHERE event_key='website-payment:test-paid-email'"))[0].n,1);
-    assert.ok((await query("SELECT detail FROM email_outbox WHERE event_key='website-payment:test-paid-email'"))[0].detail.includes('5000.00'));
+    await query(
+      "INSERT INTO website_plan_payments(reference,organization_id,plan_id,interval,amount_kobo,currency,paid_at,period_end,provider_transaction_id) VALUES('test-paid-email',$1,'growth','monthly',500000,'NGN',now(),now()+interval '1 month','mock-provider-proof') ON CONFLICT DO NOTHING",
+      [org],
+    );
+    assert.equal(
+      (
+        await query(
+          "SELECT count(*)::int n FROM email_outbox WHERE event_key='website-payment:test-paid-email'",
+        )
+      )[0].n,
+      1,
+    );
+    assert.ok(
+      (
+        await query(
+          "SELECT detail FROM email_outbox WHERE event_key='website-payment:test-paid-email'",
+        )
+      )[0].detail.includes("5000.00"),
+    );
     const service = load("../src/lib/mail/service.ts", {
       "server-only": {},
       "@/lib/custom/service": { query },
       "./layout": layout,
+      "./addresses": addresses,
     });
     let rendered = await service.brandEmail(
       "customer@example.test",
@@ -219,7 +239,10 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
     );
     let role = "owner",
       sends = [];
-    const preview = load("../src/lib/mail/preview.ts", { "./layout": layout });
+    const preview = load("../src/lib/mail/preview.ts", {
+      "./layout": layout,
+      "@/lib/admin-permissions": permissions,
+    });
     const deps = {
       "@/lib/admin-session": {
         requireAdminCapability: async (cap) => {
@@ -229,6 +252,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       },
       "@/lib/custom/service": { query },
       "@/lib/mail/layout": layout,
+      "@/lib/mail/addresses": addresses,
       "@/lib/mail/preview": preview,
       "@/lib/support/service": { rate: async () => {} },
       "@/lib/email": {
@@ -336,6 +360,9 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       const email = load("../src/lib/email.ts", {
         resend: { Resend },
         "@/lib/mail/service": service,
+        "@/lib/mail/addresses": addresses,
+        "@/lib/mail/provider-outcome": { uncertainProviderRejection },
+        "@/lib/mail/history": { recordMailAttempt: async () => {} },
         "@/lib/mail/layout": layout,
         "@/lib/format": {
           formatKobo: (n) => "NGN " + n / 100,

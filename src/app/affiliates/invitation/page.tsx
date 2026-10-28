@@ -6,6 +6,10 @@ import { getSession } from "@/lib/session";
 import { acceptAffiliateInvitationAction } from "@/lib/actions/affiliate-invitation-actions";
 import { ActionForm } from "@/components/distribution/action-form";
 export const dynamic = "force-dynamic";
+export const metadata = {
+  robots: { index: false, follow: false },
+  referrer: "no-referrer" as const,
+};
 export default async function Page({
   searchParams,
 }: {
@@ -16,7 +20,7 @@ export default async function Page({
     return <p>Invalid invitation.</p>;
   const i = (
     await query(
-      "SELECT name,message,terms,expires_at FROM affiliate_invitations WHERE token_hash=$1 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()",
+      "SELECT name,message,terms,expires_at,program FROM affiliate_invitations WHERE token_hash=$1 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()",
       [createHash("sha256").update(token).digest("hex")],
     )
   )[0];
@@ -33,13 +37,15 @@ export default async function Page({
     <main className="mx-auto max-w-2xl space-y-6 p-6 text-ink">
       <Image src="/jktl-logo.png" alt="JKTL" width={72} height={72} />
       <h1 className="text-3xl font-semibold">
-        Welcome to JKTL Affiliates, {String(i.name)}
+        Welcome to JKTL {i.program === "partner" ? "Partners" : "Affiliates"},{" "}
+        {String(i.name)}
       </h1>
       <p>{String(i.message)}</p>
       <p>
-        Your proposed policy is shown below. Accepting this invitation creates
-        Affiliate access. Commissions begin only under a separately accepted
-        agreement formally activated by JKTL.
+        Your proposed policy is shown below. Accepting this invitation creates a
+        programme profile. Partner approval and agreed terms still require JKTL
+        review. Commissions begin only under a separately accepted agreement
+        formally activated by JKTL.
       </p>
       <pre className="overflow-auto whitespace-pre-wrap rounded-xl bg-surface p-4 text-sm">
         {JSON.stringify(i.terms, null, 2)}
@@ -53,7 +59,7 @@ export default async function Page({
             eligibility needs a formally activated agreement.
           </label>
           <button className="mt-4 rounded-lg bg-primary p-3 text-on-primary">
-            Activate Affiliate access
+            Accept programme invitation
           </button>
         </ActionForm>
       ) : (

@@ -1,3 +1,4 @@
+import { ROLE_LABEL } from "@/lib/admin-permissions";
 import { mailAction, type MailCategory } from "./layout";
 export const MAIL_PREVIEWS: Record<
   string,
@@ -91,6 +92,22 @@ export const MAIL_PREVIEWS: Record<
     owned: [],
   },
 };
+for (const [role, label] of Object.entries({
+  ...ROLE_LABEL,
+  affiliate: "Affiliate",
+  partner: "Partner",
+}))
+  MAIL_PREVIEWS["invite-" + role] = {
+    title: "Invitation: " + label,
+    category: "security",
+    body:
+      "Hello Preview Recipient. You are invited to join JKTL as " +
+      label +
+      ". This is a sample only; no role, account or invitation has been created. Live invitations contain a single-use link and exact expiry.",
+    action: "Open sign-in",
+    url: "https://business.jktl.com.ng/admin/login",
+    owned: [],
+  };
 export function previewBody(id: string) {
   const sample = MAIL_PREVIEWS[id];
   if (!sample) throw Error("Choose a preview");

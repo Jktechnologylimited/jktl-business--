@@ -11,7 +11,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           ["Accounts", "/admin/affiliates#accounts"],
           ["Referrals & Earnings", "/admin/distribution/finance"],
           ["Marketing Materials", "/admin/distribution/resources"],
-          ["Communications", "/admin/affiliates/communications"],
           ["Support", "/admin/partner-support"],
           ["Settings", "/admin/affiliates/settings"],
         ].map(([label, href]) => (

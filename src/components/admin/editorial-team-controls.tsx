@@ -1,6 +1,5 @@
 "use client";
-import { useState } from "react";
-import { inviteEditorialAction } from "@/lib/actions/editorial-invitation-actions";
+import Link from "next/link";
 import { configureEditorialMemberAction } from "@/lib/actions/editorial-actions";
 import { ActionForm } from "@/components/distribution/action-form";
 import { EDITORIAL_PERMISSIONS, can } from "@/lib/admin-permissions";
@@ -47,60 +46,12 @@ export function EditorialPermissions({ member }: { member: AdminTeamMember }) {
   );
 }
 export function EditorialInvite() {
-  const [result, setResult] = useState<{
-    url: string;
-    emailSent: boolean;
-  } | null>(null);
   return (
-    <section className="rounded-2xl border border-border bg-surface p-6">
-      <h2 className="text-lg font-semibold">Invite an editorial teammate</h2>
-      <p className="my-3 text-sm text-ink-muted">
-        Invite a Writer or Editor to set their own password. No customer or
-        financial access is granted.
-      </p>
-      <ActionForm
-        action={async (f) => {
-          setResult(await inviteEditorialAction(f));
-        }}
-        className="grid gap-3"
-      >
-        <input
-          name="name"
-          placeholder="Full name"
-          aria-label="Full name"
-          required
-          maxLength={100}
-          className="rounded border border-border bg-surface p-3"
-        />
-        <input
-          name="email"
-          type="email"
-          placeholder="Email address"
-          aria-label="Email address"
-          required
-          className="rounded border border-border bg-surface p-3"
-        />
-        <select
-          name="role"
-          aria-label="Editorial role"
-          className="rounded border border-border bg-surface p-3"
-        >
-          <option value="writer">Writer</option>
-          <option value="editor">Editor</option>
-        </select>
-        <button type="submit">Send invitation</button>
-      </ActionForm>
-      {result && (
-        <div className="mt-4 break-all text-sm">
-          <p>
-            {result.emailSent
-              ? "Invitation emailed."
-              : "Email could not be sent. Share this private link directly with the invited person."}
-          </p>
-          <a href={result.url}>{result.url}</a>
-          <p>This one-time link expires in 7 days.</p>
-        </div>
-      )}
-    </section>
+    <Link
+      href="/admin/emails/invite"
+      className="rounded-lg border border-border p-3"
+    >
+      Invite a teammate through Emails → Invite User
+    </Link>
   );
 }

@@ -1,3 +1,5 @@
+Latest update: [central Emails, invitations and Reply-To](EMAIL_MANAGEMENT.md) supersedes the older navigation and invitation workflow descriptions below.
+
 # JKTL email branding and Team role controls
 
 ## Team correction

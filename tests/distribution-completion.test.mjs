@@ -5,6 +5,7 @@ import ts from "typescript";
 import { pushSubscription } from "../src/lib/support/model.ts";
 import { readFileSync, readdirSync } from "node:fs";
 import * as crypto from "node:crypto";
+import * as addresses from "../src/lib/mail/addresses.ts";
 function load(file, deps) {
   const m = { exports: {} };
   new Function(
@@ -63,6 +64,7 @@ test("secure Affiliate invitations reuse existing identity, reject mismatched/re
       session = null,
       allowed = true;
     const deps = {
+      "@/lib/mail/addresses": addresses,
       "next/server": { after() {} },
       "@/lib/distribution/notifications": {
         flushProgramNotices: async () => {},

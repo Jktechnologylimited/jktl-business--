@@ -1,2 +1,4 @@
-import { MailPreview } from "@/components/mail/mail-preview";
-export default MailPreview;
+import { redirect } from "next/navigation";
+export default function Page() {
+  redirect("/admin/emails/branding");
+}

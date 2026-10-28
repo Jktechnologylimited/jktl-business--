@@ -49,6 +49,7 @@ export type AdminCapability =
   | "review_content"
   | GrowthPermission
   | "growth_workspace"
+  | "compose_email"
   | "manage_communications"
   | "manage_support"
   | "publish_reviews"
@@ -97,6 +98,7 @@ const MATRIX: Record<AdminRole, AdminCapability[]> = {
     "publish_reviews",
   ],
   affiliate_manager: [
+    "compose_email",
     // The point of the role: approve partners, pay them, and see the numbers
     // needed to do both without asking the owner.
     "manage_affiliates",
@@ -197,9 +199,9 @@ export interface AdminNavItem {
  */
 export const ADMIN_NAV: AdminNavItem[] = [
   {
-    href: "/admin/communications",
-    label: "Communications",
-    capability: "manage_communications",
+    href: "/admin/emails",
+    label: "Emails",
+    capability: "compose_email",
   },
   {
     href: "/admin/partner-support",

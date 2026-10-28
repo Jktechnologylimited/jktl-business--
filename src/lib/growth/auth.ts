@@ -11,5 +11,11 @@ export async function signInGrowthStaff(email: string, password: string) {
   await query("UPDATE admin_users SET last_login_at=now() WHERE id=$1", [
     staff.id,
   ]);
-  return "/admin/growth";
+  return staff.role === "growth_gaming_lead"
+    ? "/admin/growth"
+    : staff.role === "support"
+      ? "/admin/support"
+      : staff.role === "writer" || staff.role === "editor"
+        ? "/admin/content"
+        : "/admin/insights";
 }

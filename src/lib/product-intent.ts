@@ -17,6 +17,12 @@ export function emailIntent(params: Params) {
     );
   }
 
+  if (params.get("next") === "team-invite") {
+    const token = params.get("invite") || "";
+    return /^[a-f0-9]{64}$/.test(token)
+      ? "?next=team-invite&invite=" + token
+      : "";
+  }
   if (params.get("next") === "affiliate-invite") {
     const token = params.get("invite") || "";
     return /^[a-f0-9]{64}$/.test(token)
@@ -58,6 +64,12 @@ export function emailDestination(params: Params) {
     );
   }
 
+  if (params.get("next") === "team-invite") {
+    const token = params.get("invite") || "";
+    return /^[a-f0-9]{64}$/.test(token)
+      ? "/admin/invitation?token=" + token
+      : null;
+  }
   if (params.get("next") === "affiliate-invite") {
     const token = params.get("invite") || "";
     return /^[a-f0-9]{64}$/.test(token)

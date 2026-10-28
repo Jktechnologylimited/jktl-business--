@@ -38,7 +38,7 @@ export async function endAdminSession(): Promise<void> {
   const linkedStaff = await getAdminSession();
   if (sessionId) await destroyAdminSession(sessionId);
   store.delete(COOKIE_NAME);
-  if (linkedStaff?.role === "growth_gaming_lead") await endSession();
+  if (linkedStaff?.businessUserId) await endSession();
 }
 
 /** Returns null when there's no admin session — callers decide how to handle it. */

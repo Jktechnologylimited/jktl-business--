@@ -14,47 +14,25 @@ import {
   Loader2,
   ShieldCheck,
   Trash2,
-  UserPlus,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { Field } from "@/components/app/field";
 import { formatShortDate } from "@/lib/format";
 import { useToastStore } from "@/lib/toast";
+import { ROLE_LABEL } from "@/lib/admin-permissions";
 import {
-  ROLE_DESCRIPTION,
-  ROLE_LABEL,
-  type AdminRole,
-} from "@/lib/admin-permissions";
-import {
-  createAdminTeamMemberAction,
   deleteAdminAccountAction,
   resetAdminPasswordAction,
   setAdminDisabledAction,
 } from "@/lib/actions/admin-actions";
 import type { AdminTeamMember } from "@/lib/db/admin-auth";
 
-/**
- * Creates and disables command-centre accounts.
- *
- * The password is typed by the owner and shown back once, then never again — it is
- * deliberately not emailed. An emailed password lives in a mailbox forever and, in
- * practice, is never changed.
- */
+/** Manage existing access. New accounts use Emails → Invite User so recipients
+ * choose their own passwords and existing Business identities remain linked. */
 export function TeamManager({ team }: { team: AdminTeamMember[] }) {
   const show = useToastStore((s) => s.show);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<AdminRole>("affiliate_manager");
-  const [pending, setPending] = useState(false);
   const [busy, setBusy] = useState("");
-  const [created, setCreated] = useState<{
-    email: string;
-    role: AdminRole;
-  } | null>(null);
   /** Which account is having its password reset, and the new value — shown once. */
   const [resetting, setResetting] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -62,30 +40,6 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
     email: string;
     password: string;
   } | null>(null);
-
-  async function create(e: React.FormEvent) {
-    e.preventDefault();
-    setPending(true);
-    setCreated(null);
-    const result = await createAdminTeamMemberAction({
-      name,
-      email,
-      password,
-      role,
-    });
-    setPending(false);
-    if (!result.ok) {
-      show(result.error, "danger");
-      return;
-    }
-    setCreated({ email: result.data.email, role: result.data.role });
-    setName("");
-    setEmail("");
-    setPassword("");
-    show("Account created. Share the password with them directly.");
-    // The list is server-rendered; a reload is the simplest way to show the new row.
-    window.location.reload();
-  }
 
   async function resetPassword(member: AdminTeamMember) {
     setBusy(member.id);
@@ -325,88 +279,6 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
             design.
           </p>
         ) : null}
-      </section>
-
-      <section className="rounded-2xl border border-border bg-paper p-4">
-        <h2 className="flex items-center gap-1.5 font-display text-sm font-semibold text-ink">
-          <UserPlus className="size-4 text-primary" /> Add someone
-        </h2>
-
-        {created ? (
-          <p className="mt-3 rounded-xl bg-primary-soft px-3 py-2.5 text-xs text-ink">
-            <strong className="font-semibold">
-              Account created for {created.email}.
-            </strong>{" "}
-            Give them the password you typed, in person or over a call. It is
-            not emailed, by design — an emailed password sits in a mailbox
-            forever. They can change it after signing in.
-          </p>
-        ) : null}
-
-        <form onSubmit={create} className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field label="Name" htmlFor="team-name">
-            <Input
-              id="team-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </Field>
-          <Field label="Email" htmlFor="team-email">
-            <Input
-              id="team-email"
-              type="email"
-              autoComplete="off"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </Field>
-          <Field
-            label="Password"
-            htmlFor="team-password"
-            hint="At least 8 characters. Share it directly, not by email."
-          >
-            <PasswordInput
-              id="team-password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </Field>
-          <Field label="Role" htmlFor="team-role" hint={ROLE_DESCRIPTION[role]}>
-            <Select
-              id="team-role"
-              value={role}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                setRole(e.target.value as AdminRole)
-              }
-            >
-              <option value="growth_gaming_lead">
-                {ROLE_LABEL.growth_gaming_lead}
-              </option>
-              <option value="affiliate_manager">
-                {ROLE_LABEL.affiliate_manager}
-              </option>
-              <option value="support">{ROLE_LABEL.support}</option>
-              <option value="writer">{ROLE_LABEL.writer}</option>
-              <option value="editor">{ROLE_LABEL.editor}</option>
-              <option value="analyst">{ROLE_LABEL.analyst}</option>
-              <option value="owner">{ROLE_LABEL.owner}</option>
-            </Select>
-          </Field>
-          <div className="sm:col-span-2">
-            <Button type="submit" disabled={pending}>
-              {pending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <UserPlus className="size-4" />
-              )}
-              {pending ? "Creating…" : "Create account"}
-            </Button>
-          </div>
-        </form>
       </section>
     </div>
   );

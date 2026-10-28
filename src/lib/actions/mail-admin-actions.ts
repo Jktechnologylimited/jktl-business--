@@ -1,4 +1,10 @@
 "use server";
+import {
+  mailAddress,
+  REPLY_CATEGORIES,
+  verifiedSenders,
+  deliveryHeaders,
+} from "@/lib/mail/addresses";
 import { requireAdminCapability } from "@/lib/admin-session";
 import { query } from "@/lib/custom/service";
 import {
@@ -51,15 +57,88 @@ export async function saveMailBrandingAction(f: FormData) {
       return url ? [{ label, url }] : [];
     },
   );
+  const previous = brandingSettings(
+    (await query("SELECT settings FROM email_branding WHERE id=true"))[0]
+      ?.settings,
+  );
+  settings.senderDisplayName = String(f.get("senderDisplayName") || "").trim();
+  settings.senderEmail = String(f.get("senderEmail") || "")
+    .trim()
+    .toLowerCase();
+  if (
+    String(settings.senderDisplayName).length > 100 ||
+    /[<>\r\n\x00-\x1f\x7f]/.test(String(settings.senderDisplayName))
+  )
+    throw Error("Check sender display name");
+  if (
+    settings.senderEmail &&
+    (!mailAddress(settings.senderEmail) ||
+      !verifiedSenders().includes(String(settings.senderEmail)))
+  )
+    throw Error(
+      "Choose a provider-verified sender configured in the secure sender allowlist",
+    );
+  const address = (name: string) => {
+    const value = String(f.get(name) || "")
+      .trim()
+      .toLowerCase();
+    if (value && !mailAddress(value))
+      throw Error("Use one valid email address for " + name);
+    return value;
+  };
+  settings.defaultReplyTo = address("defaultReplyTo");
+  settings.categoryReplyTo = Object.fromEntries(
+    REPLY_CATEGORIES.map((c) => [c, address("reply_" + c)]).filter(
+      ([, v]) => v,
+    ),
+  );
+  const extra = String(f.get("additionalReplyTo") || "")
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .map((v) => v.toLowerCase());
+  if (extra.length > 20 || extra.some((v) => !mailAddress(v)))
+    throw Error("Use valid verified reply mailboxes");
+  const all = [
+    ...new Set(
+      [
+        String(settings.defaultReplyTo),
+        ...Object.values(settings.categoryReplyTo as Record<string, string>),
+        ...extra,
+      ].filter(Boolean),
+    ),
+  ];
+  if (
+    all.some((v) => !previous.verifiedReplyTo.includes(v)) &&
+    f.get("mailboxesVerified") !== "on"
+  )
+    throw Error(
+      "Verify that each new Reply-To mailbox exists and is authorized to receive JKTL replies before confirming it",
+    );
+  settings.verifiedReplyTo = all;
+  settings.invitationHours = Number(f.get("invitationHours") || 48);
+  if (
+    !Number.isInteger(settings.invitationHours) ||
+    Number(settings.invitationHours) < 1 ||
+    Number(settings.invitationHours) > 168
+  )
+    throw Error("Choose an invitation expiry from 1 to 168 hours");
   const normalized = brandingSettings(settings);
   if (normalized.headerColor !== settings.headerColor)
     throw Error("Choose a dark header color with readable light text");
   const rows = await query(
-    `WITH saved AS(UPDATE email_branding SET settings=$1::jsonb,revision=revision+1,updated_by=$2,updated_at=now() WHERE id=true AND revision=$3 RETURNING revision) INSERT INTO distribution_audit(actor_id,event,detail) SELECT $2,'EMAIL_BRANDING_SAVED',jsonb_build_object('revision',revision) FROM saved RETURNING id`,
-    [JSON.stringify(normalized), a.id, Number(f.get("revision"))],
+    `WITH saved AS(UPDATE email_branding SET settings=$1::jsonb,revision=revision+1,updated_by=$2,updated_at=now() WHERE id=true AND revision=$3 RETURNING revision) INSERT INTO distribution_audit(actor_id,event,detail) SELECT $2,'EMAIL_BRANDING_SAVED',jsonb_build_object('revision',revision,'replyMailboxesVerified',true) FROM saved RETURNING id`,
+    [
+      JSON.stringify({
+        ...normalized,
+        invitationHours: settings.invitationHours,
+      }),
+      a.id,
+      Number(f.get("revision")),
+    ],
   );
   if (!rows.length) throw Error("This branding changed. Reload before saving.");
   revalidatePath("/admin/communications");
+  revalidatePath("/admin/emails/branding");
 }
 export async function saveMailPromotionAction(f: FormData) {
   const a = await requireAdminCapability("manage_communications");
@@ -138,7 +217,7 @@ export async function saveMailPromotionAction(f: FormData) {
       JSON.stringify({ promotion: rows[0].id, enabled: values[4], priority }),
     ],
   );
-  revalidatePath("/admin/communications/promotions");
+  revalidatePath("/admin/emails/branding");
 }
 export async function previewMailAction(id: string) {
   await requireAdminCapability("manage_communications");
@@ -180,6 +259,13 @@ export async function previewMailAction(id: string) {
     }),
     title: sample.title,
     category: sample.category,
+    replyTo: deliveryHeaders(branding, {
+      replyCategory: ["affiliate", "partner", "support", "security"].includes(
+        sample.category,
+      )
+        ? (sample.category as "affiliate" | "partner" | "support" | "security")
+        : undefined,
+    }).replyTo,
   };
 }
 export async function sendTestMailAction(id: string) {

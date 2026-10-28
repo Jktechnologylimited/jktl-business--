@@ -20,7 +20,11 @@ import {
 
 test("an owner can do everything, by definition", () => {
   for (const item of ADMIN_NAV) {
-    assert.equal(can("owner", item.capability), true, `owner should be able to ${item.capability}`);
+    assert.equal(
+      can("owner", item.capability),
+      true,
+      `owner should be able to ${item.capability}`,
+    );
   }
   assert.equal(can("owner", "manage_team"), true);
   assert.equal(can("owner", "run_daily_job"), true);
@@ -38,7 +42,11 @@ test("an affiliate manager can run the partner programme and nothing else", () =
   assert.equal(can("affiliate_manager", "run_lead_engine"), false);
   assert.equal(can("affiliate_manager", "import_leads"), false);
   assert.equal(can("affiliate_manager", "manage_team"), false);
-  assert.equal(can("affiliate_manager", "run_daily_job"), false, "the daily job collects money");
+  assert.equal(
+    can("affiliate_manager", "run_daily_job"),
+    false,
+    "the daily job collects money",
+  );
 });
 
 test("an analyst can see numbers and change nothing", () => {
@@ -53,7 +61,11 @@ test("an analyst can see numbers and change nothing", () => {
     "manage_team",
     "run_daily_job",
   ]) {
-    assert.equal(can("analyst", capability), false, `an analyst must not ${capability}`);
+    assert.equal(
+      can("analyst", capability),
+      false,
+      `an analyst must not ${capability}`,
+    );
   }
 });
 
@@ -85,7 +97,13 @@ test("navigation is filtered by capability, and never empty", () => {
   assert.equal(ownerNav.length, ADMIN_NAV.length);
 
   const managerNav = navFor("affiliate_manager").map((i) => i.label);
-  assert.deepEqual(managerNav, ["Distribution", "Partners", "Insights", "Affiliates"]);
+  assert.deepEqual(managerNav, [
+    "Emails",
+    "Distribution",
+    "Partners",
+    "Insights",
+    "Affiliates",
+  ]);
 
   const analystNav = navFor("analyst").map((i) => i.label);
   assert.deepEqual(analystNav, ["Insights"]);
@@ -99,8 +117,15 @@ test("navigation is filtered by capability, and never empty", () => {
 test("every nav item is reachable by the role that sees it", () => {
   for (const role of ["owner", "affiliate_manager", "analyst"]) {
     for (const item of navFor(role)) {
-      assert.equal(can(role, item.capability), true, `${role} sees ${item.label} but cannot use it`);
-      assert.ok(item.href.startsWith("/admin"), "every admin link stays under /admin");
+      assert.equal(
+        can(role, item.capability),
+        true,
+        `${role} sees ${item.label} but cannot use it`,
+      );
+      assert.ok(
+        item.href.startsWith("/admin"),
+        "every admin link stays under /admin",
+      );
     }
   }
 });
@@ -108,7 +133,10 @@ test("every nav item is reachable by the role that sees it", () => {
 test("each role is described in a sentence a person understands", () => {
   for (const role of ["owner", "affiliate_manager", "analyst"]) {
     assert.ok(ROLE_LABEL[role].length > 3);
-    assert.ok(ROLE_DESCRIPTION[role].length > 30, `${role} needs a real description`);
+    assert.ok(
+      ROLE_DESCRIPTION[role].length > 30,
+      `${role} needs a real description`,
+    );
     assert.ok(!/undefined/.test(ROLE_DESCRIPTION[role]));
   }
   // The manager's description should say what it can do, not just what it cannot.

@@ -9,6 +9,10 @@ test("program notices stay queued without delivery configuration and isolate ret
     sent = [],
     fail = true;
   const deps = {
+    "@/lib/mail/composed-delivery": {
+      recoverComposedSubmissions: async () => {},
+      deliverComposedNotice: async () => ({ accepted: false, failed: false }),
+    },
     "server-only": {},
     "./push": {
       flushProgrammePush: async () => ({

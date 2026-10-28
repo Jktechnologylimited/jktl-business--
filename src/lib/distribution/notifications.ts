@@ -1,7 +1,11 @@
 import { flushProgrammePush } from "./push";
 import "server-only";
 import { query } from "@/lib/custom/service";
-import { sendPartnerNoticeEmail } from "@/lib/email";
+import {
+  deliverComposedNotice,
+  recoverComposedSubmissions,
+} from "@/lib/mail/composed-delivery";
+import { sendAdminComposedEmail, sendPartnerNoticeEmail } from "@/lib/email";
 export async function flushProgramNotices() {
   const push = await flushProgrammePush().catch(() => ({
     configured: true,
@@ -15,13 +19,20 @@ export async function flushProgramNotices() {
       failed: push.failed,
       push,
     };
+  await recoverComposedSubmissions(query);
   const rows = await query(
-    `WITH picked AS(SELECT id FROM distribution_program_notices WHERE delivered_at IS NULL AND suppressed_at IS NULL AND attempts<10 AND(lease_until IS NULL OR lease_until<now()) ORDER BY id LIMIT 20 FOR UPDATE SKIP LOCKED) UPDATE distribution_program_notices n SET lease_until=now()+interval '5 minutes',attempts=attempts+1 FROM picked WHERE n.id=picked.id RETURNING n.*`,
+    `WITH picked AS(SELECT id FROM distribution_program_notices WHERE delivered_at IS NULL AND suppressed_at IS NULL AND attempts<10 AND(composed_id IS NULL OR send_state='QUEUED') AND(lease_until IS NULL OR lease_until<now()) ORDER BY id LIMIT 20 FOR UPDATE SKIP LOCKED) UPDATE distribution_program_notices n SET lease_until=now()+interval '5 minutes',attempts=attempts+1 FROM picked WHERE n.id=picked.id RETURNING n.*`,
   );
   let delivered = 0,
     failed = 0;
   for (const n of rows) {
     try {
+      if (n.composed_id) {
+        const r = await deliverComposedNotice(query, n, sendAdminComposedEmail);
+        if (r.accepted) delivered++;
+        if (r.failed) failed++;
+        continue;
+      }
       const recipients = n.recipient_email
         ? [{ email: n.recipient_email }]
         : n.audience === "STAFF"

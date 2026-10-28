@@ -1,4 +1,5 @@
 import "server-only";
+import { deliveryHeaders, type ReplyCategory } from "./addresses";
 import { query } from "@/lib/custom/service";
 import {
   brandingSettings,
@@ -10,6 +11,9 @@ import {
 } from "./layout";
 export type MailContext = {
   category?: MailCategory;
+  replyCategory?: ReplyCategory;
+  replyTo?: string;
+  suppressPromotions?: boolean;
   ownedProducts?: string[];
   outreachAuthorized?: boolean;
   unsubscribeUrl?: string;
@@ -61,6 +65,7 @@ export async function brandEmail(
           Boolean(p.marketing_opt_in || ctx.outreachAuthorized) &&
           Boolean(branding.postalAddress);
       if (
+        !ctx.suppressPromotions &&
         p.marketing_opt_in &&
         !p.marketing_suppressed &&
         !legacySuppressed &&
@@ -102,8 +107,11 @@ export async function brandEmail(
         )
           eligible.push("domains");
         if (
-          (await query("SELECT 1 FROM email_plans WHERE enabled=true AND publicly_available=true LIMIT 1"))
-            .length
+          (
+            await query(
+              "SELECT 1 FROM email_plans WHERE enabled=true AND publicly_available=true LIMIT 1",
+            )
+          ).length
         )
           eligible.push("business-email");
         promotions = selectPromotions(
@@ -144,6 +152,17 @@ export async function brandEmail(
       preferencesUrl,
     }),
     permitted,
+    delivery: deliveryHeaders(branding, {
+      replyTo: ctx.replyTo,
+      replyCategory:
+        ctx.replyCategory ||
+        (category === "affiliate" ||
+        category === "partner" ||
+        category === "support" ||
+        category === "security"
+          ? category
+          : undefined),
+    }),
     preferencesUrl,
   };
 }

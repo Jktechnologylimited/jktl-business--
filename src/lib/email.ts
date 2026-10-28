@@ -1,3 +1,7 @@
+import { uncertainProviderRejection } from "@/lib/mail/provider-outcome";
+import { recordMailAttempt } from "@/lib/mail/history";
+import { deliveryHeaders, mailAddress } from "@/lib/mail/addresses";
+import { currentBranding } from "@/lib/mail/service";
 import { brandEmail, type MailContext } from "@/lib/mail/service";
 import { escapeHtml, mailAction } from "@/lib/mail/layout";
 import { Resend } from "resend";
@@ -21,7 +25,9 @@ const FROM =
   process.env.RESEND_FROM_EMAIL ||
   "JKTL Business <jktl-business@mail.ibiz.name.ng>";
 
-type EmailResult = { ok: true } | { ok: false; error: string };
+type EmailResult =
+  | { ok: true; providerId?: string }
+  | { ok: false; error: string; uncertain?: boolean };
 
 /** Every send is wrapped so a failed email never breaks the action that
  * triggered it (a signup should succeed even if the welcome email bounces).
@@ -66,7 +72,9 @@ export async function sendProspectOutreachEmail(params: {
         error:
           "Marketing preferences or required sender postal address prevent this send.",
       };
-    const { error } = await getResend().emails.send({
+    if (params.replyTo && !mailAddress(params.replyTo))
+      return { ok: false, error: "Invalid Reply-To address." };
+    const { error, data } = await getResend().emails.send({
       from: process.env.RESEND_OUTREACH_FROM_EMAIL || FROM,
       to: params.to,
       subject: params.subject,
@@ -79,10 +87,31 @@ export async function sendProspectOutreachEmail(params: {
         : {}),
       html: rendered.html,
       text: rendered.text,
-      ...(params.replyTo ? { reply_to: params.replyTo } : {}),
+      ...(params.replyTo
+        ? { replyTo: mailAddress(params.replyTo) }
+        : rendered.delivery?.replyTo
+          ? { replyTo: rendered.delivery.replyTo }
+          : {}),
     });
-    if (error) return { ok: false, error: error.message };
-    return { ok: true };
+    await recordMailAttempt({
+      to: params.to,
+      subject: params.subject,
+      category: params.category || "marketing",
+      state: error
+        ? uncertainProviderRejection(error)
+          ? "UNKNOWN"
+          : "FAILED"
+        : "ACCEPTED",
+      providerId: data?.id,
+      errorCode: error?.name,
+    });
+    if (error)
+      return {
+        ok: false,
+        error: error.message,
+        uncertain: uncertainProviderRejection(error),
+      };
+    return { ok: true, providerId: data?.id };
   } catch (err) {
     return {
       ok: false,
@@ -101,13 +130,16 @@ async function send(
 ): Promise<EmailResult> {
   if (!to || !to.includes("@"))
     return { ok: false, error: "No valid recipient email." };
+  let submitted = false;
   try {
     const rendered = await brandEmail(to, subject, html, text, context);
     if (!rendered.permitted)
       return { ok: false, error: "Marketing preferences prevent this send." };
-    const { error } = await getResend().emails.send(
+    const provider = getResend();
+    submitted = true;
+    const { error, data } = await provider.emails.send(
       {
-        from: FROM,
+        ...(rendered.delivery || { from: FROM }),
         to,
         subject,
         ...(context.category === "marketing" && rendered.preferencesUrl
@@ -122,12 +154,41 @@ async function send(
       },
       key ? { idempotencyKey: key } : undefined,
     );
-    if (error) return { ok: false, error: error.message };
-    return { ok: true };
-  } catch (err) {
+    await recordMailAttempt({
+      key,
+      to,
+      subject,
+      category: context.category || "service",
+      state: error
+        ? uncertainProviderRejection(error)
+          ? "UNKNOWN"
+          : "FAILED"
+        : "ACCEPTED",
+      providerId: data?.id,
+      errorCode: error?.name,
+    });
+    if (error)
+      return {
+        ok: false,
+        error: error.message,
+        uncertain: uncertainProviderRejection(error),
+      };
+    return { ok: true, providerId: data?.id };
+  } catch {
+    await recordMailAttempt({
+      key,
+      to,
+      subject,
+      category: context.category || "service",
+      state: submitted ? "UNKNOWN" : "FAILED",
+      errorCode: submitted
+        ? "SUBMISSION_UNCONFIRMED"
+        : "VALIDATION_OR_CONFIGURATION",
+    });
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Unknown email error.",
+      error: "Email submission could not be confirmed.",
+      uncertain: submitted,
     };
   }
 }
@@ -849,6 +910,7 @@ export async function sendPartnerNoticeEmail(p: {
   key: string;
   path: string;
   category?: MailContext["category"];
+  replyCategory?: MailContext["replyCategory"];
   ticket?: { subject: string; agent: string; reply: string; reference: string };
 }): Promise<EmailResult> {
   const origin = (
@@ -866,7 +928,11 @@ export async function sendPartnerNoticeEmail(p: {
     t
       ? `${t.subject}\nFrom ${t.agent}\n\n${t.reply}\n\nReference: ${t.reference}\n${url}`
       : p.detail + "\n\n" + url,
-    { category: p.category || "partner", ownedProducts: ["partners"] },
+    {
+      category: p.category || "partner",
+      replyCategory: p.replyCategory,
+      ownedProducts: ["partners"],
+    },
     p.key,
   );
 }
@@ -874,16 +940,30 @@ export async function sendPartnerNoticeEmail(p: {
 /** Admin-only preview delivery; the caller limits recipient, rate and permissions. */
 export async function sendMailPreview(
   to: string,
-  rendered: { html: string; text: string },
+  rendered: { html: string; text: string; replyTo?: string },
   subject: string,
 ) {
   try {
     const result = await getResend().emails.send({
-      from: FROM,
+      ...deliveryHeaders(await currentBranding(), {
+        replyTo: rendered.replyTo,
+      }),
       to,
       subject: "[JKTL TEST PREVIEW] " + subject,
       html: rendered.html,
       text: rendered.text,
+    });
+    await recordMailAttempt({
+      to,
+      subject: "[JKTL TEST PREVIEW] " + subject,
+      category: "internal",
+      state: result.error
+        ? uncertainProviderRejection(result.error)
+          ? "UNKNOWN"
+          : "FAILED"
+        : "ACCEPTED",
+      providerId: result.data?.id,
+      errorCode: result.error?.name,
     });
     return result.error
       ? { ok: false, error: "Preview delivery failed" }
@@ -906,7 +986,7 @@ export async function sendEditorialNotice(
     `JKTL Editorial: ${label}`,
     `<p>${escapeHtml(title)}</p><p>Editorial status: <strong>${escapeHtml(label)}</strong>.</p>${mailAction("Open Editorial", "https://business.jktl.com.ng/admin/content")}`,
     `${title}\nEditorial status: ${label}.\nOpen Editorial: https://business.jktl.com.ng/admin/content`,
-    { category: "internal" },
+    { category: "internal", replyCategory: "editorial" },
     "editorial-" + key,
   );
 }
@@ -921,7 +1001,53 @@ export async function sendEditorialInvitation(
     "You’re invited to the JKTL Editorial Team",
     `<p>Hi ${escapeHtml(name)},</p><p>You have been invited to the JKTL Editorial Team. Set your own password to accept. This link expires in 7 days.</p>${mailAction("Accept invitation", url)}`,
     `Hi ${name},\nJoin the JKTL Editorial Team: ${url}\nThis link expires in 7 days.`,
-    { category: "internal" },
+    { category: "security", replyCategory: "editorial" },
     "editorial-invite-" + key,
+  );
+}
+
+/** One provider and shared branding for administrator-composed queue entries. */
+export async function sendAdminComposedEmail(p: {
+  to: string;
+  subject: string;
+  bodyHtml: string;
+  text: string;
+  category: "marketing" | "service";
+  replyTo?: string;
+  key: string;
+}) {
+  return send(
+    p.to,
+    p.subject,
+    p.bodyHtml,
+    p.text,
+    {
+      category: p.category,
+      replyTo: p.replyTo,
+      suppressPromotions: p.category !== "marketing",
+    },
+    p.key,
+  );
+}
+export async function sendRoleInvitationEmail(p: {
+  to: string;
+  name: string;
+  role: string;
+  message: string;
+  url: string;
+  expiresAt: string;
+  key: string;
+  editorial?: boolean;
+}) {
+  return send(
+    p.to,
+    "You’re invited to join JKTL",
+    `<p>Hello ${escapeHtml(p.name)},</p><p>You are invited to join JKTL as <strong>${escapeHtml(p.role)}</strong>.</p><p>${escapeHtml(p.message)}</p><p>Sign in to your existing account, or set your own password if this is your first team account. No password is included in this email.</p>${mailAction("Accept invitation", p.url)}<p>This single-use invitation expires ${escapeHtml(p.expiresAt)}.</p>`,
+    `Hello ${p.name},\nYour JKTL role: ${p.role}.\n${p.message}\nAccept: ${p.url}\nExpires: ${p.expiresAt}`,
+    {
+      category: "security",
+      replyCategory: p.editorial ? "editorial" : "administration",
+    },
+    p.key,
   );
 }

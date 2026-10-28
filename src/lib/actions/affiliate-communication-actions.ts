@@ -1,4 +1,7 @@
 "use server";
+/** Compatibility actions for earlier Affiliate drafts. The unified Emails UI
+ * uses email-compose-actions and the same existing draft table/provider/outbox.
+ * Keep these until outstanding legacy drafts and old client sessions retire. */
 import { query } from "@/lib/custom/service";
 import { requireAdminCapability } from "@/lib/admin-session";
 import { rate } from "@/lib/support/service";

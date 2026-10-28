@@ -24,7 +24,7 @@ export async function remindAffiliateInvitations() {
       hash = createHash("sha256").update(token).digest("hex");
     const r = (
       await query(
-        `UPDATE affiliate_invitations SET reminded_at=now(),token_hash=$2 WHERE id=$1 AND accepted_at IS NULL AND revoked_at IS NULL AND reminded_at IS NULL AND expires_at>now() RETURNING id,name,email`,
+        `UPDATE affiliate_invitations SET reminded_at=now(),token_hash=$2 WHERE id=$1 AND accepted_at IS NULL AND revoked_at IS NULL AND reminded_at IS NULL AND expires_at>now() RETURNING id,name,email,program`,
         [i.id, hash],
       )
     )[0];
@@ -37,6 +37,7 @@ export async function remindAffiliateInvitations() {
         path: "/affiliates/invitation?token=" + token,
         key: "affiliate-first-reminder-" + r.id + "-" + hash.slice(0, 12),
         category: "security",
+        replyCategory: r.program as "affiliate" | "partner",
       });
       if (!sent.ok) throw Error("Retry");
       await query(
