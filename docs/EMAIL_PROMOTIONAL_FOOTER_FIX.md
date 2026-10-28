@@ -2,7 +2,19 @@
 
 28 October 2026 — Africa/Lagos.
 
-## Root cause
+## Follow-up: received Gmail invitation still omitted the footer
+
+The received screenshot proves that the invitation/date changes deployed, but the footer did not. The first fix was insufficient: final-payload tests supplied both marketing consent and a postal address, unlike a new invitation recipient using default branding. The shared sender **and** selector still required both prerequisites. The screenshot has no postal address, which alone prevented the section.
+
+The shared policy now includes the small service-discovery footer in requested role/programme invitations and new-account welcomes by default, without requiring a separate marketing subscription or company postal-address setup. It does not change or infer `marketing_opt_in`. Explicit recipient suppression, legacy opt-outs, caller suppression, global OFF, disabled/deleted items, category restrictions and security exclusions still apply. Standalone marketing and other email categories retain their existing consent/postal requirements. This is limited to service discovery in invitations/welcomes, not permission to send unsolicited campaigns.
+
+The complete provider-payload regression now starts with **empty branding settings and no recipient preference row**, then verifies the default footer in HTML/text, welcome and programme invitations, and no footer in resets. Additional tests cover opt-outs, legacy suppression, explicit suppression, global OFF and refusal of marketing without consent. Optional footer lookup failures now produce a generic server-side diagnostic (no recipient, token or database-error details), rather than silently hiding an operational failure.
+
+Follow-up validation: production build (including TypeScript) and focused ESLint passed. All **20 focused email tests passed**, including the provider-boundary regression and existing invitation, authorization, Reply-To, compose, opt-out and persistence coverage.
+
+Preview guidance now describes these category differences. No schema change or manual reseeding is required for this follow-up. Production database/provider access is still unavailable here; inbox verification must use a newly sent invitation after the follow-up deployment. Previously delivered emails do not change.
+
+## Original root cause
 
 Role invitations and programme invitation/reminder sends used the `security` category. Both the shared selection service and final layout intentionally strip all promotional content from security messages. Therefore invitations could never contain a footer, even with promotions enabled and an eligible recipient.
 
@@ -37,7 +49,7 @@ The catalogue entries are editable database defaults, not a hardcoded footer app
 
 ## Eligibility and privacy
 
-Enabling the footer does not create marketing consent. Actual sends still require the existing optional-marketing eligibility checks: opted-in recipient, no suppression/opt-out, genuine configured company postal details, enabled footer/items and relevant product/category. Missing or unavailable preference data fails closed for optional promotions; the essential invitation can still be sent without marketing. Security/internal emails and explicitly non-promotional operational compositions remain free of product promotions.
+Enabling the footer does not create marketing consent. Marketing and other non-invitation/non-welcome sends require the existing optional-marketing eligibility checks: opted-in recipient, no suppression/opt-out, genuine configured company postal details, enabled footer/items and relevant product/category. Invitations and welcome emails use the follow-up service-discovery policy above. Missing or unavailable preference data fails closed for optional promotions; the essential invitation can still be sent without marketing. Security/internal emails and explicitly non-promotional operational compositions remain free of product promotions.
 
 The preview states its assumed eligibility and warns if required company information is missing. An administrator who has never configured footer content does not need to add those five links manually. This does not bypass recipient preferences or invent company postal details.
 

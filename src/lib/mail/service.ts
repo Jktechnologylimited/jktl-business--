@@ -6,6 +6,7 @@ import {
   brandingSettings,
   DEFAULT_BRANDING,
   selectPromotions,
+  serviceDiscoveryCategory,
   mailLayout,
   type Promotion,
   type MailCategory,
@@ -67,10 +68,10 @@ export async function brandEmail(
           Boolean(branding.postalAddress);
       if (
         !ctx.suppressPromotions &&
-        p.marketing_opt_in &&
         !p.marketing_suppressed &&
         !legacySuppressed &&
-        branding.postalAddress
+        (serviceDiscoveryCategory(category) ||
+          (p.marketing_opt_in && branding.postalAddress))
       ) {
         const rows = await listPromotions(query);
         const ownership = (
@@ -122,13 +123,17 @@ export async function brandEmail(
         )
           eligible.push("business-email");
         promotions = selectPromotions(promotionRows(rows), branding, category, {
-          consented: true,
+          consented: Boolean(p.marketing_opt_in),
+          suppressed: Boolean(p.marketing_suppressed || legacySuppressed),
           ownedProducts: owned,
           eligibleProducts: eligible,
         });
       }
     }
   } catch {
+    // Do not break essential mail, but never silently hide a catalogue/query failure.
+    // No addresses, tokens, credentials or database errors enter application logs.
+    console.error("[mail] Optional footer lookup failed", { category });
     promotions = [];
     if (category === "marketing") permitted = false;
   }

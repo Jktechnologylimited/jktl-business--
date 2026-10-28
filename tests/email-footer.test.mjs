@@ -127,6 +127,10 @@ test("the final provider payload includes one shared invitation footer and reada
   const f = await fixture();
   const old = process.env.RESEND_API_KEY;
   try {
+    // Reproduce the received Gmail message: no configured postal address and
+    // a new recipient with no separate marketing subscription.
+    await f.q("UPDATE email_branding SET settings='{}'::jsonb");
+    await f.q("DELETE FROM email_preferences");
     const payloads = [];
     class Resend {
       emails = {
@@ -222,6 +226,16 @@ test("the final provider payload includes one shared invitation footer and reada
     });
     assert.doesNotMatch(payloads.at(-1).html, /Explore More from JKTL/);
     assert.doesNotMatch(payloads.at(-1).text, /Explore More from JKTL/);
+    const preference = (
+      await f.q(
+        "SELECT marketing_opt_in FROM email_preferences WHERE email='footer@example.test'",
+      )
+    )[0];
+    assert.equal(
+      preference.marketing_opt_in,
+      false,
+      "service links must not grant marketing consent",
+    );
     const rows = await promotions.listPromotions(f.q);
     assert.equal(rows.length, 5);
     assert.deepEqual(
@@ -400,6 +414,76 @@ test("default initialization respects an explicit global disable and an intentio
       }).html,
       /Explore More from JKTL/,
     );
+  } finally {
+    await f.db.close();
+  }
+});
+
+test("invitation service links work with default settings and respect opt-outs without permitting marketing", async () => {
+  const f = await fixture();
+  try {
+    await f.q("UPDATE email_branding SET settings='{}'::jsonb");
+    await f.q("DELETE FROM email_preferences");
+    assert.match((await f.render()).html, /Explore More from JKTL/);
+    assert.match((await f.render()).text, /https:\/\/jktl.com.ng\/templates/);
+    assert.match(
+      (
+        await f.actions.previewFooterDraftAction({
+          sample: "invite-owner",
+          enabled: true,
+          max: 3,
+        })
+      ).html,
+      /Explore More from JKTL/,
+    );
+    const marketing = await f.service.brandEmail(
+      "footer@example.test",
+      "Marketing",
+      "<p>Ad</p>",
+      "Ad",
+      { category: "marketing" },
+    );
+    assert.equal(marketing.permitted, false);
+    assert.doesNotMatch(marketing.html, /Explore More from JKTL/);
+    await f.q(
+      "UPDATE email_preferences SET marketing_suppressed=true WHERE email='footer@example.test'",
+    );
+    let rendered = await f.render();
+    assert.equal(rendered.permitted, true, "essential invitation still sends");
+    assert.doesNotMatch(rendered.html, /Explore More from JKTL/);
+    await f.q(
+      "UPDATE email_preferences SET marketing_suppressed=false WHERE email='footer@example.test'",
+    );
+    await f.q(
+      "INSERT INTO prospects(business_name,email,status,suppressed) VALUES('Fixture','footer@example.test','suppressed',true)",
+    );
+    assert.doesNotMatch((await f.render()).html, /Explore More from JKTL/);
+    assert.equal(
+      layout.selectPromotions(
+        defaults.DEFAULT_PROMOTIONS,
+        layout.DEFAULT_BRANDING,
+        "invitation",
+        { suppressed: true },
+      ).length,
+      0,
+    );
+    await f.q("DELETE FROM prospects WHERE email='footer@example.test'");
+    assert.doesNotMatch(
+      (
+        await f.service.brandEmail(
+          "footer@example.test",
+          "Invite",
+          "<p>Invite</p>",
+          "Invite",
+          { category: "invitation", suppressPromotions: true },
+        )
+      ).html,
+      /Explore More from JKTL/,
+    );
+    await f.q(
+      "UPDATE email_branding SET settings=jsonb_build_object('promotionsEnabled',false)",
+    );
+    assert.doesNotMatch((await f.render()).html, /Explore More from JKTL/);
   } finally {
     await f.db.close();
   }

@@ -88,8 +88,9 @@ export function PromotionalFooter({ initial }: { initial: Data }) {
       <p>
         Explore More from JKTL appears after the signature in eligible emails.
         Security-critical messages never include it. New items start at the top;
-        use the arrows to choose display order. Consent, opt-outs and genuine
-        company postal details still apply.
+        use the arrows to choose display order. Invitations and welcome emails
+        include service links by default unless the recipient has opted out.
+        Marketing emails still require consent and company postal details.
       </p>
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex gap-3">

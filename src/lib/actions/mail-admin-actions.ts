@@ -17,6 +17,7 @@ import {
   MAIL_CATEGORIES,
   httpsUrl,
   selectPromotions,
+  serviceDiscoveryCategory,
   mailLayout,
   type Promotion,
 } from "@/lib/mail/layout";
@@ -440,9 +441,11 @@ export async function previewFooterDraftAction(raw: {
       }),
       preferencesUrl: "https://business.jktl.com.ng/business/email-preferences",
     }),
-    warning: !branding.postalAddress
-      ? "Configure the genuine company postal address before live promotional sending. The sample does not invent an address."
-      : "Sample assumes an eligible, opted-in recipient. Actual sends recheck preferences and relevance.",
+    warning: serviceDiscoveryCategory(sample.category)
+      ? "Invitations and welcome emails include service links by default. Explicit opt-outs, disabled items and the global OFF setting are respected. This does not subscribe the recipient to marketing."
+      : !branding.postalAddress
+        ? "This email category requires the genuine company postal address and recipient marketing consent for promotions."
+        : "Sample assumes an eligible, opted-in recipient. Actual sends recheck preferences and relevance.",
   };
 }
 

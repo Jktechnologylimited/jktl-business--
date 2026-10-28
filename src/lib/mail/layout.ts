@@ -182,12 +182,19 @@ export function brandingSettings(raw: unknown): Branding {
   }
   return b;
 }
+/** Invited team/programme members and newly registered customers receive a
+ * small service-discovery footer with their requested invitation/welcome.
+ * This does not grant marketing consent or authorize standalone campaigns. */
+export function serviceDiscoveryCategory(category: MailCategory) {
+  return category === "invitation" || category === "onboarding";
+}
 export function selectPromotions(
   rows: Promotion[],
   b: Branding,
   category: MailCategory,
   options: {
     consented?: boolean;
+    suppressed?: boolean;
     ownedProducts?: string[];
     now?: number;
     eligibleProducts?: string[];
@@ -197,8 +204,9 @@ export function selectPromotions(
     category === "security" ||
     category === "internal" ||
     !b.promotionsEnabled ||
-    !options.consented ||
-    !b.postalAddress ||
+    options.suppressed ||
+    (!serviceDiscoveryCategory(category) &&
+      (!options.consented || !b.postalAddress)) ||
     (category === "support" && !b.supportPromotions)
   )
     return [];
