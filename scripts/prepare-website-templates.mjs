@@ -42,6 +42,7 @@ if (!url) {
       "058_go54_diagnostics.sql",
       "059_domain_fulfillment.sql",
       "060_email_management.sql",
+      "061_email_promotional_footer.sql",
     ].map((name) =>
       readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
     ),

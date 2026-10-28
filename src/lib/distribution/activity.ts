@@ -36,7 +36,7 @@ export async function remindAffiliateInvitations() {
         detail: `Hello ${r.name}, your JKTL Affiliate invitation is ready. Review the terms and activate using your existing Business account or ordinary signup. This is a replacement secure link; older invitation links no longer work.`,
         path: "/affiliates/invitation?token=" + token,
         key: "affiliate-first-reminder-" + r.id + "-" + hash.slice(0, 12),
-        category: "security",
+        category: "invitation",
         replyCategory: r.program as "affiliate" | "partner",
       });
       if (!sent.ok) throw Error("Retry");

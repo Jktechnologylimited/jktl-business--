@@ -1,3 +1,5 @@
+Latest footer update: [shared promotional footer fix, simple manager and WAT expiry](EMAIL_PROMOTIONAL_FOOTER_FIX.md).
+
 # JKTL Emails, invitations and Reply-To
 
 28 October 2026 (Africa/Lagos).

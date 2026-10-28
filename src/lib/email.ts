@@ -1,3 +1,4 @@
+import { invitationExpiry } from "@/lib/mail/invitation-date";
 import { uncertainProviderRejection } from "@/lib/mail/provider-outcome";
 import { recordMailAttempt } from "@/lib/mail/history";
 import { deliveryHeaders, mailAddress } from "@/lib/mail/addresses";
@@ -999,9 +1000,9 @@ export async function sendEditorialInvitation(
   return send(
     to,
     "You’re invited to the JKTL Editorial Team",
-    `<p>Hi ${escapeHtml(name)},</p><p>You have been invited to the JKTL Editorial Team. Set your own password to accept. This link expires in 7 days.</p>${mailAction("Accept invitation", url)}`,
-    `Hi ${name},\nJoin the JKTL Editorial Team: ${url}\nThis link expires in 7 days.`,
-    { category: "security", replyCategory: "editorial" },
+    `<p>Hi ${escapeHtml(name)},</p><p>You have been invited to the JKTL Editorial Team. Set your own password to accept. Open the invitation to review its expiry.</p>${mailAction("Accept invitation", url)}`,
+    `Hi ${name},\nJoin the JKTL Editorial Team: ${url}\nOpen the invitation to review its expiry.`,
+    { category: "invitation", replyCategory: "editorial" },
     "editorial-invite-" + key,
   );
 }
@@ -1039,13 +1040,14 @@ export async function sendRoleInvitationEmail(p: {
   key: string;
   editorial?: boolean;
 }) {
+  const expiry = invitationExpiry(p.expiresAt);
   return send(
     p.to,
     "You’re invited to join JKTL",
-    `<p>Hello ${escapeHtml(p.name)},</p><p>You are invited to join JKTL as <strong>${escapeHtml(p.role)}</strong>.</p><p>${escapeHtml(p.message)}</p><p>Sign in to your existing account, or set your own password if this is your first team account. No password is included in this email.</p>${mailAction("Accept invitation", p.url)}<p>This single-use invitation expires ${escapeHtml(p.expiresAt)}.</p>`,
-    `Hello ${p.name},\nYour JKTL role: ${p.role}.\n${p.message}\nAccept: ${p.url}\nExpires: ${p.expiresAt}`,
+    `<p>Hello ${escapeHtml(p.name)},</p><p>You are invited to join JKTL as <strong>${escapeHtml(p.role)}</strong>.</p><p>${escapeHtml(p.message)}</p><p>Sign in to your existing account, or set your own password if this is your first team account. No password is included in this email.</p>${mailAction("Accept invitation", p.url)}<p>${escapeHtml(expiry)}</p>`,
+    `Hello ${p.name},\nYour JKTL role: ${p.role}.\n${p.message}\nAccept: ${p.url}\n${expiry}`,
     {
-      category: "security",
+      category: "invitation",
       replyCategory: p.editorial ? "editorial" : "administration",
     },
     p.key,

@@ -99,7 +99,7 @@ for (const [role, label] of Object.entries({
 }))
   MAIL_PREVIEWS["invite-" + role] = {
     title: "Invitation: " + label,
-    category: "security",
+    category: "invitation",
     body:
       "Hello Preview Recipient. You are invited to join JKTL as " +
       label +

@@ -1,4 +1,9 @@
 "use server";
+import { listPromotions, promotionRows } from "@/lib/mail/promotions";
+import {
+  PROMOTION_CATEGORIES,
+  DEFAULT_PROMOTIONS,
+} from "@/lib/mail/promotion-defaults";
 import {
   mailAddress,
   REPLY_CATEGORIES,
@@ -41,25 +46,31 @@ export async function saveMailBrandingAction(f: FormData) {
     throw Error("Use an HTTPS logo and JKTL support URL");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(settings.supportEmail)))
     throw Error("Check support email");
-  settings.promotionsEnabled = f.get("promotionsEnabled") === "on";
-  settings.supportPromotions = f.get("supportPromotions") === "on";
-  settings.maxPromotions = Number(f.get("maxPromotions"));
+  const previous = brandingSettings(
+    (await query("SELECT settings FROM email_branding WHERE id=true"))[0]
+      ?.settings,
+  );
+  settings.promotionsEnabled = f.has("maxPromotions")
+    ? f.get("promotionsEnabled") === "on"
+    : previous.promotionsEnabled;
+  settings.supportPromotions = f.has("maxPromotions")
+    ? f.get("supportPromotions") === "on"
+    : previous.supportPromotions;
+  settings.maxPromotions = f.has("maxPromotions")
+    ? Number(f.get("maxPromotions"))
+    : previous.maxPromotions;
   if (
     !Number.isInteger(settings.maxPromotions) ||
     Number(settings.maxPromotions) < 0 ||
-    Number(settings.maxPromotions) > 3
+    Number(settings.maxPromotions) > 4
   )
-    throw Error("Choose 0–3 promotions");
+    throw Error("Choose 0–4 promotions");
   settings.socialLinks = ["facebook", "instagram", "linkedin"].flatMap(
     (label) => {
       const url = String(f.get(label) || "").trim();
       if (url && !httpsUrl(url)) throw Error("Use HTTPS social links");
       return url ? [{ label, url }] : [];
     },
-  );
-  const previous = brandingSettings(
-    (await query("SELECT settings FROM email_branding WHERE id=true"))[0]
-      ?.settings,
   );
   settings.senderDisplayName = String(f.get("senderDisplayName") || "").trim();
   settings.senderEmail = String(f.get("senderEmail") || "")
@@ -142,12 +153,41 @@ export async function saveMailBrandingAction(f: FormData) {
 }
 export async function saveMailPromotionAction(f: FormData) {
   const a = await requireAdminCapability("manage_communications");
+  await listPromotions(query);
+  const id = String(f.get("id") || "");
+  const previousPromotion = id
+    ? (
+        await query(
+          "SELECT * FROM email_promotions WHERE id=$1 AND deleted_at IS NULL",
+          [id],
+        )
+      )[0]
+    : undefined;
+  if (id && !previousPromotion)
+    throw Error("Current promotion changed. Reload before saving.");
   const title = String(f.get("title") || "").trim(),
     description = String(f.get("description") || "").trim(),
     url = httpsUrl(f.get("url"), true),
-    product = String(f.get("productId")),
-    categories = f.getAll("categories").map(String),
-    priority = Number(f.get("priority"));
+    product = String(
+      f.get("productId") ||
+        DEFAULT_PROMOTIONS.find((p) => new URL(p.url).href === url)
+          ?.productId ||
+        "",
+    ),
+    categories = f.has("categories")
+      ? f.getAll("categories").map(String)
+      : (previousPromotion?.categories as string[]) || PROMOTION_CATEGORIES,
+    priority = f.has("priority")
+      ? Number(f.get("priority"))
+      : previousPromotion
+        ? Number(previousPromotion.priority)
+        : Number(
+            (
+              await query(
+                "SELECT COALESCE(min(priority),10)-10 priority FROM email_promotions WHERE deleted_at IS NULL",
+              )
+            )[0]?.priority || 10,
+          );
   if (
     !title ||
     title.length > 120 ||
@@ -155,6 +195,8 @@ export async function saveMailPromotionAction(f: FormData) {
     description.length > 500 ||
     !url ||
     ![
+      "",
+      "jktl-business",
       "website-builder",
       "templates",
       "business-email",
@@ -165,8 +207,8 @@ export async function saveMailPromotionAction(f: FormData) {
       "partner-support",
     ].includes(product) ||
     !Number.isInteger(priority) ||
-    priority < 0 ||
-    priority > 1000 ||
+    priority < -1000000 ||
+    priority > 1000000 ||
     !categories.length ||
     categories.some(
       (c) =>
@@ -182,11 +224,12 @@ export async function saveMailPromotionAction(f: FormData) {
     if (!Number.isFinite(n)) throw Error("Check " + k);
     return new Date(n).toISOString();
   };
-  const start = date("startsAt"),
-    end = date("endsAt");
+  const start = f.has("startsAt")
+      ? date("startsAt")
+      : previousPromotion?.starts_at || null,
+    end = f.has("endsAt") ? date("endsAt") : previousPromotion?.ends_at || null;
   if (start && end && end <= start)
     throw Error("Expiration must follow the start date");
-  const id = String(f.get("id") || "");
   const values = [
     title,
     description,
@@ -201,7 +244,7 @@ export async function saveMailPromotionAction(f: FormData) {
   ];
   const rows = id
     ? await query(
-        `UPDATE email_promotions SET title=$1,description=$2,url=$3,product_id=$4,enabled=$5,priority=$6,starts_at=$7,ends_at=$8,categories=$9::text[],updated_by=$10,updated_at=now(),revision=revision+1 WHERE id=$11 AND revision=$12 RETURNING id`,
+        `UPDATE email_promotions SET title=$1,description=$2,url=$3,product_id=$4,enabled=$5,priority=$6,starts_at=$7,ends_at=$8,categories=$9::text[],updated_by=$10,updated_at=now(),revision=revision+1 WHERE id=$11 AND revision=$12 AND deleted_at IS NULL RETURNING id`,
         [...values, id, Number(f.get("revision"))],
       )
     : await query(
@@ -225,22 +268,9 @@ export async function previewMailAction(id: string) {
     await query("SELECT settings FROM email_branding WHERE id=true")
   )[0];
   const branding = brandingSettings(settings?.settings);
-  const rows = await query(
-    "SELECT * FROM email_promotions ORDER BY priority,id",
-  );
+  const rows = await listPromotions(query);
   const { sample, html, text } = previewBody(id);
-  const promos: Promotion[] = rows.map((r) => ({
-    id: String(r.id),
-    title: String(r.title),
-    description: String(r.description),
-    url: String(r.url),
-    productId: String(r.product_id),
-    categories: r.categories as string[],
-    priority: Number(r.priority),
-    enabled: Boolean(r.enabled),
-    startsAt: r.starts_at ? new Date(String(r.starts_at)).toISOString() : null,
-    endsAt: r.ends_at ? new Date(String(r.ends_at)).toISOString() : null,
-  }));
+  const promos = promotionRows(rows);
   return {
     ...mailLayout({
       title: sample.title,
@@ -273,4 +303,165 @@ export async function sendTestMailAction(id: string) {
   await rate("mail-preview:" + a.id, 5);
   const sample = await previewMailAction(id);
   return sendMailPreview(a.email, sample, sample.title);
+}
+
+export async function footerManagerDataAction() {
+  await requireAdminCapability("manage_communications");
+  const rows = await listPromotions(query),
+    row = (
+      await query("SELECT settings,revision FROM email_branding WHERE id=true")
+    )[0];
+  return {
+    items: promotionRows(rows).map((p, i) => ({
+      ...p,
+      revision: Number(rows[i].revision),
+    })),
+    branding: brandingSettings(row?.settings),
+    revision: Number(row?.revision || 1),
+  };
+}
+export async function saveFooterSettingsAction(f: FormData) {
+  const a = await requireAdminCapability("manage_communications");
+  await listPromotions(query);
+  const count = Number(f.get("maxPromotions"));
+  if (!Number.isInteger(count) || count < 0 || count > 4)
+    throw Error("Choose 0–4 promotions.");
+  const rows = await query(
+    `WITH changed AS(UPDATE email_branding SET settings=jsonb_set(jsonb_set(settings,'{promotionsEnabled}',$1::jsonb),'{maxPromotions}',$2::jsonb),revision=revision+1,updated_by=$3,updated_at=now() WHERE id=true AND revision=$4 RETURNING revision)
+ INSERT INTO distribution_audit(actor_id,event,detail) SELECT $3,'EMAIL_FOOTER_SETTINGS_SAVED',jsonb_build_object('revision',revision) FROM changed RETURNING id`,
+    [
+      JSON.stringify(f.get("enabled") === "on"),
+      JSON.stringify(count),
+      a.id,
+      Number(f.get("revision")),
+    ],
+  );
+  if (!rows.length)
+    throw Error("Current footer settings changed. Reload before saving.");
+  revalidatePath("/admin/emails/branding");
+}
+export async function deleteMailPromotionAction(f: FormData) {
+  const a = await requireAdminCapability("manage_communications");
+  if (f.get("confirm") !== "on")
+    throw Error("Confirm deleting this promotion.");
+  await listPromotions(query);
+  const rows = await query(
+    `WITH changed AS(UPDATE email_promotions SET deleted_at=now(),enabled=false,revision=revision+1,updated_by=$3,updated_at=now() WHERE id=$1 AND revision=$2 AND deleted_at IS NULL RETURNING id)
+ INSERT INTO distribution_audit(actor_id,event,detail) SELECT $3,'EMAIL_PROMOTION_DELETED',jsonb_build_object('promotion',id) FROM changed RETURNING id`,
+    [String(f.get("id")), Number(f.get("revision")), a.id],
+  );
+  if (!rows.length)
+    throw Error("Current promotion changed. Reload before deleting.");
+  revalidatePath("/admin/emails/branding");
+}
+export async function reorderMailPromotionAction(f: FormData) {
+  const a = await requireAdminCapability("manage_communications");
+  await listPromotions(query);
+  const direction = String(f.get("direction"));
+  if (!["UP", "DOWN"].includes(direction))
+    throw Error("Choose an order direction.");
+  const rows = await query(
+    `WITH locked AS(SELECT id,priority,revision FROM email_promotions WHERE deleted_at IS NULL ORDER BY priority,id FOR UPDATE),ranked AS(SELECT *,row_number() OVER(ORDER BY priority,id)::int n FROM locked),target AS(SELECT n FROM ranked WHERE id=$1 AND revision=$2),changed AS(
+ UPDATE email_promotions p SET priority=10*(CASE WHEN r.n=t.n THEN t.n+$3::int WHEN r.n=t.n+$3::int THEN t.n ELSE r.n END),revision=p.revision+1,updated_by=$4,updated_at=now() FROM ranked r CROSS JOIN target t WHERE p.id=r.id AND EXISTS(SELECT 1 FROM ranked WHERE n=t.n+$3::int) RETURNING p.id)
+ INSERT INTO distribution_audit(actor_id,event,detail) SELECT $4,'EMAIL_PROMOTION_REORDERED',jsonb_build_object('promotion',$1::uuid,'direction',$3::int) WHERE EXISTS(SELECT 1 FROM changed) RETURNING id`,
+    [
+      String(f.get("id")),
+      Number(f.get("revision")),
+      direction === "UP" ? -1 : 1,
+      a.id,
+    ],
+  );
+  if (!rows.length)
+    throw Error("Current order changed or the item is already at the edge.");
+  revalidatePath("/admin/emails/branding");
+}
+/** Preview the complete shared layout with unsaved footer edits; never send or
+ * activate an invitation. Saved settings are not changed by this action. */
+export async function previewFooterDraftAction(raw: {
+  sample: string;
+  enabled: boolean;
+  max: number;
+  candidate?: {
+    id: string;
+    title: string;
+    description: string;
+    url: string;
+    enabled: boolean;
+  };
+}) {
+  await requireAdminCapability("manage_communications");
+  if (
+    !raw ||
+    typeof raw.enabled !== "boolean" ||
+    !Number.isInteger(raw.max) ||
+    raw.max < 0 ||
+    raw.max > 4
+  )
+    throw Error("Check footer preview settings.");
+  const { branding, items } = await footerManagerDataAction();
+  branding.promotionsEnabled = raw.enabled;
+  branding.maxPromotions = raw.max;
+  let previews: Promotion[] = items;
+  if (raw.candidate) {
+    const p = raw.candidate,
+      url = httpsUrl(p.url, true);
+    if (
+      !p.title.trim() ||
+      p.title.length > 120 ||
+      !p.description.trim() ||
+      p.description.length > 500 ||
+      !url ||
+      typeof p.enabled !== "boolean"
+    )
+      throw Error("Check the promotion title, description and HTTPS URL.");
+    const existing = items.find((i) => i.id === p.id);
+    const candidate: Promotion = {
+      ...p,
+      url,
+      productId: "",
+      priority: existing
+        ? existing.priority
+        : Math.min(10, ...items.map((i) => i.priority)) - 10,
+      categories: PROMOTION_CATEGORIES,
+    };
+    previews = [...items.filter((i) => i.id !== p.id), candidate];
+  }
+  const { sample, html, text } = previewBody(raw.sample);
+  return {
+    ...mailLayout({
+      title: sample.title,
+      bodyHtml: html,
+      text,
+      category: sample.category,
+      branding,
+      promotions: selectPromotions(previews, branding, sample.category, {
+        consented: true,
+        ownedProducts: sample.owned,
+      }),
+      preferencesUrl: "https://business.jktl.com.ng/business/email-preferences",
+    }),
+    warning: !branding.postalAddress
+      ? "Configure the genuine company postal address before live promotional sending. The sample does not invent an address."
+      : "Sample assumes an eligible, opted-in recipient. Actual sends recheck preferences and relevance.",
+  };
+}
+
+export async function setMailPromotionEnabledAction(f: FormData) {
+  const a = await requireAdminCapability("manage_communications");
+  await listPromotions(query);
+  if (!["on", "off"].includes(String(f.get("enabled"))))
+    throw Error("Choose enabled or disabled.");
+  const rows = await query(
+    `WITH changed AS(UPDATE email_promotions SET enabled=$3,revision=revision+1,updated_by=$4,updated_at=now() WHERE id=$1 AND revision=$2 AND deleted_at IS NULL RETURNING id)
+ INSERT INTO distribution_audit(actor_id,event,detail) SELECT $4,'EMAIL_PROMOTION_SAVED',jsonb_build_object('promotion',id,'enabled',$3::boolean) FROM changed RETURNING id`,
+    [
+      String(f.get("id")),
+      Number(f.get("revision")),
+      f.get("enabled") === "on",
+      a.id,
+    ],
+  );
+  if (!rows.length)
+    throw Error("Current promotion changed. Reload before saving.");
+  revalidatePath("/admin/emails/branding");
 }

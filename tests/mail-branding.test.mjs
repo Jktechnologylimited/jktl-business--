@@ -1,3 +1,5 @@
+import * as promotionDefaults from "../src/lib/mail/promotion-defaults.ts";
+import { invitationExpiry } from "../src/lib/mail/invitation-date.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { PGlite } from "@electric-sql/pglite";
@@ -7,6 +9,10 @@ import { applyMigrationBatch } from "../scripts/sql-statements.mjs";
 import { uncertainProviderRejection } from "../src/lib/mail/provider-outcome.ts";
 import * as permissions from "../src/lib/admin-permissions.ts";
 import * as addresses from "../src/lib/mail/addresses.ts";
+const promotions = load("../src/lib/mail/promotions.ts", {
+  "server-only": {},
+  "./promotion-defaults": promotionDefaults,
+});
 const layout = load("../src/lib/mail/layout.ts", { "./addresses": addresses });
 function load(file, deps) {
   const m = { exports: {} };
@@ -38,7 +44,7 @@ test("layout escapes configurable content, forbids security promotions, caps and
     maxPromotions: 999,
     headerColor: "#ffffff",
   });
-  assert.equal(b.maxPromotions, 3);
+  assert.equal(b.maxPromotions, 4);
   assert.equal(b.headerColor, "#060e2a");
   assert.equal(b.socialLinks.length, 0);
   const promos = ["domains", "business-email", "templates", "plans"].map(
@@ -46,7 +52,12 @@ test("layout escapes configurable content, forbids security promotions, caps and
       id: String(i),
       title: productId,
       description: "Safe text",
-      url: "https://jktl.com.ng/pricing",
+      url: [
+        "https://jktl.com.ng/domains",
+        "https://jktl.com.ng/products/business-email",
+        "https://jktl.com.ng/templates",
+        "https://jktl.com.ng/pricing",
+      ][i],
       productId,
       priority: i,
       categories: ["security", "website", "support"],
@@ -64,7 +75,7 @@ test("layout escapes configurable content, forbids security promotions, caps and
   );
   assert.equal(
     layout.selectPromotions(promos, b, "website", { consented: true }).length,
-    3,
+    4,
   );
   assert.deepEqual(
     layout
@@ -85,8 +96,8 @@ test("layout escapes configurable content, forbids security promotions, caps and
   });
   assert.ok(rendered.html.includes("JKTL logo"));
   assert.ok(!rendered.html.includes("<script>"));
-  assert.ok(!rendered.html.includes("More ways"));
-  assert.ok(!rendered.text.includes("More ways"));
+  assert.ok(!rendered.html.includes("Explore More from JKTL"));
+  assert.ok(!rendered.text.includes("Explore More from JKTL"));
   assert.ok(
     rendered.html.includes("https://business.jktl.com.ng/jktl-logo.png"),
   );
@@ -181,6 +192,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       "@/lib/custom/service": { query },
       "./layout": layout,
       "./addresses": addresses,
+      "./promotions": promotions,
     });
     let rendered = await service.brandEmail(
       "customer@example.test",
@@ -189,7 +201,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       "Actual update",
       { category: "website" },
     );
-    assert.ok(!rendered.html.includes("More ways"));
+    assert.ok(!rendered.html.includes("Explore More from JKTL"));
     const cfg = layout.brandingSettings({
       postalAddress: "Actual office supplied by company",
     });
@@ -206,7 +218,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       "Actual update",
       { category: "website" },
     );
-    assert.ok(rendered.html.includes("More ways"));
+    assert.ok(rendered.html.includes("Explore More from JKTL"));
     assert.ok(!rendered.html.includes("Explore templates and find"));
     const pref = (
       await query(
@@ -224,7 +236,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       "Actual update",
       { category: "website" },
     );
-    assert.ok(!rendered.html.includes("More ways"));
+    assert.ok(!rendered.html.includes("Explore More from JKTL"));
     assert.equal(
       (
         await service.brandEmail(
@@ -254,6 +266,8 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       "@/lib/mail/layout": layout,
       "@/lib/mail/addresses": addresses,
       "@/lib/mail/preview": preview,
+      "@/lib/mail/promotions": promotions,
+      "@/lib/mail/promotion-defaults": promotionDefaults,
       "@/lib/support/service": { rate: async () => {} },
       "@/lib/email": {
         sendMailPreview: async (...args) => {
@@ -269,7 +283,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
     await assert.rejects(actions.sendTestMailAction("security"));
     role = "owner";
     const sample = await actions.previewMailAction("security");
-    assert.ok(!sample.html.includes("More ways"));
+    assert.ok(!sample.html.includes("Explore More from JKTL"));
     await actions.sendTestMailAction("payment");
     assert.equal(sends[0][0], "owner@example.test");
     assert.ok(sends[0][1].text.includes("TEST PREVIEW ONLY"));
@@ -362,6 +376,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
         "@/lib/mail/service": service,
         "@/lib/mail/addresses": addresses,
         "@/lib/mail/provider-outcome": { uncertainProviderRejection },
+        "@/lib/mail/invitation-date": { invitationExpiry },
         "@/lib/mail/history": { recordMailAttempt: async () => {} },
         "@/lib/mail/layout": layout,
         "@/lib/format": {
@@ -377,7 +392,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       });
       assert.ok(delivered[0].payload.html.includes("&lt;img src=x&gt;"));
       assert.ok(delivered[0].payload.html.includes("token=opaque"));
-      assert.ok(!delivered[0].payload.html.includes("More ways"));
+      assert.ok(!delivered[0].payload.html.includes("Explore More from JKTL"));
       await email.sendDomainOrderEmail({
         to: "customer@example.test",
         domain: "example.com.ng",

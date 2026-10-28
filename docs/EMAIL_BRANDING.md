@@ -1,3 +1,5 @@
+Latest footer update: [shared promotional footer fix, simple manager and WAT expiry](EMAIL_PROMOTIONAL_FOOTER_FIX.md).
+
 Latest update: [central Emails, invitations and Reply-To](EMAIL_MANAGEMENT.md) supersedes the older navigation and invitation workflow descriptions below.
 
 # JKTL email branding and Team role controls

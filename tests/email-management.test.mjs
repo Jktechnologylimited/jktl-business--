@@ -1,3 +1,5 @@
+import * as promotionDefaults from "../src/lib/mail/promotion-defaults.ts";
+import { invitationExpiry } from "../src/lib/mail/invitation-date.ts";
 // All delivery/provider responses are test fixtures. No real emails are sent.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -33,6 +35,10 @@ function load(file, deps) {
   );
   return m.exports;
 }
+const promotions = load("../src/lib/mail/promotions.ts", {
+  "server-only": {},
+  "./promotion-defaults": promotionDefaults,
+});
 const layout = load("../src/lib/mail/layout.ts", { "./addresses": addresses });
 const invitations = load("../src/lib/mail/invitations.ts", {
   "server-only": {},
@@ -615,6 +621,8 @@ test("branding edits require authority and mailbox verification; invalid sender 
       "@/lib/mail/layout": layout,
       "@/lib/mail/addresses": addresses,
       "@/lib/mail/preview": preview,
+      "@/lib/mail/promotions": promotions,
+      "@/lib/mail/promotion-defaults": promotionDefaults,
       "@/lib/support/service": { rate: async () => {} },
       "@/lib/email": { sendMailPreview: async () => ({ ok: true }) },
       "next/cache": { revalidatePath: () => {} },
@@ -675,6 +683,7 @@ test("shared Resend sender applies verified Reply-To to real event helpers and r
       "@/lib/custom/service": { query: f.q },
       "./layout": layout,
       "./addresses": addresses,
+      "./promotions": promotions,
     });
     const history = load("../src/lib/mail/history.ts", {
       "server-only": {},
@@ -708,6 +717,7 @@ test("shared Resend sender applies verified Reply-To to real event helpers and r
       "@/lib/mail/addresses": addresses,
       "@/lib/mail/history": history,
       "@/lib/mail/provider-outcome": outcome,
+      "@/lib/mail/invitation-date": { invitationExpiry },
       "@/lib/format": {
         formatKobo: (n) => String(n),
         formatShortDate: (s) => s,
@@ -727,7 +737,7 @@ test("shared Resend sender applies verified Reply-To to real event helpers and r
         "https://business.jktl.com.ng/reset-password?token=SECRET-RESET-FIXTURE",
     });
     assert.equal(sent.at(-1).payload.replyTo, "security-help@example.test");
-    assert.doesNotMatch(sent.at(-1).payload.html, /More ways to grow/);
+    assert.doesNotMatch(sent.at(-1).payload.html, /Explore More from JKTL/);
     await email.sendRoleInvitationEmail({
       to: "team@example.test",
       name: "Teammate",
@@ -774,7 +784,7 @@ test("shared Resend sender applies verified Reply-To to real event helpers and r
     });
     assert.doesNotMatch(
       sent.at(-1).payload.html,
-      /OPERATIONAL-PROMO-FIXTURE|More ways to grow/,
+      /OPERATIONAL-PROMO-FIXTURE|Explore More from JKTL/,
     );
     for (const { payload } of sent) {
       assert.match(
@@ -1090,7 +1100,7 @@ test("email branding, invitation list and history server pages render their real
       "../src/app/admin/(command)/emails/history/page.tsx",
       {
         "react/jsx-runtime": jsx,
-        "@/lib/admin-page-guard":{guardAdminPage:async()=>{}},
+        "@/lib/admin-page-guard": { guardAdminPage: async () => {} },
         "@/lib/admin-session": { requireAdminCapability: async () => f.owner },
         "@/lib/admin-permissions": permissions,
         "@/lib/custom/service": { query: f.q },

@@ -6,6 +6,7 @@ import {
 /** Canonical, provider-independent email renderer. Synced into connected apps. */
 export const MAIL_CATEGORIES = [
   "security",
+  "invitation",
   "onboarding",
   "website",
   "domain",
@@ -143,7 +144,7 @@ export function brandingSettings(raw: unknown): Branding {
   b.promotionsEnabled = s.promotionsEnabled !== false;
   b.supportPromotions = s.supportPromotions === true;
   b.maxPromotions = Number.isInteger(s.maxPromotions)
-    ? Math.max(0, Math.min(3, Number(s.maxPromotions)))
+    ? Math.max(0, Math.min(4, Number(s.maxPromotions)))
     : 3;
   b.socialLinks = Array.isArray(s.socialLinks)
     ? s.socialLinks
@@ -211,14 +212,15 @@ export function selectPromotions(
         httpsUrl(p.url, true) &&
         (!p.startsAt || Date.parse(p.startsAt) <= now) &&
         (!p.endsAt || Date.parse(p.endsAt) > now) &&
-        !options.ownedProducts?.includes(p.productId) &&
-        (!options.eligibleProducts ||
+        (!p.productId || !options.ownedProducts?.includes(p.productId)) &&
+        (!p.productId ||
+          !options.eligibleProducts ||
           options.eligibleProducts.includes(p.productId)),
     )
     .sort((a, b) => a.priority - b.priority || a.id.localeCompare(b.id))
     .filter((p) => {
-      if (seen.has(p.productId)) return false;
-      seen.add(p.productId);
+      if (seen.has(p.url)) return false;
+      seen.add(p.url);
       return true;
     })
     .slice(0, b.maxPromotions);
@@ -238,7 +240,9 @@ export function mailLayout(input: {
 }) {
   const b = input.branding || DEFAULT_BRANDING,
     promos =
-      input.category === "security" || input.category === "internal"
+      input.category === "security" ||
+      input.category === "internal" ||
+      !b.promotionsEnabled
         ? []
         : (input.promotions || []).slice(0, b.maxPromotions),
     e = escapeHtml;
@@ -247,7 +251,7 @@ export function mailLayout(input: {
     new Date().getFullYear().toString(),
   );
   const promoHtml = promos.length
-    ? `<tr><td bgcolor="#f5f0df" style="padding:24px;border-top:1px solid #dfd5b8"><h2 style="margin:0 0 16px;font-size:19px;color:#060e2a">More ways to grow with JKTL</h2>${promos.map((p) => `<p style="margin:0 0 16px"><a href="${e(p.url)}" style="color:#112055;font-weight:bold">${e(p.title)}</a><br><span style="color:#25304d">${e(p.description)}</span></p>`).join("")}</td></tr>`
+    ? `<tr><td bgcolor="#f5f0df" style="padding:22px 24px;border-top:1px solid #dfd5b8;font-size:14px;line-height:1.6"><h2 style="margin:0 0 14px;font-size:17px;color:#060e2a">Explore More from JKTL</h2>${promos.map((p) => `<p style="margin:0 0 16px"><a href="${e(p.url)}" style="color:#112055;font-weight:bold">${e(p.title)}</a><br><span style="color:#25304d">${e(p.description)}</span></p>`).join("")}</td></tr>`
     : "";
   const prefs =
     input.preferencesUrl && input.category !== "security"
@@ -262,7 +266,7 @@ export function mailLayout(input: {
       b.signature,
       ...(promos.length
         ? [
-            "More ways to grow with JKTL",
+            "Explore More from JKTL",
             ...promos.map(
               (p) => p.title + " — " + p.description + "\n" + p.url,
             ),
@@ -273,7 +277,9 @@ export function mailLayout(input: {
       b.supportEmail,
       b.phone,
       b.supportUrl,
-      ...(input.category === "security" || input.category === "internal"
+      ...(input.category === "security" ||
+      input.category === "internal" ||
+      !b.promotionsEnabled
         ? []
         : b.socialLinks.map((s) => s.label + ": " + s.url)),
       ...(input.preferencesUrl && input.category !== "security"

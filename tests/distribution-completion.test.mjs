@@ -107,7 +107,7 @@ test("secure Affiliate invitations reuse existing identity, reject mismatched/re
     f.set("policy", policy.id);
     await a.inviteAffiliateAction(f);
     assert.equal(sent.length, 1);
-    assert.equal(sent[0].category, "security");
+    assert.equal(sent[0].category, "invitation");
     const token = new URL(
       "https://example.test" + sent[0].path,
     ).searchParams.get("token");

@@ -1,4 +1,5 @@
 import "server-only";
+import { listPromotions, promotionRows } from "./promotions";
 import { deliveryHeaders, type ReplyCategory } from "./addresses";
 import { query } from "@/lib/custom/service";
 import {
@@ -71,9 +72,7 @@ export async function brandEmail(
         !legacySuppressed &&
         branding.postalAddress
       ) {
-        const rows = await query(
-          "SELECT * FROM email_promotions WHERE enabled=true ORDER BY priority,id",
-        );
+        const rows = await listPromotions(query);
         const ownership = (
           await query(
             `SELECT bool_or(b.published) website,bool_or(EXISTS(SELECT 1 FROM domain_assets d WHERE d.organization_id=m.organization_id)) domains,bool_or(EXISTS(SELECT 1 FROM email_services e WHERE e.organization_id=m.organization_id AND e.status<>'CANCELLED')) email,bool_or(EXISTS(SELECT 1 FROM website_plan_subscriptions s WHERE s.organization_id=m.organization_id AND s.status='active')) plan FROM organization_members m LEFT JOIN business_profiles b ON b.organization_id=m.organization_id WHERE lower(m.email)=lower($1) AND m.active=true`,
@@ -87,7 +86,15 @@ export async function brandEmail(
           ...(ownership?.email ? ["business-email"] : []),
           ...(ownership?.plan ? ["plans"] : []),
         ];
-        const eligible = ["website-builder", "templates", "plans", "partners"];
+        const eligible = [
+          "website-builder",
+          "templates",
+          "plans",
+          "partners",
+          "jktl-business",
+          "domains",
+          "business-email",
+        ];
         const profiles = await query(
           "SELECT programme FROM affiliates WHERE lower(email)=lower($1) AND status='active'",
           [to],
@@ -114,27 +121,11 @@ export async function brandEmail(
           ).length
         )
           eligible.push("business-email");
-        promotions = selectPromotions(
-          rows.map((r) => ({
-            id: String(r.id),
-            title: String(r.title),
-            description: String(r.description),
-            url: String(r.url),
-            productId: String(r.product_id),
-            priority: Number(r.priority),
-            categories: r.categories as string[],
-            enabled: Boolean(r.enabled),
-            startsAt: r.starts_at
-              ? new Date(String(r.starts_at)).toISOString()
-              : null,
-            endsAt: r.ends_at
-              ? new Date(String(r.ends_at)).toISOString()
-              : null,
-          })),
-          branding,
-          category,
-          { consented: true, ownedProducts: owned, eligibleProducts: eligible },
-        );
+        promotions = selectPromotions(promotionRows(rows), branding, category, {
+          consented: true,
+          ownedProducts: owned,
+          eligibleProducts: eligible,
+        });
       }
     }
   } catch {

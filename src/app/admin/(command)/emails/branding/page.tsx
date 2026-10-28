@@ -5,7 +5,6 @@ import {
   verifiedSenders,
 } from "@/lib/mail/addresses";
 import PromotionSettings from "@/components/mail/promotion-settings";
-import { MailPreview } from "@/components/mail/mail-preview";
 import { query } from "@/lib/custom/service";
 import { brandingSettings } from "@/lib/mail/layout";
 import { ActionForm } from "@/components/distribution/action-form";
@@ -180,51 +179,11 @@ export default async function Page() {
             />
           </label>
         ))}
-        <label className="flex gap-3">
-          <input
-            type="checkbox"
-            name="promotionsEnabled"
-            defaultChecked={b.promotionsEnabled}
-          />
-          Allow optional promotions for eligible, opted-in recipients
-        </label>
-        <label className="flex gap-3">
-          <input
-            type="checkbox"
-            name="supportPromotions"
-            defaultChecked={b.supportPromotions}
-          />
-          Allow optional promotions in support correspondence
-        </label>
-        <label>
-          Maximum promotions (0–3)
-          <input
-            className={input}
-            name="maxPromotions"
-            type="number"
-            min={0}
-            max={3}
-            required
-            defaultValue={b.maxPromotions}
-          />
-        </label>
-        <p className="text-sm text-ink-muted">
-          Security and internal emails never contain promotional product
-          listings. Missing preferences, an opt-out, unavailable products or
-          missing postal information suppress optional promotions.
-        </p>
         <button className="rounded-lg bg-primary p-3 text-on-primary">
           Save email branding
         </button>
       </ActionForm>
-      <details>
-        <summary>Product footer links</summary>
-        <PromotionSettings />
-      </details>
-      <details>
-        <summary>Preview branding and send a test to your own address</summary>
-        <MailPreview />
-      </details>
+      <PromotionSettings />
     </section>
   );
 }
