@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useResponsivePreview } from "./useResponsivePreview";
 import { Monitor, Smartphone } from "lucide-react";
 import {
   getWebsiteTemplate,
@@ -16,7 +16,7 @@ export function TemplatePreview({
   id: string;
   insideBusiness?: boolean;
 }) {
-  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
+  const { device, setDevice, frameRef } = useResponsivePreview();
   const template = getWebsiteTemplate(id);
   if (!template) return null;
   // A raw preview route prevents recursive frames and retains the full renderer.
@@ -62,13 +62,14 @@ export function TemplatePreview({
               : `https://business.jktl.com.ng${templateLoginPath(id)}`
           }
         >
-          Edit template ↗
+          Select Template ↗
         </a>
       </header>
       <div className={styles.stage} data-device={device}>
         <iframe
           key={id}
-          title={`${template.name} ${device} preview`}
+          title={`${template.name} website preview`}
+          ref={frameRef}
           src={`/template-canvas/${id}`}
           className={styles.frame}
         />

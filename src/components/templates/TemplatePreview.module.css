@@ -1,16 +1,20 @@
 .shell {
-  background: #F9F7F0;
-  color: #060E2A;
-  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-width: 0;
+  background: #f9f7f0;
+  color: #060e2a;
   font-family: var(--font-plus-jakarta-sans), sans-serif;
 }
 .toolbar {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 20px;
   padding: 12px 24px;
-  background: white;
-  border-bottom: 1px solid #E8E1D0;
+  background: #fffdf8;
+  border-bottom: 1px solid #e8e1d0;
   min-height: 74px;
   flex-wrap: wrap;
 }
@@ -54,20 +58,22 @@
 }
 .devices button:focus-visible,
 .toolbar a:focus-visible {
-  outline: 3px solid #C9A84C;
+  outline: 3px solid #c9a84c;
   outline-offset: 3px;
 }
 .toolbar .edit {
   padding: 13px 20px;
-  background: #112055;
-  color: white;
+  background: #c9a84c;
+  color: #060e2a;
   border-radius: 30px;
   white-space: nowrap;
+  font-weight: 600;
 }
 .stage {
   display: flex;
   justify-content: center;
-  height: calc(100dvh - 75px);
+  flex: 1;
+  min-height: 0;
   padding: 0;
   overflow: auto;
 }
@@ -86,34 +92,63 @@
   width: 390px;
   max-width: 100%;
   border-radius: 24px;
-  border: 7px solid #060E2A;
+  border: 7px solid #060e2a;
   box-shadow: 0 12px 35px #11205520;
 }
-@media (max-width: 600px) {
+.embedded {
+  min-width: 0;
+}
+.embedded .toolbar {
+  justify-content: center;
+  min-height: 0;
+}
+.embedded .stage {
+  height: 720px;
+}
+@media (max-width: 767.98px) {
+  .shell {
+    height: auto;
+    min-height: 100dvh;
+    padding-top: 64px;
+  }
   .toolbar {
-    gap: 10px;
+    position: fixed;
+    inset: 0 0 auto;
+    box-sizing: border-box;
+    height: 64px;
+    z-index: 20;
+    justify-content: space-between;
+    gap: 8px;
     padding: 10px 12px;
+    min-height: 64px;
+    flex-wrap: nowrap;
   }
-  .name {
-    order: 4;
-    width: 100%;
-    font-size: 12px;
-  }
+  .name,
   .devices {
-    margin-left: auto;
+    display: none;
   }
   .toolbar .edit {
     padding: 12px;
   }
-  .stage {
-    height: calc(100dvh - 115px);
+  .stage,
+  .stage[data-device="mobile"],
+  .embedded .stage {
+    display: block;
+    height: auto;
+    overflow: visible;
+    padding: 0;
   }
-}
-
-.stage[data-device="desktop"] {
-  display: block;
-}
-.stage[data-device="desktop"] .frame {
-  min-width: 1024px;
-  margin: 0 auto;
+  .frame,
+  .stage[data-device="mobile"] .frame {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: var(--preview-height, 100dvh);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .embedded .toolbar {
+    display: none;
+  }
 }

@@ -1,5 +1,7 @@
 "use client";
-import { useRef, useState } from "react";
+import { useCallback, useState } from "react";
+import styles from "./TemplatePreview.module.css";
+import { useResponsivePreview } from "./useResponsivePreview";
 import { Monitor, Smartphone } from "lucide-react";
 import { createPortal } from "react-dom";
 import { TemplateWebsite, type TemplateContact } from "./TemplateWebsite";
@@ -8,90 +10,78 @@ export function TemplateCanvas({
   template,
   document: content,
   contact,
+  readOnly = false,
+  title = "Your website live preview",
 }: {
   template: WebsiteTemplate;
   document: WebsiteDocument;
   contact: TemplateContact;
+  readOnly?: boolean;
+  title?: string;
 }) {
-  const frame = useRef<HTMLIFrameElement>(null);
   const [mount, setMount] = useState<HTMLElement | null>(null);
-  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
+  const prepareDocument = useCallback((target: Document) => {
+    // Use the same styles and portal renderer as the existing editor. Copy
+    // once per document; switching devices does not navigate or reset drafts.
+    if (!target.head.querySelector("[data-preview-styles]")) {
+      document.head
+        .querySelectorAll('link[rel="stylesheet"],style')
+        .forEach((node) => {
+          const clone = node.cloneNode(true) as HTMLElement;
+          clone.setAttribute("data-preview-styles", "");
+          target.head.appendChild(clone);
+        });
+    }
+    setMount(target.body);
+  }, []);
+  const { device, setDevice, frameRef } = useResponsivePreview(prepareDocument);
   return (
-    <div>
-      <div
-        role="group"
-        aria-label="Editor preview device"
-        style={{
-          display: "flex",
-          gap: 8,
-          padding: 12,
-          justifyContent: "center",
-        }}
-      >
-        {(["desktop", "mobile"] as const).map((value) => (
-          <button
-            type="button"
-            key={value}
-            aria-label={`${value} editor preview`}
-            aria-pressed={device === value}
-            onClick={() => setDevice(value)}
-            style={{
-              padding: 10,
-              borderRadius: 8,
-              border: "1px solid #aab9ae",
-              background: device === value ? "#112055" : "white",
-              color: device === value ? "white" : "#112055",
-            }}
-          >
-            {value === "desktop" ? (
-              <Monitor size={20} />
-            ) : (
-              <Smartphone size={20} />
-            )}
-          </button>
-        ))}
+    <div className={styles.embedded}>
+      <div className={styles.toolbar}>
+        <div
+          className={styles.devices}
+          role="group"
+          aria-label="Editor preview device"
+        >
+          {(["desktop", "mobile"] as const).map((value) => (
+            <button
+              type="button"
+              key={value}
+              aria-label={`${value} editor preview`}
+              aria-pressed={device === value}
+              onClick={() => setDevice(value)}
+            >
+              {value === "desktop" ? (
+                <Monitor size={20} />
+              ) : (
+                <Smartphone size={20} />
+              )}
+            </button>
+          ))}
+        </div>
       </div>
-      <div
-        style={{
-          overflow: "auto",
-          display: "flex",
-          justifyContent: device === "mobile" ? "center" : "flex-start",
-          background: "#F9F7F0",
-          padding: 12,
-        }}
-      >
+      <div className={styles.stage} data-device={device}>
         <iframe
-          ref={frame}
-          title="Your website live preview"
-          style={{
-            width: device === "mobile" ? 390 : "100%",
-            maxWidth: device === "mobile" ? "100%" : undefined,
-            minWidth: device === "desktop" ? 1024 : undefined,
-            flexShrink: 0,
-            height: 720,
-            border: 0,
-            background: content.paper,
-          }}
+          ref={frameRef}
+          title={title}
+          className={styles.frame}
+          sandbox={readOnly ? "allow-same-origin" : undefined}
+          referrerPolicy="no-referrer"
+          style={{ background: content.paper }}
           srcDoc={
-            '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0"></body></html>'
+            '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"></head><body style="margin:0"></body></html>'
           }
-          onLoad={() => {
-            const target = frame.current?.contentDocument;
-            if (!target) return;
-            document.head
-              .querySelectorAll('link[rel="stylesheet"],style')
-              .forEach((node) => target.head.appendChild(node.cloneNode(true)));
-            setMount(target.body);
-          }}
         >
           {mount &&
             createPortal(
-              <TemplateWebsite
-                template={template}
-                document={content}
-                contact={contact}
-                preview
-              />,
+              <div className="jktl-light" inert={readOnly || undefined}>
+                <TemplateWebsite
+                  template={template}
+                  document={content}
+                  contact={contact}
+                  preview
+                />
+              </div>,
               mount,
             )}
         </iframe>

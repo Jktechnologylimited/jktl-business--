@@ -823,7 +823,7 @@ export function TemplateEditor({
             <h2 className="font-semibold mb-3">
               <T>Live preview</T>
             </h2>
-            <div className="overflow-hidden rounded-xl border border-border">
+            <div className="overflow-hidden md:rounded-xl md:border md:border-border">
               <TemplateCanvas
                 template={template}
                 document={content}
