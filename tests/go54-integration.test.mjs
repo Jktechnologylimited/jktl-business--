@@ -713,6 +713,8 @@ test("all private registrar actions reject an unauthorized caller before reading
     },
     "@/lib/domains/registrar-admin": admin,
     "@/lib/domains/store": store,
+    "@/lib/domains/go54-client": { Go54RequestError: class extends Error {} },
+    "@/lib/domains/go54-diagnostics": {},
   });
   for (const fn of Object.values(actions))
     assert.equal((await fn({})).ok, false);

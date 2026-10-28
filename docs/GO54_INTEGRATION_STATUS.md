@@ -2,6 +2,10 @@
 
 28 October 2026 — Africa/Lagos.
 
+## Latest update
+
+Public documentation access was restored on 28 October 2026. Published request bindings for registration, renewal, transfer, nameservers, locks, EPP, contacts and synchronization are now implemented and mock-tested. Response fields remain unverified; retrieval GET/POST conflicts are configurable and live POSTs remain disabled. See [verified request contracts and JSON diagnostics](GO54_REQUEST_CONTRACTS.md) for the current details. The initial access failure described below is historical.
+
 ## Scope and current release state
 
 This extends the existing JKTL domain product; it does not replace orders, assets, payments, subscriptions, registrant encryption or the existing fulfillment/refund workflow. Automated registrar purchases remain **disabled**. No live GO54 request, wallet debit, registration, renewal, transfer or EPP request was executed during implementation. Automated tests use mocked HTTP and disposable PostgreSQL-compatible fixtures only.
@@ -10,7 +14,7 @@ GO54 support's capability confirmation is accepted: registration, renewal, trans
 
 ## Documentation access evidence
 
-HTTPS requests were attempted to the authenticated documentation, confirmed pricing URL, all seven public knowledge-base articles, IANA's official RDAP bootstrap, IANA's `.ng` delegation page and NiRA's website. The environment proxy rejected CONNECT with HTTP 403, **before reaching those services**. This is not a claim that GO54's public knowledge base is inaccessible to ordinary visitors or that GO54 is down.
+The initial attempt was blocked by an environment proxy before reaching the documentation services. On retry, the public knowledge-base articles and IANA sources returned HTTP 200 and supplied the request contracts implemented below. NiRA's website and RDAP help endpoint timed out; no authenticated registrar request or live domain lookup was performed.
 
 Official sources supplied by the user:
 
@@ -24,31 +28,31 @@ Official sources supplied by the user:
 - [Registrar lock update](https://knowledgebase.go54.com/en/article/381-update-the-registrar-lock-of-a-domain)
 - [Authenticated documentation](https://panel.whogohost.com/resellers/domains/api-docs)
 
-No registrar routes were inferred from article numbers/titles, other WHMCS modules, third-party samples or the names of capabilities. Exact remaining PHP/cURL examples and JSON responses have been requested without credentials. This release implements the independent parts while that information is pending.
+No registrar routes were inferred from article titles or third-party modules. The now-readable official articles supplied the implemented paths and request fields. JSON response examples, wallet details and several method inconsistencies still need provider confirmation.
 
 ## Contract and operation matrix
 
 | Operation | Confirmed information | Implemented now | Remaining verification |
 | --- | --- | --- | --- |
 | Authentication | `username` email header; token = Base64 of hexadecimal HMAC-SHA256, message API key, key email + `:` + UTC `y-m-d H` | Exact server-side implementation with an independently computed test vector, UTC rollover and raw-digest mismatch tests | Real read-only authenticated response; secure deployment bindings |
-| Request encoding | PHP `http_build_query` nested form encoding; JSON responses | Bounded PHP-style bracket/index encoding, RFC1738 spaces and scalar flags; JSON-only bounded response reader | Endpoint-specific nested contact/addon/domainfield names |
+| Request encoding | PHP `http_build_query` nested forms and JSON responses | Exact named registration nameservers, indexed transfer/update nameservers, all four contact roles and documented field names; bounded JSON parser and redacted diagnostics | TLD-specific domainfields and operational eligibility rules |
 | Wholesale pricing | Authenticated **GET `/tlds/pricing`** at the supplied fixed base URL | Real read-only HTTP transport, private five-minute cache/coalescing, no redirects, time/body limits, team-only transport check | Actual success/error schema, currency, annual/multiyear units and premium/restriction fields. Raw JSON is deliberately **not** interpreted as a valid quote or imported into selling prices |
-| Registration | Capability and top-level `domain`, `regperiod`, `nameservers`, `contacts`, optional `domainfields`/`addons` | Shared encoder; payment/preflight/submission/reconciliation ledger infrastructure tested with mocks | Exact method/path, all four contact-role structures/required fields, TLD-specific registrant requirements, idempotency/transaction/confirmation semantics. **No registration HTTP call implemented or enabled** |
-| Renewal | Capability confirmed | Existing paid renewal flow preserved; new ledger supports verified renewal confirmation and existing expiry-based finalization | Exact method/path, period/base-expiry request fields and response semantics. **No renewal HTTP call implemented** |
-| Transfer-in | Capability confirmed | Existing authorized support/transfer workflow and transfer-price fields preserved | Exact method/path, EPP/contact structure, eligibility and billing/year rules; paid transfer orchestration is not represented as implemented |
-| Nameserver retrieval/update | Update capability confirmed; retrieval requested | Existing owner-scoped nameserver request/confirmation workflow preserved | Both endpoint contracts and response structures; no guessed `/nameservers` API route |
-| Lock retrieval/update | Lock/unlock capability confirmed | No fake action that claims the registrar lock changed | Exact endpoints, lock field names and success/error semantics |
-| EPP retrieval | Capability confirmed | No EPP endpoint, secret cache, log or email added | Exact path/method/schema and secure owner reauthentication/disclosure design; do not put EPP codes in task messages, audit detail or ordinary notifications |
-| Domain synchronization/reconciliation | Required for safe retries | Internal normalized confirmation ledger and recoverable local finalization | Authoritative account-domain/transaction lookup contracts, ownership matching and pending/error semantics. RDAP absence cannot substitute for these |
+| Registration | `POST /order/domains/register`, documented contact/ns structure | Typed request binding, field validation, mock tests and existing paid-attempt ledger | Live disabled: success/error/pending schemas, wallet and transactional reconciliation still need verification |
+| Renewal | `POST /order/domains/renew` | Typed form request and mock tests; paid renewal ledger preserved | Live disabled; response semantics and verified wallet/quote handling |
+| Transfer-in | `POST /order/domains/transfer`, EPP and four contact groups | Typed request and indexed nameserver encoding, secret-safe diagnostics, mock tests | Live disabled; response/transfer eligibility and paid customer orchestration require verified contracts |
+| Nameserver retrieval/update | GET/POST `/domains/{domain}/nameservers` | Typed read/update requests, configurable retrieval method, mock tests | CALL says GET for retrieval while PHP uses POST; provider confirmation and response schemas pending. Live POST disabled |
+| Lock retrieval/update | GET/POST `/domains/{domain}/lock`, `lockstatus` text | Typed read/update requests, configurable retrieval, mock tests | Retrieval-method conflict, unlock semantics and response verification. Live POST disabled |
+| EPP retrieval | CALL GET `/domains/{domain}/eppcode` | Typed configurable request, all diagnostic scalar values redacted; no customer disclosure action | PHP sample uses POST; confirm method/schema and owner reauthentication before sensitive customer UI |
+| Domain synchronization/reconciliation | POST `/domains/{domain}/sync` and `/transfersync` | Typed form requests, mock tests, existing normalized confirmation ledger | Live POST disabled; authoritative ownership/transaction/pending response mapping remains unverified |
 | Wallet balance | Enquiry capability confirmed; **endpoint still unverified** | Private, explicitly operator-entered NGN snapshot, configurable threshold and durable owner-only low-balance emails/dashboard alerts | Actual read-only method/path, currency/units and response structure; no wallet API URL invented. Operator snapshots cannot satisfy the submission guard's fresh **API** balance requirement |
 
-The implementation is intentionally **incomplete at the registrar write boundary**. It must not be described as live end-to-end automated registration or domain management until those contracts have been implemented and validated.
+The request adapter is implemented; the integration is intentionally **incomplete at the live-response and customer automation boundary**. It must not be described as live end-to-end automated registration or domain management until those contracts have been implemented and validated.
 
 ## Independent availability service
 
-`src/lib/domains/registry.ts` is a separate server-only standards-based RDAP discovery service. It obtains authoritative TLD service bases only from `https://data.iana.org/rdap/dns.json` and uses the RFC 9082 `domain/<name>` lookup shape. `.ng` and `.com.ng` resolve through the `ng` delegation **if an authoritative RDAP service is actually listed**. No NiRA hostname or WHOIS endpoint was guessed; no WHOIS scraping fallback was introduced.
+`src/lib/domains/registry.ts` is a separate server-only standards-based RDAP discovery service. It obtains authoritative TLD service bases only from `https://data.iana.org/rdap/dns.json` and uses the RFC 9082 `domain/<name>` lookup shape. The retrieved IANA bootstrap confirms `https://rdap.nic.net.ng/` for the `ng` delegation used by `.ng` and `.com.ng`. No NiRA hostname or WHOIS endpoint was guessed; no WHOIS scraping fallback was introduced.
 
-Registry access is off by default. Set `DOMAIN_RDAP_ENABLED=true` and explicitly allow root TLDs in `DOMAIN_RDAP_ALLOWED_TLDS` only after reviewing their registry access/usage rules. The NiRA service and its terms could not be verified from this environment; if `.ng` is not present in the official RDAP bootstrap, it remains UNKNOWN until an official authorized service is verified. This is a prepared registry lookup, not a claim of validated live NiRA availability.
+Registry access is off by default. Set `DOMAIN_RDAP_ENABLED=true` and explicitly allow root TLDs in `DOMAIN_RDAP_ALLOWED_TLDS` only after reviewing their registry access/usage rules. NiRA usage rules and actual live lookup behavior remain unverified because its website and RDAP help endpoint timed out. This is a prepared registry lookup, not a claim of validated live NiRA availability.
 
 The service bounds response bodies, uses HTTPS/no redirects/timeouts, retains no registry contact entities, caches bootstrap metadata for one day and results for at most a minute, and caps in-process entries. Existing public rate limits, database cache/leases and call budget remain in place. Unsupported TLDs, rate limits, access failures and malformed responses remain UNKNOWN.
 
@@ -80,11 +84,11 @@ The existing `/admin/domains` page has a private registrar section, guarded by `
 6. Persist a matching registrar transaction reference and actual registration/expiry/nameserver confirmation before creating/extending the customer's asset. Transaction references are unique.
 7. If local asset finalization fails after registrar success, retain CONFIRMED and retry only local finalization. Never submit the registration/renewal again. Tests cover this failure boundary and a subsequent two-year renewal.
 
-The current manual fulfillment, support and verified refund paths remain available for existing paid orders. The new internal submission functions have no production GO54 write caller; the existing automation switch still rejects enabling an unimplemented adapter.
+The current manual fulfillment, support and verified refund paths remain available for existing paid orders. The new internal submission functions have no production GO54 write caller; the existing automation switch still rejects enabling an end-to-end adapter whose response contracts remain unverified.
 
 ## Schema, configuration and preservation
 
-Additive migration **057_registrar_operations.sql** is included in the existing prebuild migration list and normal migration runner. It adds private pricing-policy/sync columns, the singleton registrar balance/gate, alert outbox and operation ledger. It drops no table/column, rewrites no order amount, creates no customer wallet and does not touch subscriptions. Migration replay preserves paid receipts and existing configuration.
+Additive migration **057_registrar_operations.sql** is included in the existing prebuild migration list and normal migration runner. It adds private pricing-policy/sync columns, the singleton registrar balance/gate, alert outbox and operation ledger. It drops no table/column, rewrites no order amount, creates no customer wallet and does not touch subscriptions. Migration replay preserves paid receipts and existing configuration. Additive migration **058_go54_diagnostics.sql** stores private sanitized provider evidence and is included in the same prebuild and migration runners.
 
 New secure server-only bindings documented in `.env.example`: `GO54_RESELLER_EMAIL` and `GO54_API_KEY`. No matching existing environment bindings were present here; no deployment variable was renamed or overwritten. The optional RDAP policy settings default off. Preserve `DOMAIN_CONTACT_ENCRYPTION_KEY` unchanged so existing registrant details remain decryptable.
 
@@ -96,6 +100,6 @@ Tests cover the HMAC vector, nested encoding, exact pricing GET URL/headers, cac
 
 Existing domain order/payment/refund/discovery and schema/SQL regressions are run alongside the new mock suite. Production build, TypeScript and focused lint checks validate the integration code. No registrar purchase or real payment test is authorized by this release.
 
-Validation results: all five selected regression files pass (`domain-orders`, `domain-discovery`, `go54-integration`, `schema`, `sql-statements`), including 8 focused GO54/registry/ledger tests and 21 existing domain-order tests. `npm run build`, `tsc --noEmit`, focused ESLint and `git diff --check` pass. The deployment prebuild correctly skipped live migration because this runtime has no DATABASE_URL. Provider requests and email delivery were mocked; no authenticated live registrar or NiRA service was validated.
+Validation results: all six selected regression files pass (`go54-client`, `domain-orders`, `domain-discovery`, `go54-integration`, `schema`, `sql-statements`), including 7 new request/diagnostic tests, 8 GO54/registry/ledger tests and 21 existing domain-order tests. `npm run build`, `tsc --noEmit`, focused ESLint and `git diff --check` pass. The deployment prebuild correctly skipped live migration because this runtime has no DATABASE_URL. Provider requests and email delivery were mocked; no authenticated live registrar or NiRA service was validated.
 
-To finish the missing operations, provide the official method/path and full request/response examples from the linked articles, plus pricing, wallet and domain synchronization contracts. The critical missing details include contact role/field names, mandatory country/TLD fields, response success/error meaning, pending/timeout reconciliation, actual wallet currency/units and authoritative ownership/transaction matching. Never provide API keys in those examples. Then bind only those documented contracts, use mocked end-to-end tests, and request explicit approval for a narrowly scoped live test. **Keep automated purchases disabled until that approval and validation.**
+To finish live customer automation, verify sanitized success/error/pending responses, pricing currency/units and restrictions, the wallet endpoint and response format, retrieval GET/POST methods, TLD-specific registrant requirements and authoritative ownership/transaction reconciliation. The published request paths and contact-role field names are already implemented. Unknown JSON fields remain uninterpreted until confirmed; test fixtures are synthetic rather than official provider examples. Record actual sanitized responses only during administrator-authorized validation, then finalize the response schemas and transactional integration. **Keep automated purchases disabled until explicit live-test approval and successful validation.**

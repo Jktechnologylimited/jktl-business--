@@ -4,6 +4,8 @@ import { createHmac } from "node:crypto";
 export const GO54_BASE_URL =
   "https://www.whogohost.com/host/modules/addons/DomainsReseller/api/index.php";
 export const GO54_PRICING_PATH = "/tlds/pricing";
+export const GO54_REQUEST_CONTRACTS_IMPLEMENTED = true;
+// Request serialization alone is not a verified end-to-end write adapter.
 export const GO54_WRITES_IMPLEMENTED = false;
 export type Go54Credentials = { email: string; apiKey: string };
 export type FormValue =

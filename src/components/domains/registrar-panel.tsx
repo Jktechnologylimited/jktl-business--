@@ -65,9 +65,9 @@ export function RegistrarPanel() {
     >
       <h2>Registrar integration</h2>
       <p>
-        Automated registrar requests remain disabled. Authentication and
-        read-only pricing transport are implemented; operation contracts and
-        pricing response mapping still need verification.
+        Automated registrar requests remain disabled. Authentication, pricing
+        transport and documented operation requests are implemented. Response
+        contracts, wallet API access and live validation remain pending.
       </p>
       <p className={styles.note}>
         This section is private to the domain operations team. Wholesale costs
@@ -86,7 +86,7 @@ export function RegistrarPanel() {
               disabled={busy}
               onClick={() => void run(checkGo54PricingTransportAction)}
             >
-              Check read-only pricing transport
+              Capture read-only pricing diagnostic
             </button>
             <button disabled={busy} onClick={() => void reload()}>
               Refresh private records
@@ -296,6 +296,45 @@ export function RegistrarPanel() {
               </article>
             ))}
           </details>
+          <p className={styles.note}>
+            Retrieval methods under review: nameservers{" "}
+            {data.retrievalMethods.nameservers}, lock{" "}
+            {data.retrievalMethods.lock}, EPP {data.retrievalMethods.epp}. No
+            automatic GET/POST fallback is used.
+          </p>
+          {data.diagnostics.length > 0 ? (
+            <details>
+              <summary>Redacted provider diagnostics</summary>
+              <p className={styles.note}>
+                HTTP and JSON transport evidence only. These records do not
+                prove registrar success or enable purchases.
+              </p>
+              {data.diagnostics.map((item) => (
+                <article key={String(item.id)}>
+                  <h3>
+                    {String(item.operation)} · {String(item.method)} · HTTP{" "}
+                    {String(item.http_status ?? "unknown")}
+                  </h3>
+                  <p>
+                    {String(item.observed_at)} · JSON{" "}
+                    {item.json_valid === true
+                      ? "valid"
+                      : "invalid or unavailable"}
+                  </p>
+                  <pre
+                    style={{
+                      overflow: "auto",
+                      maxHeight: "20rem",
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    {JSON.stringify(item.sanitized_payload, null, 2)}
+                  </pre>
+                </article>
+              ))}
+            </details>
+          ) : null}
           {data.operations.length > 0 ? (
             <>
               <h3>Registrar transaction reconciliation</h3>

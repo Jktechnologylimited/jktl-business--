@@ -1,6 +1,6 @@
 # Shared domain discovery and purchase safeguards
 
-Current update: [GO54 integration status](GO54_INTEGRATION_STATUS.md) records the supplied official authentication specification, confirmed GET pricing endpoint, private controls, independent RDAP service, transaction ledger and exact contracts still awaiting documentation. The earlier access notes below describe the previous implementation stage; current capability confirmations supersede its uncertainty about wholesale pricing. GO54 has no availability endpoint or sandbox according to the latest supplied confirmation. Automated registrar purchases remain disabled.
+Current update: [verified GO54 request contracts and JSON diagnostics](GO54_REQUEST_CONTRACTS.md) supersede the original network blocker; requests are now implemented, while response verification and live POSTs remain gated. [GO54 integration status](GO54_INTEGRATION_STATUS.md) records the supplied official authentication specification, confirmed GET pricing endpoint, private controls, independent RDAP service, transaction ledger and exact contracts still awaiting documentation. The earlier access notes below describe the previous implementation stage; current capability confirmations supersede its uncertainty about wholesale pricing. GO54 has no availability endpoint or sandbox according to the latest supplied confirmation. Automated registrar purchases remain disabled.
 
 ## Delivered in this change
 
