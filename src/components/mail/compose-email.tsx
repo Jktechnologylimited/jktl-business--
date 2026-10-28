@@ -52,9 +52,9 @@ export function ComposeEmail({
     <section className="space-y-5">
       <h2 className="text-2xl font-semibold">Compose Email</h2>
       <p>
-        Messages are sent individually through JKTL&apos;s existing provider. Preview
-        the unique recipient count before confirming. Promotional mail requires
-        opt-in and respects suppression preferences.
+        Messages are sent individually through JKTL&apos;s existing provider.
+        Preview the unique recipient count before confirming. Promotional mail
+        requires opt-in and respects suppression preferences.
       </p>
       <form
         className="grid gap-4 rounded-xl border border-border bg-paper p-5"
@@ -213,8 +213,8 @@ export function ComposeEmail({
                 checked={operational}
                 onChange={(e) => setOperational(e.target.checked)}
               />{" "}
-              This is necessary operational information, not promotional
-              content.
+              The main message is necessary operational information, not a
+              marketing campaign. The shared footer follows saved preferences.
             </label>
           )}
           <button

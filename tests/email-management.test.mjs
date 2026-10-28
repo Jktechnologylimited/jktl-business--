@@ -772,7 +772,7 @@ test("shared Resend sender applies verified Reply-To to real event helpers and r
       "INSERT INTO email_preferences(email,marketing_opt_in) VALUES('operational@example.test',true)",
     );
     await f.q(
-      "INSERT INTO email_promotions(title,description,url,product_id,enabled,priority,categories) VALUES('OPERATIONAL-PROMO-FIXTURE','Should never appear here','https://jktl.com.ng/templates','templates',true,0,ARRAY['service'])",
+      "INSERT INTO email_promotions(title,description,url,product_id,enabled,priority,categories) VALUES('OPERATIONAL-PROMO-FIXTURE','Shared product link','https://jktl.com.ng/templates','templates',true,0,ARRAY['service'])",
     );
     await email.sendAdminComposedEmail({
       to: "operational@example.test",
@@ -782,10 +782,8 @@ test("shared Resend sender applies verified Reply-To to real event helpers and r
       category: "service",
       key: "operational-fixture",
     });
-    assert.doesNotMatch(
-      sent.at(-1).payload.html,
-      /OPERATIONAL-PROMO-FIXTURE|Explore More from JKTL/,
-    );
+    assert.match(sent.at(-1).payload.html, /OPERATIONAL-PROMO-FIXTURE/);
+    assert.match(sent.at(-1).payload.html, /Explore More from JKTL/);
     for (const { payload } of sent) {
       assert.match(
         payload.html,

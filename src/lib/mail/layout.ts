@@ -182,11 +182,10 @@ export function brandingSettings(raw: unknown): Branding {
   }
   return b;
 }
-/** Invited team/programme members and newly registered customers receive a
- * small service-discovery footer with their requested invitation/welcome.
- * This does not grant marketing consent or authorize standalone campaigns. */
+/** Shared service links accompany ordinary mail; this never opts a recipient
+ * into standalone marketing campaigns. Security mail is always excluded. */
 export function serviceDiscoveryCategory(category: MailCategory) {
-  return category === "invitation" || category === "onboarding";
+  return category !== "security" && category !== "marketing";
 }
 export function selectPromotions(
   rows: Promotion[],
@@ -202,12 +201,10 @@ export function selectPromotions(
 ) {
   if (
     category === "security" ||
-    category === "internal" ||
     !b.promotionsEnabled ||
     options.suppressed ||
     (!serviceDiscoveryCategory(category) &&
-      (!options.consented || !b.postalAddress)) ||
-    (category === "support" && !b.supportPromotions)
+      (!options.consented || !b.postalAddress))
   )
     return [];
   const now = options.now ?? Date.now(),
@@ -216,7 +213,8 @@ export function selectPromotions(
     .filter(
       (p) =>
         p.enabled &&
-        p.categories.includes(category) &&
+        (serviceDiscoveryCategory(category) ||
+          p.categories.includes(category)) &&
         httpsUrl(p.url, true) &&
         (!p.startsAt || Date.parse(p.startsAt) <= now) &&
         (!p.endsAt || Date.parse(p.endsAt) > now) &&
@@ -248,9 +246,7 @@ export function mailLayout(input: {
 }) {
   const b = input.branding || DEFAULT_BRANDING,
     promos =
-      input.category === "security" ||
-      input.category === "internal" ||
-      !b.promotionsEnabled
+      input.category === "security" || !b.promotionsEnabled
         ? []
         : (input.promotions || []).slice(0, b.maxPromotions),
     e = escapeHtml;
@@ -266,7 +262,7 @@ export function mailLayout(input: {
       ? `<p><a href="${e(input.preferencesUrl)}" style="color:#112055">Email preferences / unsubscribe from marketing</a></p>`
       : "";
   return {
-    html: `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>${e(input.title)}</title></head><body style="margin:0;padding:0;background:#eee9da;color:#060e2a;font-family:Arial,Helvetica,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#eee9da"><tr><td align="center" style="padding:20px 10px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;table-layout:fixed;background:#fffdf8;border:1px solid #dfd5b8;border-radius:12px;overflow:hidden"><tr><td bgcolor="${e(b.headerColor)}" style="padding:26px 24px;text-align:${b.alignment};color:#eee9da"><img src="${e(b.logoUrl)}" alt="JKTL logo" width="64" height="64" style="display:inline-block;border:0;max-width:64px;height:auto"><p style="font-size:18px;font-weight:bold;margin:12px 0 0;color:#eee9da">JKTL Business<br>${e(b.companyName)}</p></td></tr><tr><td bgcolor="#fffdf8" style="padding:28px 24px;font-size:16px;line-height:1.65;color:#060e2a;word-wrap:break-word;overflow-wrap:anywhere"><h1 style="font-size:24px;line-height:1.3;margin:0 0 20px;color:#060e2a">${e(input.title)}</h1>${input.bodyHtml}<p style="margin:26px 0 0;color:#060e2a">${e(b.signature)}</p></td></tr>${promoHtml}<tr><td bgcolor="#eee9da" style="padding:22px 24px;border-top:1px solid #dfd5b8;font-size:12px;line-height:1.7;color:#35405a"><strong>${e(b.companyName)}</strong>${b.postalAddress ? `<br>${e(b.postalAddress)}` : ""}<br><a style="color:#112055" href="mailto:${e(b.supportEmail)}">${e(b.supportEmail)}</a>${b.phone ? " · " + e(b.phone) : ""}<br><a style="color:#112055" href="${e(b.supportUrl)}">Contact JKTL support</a>${b.socialLinks.length && input.category !== "security" && input.category !== "internal" ? "<p>" + b.socialLinks.map((s) => `<a style="color:#112055" href="${e(s.url)}">${e(s.label)}</a>`).join(" · ") + "</p>" : ""}${prefs}<p style="margin-bottom:0">${e(copy)}</p></td></tr></table></td></tr></table></body></html>`,
+    html: `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>${e(input.title)}</title></head><body style="margin:0;padding:0;background:#eee9da;color:#060e2a;font-family:Arial,Helvetica,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#eee9da"><tr><td align="center" style="padding:20px 10px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;table-layout:fixed;background:#fffdf8;border:1px solid #dfd5b8;border-radius:12px;overflow:hidden"><tr><td bgcolor="${e(b.headerColor)}" style="padding:26px 24px;text-align:${b.alignment};color:#eee9da"><img src="${e(b.logoUrl)}" alt="JKTL logo" width="64" height="64" style="display:inline-block;border:0;max-width:64px;height:auto"><p style="font-size:18px;font-weight:bold;margin:12px 0 0;color:#eee9da">JKTL Business<br>${e(b.companyName)}</p></td></tr><tr><td bgcolor="#fffdf8" style="padding:28px 24px;font-size:16px;line-height:1.65;color:#060e2a;word-wrap:break-word;overflow-wrap:anywhere"><h1 style="font-size:24px;line-height:1.3;margin:0 0 20px;color:#060e2a">${e(input.title)}</h1>${input.bodyHtml}<p style="margin:26px 0 0;color:#060e2a">${e(b.signature)}</p></td></tr>${promoHtml}<tr><td bgcolor="#eee9da" style="padding:22px 24px;border-top:1px solid #dfd5b8;font-size:12px;line-height:1.7;color:#35405a"><strong>${e(b.companyName)}</strong>${b.postalAddress ? `<br>${e(b.postalAddress)}` : ""}<br><a style="color:#112055" href="mailto:${e(b.supportEmail)}">${e(b.supportEmail)}</a>${b.phone ? " · " + e(b.phone) : ""}<br><a style="color:#112055" href="${e(b.supportUrl)}">Contact JKTL support</a>${b.socialLinks.length && input.category !== "security" ? "<p>" + b.socialLinks.map((s) => `<a style="color:#112055" href="${e(s.url)}">${e(s.label)}</a>`).join(" · ") + "</p>" : ""}${prefs}<p style="margin-bottom:0">${e(copy)}</p></td></tr></table></td></tr></table></body></html>`,
     text: [
       b.companyName,
       input.title,
@@ -285,9 +281,7 @@ export function mailLayout(input: {
       b.supportEmail,
       b.phone,
       b.supportUrl,
-      ...(input.category === "security" ||
-      input.category === "internal" ||
-      !b.promotionsEnabled
+      ...(input.category === "security" || !b.promotionsEnabled
         ? []
         : b.socialLinks.map((s) => s.label + ": " + s.url)),
       ...(input.preferencesUrl && input.category !== "security"

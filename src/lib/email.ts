@@ -1025,7 +1025,6 @@ export async function sendAdminComposedEmail(p: {
     {
       category: p.category,
       replyTo: p.replyTo,
-      suppressPromotions: p.category !== "marketing",
     },
     p.key,
   );

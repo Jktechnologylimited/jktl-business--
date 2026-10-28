@@ -68,10 +68,10 @@ test("layout escapes configurable content, forbids security promotions, caps and
     layout.selectPromotions(promos, b, "security", { consented: true }).length,
     0,
   );
-  assert.equal(layout.selectPromotions(promos, b, "website", {}).length, 0);
+  assert.equal(layout.selectPromotions(promos, b, "website", {}).length, 4);
   assert.equal(
     layout.selectPromotions(promos, b, "support", { consented: true }).length,
-    0,
+    4,
   );
   assert.equal(
     layout.selectPromotions(promos, b, "website", { consented: true }).length,
@@ -201,7 +201,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       "Actual update",
       { category: "website" },
     );
-    assert.ok(!rendered.html.includes("Explore More from JKTL"));
+    assert.ok(rendered.html.includes("Explore More from JKTL"));
     const cfg = layout.brandingSettings({
       postalAddress: "Actual office supplied by company",
     });
@@ -219,7 +219,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
       { category: "website" },
     );
     assert.ok(rendered.html.includes("Explore More from JKTL"));
-    assert.ok(!rendered.html.includes("Explore templates and find"));
+    assert.ok(rendered.html.includes("Explore More from JKTL"));
     const pref = (
       await query(
         "SELECT preference_token FROM email_preferences WHERE email='customer@example.test'",

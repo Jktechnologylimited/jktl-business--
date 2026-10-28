@@ -281,7 +281,6 @@ export async function previewMailAction(id: string) {
       branding,
       promotions: selectPromotions(promos, branding, sample.category, {
         consented: true,
-        ownedProducts: sample.owned,
       }),
       preferencesUrl:
         sample.category === "security"
@@ -437,12 +436,11 @@ export async function previewFooterDraftAction(raw: {
       branding,
       promotions: selectPromotions(previews, branding, sample.category, {
         consented: true,
-        ownedProducts: sample.owned,
       }),
       preferencesUrl: "https://business.jktl.com.ng/business/email-preferences",
     }),
     warning: serviceDiscoveryCategory(sample.category)
-      ? "Invitations and welcome emails include service links by default. Explicit opt-outs, disabled items and the global OFF setting are respected. This does not subscribe the recipient to marketing."
+      ? "Ordinary emails include service links by default. Explicit opt-outs, disabled items and the global OFF setting are respected. This does not subscribe the recipient to marketing."
       : !branding.postalAddress
         ? "This email category requires the genuine company postal address and recipient marketing consent for promotions."
         : "Sample assumes an eligible, opted-in recipient. Actual sends recheck preferences and relevance.",

@@ -2,6 +2,27 @@
 
 28 October 2026 — Africa/Lagos.
 
+## Current policy: one footer across ordinary Business mail
+
+The user subsequently requested promotions in each sent email. The shared sender
+now uses the enabled catalogue for **every ordinary Business email category**,
+including support and team notifications and administrator-composed service
+messages. Invitations/welcomes no longer receive special treatment. Unrelated
+ownership, domain-pricing and programme queries were removed from the footer
+selection path; they cannot silently empty this common footer. Historical category
+arrays do not restrict ordinary mail. Marketing still follows its existing send
+eligibility and category rules.
+
+Password resets, verification/recovery and other `security` messages stay free of
+promotions. Explicit opt-outs, caller suppression, global OFF, disabled/deleted items,
+schedules and URL validation remain. Existing catalogue choices are not rewritten.
+The provider-boundary test checks HTML and text for every ordinary category plus
+composed service mail, without a postal address or marketing subscription. No real
+mail is sent in tests. Validation: 29 email/editorial tests passed; the final
+5 footer tests passed again after aligning preview selection, and production build
+(including TypeScript) and focused lint passed. The historical investigation below
+describes the earlier fixes.
+
 ## Follow-up: received Gmail invitation still omitted the footer
 
 The received screenshot proves that the invitation/date changes deployed, but the footer did not. The first fix was insufficient: final-payload tests supplied both marketing consent and a postal address, unlike a new invitation recipient using default branding. The shared sender **and** selector still required both prerequisites. The screenshot has no postal address, which alone prevented the section.

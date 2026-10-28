@@ -49,8 +49,8 @@ security layout. Its security tokens/expiry and game disclaimer remain intact.
 
 - **Email Branding:** company name, actual logo URL, readable dark header color,
   alignment, signature, support contact, genuine company postal address, social
-  links, copyright, global promotion visibility, support promotion visibility and
-  a 0–3 item limit. Optimistic revisions prevent overwriting another edit.
+  links, copyright, global promotion visibility and
+  a 0–4 item limit. Optimistic revisions prevent overwriting another edit.
 - **Email Promotions:** create/edit title, description, product, JKTL HTTPS
   destination, enabled state, priority/order, eligible categories and UTC start/end
   dates. URLs with credentials, secret query parameters, non-HTTPS schemes or
@@ -70,17 +70,20 @@ no redeploy. No live emails are sent by automated tests.
 ## Categories, consent and product eligibility
 
 Security/recovery emails never show product promotions or social link listings.
-Internal operational emails also exclude promotions. Essential transactional
-messages remain deliverable when preference/branding storage is unavailable;
-unknown preferences produce a clean branded message without optional marketing.
+All ordinary Business emails—including invitations, welcome messages, service and
+payment notifications, support replies, team notices and composed operational
+messages—use the shared promotional footer by default. Historical item category
+and product-ownership filters no longer hide this common footer in ordinary mail.
+The old support-only setting is retained in stored branding for compatibility but
+no longer independently suppresses it. No database rewrite or reseeding is needed.
 
-Optional promotions require an explicit marketing opt-in, no global opt-out, no
-existing prospect suppression, configured postal information, matching category,
-active schedule, eligible product and no known product ownership. At most three
-distinct products appear, ordered by priority. Support promotions default off.
-Native domain/email ordering configuration and active programme profiles constrain
-eligible products. Contextual ownership plus actual current organization services
-suppress products the recipient already has.
+Explicit recipient opt-outs (including legacy suppression), disabled/deleted items,
+active schedules, the global OFF switch and the configured limit remain respected.
+At most four distinct URLs appear, ordered by priority. Standalone marketing still
+requires its existing consent/authorized-outreach and genuine postal-address checks;
+including service links does not change a recipient's marketing subscription.
+Essential mail still sends without optional promotions if preference/catalogue
+storage is unavailable, with a generic server-side diagnostic.
 
 Business users manage their own choice at `/business/email-preferences`. Mail
 footers contain an opaque preference link. Public `/email-preferences` requires a
@@ -132,8 +135,8 @@ Migration 047’s replayed check is adjusted to retain native Growth staff accou
 Existing `DATABASE_URL`, verified Resend sender settings and scheduled maintenance
 must be present in deployment. No new mandatory secret or mail provider.
 
-An Owner must enter the **actual company postal address** before marketing or
-optional promotions are enabled in delivered messages. The application does not
+An Owner must enter the **actual company postal address** before standalone marketing
+is sent. The application does not
 invent an address or assume consent. Check the official HTTPS logo and configured
 support/social links in deployment. Existing SPF/DKIM/DMARC and sender-domain
 verification remain provider configuration, not something a template build proves.

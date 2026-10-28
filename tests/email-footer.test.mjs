@@ -226,6 +226,38 @@ test("the final provider payload includes one shared invitation footer and reada
     });
     assert.doesNotMatch(payloads.at(-1).html, /Explore More from JKTL/);
     assert.doesNotMatch(payloads.at(-1).text, /Explore More from JKTL/);
+    for (const category of layout.MAIL_CATEGORIES.filter(
+      (c) => c !== "security" && c !== "marketing",
+    )) {
+      await email.sendPartnerNoticeEmail({
+        to: "footer@example.test",
+        subject: "Category fixture " + category,
+        detail: "Requested account update.",
+        path: "/business",
+        key: "footer-all-" + category,
+        category,
+      });
+      assert.equal(
+        (payloads.at(-1).html.match(/Explore More from JKTL/g) || []).length,
+        1,
+        category + " HTML",
+      );
+      assert.match(
+        payloads.at(-1).text,
+        /Explore More from JKTL/,
+        category + " text",
+      );
+    }
+    await email.sendAdminComposedEmail({
+      to: "footer@example.test",
+      subject: "General announcement fixture",
+      bodyHtml: "<p>Account announcement.</p>",
+      text: "Account announcement.",
+      category: "service",
+      key: "footer-admin-service",
+    });
+    assert.match(payloads.at(-1).html, /Explore More from JKTL/);
+    assert.match(payloads.at(-1).text, /Explore More from JKTL/);
     const preference = (
       await f.q(
         "SELECT marketing_opt_in FROM email_preferences WHERE email='footer@example.test'",

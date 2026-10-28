@@ -127,7 +127,7 @@ export async function sendComposedEmailAction(raw: {
     throw Error("Recipient eligibility changed. Preview the message again.");
   if (draft.message_kind === "operational" && raw.operationalConfirmed !== true)
     throw Error(
-      "Confirm this is a necessary operational message without promotional content.",
+      "Confirm the main message is necessary operational information, not a marketing campaign.",
     );
   const branding = await currentBranding();
   authorizeComposeReplyTo(a.role, branding, String(draft.reply_to || ""));

@@ -10,6 +10,7 @@ export const PROMOTION_CATEGORIES = [
   "affiliate",
   "partner",
   "service",
+  "support",
   "marketing",
 ];
 /** Verified public destinations on 28 October 2026; these are initialization
