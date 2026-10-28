@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getSql } from "@/lib/db/client";
 import { parseGame } from "@/lib/tycoon";
+import { authRateLimit, AuthRateLimitError } from "@/lib/security/auth-rate-limit";
+import { GameRequestError, readGameDocument, sameOriginGameWrite } from "@/lib/security/game-request";
 export const dynamic = "force-dynamic";
 export async function GET() {
   try {
@@ -12,6 +14,8 @@ export async function GET() {
         { headers: { "Cache-Control": "no-store" } },
       );
     const sql = getSql();
+    try { await authRateLimit(session.userId, "tycoon-read", 120, 60); }
+    catch (error) { if (!(error instanceof AuthRateLimitError)) throw error; return NextResponse.json({ error: "Account saves are temporarily busy. Please retry shortly." }, { status: 429, headers: { "Retry-After": "60", "Cache-Control": "no-store" } }); }
     const rows =
       await sql`SELECT document, revision FROM tycoon_saves WHERE user_id=${session.userId}`;
     return NextResponse.json(
@@ -31,10 +35,7 @@ export async function GET() {
 }
 export async function PUT(req: NextRequest) {
   try {
-    if (
-      !req.headers.get("origin") ||
-      new URL(req.headers.get("origin")!).host !== req.headers.get("host")
-    )
+    if (!sameOriginGameWrite(req))
       return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
     const session = await getSession();
     if (!session)
@@ -42,18 +43,12 @@ export async function PUT(req: NextRequest) {
         { error: "Sign in to save to your account." },
         { status: 401 },
       );
-    const raw = await req.text();
-    if (raw.length > 12000)
-      return NextResponse.json({ error: "Save too large." }, { status: 413 });
-    let body;
-    try {
-      body = JSON.parse(raw);
-    } catch {
-      return NextResponse.json({ error: "Invalid save." }, { status: 400 });
-    }
+    try { await authRateLimit(session.userId, "tycoon-write", 30, 60); }
+    catch (error) { if (!(error instanceof AuthRateLimitError)) throw error; return NextResponse.json({ error: "Too many saves. Please retry shortly." }, { status: 429, headers: { "Retry-After": "60", "Cache-Control": "no-store" } }); }
+    const body = await readGameDocument(req);
     const document = parseGame(body.document);
     const revision = body.revision;
-    if (!document || !Number.isSafeInteger(revision) || revision < 0)
+    if (!document || typeof revision !== "number" || !Number.isSafeInteger(revision) || revision < 0)
       return NextResponse.json({ error: "Invalid save." }, { status: 400 });
     const sql = getSql();
     const rows =
@@ -67,7 +62,8 @@ export async function PUT(req: NextRequest) {
         { status: 409 },
       );
     return NextResponse.json({ ok: true, revision: Number(rows[0].revision) });
-  } catch {
+  } catch (error) {
+    if (error instanceof GameRequestError) return NextResponse.json({ error: error.message }, { status: error.status });
     return NextResponse.json(
       { error: "Could not save. Your game remains open; please retry." },
       { status: 503 },

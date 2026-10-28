@@ -21,8 +21,8 @@ function ResetPasswordForm() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < 10) {
+      setError("Password must be at least 10 characters.");
       return;
     }
     if (password !== confirm) {
@@ -69,7 +69,7 @@ function ResetPasswordForm() {
   return (
     <>
       <h1 className="mt-10 font-display text-2xl font-bold tracking-tight text-ink">Choose a new password</h1>
-      <p className="mt-1.5 text-sm text-ink-muted">Make it at least 6 characters.</p>
+      <p className="mt-1.5 text-sm text-ink-muted">Make it at least 10 characters.</p>
       <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
         <Field label="New password" htmlFor="password">
           <PasswordInput
@@ -78,7 +78,7 @@ function ResetPasswordForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            minLength={6}
+            minLength={10}
             autoFocus
           />
         </Field>
@@ -89,7 +89,7 @@ function ResetPasswordForm() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             required
-            minLength={6}
+            minLength={10}
           />
         </Field>
         {error ? <p className="text-sm text-danger">{error}</p> : null}

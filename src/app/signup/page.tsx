@@ -246,11 +246,11 @@ function SignupForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Create a password"
                 required
-                minLength={6}
+                minLength={10}
                 aria-describedby="password-hint"
               />
               <p id="password-hint" className={styles.passwordHint}>
-                <T>Use at least 6 characters.</T>
+                <T>Use at least 10 characters.</T>
               </p>
             </div>
             <button type="submit" className={styles.submit} disabled={pending}>

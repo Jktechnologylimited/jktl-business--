@@ -6,8 +6,23 @@ const localFrames = (process.env.GAME_LOCAL_FRAME_ORIGINS || "")
     /^http:\/\/(?:[a-z-]+\.)?(?:localhost|127\.0\.0\.1)(?::[0-9]+)?$/.test(v),
   );
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   async headers() {
     return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      ...["/business/:path*", "/admin/:path*", "/affiliates/:path*", "/partners/:path*", "/login", "/signup", "/forgot-password", "/reset-password"].map(source => ({
+        source,
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Frame-Options", value: "DENY" },
+        ],
+      })),
       {
         source: "/play/tycoon",
         headers: [

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Field } from "@/components/app/field";
@@ -8,6 +9,7 @@ import { useBusinessStore } from "@/lib/store";
 import { changePasswordAction } from "@/lib/actions/auth-actions";
 
 export function PasswordForm({ onSubmit, onCancel }: { onSubmit: () => void; onCancel: () => void }) {
+  const router = useRouter();
   const mode = useBusinessStore((s) => s.mode);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -17,8 +19,8 @@ export function PasswordForm({ onSubmit, onCancel }: { onSubmit: () => void; onC
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (next.length < 6) {
-      setError("New password must be at least 6 characters.");
+    if (next.length < 10) {
+      setError("New password must be at least 10 characters.");
       return;
     }
     if (next !== confirm) {
@@ -40,7 +42,9 @@ export function PasswordForm({ onSubmit, onCancel }: { onSubmit: () => void; onC
       setError(result.error);
       return;
     }
-    onSubmit();
+    // Credential changes revoke all account sessions, including this browser.
+    router.replace("/login?passwordChanged=1");
+    router.refresh();
   }
 
   return (

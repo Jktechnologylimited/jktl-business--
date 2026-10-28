@@ -36,6 +36,9 @@
     "web-push": "^3.6.7",
     "zustand": "^5.0.15"
   },
+  "overrides": {
+    "@vercel/cli-config": { "zod": "^4.6.7" }
+  },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10",
     "@tailwindcss/postcss": "^4",

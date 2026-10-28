@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { randomBytes, createHash } from "node:crypto";
 import { getSql } from "./client";
 import type { AppUser, BusinessType } from "@/lib/types";
+import { authRateLimit } from "@/lib/security/auth-rate-limit";
 
 const SESSION_DAYS = 30;
 const RESET_TOKEN_MINUTES = 60;
@@ -91,6 +92,10 @@ export interface LoginResult {
 }
 
 export async function verifyLogin(email: string, password: string): Promise<LoginResult | null> {
+  // Preserve existing bcrypt accounts whose old passwords exceeded 72 bytes.
+  // Only NEW credentials use the stricter bound below.
+  if (typeof email !== "string" || email.length > 254 || typeof password !== "string" || Buffer.byteLength(password, "utf8") > 1024) return null;
+  await authRateLimit(email.trim().toLowerCase(), "login", 10, 600);
   const sql = getSql();
   const rows = await sql`SELECT * FROM users WHERE email = ${email.toLowerCase()}`;
   const row = rows[0];
@@ -100,7 +105,7 @@ export async function verifyLogin(email: string, password: string): Promise<Logi
   if (!ok) return null;
 
   const memberRows = await sql`
-    SELECT organization_id FROM organization_members WHERE user_id = ${row.id} ORDER BY created_at ASC LIMIT 1
+    SELECT organization_id FROM organization_members WHERE user_id = ${row.id} AND active = true ORDER BY created_at ASC LIMIT 1
   `;
   if (!memberRows[0]) return null;
 
@@ -133,9 +138,11 @@ export async function createSession(userId: string, organizationId: string): Pro
 }
 
 export async function validateSession(sessionId: string): Promise<SessionInfo | null> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId)) return null;
   const sql = getSql();
   const rows = await sql`
-    SELECT user_id, organization_id FROM sessions WHERE id = ${sessionId} AND expires_at > now()
+    SELECT s.user_id, s.organization_id FROM sessions s WHERE s.id = ${sessionId} AND s.expires_at > now()
+    AND EXISTS(SELECT 1 FROM organization_members m WHERE m.user_id = s.user_id AND m.organization_id = s.organization_id AND m.active = true)
   `;
   if (!rows[0]) return null;
   return { userId: rows[0].user_id as string, organizationId: rows[0].organization_id as string };
@@ -188,24 +195,33 @@ export async function createPasswordResetToken(userId: string): Promise<string> 
  * were still live for the same account.
  */
 export async function consumePasswordResetToken(rawToken: string, newPassword: string): Promise<boolean> {
+  if (typeof rawToken !== "string" || !/^[a-f0-9]{64}$/i.test(rawToken) || !validNewPassword(newPassword)) return false;
   const sql = getSql();
   const tokenHash = hashToken(rawToken);
-  const rows = await sql`
-    SELECT id, user_id FROM password_reset_tokens
-    WHERE token_hash = ${tokenHash} AND used_at IS NULL AND expires_at > now()
-  `;
-  const row = rows[0];
-  if (!row) return false;
-
   const passwordHash = await hashPassword(newPassword);
-  const userId = row.user_id as string;
-  await sql`UPDATE users SET password_hash = ${passwordHash} WHERE id = ${userId}`;
-  await sql`UPDATE password_reset_tokens SET used_at = now() WHERE user_id = ${userId} AND used_at IS NULL`;
-  return true;
+  // A single statement locks, consumes, changes credentials and revokes every
+  // account session atomically. Concurrent reuse cannot change the password twice.
+  const rows = await sql`
+    WITH candidate AS MATERIALIZED (
+      SELECT t.id, t.user_id FROM password_reset_tokens t JOIN users u ON u.id=t.user_id
+      WHERE t.token_hash=${tokenHash} AND t.used_at IS NULL AND t.expires_at>now() FOR UPDATE OF u,t
+    ), consumed AS (
+      UPDATE password_reset_tokens SET used_at=now() WHERE id IN(SELECT id FROM candidate) RETURNING user_id
+    ), changed AS (
+      UPDATE users SET password_hash=${passwordHash} WHERE id IN(SELECT user_id FROM consumed) RETURNING id
+    ), invalidated AS (
+      UPDATE password_reset_tokens SET used_at=now() WHERE user_id IN(SELECT id FROM changed)
+      AND used_at IS NULL AND id NOT IN(SELECT id FROM candidate)
+    ), revoked AS (
+      DELETE FROM sessions WHERE user_id IN(SELECT id FROM changed)
+    ) SELECT id FROM changed
+  `;
+  return rows.length === 1;
 }
 
 /** Changes a signed-in user's password after verifying their current one. */
 export async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<boolean> {
+  if (!validNewPassword(newPassword) || typeof currentPassword !== "string" || Buffer.byteLength(currentPassword, "utf8") > 1024) return false;
   const sql = getSql();
   const rows = await sql`SELECT password_hash FROM users WHERE id = ${userId}`;
   const row = rows[0];
@@ -215,6 +231,19 @@ export async function changePassword(userId: string, currentPassword: string, ne
   if (!ok) return false;
 
   const passwordHash = await hashPassword(newPassword);
-  await sql`UPDATE users SET password_hash = ${passwordHash} WHERE id = ${userId}`;
-  return true;
+  const changed = await sql`
+    WITH changed AS (
+      UPDATE users SET password_hash=${passwordHash} WHERE id=${userId} AND password_hash=${row.password_hash} RETURNING id
+    ), revoked AS (
+      DELETE FROM sessions WHERE user_id IN(SELECT id FROM changed)
+    ), invalidated AS (
+      UPDATE password_reset_tokens SET used_at=now() WHERE user_id IN(SELECT id FROM changed) AND used_at IS NULL
+    ) SELECT id FROM changed
+  `;
+  return changed.length === 1;
+}
+
+/** bcrypt truncates beyond 72 UTF-8 bytes; never silently accept that input. */
+export function validNewPassword(value: unknown): value is string {
+  return typeof value === "string" && value.length >= 10 && Buffer.byteLength(value, "utf8") <= 72;
 }

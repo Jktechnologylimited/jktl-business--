@@ -86,6 +86,7 @@ test("Growth staff use existing identity, least privilege, approved publishing, 
       );
     });
     const businessAuth = load("../src/lib/db/auth.ts", {
+      "@/lib/security/auth-rate-limit": { authRateLimit: async () => {} },
       bcryptjs: { default: bcrypt },
       "node:crypto": await import("node:crypto"),
       "./client": { getSql: () => sql },
