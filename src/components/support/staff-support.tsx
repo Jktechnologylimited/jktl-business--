@@ -98,8 +98,7 @@ export function StaffSupport() {
         <h1 className="mt-3 text-3xl font-semibold">Support inbox</h1>
         <p className="mt-3 text-sm leading-7 text-ink-muted">
           Claim a request, continue the conversation and help the customer
-          finish their next step. Sensitive requests go to an owner
-          team member.
+          finish their next step. Sensitive requests go to an owner team member.
         </p>
       </header>
       {guide && (
@@ -255,6 +254,29 @@ export function StaffSupport() {
               <h2 className="text-xl font-semibold">
                 {String(data.case.subject)}
               </h2>
+              {data.project && (
+                <div className="my-4 border border-border p-4 text-sm">
+                  <p>
+                    Project: {String(data.project.name)} ·{" "}
+                    {String(data.project.status)}
+                  </p>
+                  <a
+                    href={String(data.project.website_url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Open client website
+                  </a>
+                  <p>Category: {String(data.case.project_category || "")}</p>
+                  <p>
+                    CMS:{" "}
+                    {data.project.cms_tested_at
+                      ? "Verified integration"
+                      : "Not enabled"}
+                  </p>
+                </div>
+              )}
               <p className="my-3 text-sm text-ink-muted">
                 {String(data.case.status)} ·{" "}
                 {data.case.sensitive

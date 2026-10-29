@@ -10,6 +10,7 @@ type Data = {
   invoices: Row[];
   requests: Row[];
   audit: Row[];
+  invitations?: Row[];
 };
 const val = (d: FormData, k: string) => String(d.get(k) || "");
 export function CustomAdmin({ initial }: { initial: Data }) {
@@ -151,6 +152,33 @@ export function CustomAdmin({ initial }: { initial: Data }) {
                   }{" "}
                   projects · {c.pilot_ready ? "Pilot ready" : "Pilot pending"}
                 </p>
+                <ul className="my-3 text-sm">
+                  {(data.invitations || [])
+                    .filter((i) => i.organization_id === c.organization_id)
+                    .slice(0, 3)
+                    .map((i) => (
+                      <li key={String(i.id)}>
+                        Invitation:{" "}
+                        {i.accepted_at
+                          ? "Accepted"
+                          : i.revoked_at
+                            ? "Revoked / superseded"
+                            : i.used_at
+                              ? "Previously used"
+                              : new Date(String(i.expires_at)) < new Date()
+                                ? "Expired"
+                                : i.sent_at
+                                  ? "Sent — awaiting acceptance"
+                                  : "Not submitted"}{" "}
+                        · expires{" "}
+                        {new Date(String(i.expires_at)).toLocaleString(
+                          "en-NG",
+                          { timeZone: "Africa/Lagos" },
+                        )}{" "}
+                        WAT
+                      </li>
+                    ))}
+                </ul>
                 <div className={styles.links}>
                   <button
                     disabled={busy}
@@ -505,6 +533,17 @@ function ProjectForm({
             status: val(d, "status"),
             revision: p ? Number(p.revision) : undefined,
             domainAssetId: val(d, "domain") || undefined,
+            deploymentProvider: val(d, "deployment"),
+            vercelProjectRef: val(d, "vercel"),
+            githubRepositoryRef: val(d, "github"),
+            internalNotes: val(d, "internal"),
+            maintenanceAgreement: val(d, "maintenance"),
+            emailServiceId: val(d, "emailService"),
+            cmsFields: val(d, "fields")
+              .split(/[,\n]/)
+              .map((v) => v.trim())
+              .filter(Boolean),
+            cmsScopes: d.getAll("scope").map(String),
           }),
         );
       }}
@@ -578,6 +617,96 @@ function ProjectForm({
         Customer-owned domain asset ID (optional)
         <input name="domain" defaultValue={String(p?.domain_asset_id || "")} />
       </label>
+      <fieldset className="space-y-4 border-t border-border pt-4">
+        <legend>Deployment & service links</legend>
+        <label>
+          Deployment provider
+          <input
+            name="deployment"
+            defaultValue={String(p?.deployment_provider || "")}
+            maxLength={100}
+          />
+        </label>
+        <label>
+          Vercel project reference — team only
+          <input
+            name="vercel"
+            defaultValue={String(p?.vercel_project_ref || "")}
+            maxLength={200}
+          />
+        </label>
+        <label>
+          GitHub owner/repository — team only
+          <input
+            name="github"
+            defaultValue={String(p?.github_repository_ref || "")}
+            maxLength={250}
+          />
+        </label>
+        <label>
+          Linked business email service ID
+          <input
+            name="emailService"
+            defaultValue={String(p?.email_service_id || "")}
+          />
+        </label>
+        <label>
+          Maintenance agreement — client visible
+          <textarea
+            name="maintenance"
+            defaultValue={String(p?.maintenance_agreement || "")}
+            maxLength={2000}
+          />
+        </label>
+        <label>
+          Internal project notes — team only
+          <textarea
+            name="internal"
+            defaultValue={String(p?.internal_notes || "")}
+            maxLength={4000}
+          />
+        </label>
+        <p className="text-xs">
+          Link hosting and maintenance charges in Services. Never paste
+          credentials into these records. The project UUID stays the same across
+          deployments.
+        </p>
+      </fieldset>
+      <fieldset className="space-y-3 border-t border-border pt-4">
+        <legend>Verified CMS capabilities</legend>
+        <label>
+          Supported field identifiers — one per line
+          <textarea
+            name="fields"
+            defaultValue={
+              Array.isArray(p?.cms_fields) ? p.cms_fields.join("\n") : ""
+            }
+          />
+        </label>
+        {[
+          ["content:read", "Read content"],
+          ["content:write", "Edit content"],
+          ["content:publish", "Publish content"],
+        ].map(([scope, label]) => (
+          <label key={scope}>
+            <input
+              type="checkbox"
+              name="scope"
+              value={scope}
+              defaultChecked={
+                Array.isArray(p?.cms_scopes)
+                  ? p.cms_scopes.includes(scope)
+                  : scope === "content:read"
+              }
+            />
+            {label}
+          </label>
+        ))}
+        <p className="text-xs">
+          Enable only fields and permissions implemented and tested in this
+          project’s CMS adapter. An attached URL alone does not enable editing.
+        </p>
+      </fieldset>
       <button disabled={busy || !clients.length}>
         {p ? "Save project" : "Add project"}
       </button>

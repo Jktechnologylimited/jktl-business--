@@ -1,4 +1,5 @@
 "use client";
+import { CMS_SCOPE_LABELS } from "@/lib/custom/contracts";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -14,7 +15,6 @@ import {
   acceptCustomServiceAction,
   payCustomInvoiceAction,
   verifyCustomPaymentAction,
-  createCustomRequestAction,
   openCustomCmsAction,
 } from "@/lib/actions/custom-project-actions";
 import styles from "@/components/domains/domains.module.css";
@@ -116,7 +116,7 @@ export function CustomWorkspace() {
           <>
             <section className={styles.section}>
               <h2>
-                <Globe className="inline size-5" /> My Websites
+                <Globe className="inline size-5" /> My Projects
               </h2>
               {data.projects.length === 0 ? (
                 <p>
@@ -149,7 +149,7 @@ export function CustomWorkspace() {
                             run(() => openCustomCmsAction(String(p.id)), true)
                           }
                         >
-                          Edit website
+                          Manage website
                         </button>
                         {Boolean(p.analytics_url) && (
                           <a
@@ -160,9 +160,61 @@ export function CustomWorkspace() {
                             Analytics
                           </a>
                         )}
-                        <Link href="/business/domains">Domain & DNS</Link>
-                        <a href="#custom-support">Business email & support</a>
+                        {Boolean(p.domain) && (
+                          <Link href="/business/domains">Domain & DNS</Link>
+                        )}
+                        {Boolean(p.email_domain) && (
+                          <Link href="/business/email">Business Email</Link>
+                        )}
+                        <Link href={`/business/help?project=${String(p.id)}`}>
+                          Project support
+                        </Link>
                       </div>
+                      {Boolean(p.cms_tested_at) && (
+                        <div className="my-3 text-sm">
+                          <p>Available editing capabilities:</p>
+                          <ul>
+                            {Array.isArray(p.cms_scopes) &&
+                              p.cms_scopes.map((scope) => (
+                                <li key={String(scope)}>
+                                  {CMS_SCOPE_LABELS[String(scope)] ||
+                                    "Website content"}
+                                </li>
+                              ))}
+                          </ul>
+                          {Array.isArray(p.cms_fields) &&
+                            p.cms_fields.length > 0 && (
+                              <p>
+                                {p.cms_fields
+                                  .map((v) =>
+                                    String(v)
+                                      .replace(/([a-z])([A-Z])/g, "$1 $2")
+                                      .replace(/[._-]/g, " "),
+                                  )
+                                  .join(" · ")}
+                              </p>
+                            )}
+                        </div>
+                      )}
+                      {Boolean(p.domain) && (
+                        <p className="mt-3 text-sm">
+                          Domain: {String(p.domain)} · renews{" "}
+                          {day(p.domain_expires_at)} · {String(p.domain_status)}
+                        </p>
+                      )}
+                      {Boolean(p.email_domain) && (
+                        <p className="mt-3 text-sm">
+                          Business Email: {String(p.email_domain)} ·{" "}
+                          {String(p.email_plan)} · {String(p.email_status)} ·
+                          renewal {day(p.email_renews_at)}
+                        </p>
+                      )}
+                      {Boolean(p.maintenance_agreement) && (
+                        <p className="mt-3 whitespace-pre-wrap text-sm">
+                          Maintenance agreement:{" "}
+                          {String(p.maintenance_agreement)}
+                        </p>
+                      )}
                       {!p.cms_tested_at && (
                         <p className="mt-3 text-xs">
                           CMS access is being configured. Request content
@@ -176,7 +228,7 @@ export function CustomWorkspace() {
             </section>
             <section className={styles.section}>
               <h2>
-                <Layers className="inline size-5" /> Services & agreements
+                <Layers className="inline size-5" /> My Services & agreements
               </h2>
               <p>
                 Hosting, maintenance and third-party costs are itemized
@@ -198,6 +250,9 @@ export function CustomWorkspace() {
                     {money(Number(s.amount_kobo) - Number(s.discount_kobo))} /{" "}
                     {String(s.interval).toLowerCase()} · starts{" "}
                     {day(s.starts_on)}
+                  </p>
+                  <p className="text-sm">
+                    Next invoice period: {day(s.next_due_on)}
                   </p>
                   {Number(s.discount_kobo) > 0 && (
                     <p>Discount: {money(s.discount_kobo)} per invoice</p>
@@ -250,6 +305,14 @@ export function CustomWorkspace() {
               >
                 Refresh payment status
               </button>
+              <p className="my-3">
+                Outstanding balance:{" "}
+                {money(
+                  data.invoices
+                    .filter((i) => i.status === "OPEN")
+                    .reduce((sum, i) => sum + Number(i.amount_kobo), 0),
+                )}
+              </p>
               {data.invoices.length === 0 ? (
                 <p className="mt-4">No invoices yet.</p>
               ) : (
@@ -321,55 +384,23 @@ export function CustomWorkspace() {
               <h2>
                 <LifeBuoy className="inline size-5" /> Support & change requests
               </h2>
-              {data.projects.length > 0 && (
-                <form
-                  className={styles.form}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const f = e.currentTarget,
-                      d = new FormData(f);
-                    run(() =>
-                      createCustomRequestAction(
-                        String(d.get("project")),
-                        String(d.get("kind")),
-                        String(d.get("message")),
-                      ),
-                    );
-                  }}
-                >
-                  <label>
-                    Website
-                    <select name="project" required>
-                      {data.projects.map((p) => (
-                        <option key={String(p.id)} value={String(p.id)}>
-                          {String(p.name)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Request type
-                    <select name="kind">
-                      <option value="CONTENT">Content update</option>
-                      <option value="FIX">Fix a problem</option>
-                      <option value="DEVELOPMENT">
-                        Additional development
-                      </option>
-                      <option value="EMAIL">Business email</option>
-                      <option value="SUPPORT">Technical support</option>
-                    </select>
-                  </label>
-                  <label>
-                    How can we help?
-                    <textarea name="message" required maxLength={4000} />
-                  </label>
-                  <p className="text-xs">
-                    Please keep passwords, payment card details and private
-                    customer data out of requests. Additional development may
-                    need a separate quote.
-                  </p>
-                  <button disabled={busy}>Send request</button>
-                </form>
+              <p>
+                Use the existing JKTL support inbox for project help,
+                attachments and request history.
+              </p>
+              <div className={styles.links}>
+                <Link href="/business/help">Open support & history</Link>
+                {data.projects.map((p) => (
+                  <Link
+                    key={String(p.id)}
+                    href={`/business/help?project=${String(p.id)}`}
+                  >
+                    Help with {String(p.name)}
+                  </Link>
+                ))}
+              </div>
+              {data.requests.length > 0 && (
+                <h3 className="mt-6">Previous custom request history</h3>
               )}
               {data.requests.map((r) => (
                 <article

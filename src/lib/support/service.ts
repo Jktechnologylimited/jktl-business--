@@ -1,5 +1,6 @@
 import "server-only";
 import { query } from "@/lib/custom/service";
+import { PROJECT_CATEGORY_LABELS } from "@/lib/custom/contracts";
 import { requireSession } from "@/lib/session";
 import { requireAdminCapability } from "@/lib/admin-session";
 import { chatComplete, isDeepSeekConfigured } from "@/lib/deepseek";
@@ -53,8 +54,7 @@ export async function staffCase(caseId: string) {
       [id(caseId), a.role, a.id],
     )
   )[0];
-  if (!c)
-    throw Error("This case needs an assigned agent or team owner.");
+  if (!c) throw Error("This case needs an assigned agent or team owner.");
   return { a, c };
 }
 export async function audit(
@@ -146,14 +146,46 @@ export async function answerCase(
   if (inserted.length && needsHuman)
     await handoff(caseId, org, false, "assistant");
 }
-export async function createCase(input: { subject: string; message: string }) {
+export async function createCase(input: {
+  subject: string;
+  message: string;
+  customProjectId?: string;
+  projectCategory?: string;
+}) {
   const s = await member();
   await rate("new:" + s.userId, 5);
   const body = redact(text(input.message));
+  let project: string | null = null,
+    category: string | null = null;
+  if (input.customProjectId) {
+    project = id(input.customProjectId);
+    if (
+      !(
+        await query(
+          "SELECT 1 FROM custom_projects WHERE id=$1 AND organization_id=$2 AND billing_only=false",
+          [project, s.organizationId],
+        )
+      ).length
+    )
+      throw Error("Project unavailable for this business.");
+    if (
+      !input.projectCategory ||
+      !Object.hasOwn(PROJECT_CATEGORY_LABELS, input.projectCategory)
+    )
+      throw Error("Choose a project support category.");
+    category = input.projectCategory;
+  }
   const c = (
     await query(
-      `WITH created AS(INSERT INTO support_cases(organization_id,requester_id,subject) VALUES($1,$2,$3) RETURNING *),message AS(INSERT INTO support_messages(case_id,organization_id,sender,actor_id,body) SELECT id,organization_id,'user',$2,$4 FROM created) SELECT * FROM created`,
-      [s.organizationId, s.userId, redact(text(input.subject, 160, 3)), body],
+      `WITH created AS(INSERT INTO support_cases(organization_id,requester_id,subject,custom_project_id,project_category) VALUES($1,$2,$3,$5,$6) RETURNING *),message AS(INSERT INTO support_messages(case_id,organization_id,sender,actor_id,body) SELECT id,organization_id,'user',$2,$4 FROM created) SELECT * FROM created`,
+      [
+        s.organizationId,
+        s.userId,
+        redact(text(input.subject, 160, 3)),
+        body,
+        project,
+        category,
+      ],
     )
   )[0];
   if (sensitive(body + " " + input.subject)) {
@@ -164,4 +196,17 @@ export async function createCase(input: { subject: string; message: string }) {
     await handoff(String(c.id), s.organizationId, false, s.userId);
   } else await answerCase(String(c.id), s.organizationId, body);
   return String(c.id);
+}
+
+/** Safe project context after the calling case's customer/team authorization. */
+export async function supportProjectContext(c: Record<string, unknown>) {
+  if (!c.custom_project_id) return null;
+  return (
+    (
+      await query(
+        "SELECT id,name,website_url,status,cms_tested_at,cms_fields FROM custom_projects WHERE id=$1 AND organization_id=$2 AND billing_only=false",
+        [c.custom_project_id, c.organization_id],
+      )
+    )[0] || null
+  );
 }

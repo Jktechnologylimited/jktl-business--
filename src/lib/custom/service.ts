@@ -160,8 +160,25 @@ export async function handleCustomEvent(
 }
 export async function redeemGrant(raw: string, project: string, key: string) {
   const result = await query(
-    `WITH used AS(UPDATE custom_cms_grants g SET used_at=now() FROM custom_projects p,custom_clients c WHERE g.token_hash=$1 AND g.project_id=$2 AND p.id=g.project_id AND p.organization_id=g.organization_id AND c.organization_id=g.organization_id AND c.pilot_ready=true AND c.activated_at IS NOT NULL AND p.status='LIVE' AND p.cms_tested_at IS NOT NULL AND p.cms_key_hash=$3 AND g.used_at IS NULL AND g.expires_at>now() RETURNING g.*) SELECT u.id AS user_id,u.email,u.name,used.project_id,used.organization_id FROM used JOIN users u ON u.id=used.user_id JOIN organization_members om ON om.user_id=u.id AND om.organization_id=used.organization_id AND om.active=true AND om.role='owner'`,
+    `WITH used AS(UPDATE custom_cms_grants g SET used_at=now() FROM custom_projects p,custom_clients c WHERE g.token_hash=$1 AND g.project_id=$2 AND p.id=g.project_id AND p.organization_id=g.organization_id AND c.organization_id=g.organization_id AND c.pilot_ready=true AND c.activated_at IS NOT NULL AND c.user_id=g.user_id AND p.status='LIVE' AND p.cms_tested_at IS NOT NULL AND p.cms_key_hash=$3 AND g.used_at IS NULL AND g.expires_at>now() RETURNING g.*,p.cms_scopes AS current_scopes) SELECT used.scopes,used.current_scopes,u.id AS user_id,u.email,u.name,used.project_id,used.organization_id FROM used JOIN users u ON u.id=used.user_id JOIN organization_members om ON om.user_id=u.id AND om.organization_id=used.organization_id AND om.active=true AND om.role='owner'`,
     [digest(raw), project, digest(key)],
   );
   return result[0] || null;
+}
+
+/** Recheck live membership, project state and scopes for an independently hosted CMS session. */
+export async function validateCmsSession(
+  project: string,
+  key: string,
+  user: string,
+  org: string,
+) {
+  return (
+    (
+      await query(
+        `SELECT p.cms_scopes,u.id AS user_id,u.name,u.email,p.organization_id FROM custom_projects p JOIN custom_clients c ON c.organization_id=p.organization_id JOIN organization_members m ON m.organization_id=p.organization_id AND m.user_id=c.user_id AND m.active=true AND m.role='owner' JOIN users u ON u.id=m.user_id WHERE p.id=$1 AND p.cms_key_hash=$2 AND p.organization_id=$3 AND u.id=$4 AND p.status='LIVE' AND p.cms_tested_at IS NOT NULL AND c.pilot_ready=true AND c.activated_at IS NOT NULL`,
+        [project, digest(key), org, user],
+      )
+    )[0] || null
+  );
 }

@@ -38,7 +38,7 @@ test("Support is a scoped role; guides cover real flows and refuse credential ha
   assert.equal(normaliseRole("support"), "support");
   assert.deepEqual(
     navFor("support").map((n) => n.href),
-    ["/admin/partner-support", "/admin/support"],
+    ["/admin/partner-support", "/admin/support", "/admin/domains"],
   );
   for (const cap of [
     "manage_team",
@@ -124,6 +124,9 @@ test("Support permissions, handoff, customer consent, reviews and push use actua
   await db.exec(
     "ALTER TABLE support_push_subscriptions ADD COLUMN business_session_id uuid",
   );
+  await db.exec(
+    "ALTER TABLE support_cases ADD COLUMN custom_project_id uuid, ADD COLUMN project_category text;CREATE TABLE custom_projects(id uuid PRIMARY KEY,organization_id uuid,name text,website_url text,status text,cms_tested_at timestamptz,cms_fields text[],billing_only boolean DEFAULT false)",
+  );
   let session = { organizationId: org, userId: user },
     admin = { id: agent, role: "support" },
     ai = false,
@@ -136,6 +139,7 @@ test("Support permissions, handoff, customer consent, reviews and push use actua
   };
   const service = load("../src/lib/support/service.ts", {
     "server-only": {},
+    "@/lib/custom/contracts": load("../src/lib/custom/contracts.ts", {}),
     "@/lib/custom/service": { query: q },
     "@/lib/session": { requireSession: async () => session },
     "@/lib/admin-session": { requireAdminCapability: cap },
@@ -170,6 +174,55 @@ test("Support permissions, handoff, customer consent, reviews and push use actua
     "@/lib/admin-session": { requireAdminCapability: cap },
     "@/lib/support/model": model,
   });
+  await t.test(
+    "project support uses the shared inbox and excludes foreign/internal context",
+    async () => {
+      const project = "30000000-0000-4000-8000-000000000099";
+      await q(
+        "INSERT INTO custom_projects(id,organization_id,name,website_url,status,cms_fields) VALUES($1,$2,'Pilot law','https://law.example','LIVE',ARRAY['heroTitle'])",
+        [project, org],
+      );
+      await assert.rejects(() =>
+        service.createCase({
+          subject: "Website help",
+          message: "Please help with content",
+          customProjectId: project,
+          projectCategory: "UNKNOWN",
+        }),
+      );
+      session = { organizationId: other, userId: otherUser };
+      await assert.rejects(() =>
+        service.createCase({
+          subject: "Website help",
+          message: "Please help with content",
+          customProjectId: project,
+          projectCategory: "WEBSITE_CONTENT",
+        }),
+      );
+      session = { organizationId: org, userId: user };
+      const created = await service.createCase({
+        subject: "Website help",
+        message: "Please help with content",
+        customProjectId: project,
+        projectCategory: "WEBSITE_CONTENT",
+      });
+      const row = (
+        await q("SELECT * FROM support_cases WHERE id=$1", [created])
+      )[0];
+      assert.equal(row.custom_project_id, project);
+      assert.equal(row.project_category, "WEBSITE_CONTENT");
+      assert.equal(
+        (await service.supportProjectContext(row)).name,
+        "Pilot law",
+      );
+      assert.equal(
+        await service.supportProjectContext({ ...row, organization_id: other }),
+        null,
+      );
+      await q("DELETE FROM support_cases WHERE id=$1", [created]);
+      await q("DELETE FROM support_rate_limits");
+    },
+  );
   let caseId;
   await t.test(
     "AI cases stay private until handoff; assignment is exclusive and customer scope is enforced",

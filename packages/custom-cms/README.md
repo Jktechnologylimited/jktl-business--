@@ -14,3 +14,12 @@ Server-only, dependency-free integration contract for independent Next.js applic
 A law firm's service pages, school announcements and music events can share this authentication/publishing infrastructure while keeping separate models and permissions. Add media upload validation/auditing within each site's existing storage policy. Embedded CMS requires a separately reviewed frame/CSP/CSRF design; the initial adapter opens the authenticated site CMS directly.
 
 No live client website, including K.K. Ubani & Co., has been integrated merely by installing the central portal. The repository and a permitted pilot identity are required for that rollout.
+
+
+## Current authorization and scoped fields
+
+Declare explicit content scopes and approved field identifiers in Admin → Custom Projects. New integrations default to read-only; changing callback, fields or scopes clears the operator's CMS-test confirmation. Exchange returns only the intersection of issued and current scopes.
+
+Before **each** site editor read/save/publish operation call `validateJktlSession({identity, projectId, apiKey})` server-side. It contacts the fixed Business issuer and checks current project/client/owner membership and scopes. Use the returned narrowed scope, never only a cached cookie's permissions. Failure or timeout must deny editing. Then enforce your site's own resource schema, organization binding, CSRF protections, audit and conditional storage writes. Never map these scopes to general admin, ticketing, school or finance roles. Public website rendering should not depend on Business availability.
+
+The K.K. Ubani pilot uses a five-minute signed HttpOnly site session, exactly four homepage text fields and private conditional Blob writes. It remains independently deployed; see that repository's `docs/JKTL_CUSTOM_PILOT.md`. No customer database credential belongs in Business.

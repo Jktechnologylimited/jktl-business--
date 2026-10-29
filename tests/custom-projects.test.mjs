@@ -52,7 +52,7 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
   const db = new PGlite();
   const q = async (s, a = []) => (await db.query(s, a)).rows;
   await db.exec(
-    `CREATE TABLE organizations(id uuid PRIMARY KEY,name text);CREATE TABLE users(id uuid PRIMARY KEY,email text,name text,password_hash text);CREATE TABLE organization_members(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),organization_id uuid,user_id uuid,role text,active boolean,email text);CREATE TABLE domain_assets(id uuid PRIMARY KEY,organization_id uuid);CREATE TABLE domain_rate_limits(bucket text PRIMARY KEY,hits integer,expires_at timestamptz);INSERT INTO organizations VALUES('${org}','Pilot Law'),('${other}','Other client');INSERT INTO users VALUES('${user}','owner@example.test','Owner','unusable-random-password');INSERT INTO organization_members(organization_id,user_id,role,active,email) VALUES('${org}','${user}','owner',true,'owner@example.test');`,
+    `CREATE TABLE organizations(id uuid PRIMARY KEY,name text);CREATE TABLE users(id uuid PRIMARY KEY,email text,name text,password_hash text);CREATE TABLE organization_members(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),organization_id uuid,user_id uuid,role text,active boolean,email text);CREATE TABLE domain_assets(id uuid PRIMARY KEY,organization_id uuid,domain text,expires_at timestamptz,connection_status text);CREATE TABLE email_services(id uuid PRIMARY KEY,organization_id uuid,domain text,status text,renews_at timestamptz,plan_name text,UNIQUE(id,organization_id));CREATE TABLE support_cases(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),organization_id uuid,updated_at timestamptz DEFAULT now());CREATE TABLE domain_rate_limits(bucket text PRIMARY KEY,hits integer,expires_at timestamptz);INSERT INTO organizations VALUES('${org}','Pilot Law'),('${other}','Other client');INSERT INTO users VALUES('${user}','owner@example.test','Owner','unusable-random-password');INSERT INTO organization_members(organization_id,user_id,role,active,email) VALUES('${org}','${user}','owner',true,'owner@example.test');`,
   );
   await db.exec(
     readFileSync(
@@ -64,6 +64,15 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
   await db.exec(
     "ALTER TABLE custom_projects ADD COLUMN billing_only boolean NOT NULL DEFAULT false",
   );
+  const integrationMigration = readFileSync(
+    new URL(
+      "../migrations/062_custom_client_integrations.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  await db.exec(integrationMigration);
+  await db.exec(integrationMigration);
   const sql = Object.assign(
     (strings, ...values) =>
       q(
@@ -107,6 +116,7 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
   const rate = load("../src/lib/domains/store.ts", {
     "./model": load("../src/lib/domains/model.ts", {}),
   }).rateLimit;
+  const supportCalls = [];
   const actions = load("../src/lib/actions/custom-project-actions.ts", {
     "@/lib/admin-session": {
       requireAdminCapability: async (cap) => {
@@ -133,6 +143,25 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
       sendCustomInvitationEmail: async (p) => {
         sent.push(p);
         return { ok: sendOk };
+      },
+    },
+    "next/server": { after: () => {} },
+    "@/lib/support/notifications": {
+      processSupportNotifications: async () => {},
+    },
+    "@/lib/support/service": {
+      createCase: async (input) => {
+        if (
+          !(
+            await q(
+              "SELECT id FROM custom_projects WHERE id=$1 AND organization_id=$2",
+              [input.customProjectId, session.organizationId],
+            )
+          ).length
+        )
+          throw Error("Forbidden");
+        supportCalls.push(input);
+        return project.id;
       },
     },
     "@/lib/custom/service": service,
@@ -165,6 +194,16 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
               status: "CONFIGURING",
               description: "Independent law website",
               cmsUrl: "https://law.example/api/jktl/callback",
+              cmsFields: [
+                "heroTitle",
+                "heroDescription",
+                "welcomeTitle",
+                "welcomeSubtitle",
+              ],
+              cmsScopes: ["content:read", "content:write", "content:publish"],
+              deploymentProvider: "Vercel",
+              githubRepositoryRef: "Jktechnologylimited/kkubani-pioneer",
+              internalNotes: "Private support context",
             })
           ).ok,
           true,
@@ -383,6 +422,34 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
         const identity = await service.redeemGrant(code, project.id, key);
         assert.equal(identity.organization_id, org);
         assert.equal(identity.user_id, user);
+        assert.deepEqual(identity.scopes, [
+          "content:read",
+          "content:write",
+          "content:publish",
+        ]);
+        assert.ok(await service.validateCmsSession(project.id, key, user, org));
+        assert.equal(
+          await service.validateCmsSession(project.id, key, user, other),
+          null,
+        );
+        await q(
+          "UPDATE custom_projects SET cms_scopes=ARRAY['content:read'] WHERE id=$1",
+          [project.id],
+        );
+        assert.deepEqual(
+          (await service.validateCmsSession(project.id, key, user, org))
+            .cms_scopes,
+          ["content:read"],
+        );
+        await db.exec(integrationMigration);
+        assert.deepEqual(
+          (await q("SELECT cms_scopes FROM custom_projects"))[0].cms_scopes,
+          ["content:read"],
+        );
+        const visible = (await actions.customWorkspaceAction()).data
+          .projects[0];
+        assert.equal(visible.internal_notes, undefined);
+        assert.equal(visible.github_repository_ref, undefined);
         assert.equal(await service.redeemGrant(code, project.id, key), null);
         const expired = await actions.openCustomCmsAction(project.id);
         const c = new URL(expired.data.url).searchParams.get("jktl_code");
@@ -434,7 +501,16 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
           false,
         );
         role = "owner";
-        const req = (await q("SELECT * FROM custom_requests"))[0];
+        assert.equal(supportCalls.length, 1);
+        assert.equal(supportCalls[0].projectCategory, "WEBSITE_CONTENT");
+        assert.equal((await q("SELECT * FROM custom_requests")).length, 0);
+        // Existing request history remains usable; new requests use the shared inbox.
+        const req = (
+          await q(
+            "INSERT INTO custom_requests(organization_id,project_id,kind,message) VALUES($1,$2,'CONTENT','Historical request') RETURNING *",
+            [org, project.id],
+          )
+        )[0];
         assert.equal(
           (
             await actions.replyCustomRequestAction(

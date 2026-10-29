@@ -33,7 +33,12 @@ export async function POST(request: Request) {
         organizationId: result.organization_id,
         email: result.email,
         name: result.name,
-        scope: ["content:read", "content:write", "content:publish"],
+        scope:
+          Array.isArray(result.scopes) && Array.isArray(result.current_scopes)
+            ? result.scopes.filter((v: string) =>
+                result.current_scopes.includes(v),
+              )
+            : [],
         expiresIn: 300,
       },
       { headers },

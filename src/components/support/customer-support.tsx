@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import { PROJECT_CATEGORY_LABELS } from "@/lib/custom/contracts";
 import * as support from "@/lib/actions/support-actions";
 import * as reviews from "@/lib/actions/review-actions";
 import { HELP_GUIDES } from "@/lib/support/knowledge";
@@ -10,9 +11,16 @@ export function CustomerSupport() {
   const permissionDirty = useRef(false);
   const mode = useBusinessStore((s) => s.mode);
   const params = useSearchParams();
+  const [projects, setProjects] = useState<Row[]>([]);
+  const [project, setProject] = useState(params.get("project") || "");
+  const [category, setCategory] = useState("WEBSITE_CONTENT");
   const [caseId, setCaseId] = useState(params.get("case") || ""),
     [cases, setCases] = useState<Row[]>([]),
-    [data, setData] = useState<{ case: Row; messages: Row[] } | null>(null),
+    [data, setData] = useState<{
+      case: Row;
+      messages: Row[];
+      project?: Row | null;
+    } | null>(null),
     [subject, setSubject] = useState(""),
     [body, setBody] = useState(""),
     [busy, setBusy] = useState(false),
@@ -29,6 +37,7 @@ export function CustomerSupport() {
     try {
       const home = await support.supportHomeAction();
       setCases(home.cases);
+      setProjects(home.projects);
       if (caseId) {
         const d = await support.supportCaseAction(caseId);
         setData(d);
@@ -158,6 +167,8 @@ export function CustomerSupport() {
                   const r = await support.createSupportCaseAction({
                     subject,
                     message: body,
+                    customProjectId: project || undefined,
+                    projectCategory: project ? category : undefined,
                   });
                   if (!r.ok) throw Error(r.error);
                   setCaseId(r.id!);
@@ -165,6 +176,41 @@ export function CustomerSupport() {
                 });
               }}
             >
+              {projects.length > 0 && (
+                <label className="block text-sm">
+                  Related project
+                  <select
+                    className="mt-2 w-full rounded-xl border border-border bg-paper p-3"
+                    value={project}
+                    onChange={(e) => setProject(e.target.value)}
+                  >
+                    <option value="">General account support</option>
+                    {projects.map((p) => (
+                      <option key={String(p.id)} value={String(p.id)}>
+                        {String(p.name)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {project && (
+                <label className="block text-sm">
+                  Category
+                  <select
+                    className="mt-2 w-full rounded-xl border border-border bg-paper p-3"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    {Object.entries(PROJECT_CATEGORY_LABELS).map(
+                      ([id, label]) => (
+                        <option key={id} value={id}>
+                          {label}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+              )}
               <label className="block text-sm">
                 What do you need help with?
                 <input
@@ -198,6 +244,12 @@ export function CustomerSupport() {
               <h2 className="text-xl font-semibold">
                 {String(data.case.subject)}
               </h2>
+              {data.project && (
+                <p className="my-3 text-sm">
+                  Project: {String(data.project.name)} ·{" "}
+                  {String(data.case.project_category || "")}
+                </p>
+              )}
               <p className="my-3 text-sm text-ink-muted">
                 {data.case.status === "AI"
                   ? "Guide assistant"

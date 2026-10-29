@@ -11,6 +11,7 @@ import {
   answerCase,
   handoff,
   createCase,
+  supportProjectContext,
 } from "@/lib/support/service";
 import { requireAdminCapability } from "@/lib/admin-session";
 import {
@@ -32,6 +33,10 @@ import { processSupportNotifications } from "@/lib/support/notifications";
 export async function supportHomeAction() {
   const s = await member();
   return {
+    projects: await query(
+      "SELECT id,name FROM custom_projects WHERE organization_id=$1 AND billing_only=false ORDER BY name",
+      [s.organizationId],
+    ),
     cases: await query(
       "SELECT id,subject,status,updated_at FROM support_cases WHERE organization_id=$1 AND requester_id=$2 ORDER BY updated_at DESC LIMIT 30",
       [s.organizationId, s.userId],
@@ -42,6 +47,7 @@ export async function supportCaseAction(caseId: string) {
   const { c } = await customerCase(caseId);
   return {
     case: c,
+    project: await supportProjectContext(c),
     messages: await query(
       "SELECT * FROM(SELECT id,sender,body,guide_ids,created_at FROM support_messages WHERE case_id=$1 ORDER BY created_at DESC,id DESC LIMIT 120) recent ORDER BY created_at,id",
       [c.id],
@@ -51,6 +57,8 @@ export async function supportCaseAction(caseId: string) {
 export async function createSupportCaseAction(input: {
   subject: string;
   message: string;
+  customProjectId?: string;
+  projectCategory?: string;
 }) {
   try {
     const caseId = await createCase(input);
@@ -134,6 +142,7 @@ export async function staffSupportCaseAction(caseId: string) {
     new Date(String(c.consent_until)) > new Date();
   return {
     case: c,
+    project: await supportProjectContext(c),
     messages: await query(
       "SELECT * FROM(SELECT id,sender,body,guide_ids,created_at FROM support_messages WHERE case_id=$1 ORDER BY created_at DESC,id DESC LIMIT 120) recent ORDER BY created_at,id",
       [c.id],
