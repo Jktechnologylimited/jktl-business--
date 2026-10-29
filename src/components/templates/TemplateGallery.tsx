@@ -2,6 +2,7 @@
 import { T, useLanguage } from "@/components/i18n/LanguageProvider";
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import {
   websiteTemplates,
@@ -33,6 +34,7 @@ export function TemplateGallery({
   initialType?: "all" | "website" | "landing" | "blank";
 }) {
   const { t } = useLanguage();
+  const reducedMotion = useReducedMotion();
   const [type, setType] = useState(initialType),
     [limit, setLimit] = useState(24),
     [search, setSearch] = useState(""),
@@ -105,7 +107,7 @@ export function TemplateGallery({
         </Heading>
         <p>
           <T>
-            Explore 200 website and landing-page designs, plus blank starting
+            Explore website and landing-page designs, plus blank starting
             points. Find your favourite and make it yours.
           </T>
         </p>
@@ -247,10 +249,18 @@ export function TemplateGallery({
       </div>
       <div className={styles.grid}>
         {filtered.slice(0, limit).map((template) => (
-          <article key={template.id} className={styles.card}>
+          <motion.article
+            key={template.id}
+            className={styles.card}
+            initial={false}
+            whileHover={reducedMotion ? undefined : { y: -6 }}
+            transition={{ duration: reducedMotion ? 0 : 0.25, ease: "easeOut" }}
+          >
             <div className={styles.preview}>
               <Link
                 href={`/templates/${template.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label={`View ${template.name} template`}
                 className={styles.thumbnail}
               >
@@ -283,6 +293,8 @@ export function TemplateGallery({
                 </Link>
                 <Link
                   href={`/templates/${template.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={styles.view}
                   aria-label={`Preview ${template.name} template`}
                 >
@@ -316,7 +328,7 @@ export function TemplateGallery({
                 </T>
               </span>
             </div>
-          </article>
+          </motion.article>
         ))}
       </div>
       {filtered.length > limit && (
@@ -387,7 +399,11 @@ export function TemplateGallery({
               </T>
             </p>
             <div className={styles.dialogActions}>
-              <Link href={`/templates/${info.id}`}>
+              <Link
+                href={`/templates/${info.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <T>View template</T>
               </Link>
               <Link href={editPath(info.id)}>

@@ -38,11 +38,11 @@ const { BeautyWebsite } = loadTs(
     },
   },
 );
-test("all 200 industry templates plus blanks have complete, valid, independent documents", () => {
+test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 202);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 200);
-  assert.equal(new Set(all.map((t) => t.id)).size, 202);
+  assert.equal(all.length, 203);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 201);
+  assert.equal(new Set(all.map((t) => t.id)).size, 203);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -584,4 +584,33 @@ test("template-based public sites retain actual booking, product and chat compon
   );
   assert.ok(preview.includes('data-existing-booking-mode="preview"'));
   assert.ok(!preview.includes("data-existing-scripted-chat"));
+});
+
+test("beauty atelier is editable, keeps its design through parsing and renders its own homepage and service routes", () => {
+  const template = catalogue.getWebsiteTemplate("beauty-atelier");
+  assert.equal(template.document.beauty.design, "atelier");
+  const draft = catalogue.parseWebsiteDocument(
+    catalogue.templateDraft(template.id, "My Beauty Studio"),
+  );
+  assert.equal(draft.beauty.design, "atelier");
+  assert.equal(draft.brandName, "My Beauty Studio");
+  const html = renderToStaticMarkup(
+    createElement(BeautyWebsite, { document: draft }),
+  );
+  for (const text of [
+    "Our signature edit",
+    "The artists behind the details",
+    "My Beauty Studio",
+    "EDITABLE DEMO TESTIMONIAL",
+  ])
+    assert.ok(html.includes(text));
+  assert.ok(html.includes("/services/skin-ritual"));
+  const service = renderToStaticMarkup(
+    createElement(BeautyWebsite, {
+      document: draft,
+      pagePath: "services/skin-ritual",
+    }),
+  );
+  assert.ok(service.includes("The skin ritual"));
+  assert.ok(service.includes("/book?service=skin-ritual"));
 });

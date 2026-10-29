@@ -13,6 +13,7 @@ export type TemplateLayout =
   | "minimal"
   | "studio";
 export type BeautyContent = {
+  design?: "atelier";
   version: 2;
   demoContent: boolean;
   aboutImage: string;
@@ -1333,6 +1334,202 @@ for (const [id, name, layout] of [
     document: doc,
   });
 }
+// An additional original beauty-studio design. Existing IDs and saved drafts stay intact.
+const skinDocument = JSON.parse(
+  JSON.stringify(salon.document),
+) as WebsiteDocument;
+Object.assign(skinDocument, {
+  brandName: "Rouge Bloom Studio",
+  eyebrow: "BEAUTY, ON YOUR OWN TERMS",
+  headline: "Where your\nindividuality blooms.",
+  intro:
+    "Personal skin rituals, expressive beauty and a little time just for you. Discover a studio that celebrates the way you are.",
+  ctaLabel: "Book your session",
+  accent: "#b52d28",
+  paper: "#fffefa",
+  ink: "#a92b26",
+  heroImage: "/template-photos/beauty/skin-hero.jpg",
+  seoTitle: "Personal beauty rituals | Rouge Bloom Studio",
+  seoDescription:
+    "Explore personal skin rituals, expressive beauty and considered nail care at Rouge Bloom Studio. Meet the artists and request your next appointment.",
+  aboutTitle: "Your beauty. Your expression.",
+  aboutText:
+    "We believe beauty begins with listening. Your preferences, your routine and the way you want to feel guide every visit.\n\nOur independent studio brings a gentle approach and a creative eye to skin, makeup and nail care. We explain each step and make space for your questions.",
+  offeringsTitle: "Our signature edit",
+  offerings: [
+    {
+      slug: "skin-ritual",
+      title: "The skin ritual",
+      category: "Skin care",
+      description:
+        "A gentle cleanse, thoughtful hydration and time to reset. A personal ritual shaped around your skin and comfort.",
+      duration: "60 minutes",
+      price: "From ₦30,000",
+      image: "/template-photos/beauty/skin-care.jpg",
+      benefits: [
+        "A personal consultation",
+        "A gentle, considered routine",
+        "Simple aftercare guidance",
+      ],
+      preparation:
+        "Tell us about sensitivities and products you currently use. Suitability is discussed before treatment.",
+    },
+    {
+      slug: "makeup-artistry",
+      title: "Makeup, your way",
+      category: "Makeup",
+      description:
+        "Soft definition or a bold point of view. An expressive look designed with you, for your moment.",
+      duration: "75 minutes",
+      price: "From ₦40,000",
+      image: "/template-photos/beauty/skin-hero.jpg",
+      benefits: [
+        "A shared creative direction",
+        "A personalised finish",
+        "Time for the details",
+      ],
+      preparation: "Bring inspiration and let us know about any sensitivities.",
+    },
+    {
+      slug: "nail-design",
+      title: "The nail atelier",
+      category: "Nail care",
+      description:
+        "Considered shaping, careful finishing and colour that feels like you. Small details, beautifully done.",
+      duration: "60 minutes",
+      price: "From ₦20,000",
+      image: "/template-photos/beauty/colour.jpg",
+      benefits: [
+        "A shape you love",
+        "Personal colour selection",
+        "Care advice for home",
+      ],
+      preparation:
+        "Tell us about existing products or extensions when requesting your visit.",
+    },
+  ],
+  galleryTitle: "A closer look at our world",
+  gallery: [
+    {
+      src: "/template-photos/beauty/skin-hero.jpg",
+      alt: "A beauty portrait with thoughtful skin care",
+      category: "Beauty",
+    },
+    {
+      src: "/template-photos/beauty/skin-care.jpg",
+      alt: "A relaxing studio skin care ritual",
+      category: "Studio",
+    },
+    {
+      src: "/template-photos/beauty/interior.jpg",
+      alt: "An inviting beauty studio interior",
+      category: "Studio",
+    },
+  ],
+  featureTitle: "The artists behind the details",
+  featureText:
+    "A shared creative spirit. A thoughtful eye. A personal approach that makes every appointment feel like your own.",
+  featureItems: ["Listen first", "Create together", "Care in every detail"],
+  contactTitle: "Make a little space for yourself.",
+  contactText:
+    "Ask us about a service or request a studio visit. We will get in touch to discuss your preferences and confirm availability.",
+  reviews: [
+    {
+      name: "Sample guest",
+      quote:
+        "A warm welcome, thoughtful details and a little time to feel like myself again.",
+      rating: 5,
+    },
+  ],
+});
+skinDocument.beauty = {
+  ...skinDocument.beauty!,
+  design: "atelier",
+  demoContent: true,
+  aboutImage: "/template-photos/beauty/skin-care.jpg",
+  philosophy: [
+    "Listen with care",
+    "Celebrate individuality",
+    "Explain every step",
+  ],
+  stylists: [
+    {
+      name: "Ada Okoro",
+      role: "Skin care artist",
+      bio: "A calm, thoughtful approach to personal skin rituals.",
+      image: "/template-photos/beauty/stylist.jpg",
+    },
+    {
+      name: "Lola Bello",
+      role: "Makeup artist",
+      bio: "Colour, detail and a creative eye for individual expression.",
+      image: "/template-photos/beauty/hero.jpg",
+    },
+    {
+      name: "Zara Obi",
+      role: "Nail artist",
+      bio: "Careful finishing and a love of the smallest details.",
+      image: "/template-photos/beauty/skin-artist.jpg",
+    },
+  ],
+  pages: [
+    {
+      path: "",
+      title: skinDocument.seoTitle!,
+      description: skinDocument.seoDescription!,
+    },
+    {
+      path: "about",
+      title: "Our story | Rouge Bloom Studio",
+      description: skinDocument.aboutText.split("\n\n")[0],
+    },
+    {
+      path: "services",
+      title: "Our services | Rouge Bloom Studio",
+      description: skinDocument.intro,
+    },
+    ...skinDocument.offerings.map((service) => ({
+      path: `services/${service.slug}`,
+      title: `${service.title} | Rouge Bloom Studio`,
+      description: service.description,
+    })),
+    {
+      path: "gallery",
+      title: "Studio gallery | Rouge Bloom Studio",
+      description: skinDocument.intro,
+    },
+    {
+      path: "book",
+      title: "Request a visit | Rouge Bloom Studio",
+      description: skinDocument.contactText,
+    },
+    {
+      path: "contact",
+      title: "Contact | Rouge Bloom Studio",
+      description: skinDocument.contactText,
+    },
+  ],
+};
+websiteTemplates.push({
+  id: "beauty-atelier",
+  name: "Beauty Studio — Rouge Bloom",
+  category: "Beauty & Wellness",
+  layout: "portrait",
+  kind: "website",
+  sourceId: "beauty-atelier",
+  edition: "Atelier",
+  sectionOrder: [
+    "offerings",
+    "reviews",
+    "about",
+    "gallery",
+    "feature",
+    "areas",
+    "faq",
+  ],
+  document: skinDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -1361,9 +1558,11 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
   if (brandName?.trim()) {
     document.brandName = brandName.trim().slice(0, 120);
     document.seoTitle = (
-      document.beauty
-        ? `Hair, with a personal touch | ${document.brandName}`
-        : `${document.brandName} | ${template.name}`
+      document.beauty?.design === "atelier"
+        ? `Personal beauty rituals | ${document.brandName}`
+        : document.beauty
+          ? `Hair, with a personal touch | ${document.brandName}`
+          : `${document.brandName} | ${template.name}`
     ).slice(0, 100);
   }
   return document;
@@ -1606,6 +1805,7 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
       throw Error("Please check salon philosophy.");
     result.beauty = {
       version: 2,
+      ...(b.design === "atelier" ? { design: "atelier" as const } : {}),
       demoContent: b.demoContent,
       aboutImage: image(text(b, "aboutImage", 2000)),
       philosophy: b.philosophy,

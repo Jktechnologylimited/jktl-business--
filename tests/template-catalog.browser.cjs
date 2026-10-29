@@ -82,16 +82,29 @@ const { chromium } = require("playwright");
         .isVisible(),
       false,
     );
-    await gallery.evaluate(el => el.style.width = "720px");
+    await gallery.evaluate((el) => (el.style.width = "720px"));
     const bounds = await gallery.boundingBox();
-    const searchBounds = await page.getByRole("searchbox", { name: "Search website templates" }).boundingBox();
-    assert.ok(searchBounds.x + searchBounds.width <= bounds.x + bounds.width + 1);
-    assert.equal(await cards.first().evaluate(card => getComputedStyle(card.parentElement).gridTemplateColumns.split(" ").length), 2);
-    await gallery.evaluate(el => el.style.removeProperty("width"));
+    const searchBounds = await page
+      .getByRole("searchbox", { name: "Search website templates" })
+      .boundingBox();
+    assert.ok(
+      searchBounds.x + searchBounds.width <= bounds.x + bounds.width + 1,
+    );
+    assert.equal(
+      await cards
+        .first()
+        .evaluate(
+          (card) =>
+            getComputedStyle(card.parentElement).gridTemplateColumns.split(" ")
+              .length,
+        ),
+      2,
+    );
+    await gallery.evaluate((el) => el.style.removeProperty("width"));
     await page
       .getByRole("combobox", { name: "Filter templates by industry" })
       .selectOption("Beauty & Wellness");
-    assert.match(await gallery.getByRole("status").innerText(), /30 templates/);
+    assert.match(await gallery.getByRole("status").innerText(), /31 templates/);
     assert.equal(await cards.count(), 24);
     const firstThree = await cards
       .locator("h2,h3")
@@ -189,19 +202,69 @@ const { chromium } = require("playwright");
         .getByRole("button", { name: "Close template details", exact: true })
         .click();
     }
+    const popupPromise = page.waitForEvent("popup");
     await cards
       .first()
       .getByRole("link", { name: "Preview Law Firm template", exact: true })
       .click();
-    await page.waitForURL(origin + "/templates/law-firm");
-    await page.frameLocator("iframe").locator("h1").first().waitFor();
+    const preview = await popupPromise;
+    await preview.waitForURL(origin + "/templates/law-firm");
+    assert.equal(new URL(page.url()).pathname, "/templates");
+    await preview.frameLocator("iframe").locator("h1").first().waitFor();
     assert.ok(
       (
-        await page
+        await preview
           .getByRole("link", { name: "Select Template" })
           .getAttribute("href")
       ).endsWith("?template=law-firm"),
     );
+    await preview.goto(origin + "/templates/beauty-atelier");
+    await preview
+      .frameLocator("iframe")
+      .getByRole("heading", { name: "Where your individuality blooms." })
+      .waitFor();
+    assert.ok(
+      (
+        await preview
+          .getByRole("link", { name: "Select Template" })
+          .getAttribute("href")
+      ).endsWith("?template=beauty-atelier"),
+    );
+    for (const path of [
+      "",
+      "/about",
+      "/services",
+      "/services/skin-ritual",
+      "/gallery",
+      "/book",
+      "/contact",
+    ]) {
+      const response = await page.request.get(
+        origin + "/template-canvas/beauty-atelier" + path,
+      );
+      assert.equal(response.status(), 200, path);
+      assert.ok((await response.text()).includes("Rouge Bloom Studio"));
+    }
+    for (const width of [1440, 390]) {
+      await preview.setViewportSize({ width, height: 1000 });
+      await preview.goto(origin + "/template-canvas/beauty-atelier");
+      assert.equal(
+        await preview.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        ),
+        false,
+      );
+      const booking = preview
+        .getByRole("link", { name: "Book your session", exact: true })
+        .first();
+      assert.equal(await booking.isVisible(), true);
+      assert.equal(
+        await booking.evaluate(
+          (el) => getComputedStyle(el).color === "rgb(255, 255, 255)",
+        ),
+        false,
+      );
+    }
     assert.deepEqual(errors, []);
     console.log(
       "PASS " +

@@ -11,6 +11,7 @@ function load() {
   const module = { exports: {} };
   const dependencies = {
     react: require("react"),
+    "framer-motion": require("framer-motion"),
     "react/jsx-runtime": require("react/jsx-runtime"),
     "next/link": {
       __esModule: true,
@@ -78,7 +79,8 @@ test("public catalog uses existing preview routes and sign-in only for editing; 
       html.indexOf("Law Firm</") < html.indexOf("Church &amp; Ministry</"),
     );
     assert.match(html, /aria-label="Template information"/);
-    assert.match(html, /202/);
+    assert.match(html, /203/);
+    assert.match(html, /target="_blank" rel="noopener noreferrer"/);
   }
 });
 test("blank filter shows both existing blank starting points and the matched Main catalog uses the same source/styles", (t) => {

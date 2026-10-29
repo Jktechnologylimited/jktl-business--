@@ -27,6 +27,7 @@ export function clearPendingTemplate() {
 export function templateBusinessType(id: string): BusinessType {
   const mapped: Record<string, BusinessType> = {
     "hair-salon": "salon",
+    "beauty-atelier": "salon",
     "med-spa": "aesthetics",
     restaurant: "restaurant",
     photography: "photographer",

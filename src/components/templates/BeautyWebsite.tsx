@@ -51,6 +51,7 @@ export function BeautyWebsite({
   onInteraction?: (kind: "cta" | "contact") => void;
 }) {
   const b = doc.beauty!;
+  const atelier = b.design === "atelier";
   const [menu, setMenu] = useState(false),
     [category, setCategory] = useState("All"),
     [selected, setSelected] = useState(0);
@@ -214,7 +215,7 @@ export function BeautyWebsite({
     <div
       data-layout="portrait"
       data-beauty-version="2"
-      className={styles.site}
+      className={`${styles.site} ${atelier ? styles.atelier : ""}`}
       style={
         {
           "--beauty-accent": doc.accent,
@@ -271,7 +272,74 @@ export function BeautyWebsite({
         </nav>
       </header>
       <main id="salon-content" tabIndex={-1}>
-        {path === "" && (
+        {path === "" && atelier && (
+          <>
+            <section className={styles.atelierHero}>
+              <div>
+                <p className={styles.eyebrow}>{doc.eyebrow}</p>
+                <h1>{doc.headline}</h1>
+                <p>{doc.intro}</p>
+                {book()}
+                <p className={styles.atelierAside}>
+                  A little care. A little colour. Entirely you.
+                </p>
+              </div>
+              {photo(
+                doc.heroImage,
+                "An expressive beauty portrait",
+                undefined,
+                true,
+              )}
+            </section>
+            <section className={`${styles.section} ${styles.atelierServices}`}>
+              <h2>{doc.offeringsTitle}</h2>
+              <p>A personal approach to every detail.</p>
+              {services()}
+            </section>
+            <section
+              className={styles.atelierStories}
+              aria-label="Client stories"
+            >
+              {photo(b.aboutImage, "A personal skin care ritual")}
+              <div>
+                <p className={styles.eyebrow}>
+                  {b.demoContent && !reviews.length
+                    ? "EDITABLE DEMO TESTIMONIAL"
+                    : "CLIENT STORIES"}
+                </p>
+                {stories.slice(0, 3).map((story, i) => (
+                  <blockquote key={i}>
+                    <p aria-label={`${story.rating || 5} out of 5 stars`}>
+                      ★★★★★
+                    </p>
+                    <p>“{story.quote}”</p>
+                    <cite>{story.name}</cite>
+                  </blockquote>
+                ))}
+                {!stories.length && <p>Your clients’ words belong here.</p>}
+              </div>
+            </section>
+            <section className={`${styles.section} ${styles.atelierTeam}`}>
+              <p className={styles.eyebrow}>
+                A CREATIVE SPIRIT. A PERSONAL TOUCH.
+              </p>
+              <h2>{doc.featureTitle}</h2>
+              <p className={styles.atelierStatement}>{doc.featureText}</p>
+              <div className={styles.team}>
+                {b.stylists.map((person, i) => (
+                  <article key={i}>
+                    {photo(person.image, `${person.name}, ${person.role}`)}
+                    <h3>{person.name}</h3>
+                    <p>{person.role}</p>
+                    <p>{person.bio}</p>
+                  </article>
+                ))}
+              </div>
+              {link("about", "Discover our story →", styles.textLink)}
+            </section>
+          </>
+        )}
+        {path === "" && !atelier && (
           <>
             <section className={styles.hero}>
               <div className={styles.heroCopy}>
@@ -378,7 +446,11 @@ export function BeautyWebsite({
                 true,
               )}
               <div>
-                <h2>A thoughtful kind of beauty.</h2>
+                <h2>
+                  {atelier
+                    ? "Care, with a creative spirit."
+                    : "A thoughtful kind of beauty."}
+                </h2>
                 {doc.aboutText.split("\n\n").map((p, i) => (
                   <p key={i}>{p}</p>
                 ))}
@@ -419,7 +491,9 @@ export function BeautyWebsite({
             {title(
               "THE SERVICE EDIT",
               doc.offeringsTitle,
-              "A considered approach to every cut, colour and texture. Explore what feels right for you.",
+              atelier
+                ? doc.intro
+                : "A considered approach to every cut, colour and texture. Explore what feels right for you.",
             )}
             <section className={`${styles.section} ${styles.servicesLayout}`}>
               <aside>
@@ -520,7 +594,9 @@ export function BeautyWebsite({
             {title(
               "THE STUDIO EDIT",
               doc.galleryTitle,
-              "A closer look at texture, colour, shape and the space around them.",
+              atelier
+                ? "A closer look at our approach to beauty, care and individual expression."
+                : "A closer look at texture, colour, shape and the space around them.",
             )}
             <section className={styles.section}>
               <div
