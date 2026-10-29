@@ -2,7 +2,7 @@
 
 ## Implemented central architecture
 
-`035_custom_projects.sql` adds Custom clients, many projects per organization, secure invitations, independent service agreements, invoices, support, short-lived CMS grants, a notification outbox and audit. No production client database URLs or copies of website content are stored centrally. Deployments, content schemas and databases stay with the individual applications. No existing website is migrated/rebuilt by this schema.
+`035_custom_projects.sql` adds Custom clients, many projects per organization, secure invitations, independent service agreements, invoices, support, short-lived CMS grants, a notification outbox and audit. No production client database URLs are collected centrally. Deployments and content schemas stay with individual applications. Opted-in sites without a CMS can use tenant-bound Business PostgreSQL content/media storage through authenticated server APIs (migration 063). No existing website is migrated/rebuilt by this schema.
 
 Business owner: `/business/custom`. JKTL owner admin: `/admin/custom-projects`. Other admin roles and business staff cannot use these actions. Main: `/products/custom-websites` (JKTL Custom), `/products/managed-services`. Existing template plans are unchanged.
 
@@ -32,7 +32,7 @@ Only content read/write/publish scopes are offered. No universal school, finance
 
 ## Environment and rollout checks
 
-Existing Business DATABASE_URL, Paystack secret/webhook, Resend sender/key, NEXT_PUBLIC_APP_URL and CRON_SECRET are reused. Migration 035 follows 034 and is included in deployment prebuild; run `npm run db:migrate` where appropriate. Back up normal business data. No website database secret is needed centrally. Website adapter secrets are documented above, not browser variables.
+Existing Business DATABASE_URL, Paystack secret/webhook, Resend sender/key, NEXT_PUBLIC_APP_URL and CRON_SECRET are reused. Migration 035 follows 034 and is included in deployment prebuild; run `npm run db:migrate` where appropriate. Back up normal business data. No website database secret is needed centrally. Website adapter secrets are documented above, not browser variables. Managed CMS storage uses the existing Business DATABASE_URL; independent websites do not receive that database credential.
 
 `node tests/custom-projects.test.mjs` runs actual migration/SQL against PGlite: readiness gating, invitation hashing/expiry/use and existing account preservation, accepted price snapshots, no implicit charging, exact payment verification/idempotence, tenant/admin boundaries, CMS key rotation/grant expiry/replay and durable notification retries. Provider/email calls are mocked. This does not verify a live client CMS, production mail, or real Paystack collection.
 
