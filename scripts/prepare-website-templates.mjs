@@ -45,6 +45,7 @@ if (!url) {
       "061_email_promotional_footer.sql",
       "062_custom_client_integrations.sql",
       "063_custom_site_content.sql",
+      "064_managed_client_editor.sql",
     ].map((name) =>
       readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
     ),

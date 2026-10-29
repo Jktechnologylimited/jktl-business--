@@ -73,6 +73,12 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
   );
   await db.exec(integrationMigration);
   await db.exec(integrationMigration);
+  await db.exec(
+    readFileSync(
+      new URL("../migrations/064_managed_client_editor.sql", import.meta.url),
+      "utf8",
+    ),
+  );
   const sql = Object.assign(
     (strings, ...values) =>
       q(
@@ -462,6 +468,15 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
         assert.equal((await actions.openCustomCmsAction(project.id)).ok, false);
       },
     );
+    await t.test("managed projects open inside Business without an integration key or new grant",async()=>{
+      const before=(await q("SELECT count(*)::int AS n FROM custom_cms_grants"))[0].n;
+      await q("UPDATE custom_projects SET managed_cms=true,cms_key_hash='' WHERE id=$1",[project.id]);
+      const opened=await actions.openCustomCmsAction(project.id);
+      assert.equal(opened.ok,true);
+      assert.equal(opened.data.url,`/business/custom/${project.id}/edit`);
+      assert.equal((await q("SELECT count(*)::int AS n FROM custom_cms_grants"))[0].n,before);
+      await q("UPDATE custom_projects SET managed_cms=false WHERE id=$1",[project.id]);
+    });
     await t.test(
       "tenant data, support and admin role permissions remain isolated",
       async () => {

@@ -14,7 +14,7 @@ Business owner: `/business/custom`. JKTL owner admin: `/admin/custom-projects`. 
 4. Test using a permitted pilot account. Mark a project LIVE and confirm the configured pilot ready before sending **one individual invitation**. Invitations are hashed at rest, expire after 48 hours, invalidate prior links, and work once. Failed email attempts are invalidated and can be resent within rate limits. New clients set a 12+ character password; existing clients must sign in to the invited account and keep their password. Activation verifies email possession. Existing owners do not receive a reusable password-reset takeover link.
 5. Sign in through `/login?next=custom`, review projects, service proposals and support. Existing CMS and analytics links are enabled only if configured; unintegrated CMS access remains disabled. No fake “13 connected” counter or sample client is seeded.
 
-The K.K. Ubani and Co pilot adapter is implemented in its independent repository; approved owner: info@kkubaniandco.com. It is **not connected automatically**: secure storage/environment configuration and live verification remain required. See [the integration audit](JKTL_CUSTOM_INTEGRATION_AUDIT.md). Do not send the rest of the customer invitations until this pilot is verified.
+The K.K. Ubani and Co pilot uses the managed editor inside Business; approved owner: info@kkubaniandco.com. Its existing project and 538-field manifest are configured. No new website secrets are needed; owner invitation/activation and deployed publication checks remain required. See [the integration audit](JKTL_CUSTOM_INTEGRATION_AUDIT.md). Do not send the rest of the customer invitations until this pilot is verified.
 
 ## Custom billing
 
@@ -39,3 +39,8 @@ Existing Business DATABASE_URL, Paystack secret/webhook, Resend sender/key, NEXT
 Further rollout is project-by-project: connect the permitted pilot repository, test real CMS permissions/publication, then configure each remaining client and send individual invitations. Publish only approved case studies and testimonials; none are fabricated or auto-published by this change.
 
 Migration 062 adds deployment metadata, private notes, linked email service, explicit CMS fields/scopes, invitation event timestamps and project context in the existing support inbox. New support requests use `/business/help`; previous custom-request history is preserved. See [the integration audit](JKTL_CUSTOM_INTEGRATION_AUDIT.md) for individual repository boundaries and rollout checks.
+
+
+## Managed editor using the existing Business environment
+
+Migration 064 enables an opt-in Business editor with project-specific field manifests. It uses the normal Business session, exact activated owner and per-operation CMS scopes. The approved pilot requires no client API key, separate site session, database credential or additional private environment variables. Public managed-site endpoints expose only published website content/images; drafts and writes remain protected by Business authentication. Existing external-CMS grant/key integrations remain available for sites that reuse their own CMS. See JKTL_CUSTOM_INTEGRATION_AUDIT.md for current rollout status.

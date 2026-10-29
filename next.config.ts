@@ -7,6 +7,7 @@ const localFrames = (process.env.GAME_LOCAL_FRAME_ORIGINS || "")
   );
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: { serverActions: { bodySizeLimit: "4mb" } },
   async headers() {
     return [
       {
@@ -16,7 +17,16 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         ],
       },
-      ...["/business/:path*", "/admin/:path*", "/affiliates/:path*", "/partners/:path*", "/login", "/signup", "/forgot-password", "/reset-password"].map(source => ({
+      ...[
+        "/business/:path*",
+        "/admin/:path*",
+        "/affiliates/:path*",
+        "/partners/:path*",
+        "/login",
+        "/signup",
+        "/forgot-password",
+        "/reset-password",
+      ].map((source) => ({
         source,
         headers: [
           { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },

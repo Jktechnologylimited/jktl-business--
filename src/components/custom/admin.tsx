@@ -1,4 +1,5 @@
 "use client";
+import { ManagedCmsConfig } from "./managed-config";
 import { useState } from "react";
 import * as actions from "@/lib/actions/custom-project-actions";
 import styles from "@/components/domains/domains.module.css";
@@ -226,31 +227,39 @@ export function CustomAdmin({ initial }: { initial: Data }) {
                 <p className="my-3 break-all text-xs">
                   Integration project ID: {String(p.id)}
                 </p>
+                <ManagedCmsConfig projectId={String(p.id)} />
                 <p>
-                  CMS: {p.cms_tested_at ? "Pilot confirmed" : "Not enabled"}
+                  CMS:{" "}
+                  {p.managed_cms
+                    ? "Business editor"
+                    : p.cms_tested_at
+                      ? "Pilot confirmed"
+                      : "Not enabled"}
                 </p>
-                <div className={styles.links}>
-                  <button
-                    disabled={busy || !p.cms_url}
-                    onClick={() =>
-                      run(() =>
-                        actions.configureCustomCmsAction(String(p.id), false),
-                      )
-                    }
-                  >
-                    Generate / rotate integration key
-                  </button>
-                  <button
-                    disabled={busy || !p.cms_url}
-                    onClick={() =>
-                      run(() =>
-                        actions.configureCustomCmsAction(String(p.id), true),
-                      )
-                    }
-                  >
-                    Confirm CMS pilot tested
-                  </button>
-                </div>
+                {!p.managed_cms && (
+                  <div className={styles.links}>
+                    <button
+                      disabled={busy || !p.cms_url}
+                      onClick={() =>
+                        run(() =>
+                          actions.configureCustomCmsAction(String(p.id), false),
+                        )
+                      }
+                    >
+                      Generate / rotate integration key
+                    </button>
+                    <button
+                      disabled={busy || !p.cms_url}
+                      onClick={() =>
+                        run(() =>
+                          actions.configureCustomCmsAction(String(p.id), true),
+                        )
+                      }
+                    >
+                      Confirm CMS pilot tested
+                    </button>
+                  </div>
+                )}
               </section>
             ))}
           </>

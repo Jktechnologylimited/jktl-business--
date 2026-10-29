@@ -47,7 +47,7 @@ export async function customWorkspaceAction() {
     const [projects, services, invoices, requests, clients] = await Promise.all(
       [
         query(
-          `SELECT p.id,p.name,p.website_url,p.status,p.cms_tested_at,p.cms_fields,p.cms_scopes,p.analytics_url,p.domain_asset_id,p.description,p.revision,p.maintenance_agreement,
+          `SELECT p.id,p.name,p.website_url,p.status,p.cms_tested_at,p.cms_fields,p.cms_scopes,p.managed_cms,p.analytics_url,p.domain_asset_id,p.description,p.revision,p.maintenance_agreement,
  d.domain,d.expires_at AS domain_expires_at,d.connection_status AS domain_status,e.domain AS email_domain,e.status AS email_status,e.renews_at AS email_renews_at,e.plan_name AS email_plan
  FROM custom_projects p LEFT JOIN domain_assets d ON d.id=p.domain_asset_id AND d.organization_id=p.organization_id LEFT JOIN email_services e ON e.id=p.email_service_id AND e.organization_id=p.organization_id WHERE p.organization_id=$1 AND p.billing_only=false ORDER BY p.created_at`,
           [s.organizationId],
@@ -100,7 +100,7 @@ export async function customAdminAction() {
         "SELECT c.*,o.name,u.email,u.name AS owner_name FROM custom_clients c JOIN organizations o ON o.id=c.organization_id JOIN users u ON u.id=c.user_id ORDER BY c.created_at DESC",
       ),
       query(
-        "SELECT id,organization_id,name,website_url,status,cms_url,cms_tested_at,analytics_url,description,revision,domain_asset_id,deployment_provider,vercel_project_ref,github_repository_ref,internal_notes,maintenance_agreement,email_service_id,cms_fields,cms_scopes FROM custom_projects ORDER BY created_at DESC",
+        "SELECT id,organization_id,name,website_url,status,cms_url,cms_tested_at,analytics_url,description,revision,domain_asset_id,deployment_provider,vercel_project_ref,github_repository_ref,internal_notes,maintenance_agreement,email_service_id,cms_fields,cms_scopes,managed_cms FROM custom_projects ORDER BY created_at DESC",
       ),
       query("SELECT * FROM custom_services ORDER BY created_at DESC"),
       query("SELECT * FROM custom_invoices ORDER BY created_at DESC LIMIT 150"),
@@ -664,7 +664,7 @@ export async function openCustomCmsAction(projectId: string) {
     await rateLimit(query, s.organizationId, "custom-cms", 20, 60);
     const p = (
       await query(
-        `SELECT p.* FROM custom_projects p JOIN custom_clients c ON c.organization_id=p.organization_id WHERE p.id=$1 AND p.organization_id=$2 AND p.status='LIVE' AND p.cms_tested_at IS NOT NULL AND p.cms_key_hash<>'' AND c.pilot_ready=true AND c.activated_at IS NOT NULL AND c.user_id=$3`,
+        `SELECT p.* FROM custom_projects p JOIN custom_clients c ON c.organization_id=p.organization_id WHERE p.id=$1 AND p.organization_id=$2 AND p.status='LIVE' AND (p.managed_cms=true OR (p.cms_tested_at IS NOT NULL AND p.cms_key_hash<>'')) AND c.pilot_ready=true AND c.activated_at IS NOT NULL AND c.user_id=$3`,
         [id(projectId), s.organizationId, s.userId],
       )
     )[0];
@@ -672,6 +672,11 @@ export async function openCustomCmsAction(projectId: string) {
       throw Error(
         "This CMS integration is not ready. Request a content update through Support.",
       );
+    if (p.managed_cms)
+      return {
+        ok: true as const,
+        data: { url: `/business/custom/${String(p.id)}/edit` },
+      };
     const raw = token();
     await query(
       "INSERT INTO custom_cms_grants(token_hash,project_id,organization_id,user_id,expires_at,scopes) VALUES($1,$2,$3,$4,now()+interval '90 seconds',$5::text[])",

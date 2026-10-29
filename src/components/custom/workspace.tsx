@@ -143,7 +143,9 @@ export function CustomWorkspace() {
                       <div className={styles.links}>
                         <button
                           disabled={
-                            busy || !p.cms_tested_at || p.status !== "LIVE"
+                            busy ||
+                            (!p.managed_cms && !p.cms_tested_at) ||
+                            p.status !== "LIVE"
                           }
                           onClick={() =>
                             run(() => openCustomCmsAction(String(p.id)), true)
@@ -170,7 +172,7 @@ export function CustomWorkspace() {
                           Project support
                         </Link>
                       </div>
-                      {Boolean(p.cms_tested_at) && (
+                      {Boolean(p.managed_cms || p.cms_tested_at) && (
                         <div className="my-3 text-sm">
                           <p>Available editing capabilities:</p>
                           <ul>
