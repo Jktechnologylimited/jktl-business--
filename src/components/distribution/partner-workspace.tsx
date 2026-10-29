@@ -333,7 +333,11 @@ export function PartnerWorkspace({
                       templateId={template}
                       document={JSON.stringify(doc)}
                     />
-                    <WebsiteFields value={doc} onChange={setDoc} />
+                    <WebsiteFields
+                      value={doc}
+                      onChange={setDoc}
+                      templateId={template}
+                    />
                     <div className="mt-5 flex flex-wrap gap-3">
                       <button
                         disabled={busy}

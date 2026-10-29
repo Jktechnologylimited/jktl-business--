@@ -18,6 +18,7 @@ import {
 import { useBusinessStore } from "@/lib/store";
 import { saveWebsiteTemplateAction } from "@/lib/actions/website-template-actions";
 import type { BusinessProfile } from "@/lib/types";
+import { BeautyFields } from "./BeautyFields";
 import { TemplateCanvas } from "./TemplateCanvas";
 export function TemplateEditor({
   initialProfile,
@@ -817,6 +818,31 @@ export function TemplateEditor({
                   : "Save website draft"
                 : "Save demo website"}
           </button>
+          {content.beauty && (
+            <BeautyFields value={content} onChange={setContent} />
+          )}
+          {template.id === "hair-salon" && !content.beauty && (
+            <div className="space-y-3 rounded-xl border border-border p-4">
+              <p className="text-sm">
+                Your saved salon design is preserved. Preview the updated
+                multipage design while keeping your text, photos and services.
+                New sample sections are editable. Nothing changes on your live
+                website until you save.
+              </p>
+              <button
+                type="button"
+                className="rounded-lg border border-border p-3"
+                onClick={() =>
+                  setContent((current) => ({
+                    ...current,
+                    beauty: templateDraft("hair-salon").beauty,
+                  }))
+                }
+              >
+                Preview updated salon design
+              </button>
+            </div>
+          )}
         </div>
         <section className="min-w-0">
           <div className="xl:sticky xl:top-5">

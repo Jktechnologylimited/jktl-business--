@@ -12,6 +12,7 @@ import {
   type WebsiteDocument,
 } from "@/lib/website-templates";
 import styles from "./TemplateWebsite.module.css";
+import { BeautyWebsite, type BeautyRequest } from "./BeautyWebsite";
 export type TemplateContact = {
   email?: string;
   phone?: string;
@@ -23,7 +24,7 @@ export type TemplateContact = {
   facebookUrl?: string;
   tiktokUrl?: string;
 };
-export function TemplateWebsite({
+function LegacyTemplateWebsite({
   template,
   document: doc,
   contact = {},
@@ -479,4 +480,19 @@ export function TemplateWebsite({
       </footer>
     </div>
   );
+}
+
+export function TemplateWebsite(
+  props: Parameters<typeof LegacyTemplateWebsite>[0] & {
+    pagePath?: string;
+    basePath?: string;
+    initialService?: string;
+    onNavigate?: (path: string) => void;
+    onRequest?: (
+      input: BeautyRequest,
+    ) => Promise<{ ok: boolean; error?: string }>;
+  },
+) {
+  if (props.document.beauty?.version === 2) return <BeautyWebsite {...props} />;
+  return <LegacyTemplateWebsite {...props} />;
 }

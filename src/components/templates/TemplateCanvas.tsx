@@ -19,6 +19,7 @@ export function TemplateCanvas({
   readOnly?: boolean;
   title?: string;
 }) {
+  const [pagePath, setPagePath] = useState("");
   const [mount, setMount] = useState<HTMLElement | null>(null);
   const prepareDocument = useCallback((target: Document) => {
     // Use the same styles and portal renderer as the existing editor. Copy
@@ -74,12 +75,18 @@ export function TemplateCanvas({
         >
           {mount &&
             createPortal(
-              <div className="jktl-light" inert={readOnly || undefined}>
+              <div
+                className="jktl-light"
+                inert={(readOnly && !content.beauty) || undefined}
+              >
                 <TemplateWebsite
                   template={template}
                   document={content}
                   contact={contact}
                   preview
+                  basePath={`/template-canvas/${template.id}`}
+                  pagePath={pagePath}
+                  onNavigate={setPagePath}
                 />
               </div>,
               mount,

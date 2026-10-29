@@ -27,6 +27,17 @@ function loadTs(path, dependencies) {
   }, exports);
   return exports;
 }
+const { BeautyWebsite } = loadTs(
+  "../src/components/templates/BeautyWebsite.tsx",
+  {
+    react: require("react"),
+    "react/jsx-runtime": require("react/jsx-runtime"),
+    "@/lib/website-templates": catalogue,
+    "./BeautyWebsite.module.css": {
+      default: new Proxy({}, { get: (_, key) => String(key) }),
+    },
+  },
+);
 test("all 200 industry templates plus blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
   assert.equal(all.length, 202);
@@ -67,7 +78,10 @@ test("all 200 industry templates plus blanks have complete, valid, independent d
     );
     assert.ok(
       existsSync(
-        new URL(`../public/template-art/${template.sourceId || template.id}.svg`, import.meta.url),
+        new URL(
+          `../public/template-art/${template.sourceId || template.id}.svg`,
+          import.meta.url,
+        ),
       ),
     );
     const draft = catalogue.templateDraft(template.id, "My own business");
@@ -114,6 +128,7 @@ test("actual full-site renderer renders every template and safely escapes edited
       "@/lib/website-templates": catalogue,
       react: require("react"),
       "react/jsx-runtime": require("react/jsx-runtime"),
+      "./BeautyWebsite": { BeautyWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -128,6 +143,12 @@ test("actual full-site renderer renders every template and safely escapes edited
         preview: true,
       }),
     );
+    if (template.document.beauty) {
+      assert.ok(html.includes('id="salon-content"'));
+      assert.ok(html.includes('href="/about"'));
+      assert.ok(html.includes('href="/services"'));
+      continue;
+    }
     const sections = template.document.blank ? [] : template.sectionOrder;
     for (const id of [
       "home",
@@ -440,6 +461,7 @@ test("template-based public sites retain actual booking, product and chat compon
       "@/lib/website-templates": catalogue,
       react: require("react"),
       "react/jsx-runtime": require("react/jsx-runtime"),
+      "./BeautyWebsite": { BeautyWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -452,8 +474,12 @@ test("template-based public sites retain actual booking, product and chat compon
     {
       react: require("react"),
       "react/jsx-runtime": require("react/jsx-runtime"),
+      "next/navigation": { useRouter: () => ({ push: () => {} }) },
       "framer-motion": { motion: {}, AnimatePresence: empty },
       "lucide-react": require("lucide-react"),
+      "@/lib/actions/public-website-request-actions": {
+        submitBeautyWebsiteRequestAction: async () => ({ ok: false }),
+      },
       "@/components/templates/TemplateWebsite": { TemplateWebsite },
       "@/components/templates/PublishedSiteMetrics": loadTs(
         "../src/components/templates/PublishedSiteMetrics.tsx",
@@ -502,7 +528,11 @@ test("template-based public sites retain actual booking, product and chat compon
   const props = {
     profile: {
       websiteTemplateId: "hair-salon",
-      websiteDocument: catalogue.templateDraft("hair-salon"),
+      websiteDocument: (() => {
+        const old = catalogue.templateDraft("hair-salon");
+        delete old.beauty;
+        return old;
+      })(),
       themeColor: "#234567",
       displayName: "Own business",
       phone: "",

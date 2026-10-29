@@ -77,9 +77,24 @@ export function TemplatePreview({
     </div>
   );
 }
-export function RawTemplatePreview({ id }: { id: string }) {
+export function RawTemplatePreview({
+  id,
+  pagePath = "",
+  initialService = "",
+}: {
+  id: string;
+  pagePath?: string;
+  initialService?: string;
+}) {
   const template = getWebsiteTemplate(id);
   return template ? (
-    <TemplateWebsite template={template} document={template.document} preview />
+    <TemplateWebsite
+      template={template}
+      document={template.document}
+      preview
+      pagePath={pagePath}
+      initialService={initialService}
+      basePath={`/template-canvas/${id}`}
+    />
   ) : null;
 }

@@ -12,7 +12,35 @@ export type TemplateLayout =
   | "catalogue"
   | "minimal"
   | "studio";
+export type BeautyContent = {
+  version: 2;
+  demoContent: boolean;
+  aboutImage: string;
+  philosophy: string[];
+  stylists: { name: string; role: string; bio: string; image: string }[];
+  hours: { day: string; hours: string }[];
+  contact: {
+    phone: string;
+    email: string;
+    address: string;
+    whatsapp: string;
+    mapUrl: string;
+  };
+  pages: { path: string; title: string; description: string }[];
+};
+export type WebsiteOffering = {
+  title: string;
+  description: string;
+  slug?: string;
+  category?: string;
+  duration?: string;
+  price?: string;
+  image?: string;
+  benefits?: string[];
+  preparation?: string;
+};
 export type WebsiteDocument = {
+  beauty?: BeautyContent;
   version: 1;
   blank?: boolean;
   logoUrl?: string;
@@ -33,9 +61,9 @@ export type WebsiteDocument = {
   aboutTitle: string;
   aboutText: string;
   offeringsTitle: string;
-  offerings: { title: string; description: string }[];
+  offerings: WebsiteOffering[];
   galleryTitle: string;
-  gallery: { src: string; alt: string }[];
+  gallery: { src: string; alt: string; category?: string }[];
   featureTitle: string;
   featureText: string;
   featureItems: string[];
@@ -1051,6 +1079,202 @@ export const websiteTemplates: WebsiteTemplate[] = baseWebsiteTemplates.flatMap(
       };
     }),
 );
+// Versioned defaults only affect new drafts. Saved v1 salon documents retain
+// their original renderer until an owner explicitly chooses the new design.
+const salon = websiteTemplates.find((t) => t.id === "hair-salon")!;
+Object.assign(salon.document, {
+  eyebrow: "THE ART OF FEELING YOURSELF",
+  headline: "Good hair.\nA little more you.",
+  intro:
+    "Considered cuts, expressive colour and care for every texture. A slower, more personal kind of salon experience.",
+  ctaLabel: "Request an appointment",
+  accent: "#875844",
+  paper: "#f7f3ec",
+  ink: "#302521",
+  seoTitle: "Hair, with a personal touch | Atelier Hair",
+  seoDescription:
+    "Considered cuts, expressive colour and care for every texture. Discover the studio, explore our services and request your next salon visit.",
+  heroImage: "/template-photos/beauty/hero.jpg",
+  aboutTitle: "A space to feel\nlike yourself.",
+  aboutText:
+    "Hair is personal. So is our approach. We begin with a conversation about your routine, your texture and the way you want to feel. Then we take the time to create something that belongs to you.\n\nFrom an everyday shape to a once-in-a-lifetime look, our studio brings thoughtful craft and a warm welcome to every chair.",
+  offeringsTitle: "Your hair, thoughtfully considered.",
+  offerings: [
+    {
+      slug: "cut-and-finish",
+      category: "Cut & style",
+      title: "Signature cut & finish",
+      description:
+        "A personal consultation, a precision shape and a finish that feels effortless. Designed around your texture, your proportions and your everyday routine.",
+      duration: "60–90 minutes",
+      price: "From ₦25,000",
+      image: "/template-photos/beauty/styling.jpg",
+      benefits: [
+        "A shape designed for your texture",
+        "Styling guidance for your routine",
+        "A finish you can make your own",
+      ],
+      preparation:
+        "Bring a few reference photos and tell us about your current hair routine.",
+    },
+    {
+      slug: "colour-and-gloss",
+      category: "Colour",
+      title: "Colour & gloss",
+      description:
+        "Soft dimension, a fresh tone or a more expressive change. We talk through the possibilities and choose an approach with the condition of your hair in mind.",
+      duration: "2–3 hours",
+      price: "From ₦45,000",
+      image: "/template-photos/beauty/colour.jpg",
+      benefits: [
+        "A considered colour consultation",
+        "A personalised tone and finish",
+        "Advice for maintaining your colour",
+      ],
+      preparation:
+        "A consultation and sensitivity test may be required before colour appointments.",
+    },
+    {
+      slug: "texture-and-care",
+      category: "Care",
+      title: "Texture & restorative care",
+      description:
+        "A dedicated moment for your hair and scalp. A consultation-led treatment with gentle styling and practical guidance for looking after your natural texture.",
+      duration: "60 minutes",
+      price: "From ₦20,000",
+      image: "/template-photos/beauty/hero.jpg",
+      benefits: [
+        "Time to understand your hair",
+        "A care-led treatment approach",
+        "A simple home-care conversation",
+      ],
+      preparation:
+        "Let us know about sensitivities, recent treatments or concerns when requesting your visit.",
+    },
+    {
+      slug: "occasion-styling",
+      category: "Occasion",
+      title: "Occasion & bridal styling",
+      description:
+        "A thoughtful finishing touch for your celebration. From softly sculpted looks to a more polished statement, we design a style to complement you and the occasion.",
+      duration: "90–120 minutes",
+      price: "By consultation",
+      image: "/template-photos/beauty/styling.jpg",
+      benefits: [
+        "A look planned around your occasion",
+        "Space for inspiration and consultation",
+        "A considered finishing detail",
+      ],
+      preparation:
+        "Share your event date and inspiration. Bridal trials are arranged separately.",
+    },
+  ],
+  galleryTitle: "A few moments from the chair.",
+  gallery: [
+    {
+      src: "/template-photos/beauty/hero.jpg",
+      alt: "Editorial portrait showing natural hair texture",
+      category: "Texture",
+    },
+    {
+      src: "/template-photos/beauty/styling.jpg",
+      alt: "A stylist carefully finishing a salon client's hair",
+      category: "Styling",
+    },
+    {
+      src: "/template-photos/beauty/interior.jpg",
+      alt: "Light-filled salon with thoughtfully arranged styling stations",
+      category: "Studio",
+    },
+    {
+      src: "/template-photos/beauty/colour.jpg",
+      alt: "A salon colour and styling detail",
+      category: "Colour",
+    },
+  ],
+  featureTitle: "Thoughtful hands.\nA warm welcome.",
+  featureText:
+    "A team who listens first, works with intention and makes room for your individuality.",
+  contactTitle: "Your next good hair day starts here.",
+  contactText:
+    "Tell us what you have in mind. We will help you choose the right service and arrange a time to visit.",
+  reviews: [
+    {
+      name: "Demo client",
+      quote: "Time to talk, thoughtful advice and a style that feels like me.",
+      rating: 5,
+    },
+  ],
+  beauty: {
+    version: 2,
+    demoContent: true,
+    aboutImage: "/template-photos/beauty/interior.jpg",
+    philosophy: [
+      "Listen before we begin.",
+      "Work with your natural texture.",
+      "Make everyday care feel achievable.",
+    ],
+    stylists: [
+      {
+        name: "Ada",
+        role: "Creative stylist",
+        bio: "A thoughtful eye for shape, texture and the small details that make a look your own.",
+        image: "/template-photos/beauty/stylist.jpg",
+      },
+      {
+        name: "Maya",
+        role: "Colour specialist",
+        bio: "An intuitive approach to tone, dimension and a colour story that feels personal.",
+        image: "/template-photos/beauty/colour.jpg",
+      },
+    ],
+    hours: [
+      { day: "Tuesday–Friday", hours: "9:00 AM–6:00 PM" },
+      { day: "Saturday", hours: "9:00 AM–5:00 PM" },
+      { day: "Sunday–Monday", hours: "By appointment" },
+    ],
+    contact: { phone: "", email: "", address: "", whatsapp: "", mapUrl: "" },
+    pages: [
+      {
+        path: "",
+        title: "Hair, with a personal touch",
+        description:
+          "Considered cuts, expressive colour and care for every texture. Discover the studio, explore our services and request your next salon visit.",
+      },
+      {
+        path: "about",
+        title: "Our story & stylists",
+        description:
+          "Get to know our salon philosophy, our creative stylists and the thoughtful details that make every visit a little more personal.",
+      },
+      {
+        path: "services",
+        title: "Services & treatments",
+        description:
+          "Explore precision cuts, colour and gloss, restorative hair care and occasion styling. Find the right service and request your appointment.",
+      },
+      {
+        path: "gallery",
+        title: "The salon gallery",
+        description:
+          "Discover our approach to texture, colour and styling through editorial imagery and a closer look at the salon experience.",
+      },
+      {
+        path: "book",
+        title: "Request an appointment",
+        description:
+          "Tell us about your hair and your preferred visit. Send an appointment request and our salon team will get in touch to confirm availability.",
+      },
+      {
+        path: "contact",
+        title: "Contact & opening hours",
+        description:
+          "Find our salon contact details, opening hours and location. Ask a question, explore our social channels or arrange your next visit.",
+      },
+    ],
+  },
+});
+
 for (const [id, name, layout] of [
   ["blank-website", "Blank Website", "minimal"],
   ["blank-landing", "Blank Landing Page", "portrait"],
@@ -1136,10 +1360,11 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
   ) as WebsiteDocument;
   if (brandName?.trim()) {
     document.brandName = brandName.trim().slice(0, 120);
-    document.seoTitle = `${document.brandName} | ${template.name}`.slice(
-      0,
-      100,
-    );
+    document.seoTitle = (
+      document.beauty
+        ? `Hair, with a personal touch | ${document.brandName}`
+        : `${document.brandName} | ${template.name}`
+    ).slice(0, 100);
   }
   return document;
 }
@@ -1161,7 +1386,11 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     return value.trim();
   };
   const image = (value: string) => {
-    if (/^\/template-art\/[a-z0-9-]+\.svg$/.test(value)) return value;
+    if (
+      /^\/template-art\/[a-z0-9-]+\.svg$/.test(value) ||
+      /^\/template-photos\/beauty\/[a-z0-9-]+\.jpg$/.test(value)
+    )
+      return value;
     try {
       const url = new URL(value);
       if (url.protocol === "https:" && !url.username && !url.password)
@@ -1208,13 +1437,43 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     result[key] = value;
   }
   result.heroImage = image(text(source, "heroImage", 2000));
-  result.offerings = list("offerings", 12).map((v) => ({
-    title: text(v, "title", 120),
-    description: text(v, "description", 1200),
-  }));
+  result.offerings = list("offerings", 12).map((v) => {
+    const offering: WebsiteOffering = {
+      title: text(v, "title", 120),
+      description: text(v, "description", 1200),
+    };
+    for (const [key, max] of [
+      ["slug", 80],
+      ["category", 80],
+      ["duration", 80],
+      ["price", 120],
+      ["preparation", 1200],
+    ] as const)
+      if (v[key] !== undefined) {
+        if (typeof v[key] !== "string" || v[key].length > max)
+          throw Error(`Please check service ${key}.`);
+        offering[key] = v[key].trim();
+      }
+    if (offering.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(offering.slug))
+      throw Error("Please check service slug.");
+    if (v.image !== undefined) offering.image = image(text(v, "image", 2000));
+    if (v.benefits !== undefined) {
+      if (
+        !Array.isArray(v.benefits) ||
+        v.benefits.length > 8 ||
+        v.benefits.some(
+          (b) => typeof b !== "string" || !b.trim() || b.length > 240,
+        )
+      )
+        throw Error("Please check service benefits.");
+      offering.benefits = v.benefits.map((b) => String(b).trim());
+    }
+    return offering;
+  });
   result.gallery = list("gallery", 12).map((v) => ({
     src: image(text(v, "src", 2000)),
     alt: text(v, "alt", 200),
+    ...(v.category !== undefined ? { category: text(v, "category", 80) } : {}),
   }));
   result.faqs = list("faqs", 12).map((v) => ({
     question: text(v, "question", 240),
@@ -1293,5 +1552,148 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
       return { name, quote, rating: v.rating };
     });
   }
+  if (source.beauty !== undefined) {
+    const b = source.beauty as Record<string, unknown>;
+    if (!b || b.version !== 2 || typeof b.demoContent !== "boolean")
+      throw Error("Please check beauty design version.");
+    const values = (key: string, max: number) => {
+      const a = b[key];
+      if (
+        !Array.isArray(a) ||
+        a.length > max ||
+        a.some((v) => !v || typeof v !== "object" || Array.isArray(v))
+      )
+        throw Error(`Please check beauty ${key}.`);
+      return a as Record<string, unknown>[];
+    };
+    const contact = b.contact as Record<string, unknown>;
+    if (!contact || typeof contact !== "object" || Array.isArray(contact))
+      throw Error("Please check salon contact details.");
+    const optionalText = (
+      v: Record<string, unknown>,
+      key: string,
+      max: number,
+    ) => {
+      if (typeof v[key] !== "string" || v[key].length > max)
+        throw Error(`Please check ${key}.`);
+      return v[key].trim();
+    };
+    const email = optionalText(contact, "email", 254),
+      phone = optionalText(contact, "phone", 40),
+      whatsapp = optionalText(contact, "whatsapp", 40),
+      mapUrl = optionalText(contact, "mapUrl", 2000);
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw Error("Please check salon email.");
+    if (
+      [phone, whatsapp].some(
+        (v) =>
+          v &&
+          (!/^\+?[\d ()-]{7,40}$/.test(v) ||
+            v.replace(/\D/g, "").length < 7 ||
+            v.replace(/\D/g, "").length > 15),
+      )
+    )
+      throw Error("Please check salon phone.");
+    if (mapUrl && !image(mapUrl).startsWith("https://"))
+      throw Error("Please check map URL.");
+    if (
+      !Array.isArray(b.philosophy) ||
+      b.philosophy.length > 8 ||
+      b.philosophy.some(
+        (v) => typeof v !== "string" || !v.trim() || v.length > 240,
+      )
+    )
+      throw Error("Please check salon philosophy.");
+    result.beauty = {
+      version: 2,
+      demoContent: b.demoContent,
+      aboutImage: image(text(b, "aboutImage", 2000)),
+      philosophy: b.philosophy,
+      stylists: values("stylists", 8).map((v) => ({
+        name: text(v, "name", 100),
+        role: text(v, "role", 120),
+        bio: text(v, "bio", 1200),
+        image: image(text(v, "image", 2000)),
+      })),
+      hours: values("hours", 14).map((v) => ({
+        day: text(v, "day", 100),
+        hours: text(v, "hours", 100),
+      })),
+      contact: {
+        email,
+        phone,
+        whatsapp,
+        mapUrl,
+        address: optionalText(contact, "address", 500),
+      },
+      pages: values("pages", 24).map((v) => {
+        const path = optionalText(v, "path", 120);
+        if (
+          !/^(?:about|services(?:\/[a-z0-9-]+)?|gallery|book|contact)?$/.test(
+            path,
+          )
+        )
+          throw Error("Please check salon page path.");
+        return {
+          path,
+          title: text(v, "title", 100),
+          description: text(v, "description", 320),
+        };
+      }),
+    };
+    const slugs = (result.offerings as WebsiteOffering[]).map((o, i) =>
+      beautyServiceSlug(o, i),
+    );
+    if (new Set(slugs).size !== slugs.length)
+      throw Error("Please check duplicate service slugs.");
+    const pages = (result.beauty as BeautyContent).pages.map((p) => p.path);
+    if (new Set(pages).size !== pages.length)
+      throw Error("Please check duplicate page SEO settings.");
+  }
   return result as WebsiteDocument;
+}
+
+export function beautyServiceSlug(service: WebsiteOffering, index: number) {
+  return (
+    service.slug ||
+    service.title
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 80) ||
+    `service-${index + 1}`
+  );
+}
+export function beautyPagePaths(doc: WebsiteDocument) {
+  return doc.beauty?.version === 2
+    ? [
+        "",
+        "about",
+        "services",
+        ...doc.offerings.map((o, i) => "services/" + beautyServiceSlug(o, i)),
+        "gallery",
+        "book",
+        "contact",
+      ]
+    : [""];
+}
+export function beautyPageMeta(doc: WebsiteDocument, path: string) {
+  const custom = doc.beauty?.pages.find((p) => p.path === path);
+  const service = doc.offerings.find(
+    (o, i) => path === "services/" + beautyServiceSlug(o, i),
+  );
+  return {
+    title:
+      (path === "" ? doc.seoTitle : undefined) ||
+      custom?.title ||
+      (service ? service.title : doc.seoTitle || doc.brandName),
+    description:
+      (path === "" ? doc.seoDescription : undefined) ||
+      custom?.description ||
+      service?.description ||
+      doc.seoDescription ||
+      doc.intro,
+  };
 }

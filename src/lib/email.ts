@@ -1052,3 +1052,21 @@ export async function sendRoleInvitationEmail(p: {
     p.key,
   );
 }
+
+/** Public website requests reuse the shared sender; no visitor-controlled recipient. */
+export async function sendWebsiteRequestEmail(p: {
+  to: string;
+  businessName: string;
+  name: string;
+  email: string;
+  phone: string;
+  detail: string;
+}) {
+  return send(
+    p.to,
+    `New website request — ${p.businessName}`,
+    `<p>${escapeHtml(p.name)} sent a request through your published website.</p><p>${escapeHtml(p.email)}<br>${escapeHtml(p.phone)}</p><p style="white-space:pre-wrap">${escapeHtml(p.detail)}</p>${mailAction("View customer enquiries", "https://business.jktl.com.ng/business/customers")}`,
+    `${p.name}\n${p.email}\n${p.phone}\n\n${p.detail}\nhttps://business.jktl.com.ng/business/customers`,
+    { category: "service" },
+  );
+}

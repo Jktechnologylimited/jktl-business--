@@ -78,6 +78,7 @@
   overflow: auto;
 }
 .frame {
+  scroll-margin-top: 90px;
   display: block;
   flex-shrink: 0;
   width: 100%;
