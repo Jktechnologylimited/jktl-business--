@@ -41,6 +41,9 @@ export type WebsiteOffering = {
   preparation?: string;
 };
 export type WebsiteDocument = {
+  design?: "legal";
+  aboutImage?: string;
+  demoContent?: boolean;
   beauty?: BeautyContent;
   version: 1;
   blank?: boolean;
@@ -2184,6 +2187,157 @@ websiteTemplates.push({
   document: spaDocument,
 });
 
+// Original editorial law-firm design, independent from the existing law-firm editions.
+const legalDocument = JSON.parse(
+  JSON.stringify(baseWebsiteTemplates[0].document),
+) as WebsiteDocument;
+Object.assign(legalDocument, {
+  design: "legal",
+  demoContent: true,
+  aboutImage: "/template-photos/legal/team.jpg",
+  brandName: "Alden & Rowe",
+  eyebrow: "CONSIDERED COUNSEL. CLEARER DECISIONS.",
+  headline: "ALDEN\n& ROWE",
+  intro:
+    "Practical legal guidance for the decisions that matter to you and your business.",
+  ctaLabel: "Request a consultation",
+  accent: "#cf6b45",
+  paper: "#f8f7f0",
+  ink: "#30332a",
+  heroImage: "/template-photos/legal/office.jpg",
+  logoUrl: "",
+  seoTitle: "Considered counsel, clearer decisions | Alden & Rowe",
+  seoDescription:
+    "Explore Alden & Rowe's approach to business, employment, property and dispute matters. Meet the team and make a general consultation enquiry.",
+  aboutTitle: "A considered approach to your next step.",
+  aboutText:
+    "Legal matters are personal, even when they concern a business. We begin by listening to your priorities, understanding the context and explaining what a useful next step could look like.\n\nOur approach combines clear communication with practical thinking. We discuss scope, timing and fees before agreeing an engagement, and keep you informed as the work develops.",
+  offeringsTitle: "Practice areas",
+  offerings: [
+    {
+      slug: "business-law",
+      title: "Business law",
+      description:
+        "Support for commercial arrangements, contracts and the decisions that shape your business.",
+      benefits: [
+        "Understanding the commercial context",
+        "Reviewing the available options",
+        "Agreeing a practical scope of work",
+      ],
+      preparation:
+        "Bring a brief outline of the matter. The firm will tell you which documents to share through an appropriate channel.",
+    },
+    {
+      slug: "employment-workplace",
+      title: "Employment & workplace",
+      description:
+        "A clear, considered approach to workplace arrangements, policies and employment matters.",
+      benefits: [
+        "Understanding the working relationship",
+        "Explaining possible next steps",
+        "A conversation about scope and timing",
+      ],
+      preparation:
+        "Prepare a short summary of your concerns and any relevant dates. Avoid sending sensitive documents through the initial enquiry form.",
+    },
+    {
+      slug: "property-real-estate",
+      title: "Property & real estate",
+      description:
+        "Guidance for property decisions, agreements and transactions, shaped around your priorities.",
+      benefits: [
+        "Considering your priorities",
+        "Identifying information needed for review",
+        "Planning a clear next step",
+      ],
+      preparation:
+        "The firm will discuss the information it needs and the appropriate way to provide it.",
+    },
+    {
+      slug: "dispute-resolution",
+      title: "Dispute resolution",
+      description:
+        "Practical thinking when a disagreement needs a structured conversation and a clear way forward.",
+      benefits: [
+        "Listening to the background",
+        "Explaining available approaches",
+        "Discussing timing and next steps",
+      ],
+      preparation:
+        "Note key dates and the people involved. Time-sensitive matters should be raised directly with a qualified lawyer.",
+    },
+  ],
+  galleryTitle: "Meet our attorneys",
+  gallery: [
+    {
+      src: "/template-photos/legal/attorney-one.jpg",
+      alt: "Ada Rowe",
+      category: "Sample profile · Employment & workplace",
+    },
+    {
+      src: "/template-photos/legal/attorney-two.jpg",
+      alt: "Tunde Alden",
+      category: "Sample profile · Business & property",
+    },
+    {
+      src: "/template-photos/legal/attorney-three.jpg",
+      alt: "Kene James",
+      category: "Sample profile · Dispute resolution",
+    },
+  ],
+  featureTitle: "Clear communication. Thoughtful work.",
+  featureText:
+    "Good counsel begins with listening, makes room for questions and helps you understand the decisions ahead.",
+  featureItems: [
+    "Listen carefully",
+    "Explain the options",
+    "Agree a clear next step",
+  ],
+  faqTitle: "News & perspectives",
+  faqs: [
+    {
+      question: "Preparing for a first legal consultation",
+      answer:
+        "Begin with a short summary of what you would like help with and any dates that may matter. A first conversation is an opportunity to explain your priorities and ask how the firm approaches this type of work.\n\nAsk about scope, timing, fees and the steps needed before an engagement can begin. The firm may need to check for conflicts and gather more information before it can advise you.\n\nDo not send confidential documents through a general website form. Ask the firm which information it needs and the appropriate channel for sharing it. This article provides general information, not legal advice for a particular situation.",
+    },
+    {
+      question: "Keeping business records organised",
+      answer:
+        "An organised record of agreements, decisions and key correspondence can make a professional consultation more focused. Keep documents in a consistent location, record relevant dates and separate signed versions from working drafts.\n\nAccess and retention arrangements should fit your business and any applicable requirements. Ask an appropriate professional about records you are required to keep, how long to keep them and who should have access.\n\nThis is general organisational guidance. It does not establish a legal retention policy or replace advice on your circumstances.",
+    },
+    {
+      question: "Understanding the scope of an engagement",
+      answer:
+        "Before professional work begins, ask what is included, what information is needed and how the firm will communicate with you. Clear expectations help both sides understand the purpose of the engagement.\n\nDiscuss fees, timing, points of contact and how a change in scope would be handled. If something is unclear, ask for an explanation before you agree.\n\nThe terms of any engagement are determined by the agreement with your lawyer. Reading this article or sending a general enquiry does not create a lawyer-client relationship.",
+    },
+  ],
+  contactTitle: "Let’s discuss your next step.",
+  contactText:
+    "Send a brief general enquiry. The firm will contact you to discuss suitability, scope, availability and fees before agreeing an engagement.",
+  serviceAreas: [],
+  socials: [],
+  reviews: [],
+});
+websiteTemplates.push({
+  id: "law-firm-counsel",
+  name: "Law Firm — Alden & Rowe",
+  category: "Legal & Professional",
+  layout: "editorial",
+  kind: "website",
+  sourceId: "law-firm-counsel",
+  edition: "Counsel",
+  sectionOrder: [
+    "about",
+    "offerings",
+    "gallery",
+    "feature",
+    "faq",
+    "areas",
+    "reviews",
+  ],
+  document: legalDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -2211,15 +2365,21 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
   ) as WebsiteDocument;
   if (brandName?.trim()) {
     document.brandName = brandName.trim().slice(0, 120);
+    if (document.design === "legal")
+      document.headline = document.brandName
+        .toUpperCase()
+        .replace(/\s&\s/, "\n& ");
     document.seoTitle = (
-      document.beauty?.design === "barber"
-        ? `Precision cuts & beard care | ${document.brandName}`
-        : document.beauty?.design === "atelier" ||
-            document.beauty?.design === "spa"
-          ? `Personal beauty rituals | ${document.brandName}`
-          : document.beauty
-            ? `Hair, with a personal touch | ${document.brandName}`
-            : `${document.brandName} | ${template.name}`
+      document.design === "legal"
+        ? `Considered counsel | ${document.brandName}`
+        : document.beauty?.design === "barber"
+          ? `Precision cuts & beard care | ${document.brandName}`
+          : document.beauty?.design === "atelier" ||
+              document.beauty?.design === "spa"
+            ? `Personal beauty rituals | ${document.brandName}`
+            : document.beauty
+              ? `Hair, with a personal touch | ${document.brandName}`
+              : `${document.brandName} | ${template.name}`
     ).slice(0, 100);
   }
   return document;
@@ -2244,7 +2404,7 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   const image = (value: string) => {
     if (
       /^\/template-art\/[a-z0-9-]+\.svg$/.test(value) ||
-      /^\/template-photos\/beauty\/[a-z0-9-]+\.jpg$/.test(value)
+      /^\/template-photos\/(?:beauty|legal)\/[a-z0-9-]+\.jpg$/.test(value)
     )
       return value;
     try {
@@ -2268,6 +2428,15 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   if (source.version !== 1)
     throw new Error("Unsupported website content version.");
   const result: Record<string, unknown> = { version: 1 };
+  if (source.design !== undefined) {
+    if (source.design !== "legal") throw Error("Unsupported website design.");
+    result.design = "legal";
+    if (typeof source.demoContent !== "boolean")
+      throw Error("Please check demonstration content settings.");
+    result.demoContent = source.demoContent;
+    if (source.aboutImage !== undefined)
+      result.aboutImage = image(text(source, "aboutImage", 2000));
+  }
   if (blank) result.blank = true;
   for (const [key, max] of Object.entries({
     brandName: 120,
@@ -2519,6 +2688,11 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     if (new Set(pages).size !== pages.length)
       throw Error("Please check duplicate page SEO settings.");
   }
+  if (result.design === "legal") {
+    const paths = beautyPagePaths(result as WebsiteDocument);
+    if (new Set(paths).size !== paths.length)
+      throw Error("Please use unique practice and article titles.");
+  }
   return result as WebsiteDocument;
 }
 
@@ -2541,6 +2715,23 @@ export function beautyNotePath(question: string, index: number) {
   );
 }
 export function beautyPagePaths(doc: WebsiteDocument) {
+  if (doc.design === "legal")
+    return [
+      "",
+      "about",
+      "practice-areas",
+      ...doc.offerings.map(
+        (o, i) => "practice-areas/" + beautyServiceSlug(o, i),
+      ),
+      "attorneys",
+      "insights",
+      ...doc.faqs.map(
+        (f, i) =>
+          "insights/" +
+          beautyServiceSlug({ title: f.question, description: "" }, i),
+      ),
+      "contact",
+    ];
   return doc.beauty?.version === 2
     ? [
         "",
@@ -2557,6 +2748,45 @@ export function beautyPagePaths(doc: WebsiteDocument) {
     : [""];
 }
 export function beautyPageMeta(doc: WebsiteDocument, path: string) {
+  if (doc.design === "legal") {
+    const practice = doc.offerings.find(
+      (o, i) => path === "practice-areas/" + beautyServiceSlug(o, i),
+    );
+    const article = doc.faqs.find(
+      (f, i) =>
+        path ===
+        "insights/" +
+          beautyServiceSlug({ title: f.question, description: "" }, i),
+    );
+    const label = (
+      {
+        about: doc.aboutTitle,
+        "practice-areas": doc.offeringsTitle,
+        attorneys: doc.galleryTitle,
+        insights: doc.faqTitle,
+        contact: doc.contactTitle,
+      } as Record<string, string>
+    )[path];
+    return {
+      title:
+        path === ""
+          ? doc.seoTitle || doc.brandName
+          : `${practice?.title || article?.question || label || doc.brandName} | ${doc.brandName}`.slice(
+              0,
+              100,
+            ),
+      description: (
+        practice?.description ||
+        article?.answer ||
+        (path === "about"
+          ? doc.aboutText
+          : path === "contact"
+            ? doc.contactText
+            : doc.seoDescription) ||
+        doc.intro
+      ).slice(0, 160),
+    };
+  }
   const custom = doc.beauty?.pages.find((p) => p.path === path);
   const service = doc.offerings.find(
     (o, i) => path === "services/" + beautyServiceSlug(o, i),

@@ -229,6 +229,20 @@ export function TemplateEditor({
               {text("intro", "Introduction", true)}
               {text("ctaLabel", "Main button label", false, 60)}
               {text("heroImage", "Hero image HTTPS URL", false, 2000)}
+              {content.design === "legal" && (
+                <>
+                  {text("aboutImage", "Firm photograph", false, 2000)}
+                  <label className="flex gap-3 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={content.demoContent ?? true}
+                      onChange={(e) => update("demoContent", e.target.checked)}
+                    />
+                    Label the firm and attorney profiles as demonstration
+                    content until you replace them with verified information.
+                  </label>
+                </>
+              )}
               <button
                 type="button"
                 className="text-xs text-primary underline"
@@ -322,6 +336,53 @@ export function TemplateEditor({
                       }
                     />
                   </label>
+                  {content.design === "legal" && (
+                    <>
+                      <label className="block text-sm">
+                        Approach points — one per line
+                        <textarea
+                          className={field}
+                          rows={3}
+                          value={(item.benefits || []).join("\n")}
+                          maxLength={2000}
+                          onChange={(e) =>
+                            update(
+                              "offerings",
+                              content.offerings.map((v, n) =>
+                                n === i
+                                  ? {
+                                      ...v,
+                                      benefits: e.target.value
+                                        .split("\n")
+                                        .filter(Boolean),
+                                    }
+                                  : v,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                      <label className="block text-sm">
+                        Preparing for an enquiry
+                        <textarea
+                          className={field}
+                          rows={3}
+                          value={item.preparation || ""}
+                          maxLength={1200}
+                          onChange={(e) =>
+                            update(
+                              "offerings",
+                              content.offerings.map((v, n) =>
+                                n === i
+                                  ? { ...v, preparation: e.target.value }
+                                  : v,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                    </>
+                  )}
                   {content.offerings.length > 1 && (
                     <button
                       className="text-xs text-danger"
@@ -357,7 +418,9 @@ export function TemplateEditor({
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
             <summary className="cursor-pointer font-semibold">
-              <T>Gallery</T>
+              <T>
+                {content.design === "legal" ? "Attorney profiles" : "Gallery"}
+              </T>
             </summary>
             <div className="mt-5 space-y-5">
               {text("galleryTitle", "Gallery heading", false, 160)}
@@ -387,7 +450,11 @@ export function TemplateEditor({
                     />
                   </label>
                   <label className="block text-sm">
-                    <T>Caption & accessible description</T>
+                    <T>
+                      {content.design === "legal"
+                        ? "Attorney name & image description"
+                        : "Caption & accessible description"}
+                    </T>
                     <input
                       className={field}
                       value={item.alt}
@@ -402,6 +469,24 @@ export function TemplateEditor({
                       }
                     />
                   </label>
+                  {content.design === "legal" && (
+                    <label className="block text-sm">
+                      Attorney role
+                      <input
+                        className={field}
+                        value={item.category || ""}
+                        maxLength={80}
+                        onChange={(e) =>
+                          update(
+                            "gallery",
+                            content.gallery.map((v, n) =>
+                              n === i ? { ...v, category: e.target.value } : v,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                  )}
                   {content.gallery.length > 1 && (
                     <button
                       className="text-xs text-danger"
@@ -461,9 +546,11 @@ export function TemplateEditor({
           <details className="rounded-xl border border-border bg-surface p-5">
             <summary className="cursor-pointer font-semibold">
               <T>
-                {content.beauty?.design === "spa"
-                  ? "Care notes & articles"
-                  : "Frequently asked questions"}
+                {content.design === "legal"
+                  ? "Insights & articles"
+                  : content.beauty?.design === "spa"
+                    ? "Care notes & articles"
+                    : "Frequently asked questions"}
               </T>
             </summary>
             <div className="mt-5 space-y-5">
@@ -474,7 +561,11 @@ export function TemplateEditor({
                   className="space-y-3 border-t border-border pt-4"
                 >
                   <label className="block text-sm">
-                    <T>Question</T>
+                    <T>
+                      {content.design === "legal"
+                        ? "Article title"
+                        : "Question"}
+                    </T>
                     <input
                       className={field}
                       value={item.question}

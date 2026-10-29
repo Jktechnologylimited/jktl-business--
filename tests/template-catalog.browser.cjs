@@ -303,6 +303,7 @@ const { chromium } = require("playwright");
         "salon-luxe",
         "barber-monochrome",
         "spa-solace",
+        "law-firm-counsel",
       ]) {
         await preview.goto(origin + "/template-canvas/" + id);
         const signIn = preview.getByRole("link", {
@@ -425,11 +426,9 @@ const { chromium } = require("playwright");
       true,
     );
     await preview.goto(origin + "/template-canvas/spa-solace");
-    const renew = preview
-      .locator("article")
-      .filter({
-        has: preview.getByRole("heading", { name: "Renew", exact: true }),
-      });
+    const renew = preview.locator("article").filter({
+      has: preview.getByRole("heading", { name: "Renew", exact: true }),
+    });
     await renew
       .getByRole("link", { name: "Request an appointment", exact: true })
       .click();
@@ -438,6 +437,57 @@ const { chromium } = require("playwright");
       await preview.locator('select[name="service"]').inputValue(),
       "renew-package",
     );
+    await preview.goto(origin + "/templates/law-firm-counsel");
+    await preview
+      .frameLocator("iframe")
+      .getByRole("heading", { name: "ALDEN & ROWE", exact: true })
+      .waitFor();
+    assert.ok(
+      (
+        await preview
+          .getByRole("link", { name: "Select Template" })
+          .getAttribute("href")
+      ).endsWith("?template=law-firm-counsel"),
+    );
+    for (const path of [
+      "",
+      "/about",
+      "/practice-areas",
+      "/practice-areas/business-law",
+      "/attorneys",
+      "/insights",
+      "/insights/preparing-for-a-first-legal-consultation",
+      "/contact",
+    ]) {
+      const response = await page.request.get(
+        origin + "/template-canvas/law-firm-counsel" + path,
+      );
+      assert.equal(response.status(), 200, path);
+      assert.ok((await response.text()).includes("Alden &amp; Rowe"));
+    }
+    await preview.goto(origin + "/template-canvas/law-firm-counsel");
+    await preview
+      .getByRole("link", { name: "Request a consultation" })
+      .first()
+      .click();
+    await preview.waitForURL(/\/contact/);
+    await preview
+      .getByLabel("Your name", { exact: true })
+      .fill("Example Guest");
+    await preview
+      .getByLabel("Email address", { exact: true })
+      .fill("example@example.test");
+    await preview
+      .getByLabel("Phone number", { exact: true })
+      .fill("+2347000000000");
+    await preview
+      .getByLabel("Brief enquiry", { exact: true })
+      .fill("A general consultation request.");
+    await preview.getByRole("button", { name: "Send general enquiry" }).click();
+    await preview
+      .getByRole("alert")
+      .filter({ hasText: "No enquiry was sent" })
+      .waitFor();
     assert.deepEqual(errors, []);
     console.log(
       "PASS " +

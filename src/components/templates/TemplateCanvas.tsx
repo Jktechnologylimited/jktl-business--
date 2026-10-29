@@ -77,7 +77,10 @@ export function TemplateCanvas({
             createPortal(
               <div
                 className="jktl-light"
-                inert={(readOnly && !content.beauty) || undefined}
+                inert={
+                  (readOnly && !content.beauty && content.design !== "legal") ||
+                  undefined
+                }
               >
                 <TemplateWebsite
                   template={template}

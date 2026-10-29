@@ -38,11 +38,23 @@ const { BeautyWebsite } = loadTs(
     },
   },
 );
+const { LegalWebsite } = loadTs(
+  "../src/components/templates/LegalWebsite.tsx",
+  {
+    react: require("react"),
+    "react/jsx-runtime": require("react/jsx-runtime"),
+    "@/lib/website-templates": catalogue,
+    "./LegalWebsite.module.css": {
+      __esModule: true,
+      default: new Proxy({}, { get: (_, key) => String(key) }),
+    },
+  },
+);
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 206);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 204);
-  assert.equal(new Set(all.map((t) => t.id)).size, 206);
+  assert.equal(all.length, 207);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 205);
+  assert.equal(new Set(all.map((t) => t.id)).size, 207);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -129,6 +141,7 @@ test("actual full-site renderer renders every template and safely escapes edited
       react: require("react"),
       "react/jsx-runtime": require("react/jsx-runtime"),
       "./BeautyWebsite": { BeautyWebsite },
+      "./LegalWebsite": { LegalWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -154,6 +167,11 @@ test("actual full-site renderer renders every template and safely escapes edited
       ),
       template.id,
     );
+    if (template.document.design === "legal") {
+      assert.ok(html.includes('id="legal-content"'));
+      assert.ok(html.includes('href="/practice-areas"'));
+      continue;
+    }
     if (template.document.beauty) {
       assert.ok(html.includes('id="salon-content"'));
       assert.ok(html.includes('href="/about"'));
@@ -473,6 +491,7 @@ test("template-based public sites retain actual booking, product and chat compon
       react: require("react"),
       "react/jsx-runtime": require("react/jsx-runtime"),
       "./BeautyWebsite": { BeautyWebsite },
+      "./LegalWebsite": { LegalWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -734,4 +753,63 @@ test("Solace spa supports editable packages and care-note pages without a separa
     () => catalogue.parseWebsiteDocument(duplicate),
     /unique care-note titles/,
   );
+});
+
+test("editorial legal design preserves editable profiles and supports practice/insight metadata", () => {
+  const t = catalogue.getWebsiteTemplate("law-firm-counsel");
+  const d = catalogue.parseWebsiteDocument(
+    catalogue.templateDraft(t.id, "My Firm"),
+  );
+  assert.equal(d.design, "legal");
+  assert.equal(d.demoContent, true);
+  assert.ok(
+    catalogue.beautyPagePaths(d).includes("practice-areas/business-law"),
+  );
+  assert.ok(
+    catalogue
+      .beautyPagePaths(d)
+      .includes("insights/preparing-for-a-first-legal-consultation"),
+  );
+  assert.ok(
+    catalogue
+      .beautyPageMeta(d, "practice-areas/business-law")
+      .title.includes("Business law"),
+  );
+  for (const path of [
+    "",
+    "about",
+    "practice-areas",
+    "practice-areas/business-law",
+    "attorneys",
+    "insights",
+    "insights/preparing-for-a-first-legal-consultation",
+    "contact",
+  ]) {
+    const html = renderToStaticMarkup(
+      createElement(LegalWebsite, {
+        template: t,
+        document: d,
+        preview: true,
+        pagePath: path,
+      }),
+    );
+    assert.ok(html.includes("My Firm"));
+    assert.ok(html.includes("Sign in to JKTL Business"));
+    assert.ok(!html.includes("undefined"));
+  }
+  const edited = structuredClone(d);
+  edited.gallery[0].alt = "Our lawyer";
+  edited.gallery[0].category = "Our practice";
+  edited.demoContent = false;
+  const saved = catalogue.parseWebsiteDocument(edited);
+  const html = renderToStaticMarkup(
+    createElement(LegalWebsite, {
+      template: t,
+      document: saved,
+      pagePath: "attorneys",
+    }),
+  );
+  assert.ok(html.includes("Our lawyer"));
+  assert.ok(html.includes("Our practice"));
+  assert.ok(!html.includes("Editable sample profiles"));
 });

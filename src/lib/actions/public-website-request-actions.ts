@@ -72,7 +72,10 @@ export async function submitBeautyWebsiteRequestAction(
     )
       return { ok: false, error: "This website is not accepting requests." };
     const doc = parseWebsiteDocument(site.profile.websiteDocument);
-    if (!doc.beauty)
+    if (
+      (!doc.beauty && doc.design !== "legal") ||
+      (doc.design === "legal" && input.kind !== "contact")
+    )
       return { ok: false, error: "This website is not accepting requests." };
     const organizationId = site.profile.organizationId;
     await rate("salon-request-org:" + organizationId, 60);

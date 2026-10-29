@@ -43,18 +43,24 @@ const { BeautyWebsite } = load(
     "./BeautyWebsite.module.css": css,
   },
 );
+const { LegalWebsite } = load("../src/components/templates/LegalWebsite.tsx", {
+  ...reactDeps,
+  "@/lib/website-templates": catalogue,
+  "./LegalWebsite.module.css": css,
+});
 const { TemplateWebsite } = load(
   "../src/components/templates/TemplateWebsite.tsx",
   {
     ...reactDeps,
     "@/lib/website-templates": catalogue,
     "./BeautyWebsite": { BeautyWebsite },
+    "./LegalWebsite": { LegalWebsite },
     "./TemplateWebsite.module.css": css,
   },
 );
 const draft = () => catalogue.templateDraft("hair-salon", "Studio Example");
 test("one versioned salon entry gains ten real pages; saved v1 salons keep their old document and renderer", () => {
-  assert.equal(catalogue.websiteTemplates.length, 202);
+  assert.equal(catalogue.websiteTemplates.length, 207);
   const doc = draft();
   assert.equal(doc.beauty.version, 2);
   assert.deepEqual(catalogue.parseWebsiteDocument(doc), doc);
@@ -360,6 +366,25 @@ test("page metadata uses the verified customer host and structured data never in
   assert.equal(json.review, undefined);
   assert.equal(json.aggregateRating, undefined);
   assert.equal(json.address, undefined);
+  site.profile.websiteDocument = catalogue.templateDraft("law-firm-counsel");
+  const legalMeta = await helper.beautyMetadata(
+    "studio",
+    "practice-areas/business-law",
+  );
+  assert.equal(
+    legalMeta.alternates.canonical,
+    "https://salon.example.test/practice-areas/business-law",
+  );
+  const legalJson = helper.beautyStructuredData(
+    site.profile.websiteDocument,
+    "https://salon.example.test",
+    "",
+    site.profile,
+  );
+  assert.equal(legalJson["@type"], "LegalService");
+  assert.equal(legalJson.address, undefined);
+  site.profile.websiteDocument = doc;
+
   await assert.rejects(
     () => helper.beautyMetadata("studio", "not-real"),
     /404/,
@@ -440,4 +465,36 @@ test("tenant middleware preserves actual page paths and serves bundled template 
   );
   assert.equal(page.url.pathname, "/sites/studio/services/cut-and-finish");
   assert.equal(page.url.search, "?source=gallery");
+});
+
+test("legal enquiries reuse tenant-scoped persistence and cannot enter paid appointment booking", async () => {
+  const f = requestFixture();
+  f.site().profile.websiteTemplateId = "law-firm-counsel";
+  f.site().profile.websiteDocument =
+    catalogue.templateDraft("law-firm-counsel");
+  assert.equal(
+    (await f.actions.submitBeautyWebsiteRequestAction("studio", f.input)).ok,
+    true,
+  );
+  assert.equal(f.writes[0].org, "org-a");
+  assert.equal(f.sent[0].to, "owner@example.test");
+  assert.equal(f.bookings.length, 0);
+  const g = requestFixture();
+  g.site().profile.websiteTemplateId = "law-firm-counsel";
+  g.site().profile.websiteDocument =
+    catalogue.templateDraft("law-firm-counsel");
+  assert.equal(
+    (
+      await g.actions.submitBeautyWebsiteRequestAction("studio", {
+        ...g.input,
+        kind: "appointment",
+        service: "business-law",
+        date: "2099-01-01",
+        time: "10:00",
+      })
+    ).ok,
+    false,
+  );
+  assert.equal(g.writes.length, 0);
+  assert.equal(g.bookings.length, 0);
 });

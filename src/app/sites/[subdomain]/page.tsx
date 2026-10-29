@@ -30,7 +30,10 @@ export async function generateMetadata({
   const site = await getSite(subdomain.toLowerCase());
   if (!site) return { title: "Site not found — JKTL Business" };
 
-  if (site.profile.websiteDocument?.beauty?.version === 2)
+  if (
+    site.profile.websiteDocument?.beauty?.version === 2 ||
+    site.profile.websiteDocument?.design === "legal"
+  )
     return beautyMetadata(subdomain, "");
   // A site built for a prospect is a preview: it must not be indexed, or it
   // could outrank the website the business actually owns.
@@ -89,7 +92,8 @@ export default async function PublicSitePage({
 
   return (
     <>
-      {site.profile.websiteDocument?.beauty && (
+      {(site.profile.websiteDocument?.beauty ||
+        site.profile.websiteDocument?.design === "legal") && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -106,7 +110,8 @@ export default async function PublicSitePage({
       )}
       <PublicSiteView
         siteBasePath={
-          site.profile.websiteDocument?.beauty
+          site.profile.websiteDocument?.beauty ||
+          site.profile.websiteDocument?.design === "legal"
             ? await publicWebsiteBase(subdomain)
             : undefined
         }

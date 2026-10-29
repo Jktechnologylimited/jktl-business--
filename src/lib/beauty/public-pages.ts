@@ -12,14 +12,18 @@ import {
 export const getBeautySite = cache(async (subdomain: string) => {
   const site = await getPublicSiteBySubdomain(subdomain.toLowerCase());
   if (!site?.profile.published) notFound();
-  if (site.profile.websiteDocument?.beauty?.version !== 2) notFound();
+  if (
+    site.profile.websiteDocument?.beauty?.version !== 2 &&
+    site.profile.websiteDocument?.design !== "legal"
+  )
+    notFound();
   let doc;
   try {
     doc = parseWebsiteDocument(site.profile.websiteDocument);
   } catch {
     notFound();
   }
-  if (!doc.beauty) notFound();
+  if (!doc.beauty && doc.design !== "legal") notFound();
   return { site, doc };
 });
 export function publicWebsiteOrigin(profile: {
@@ -94,17 +98,18 @@ export function beautyStructuredData(
   },
 ) {
   const b = doc.beauty!,
-    details = b.contact;
+    details = b?.contact || { phone: "", email: "", address: "" };
   return {
     "@context": "https://schema.org",
-    "@type": "HairSalon",
+    "@type": doc.design === "legal" ? "LegalService" : "HairSalon",
     name: doc.brandName,
-    "@id": origin + "/#salon",
+    "@id": origin + (doc.design === "legal" ? "/#legal-practice" : "/#salon"),
     url: origin,
     mainEntityOfPage: origin + "/" + path,
     description: beautyPageMeta(doc, path).description,
     image: new URL(doc.heroImage, origin).href,
-    ...(!b.demoContent && (details.address || profile.address)
+    ...(!(doc.design === "legal" ? doc.demoContent : b.demoContent) &&
+    (details.address || profile.address)
       ? {
           address: {
             "@type": "PostalAddress",
