@@ -460,7 +460,11 @@ export function TemplateEditor({
           </details>
           <details className="rounded-xl border border-border bg-surface p-5">
             <summary className="cursor-pointer font-semibold">
-              <T>Frequently asked questions</T>
+              <T>
+                {content.beauty?.design === "spa"
+                  ? "Care notes & articles"
+                  : "Frequently asked questions"}
+              </T>
             </summary>
             <div className="mt-5 space-y-5">
               {text("faqTitle", "Section heading", false, 160)}

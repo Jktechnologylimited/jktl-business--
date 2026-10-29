@@ -1813,3 +1813,384 @@
     margin: 40px 0;
   }
 }
+
+/* Solace: soft peach, warm coral and considered spa rituals. */
+.spa {
+  font-family: var(--font-plus-jakarta-sans), Arial, sans-serif;
+}
+.spa .navbar {
+  border-bottom-color: #d8c6bb70;
+}
+.spa .brand {
+  font-size: 25px;
+}
+.spa .monogram {
+  border-color: #c9593e50;
+  color: var(--beauty-accent);
+}
+.spa .button {
+  border-radius: 2px;
+  background: var(--beauty-accent);
+  color: #fff !important;
+}
+.spa .navBook {
+  border-color: #c9593e60;
+  color: var(--beauty-accent);
+}
+.spaHero {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  background: #fbefeb;
+  min-height: 700px;
+}
+.spaHero > div {
+  padding: 100px 14%;
+  align-self: center;
+}
+.spaHero h1 {
+  font-size: clamp(45px, 5.5vw, 80px);
+}
+.spaHero > img {
+  height: 720px;
+  object-position: center 25%;
+}
+.spaHero > div > p:not(.eyebrow) {
+  color: #66564d;
+  max-width: 420px;
+}
+.spaAbout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 90px;
+}
+.spaAbout > img {
+  height: 550px;
+  border-radius: 50% 50% 0 0;
+  box-shadow: -25px 25px #f1d9cb;
+}
+.spaAbout p {
+  color: #67584f;
+}
+.spaCategories,
+.spaTeam,
+.spaPackages,
+.spaReviews,
+.spaNotes {
+  text-align: center;
+}
+.spaCategories > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 50px 35px;
+  margin-top: 60px;
+}
+.spaCategories h3 {
+  font-size: 23px;
+  margin-bottom: 15px;
+}
+.spaCategories article p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #75665d;
+}
+.spaSymbol {
+  display: inline-grid;
+  place-items: center;
+  width: 55px;
+  height: 55px;
+  font-size: 42px;
+  margin-bottom: 24px;
+  color: var(--beauty-accent);
+  border-radius: 20px 0;
+  background: #f1dbd2;
+}
+.spaFeatured {
+  background: #f8eae4;
+  text-align: center;
+}
+.spaFeaturedGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1fr;
+  gap: 45px;
+  align-items: center;
+  margin-top: 50px;
+}
+.spaFeaturedGrid > img {
+  height: 440px;
+  border-radius: 50%;
+  object-position: center 25%;
+}
+.spaFeaturedGrid > div:first-child {
+  text-align: right;
+}
+.spaFeaturedGrid > div:last-child {
+  text-align: left;
+}
+.spaFeaturedGrid article {
+  margin: 30px 0;
+}
+.spaFeaturedGrid h3 {
+  font-size: 26px;
+}
+.spaFeaturedGrid p {
+  font-size: 12px;
+  color: #75665d;
+}
+.spaCareBand {
+  padding: 60px 7%;
+  background: var(--beauty-accent);
+  color: #fff;
+  text-align: center;
+}
+.spaCareBand h2 {
+  font-size: 42px;
+}
+.spaCareBand > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+.spaCareBand p {
+  margin: 0;
+  font-size: 13px;
+}
+.spaCareBand span {
+  display: block;
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+.spaTeam > p:not(.eyebrow) {
+  max-width: 500px;
+  margin: 0 auto 50px;
+  color: #75665d;
+}
+.spaTeam .team {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 25px;
+}
+.spaTeam .team img {
+  height: 310px;
+}
+.spaTeam .team h3 {
+  font-size: 25px;
+}
+.spaTeam .team p {
+  font-size: 12px;
+}
+.spaPhotoStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.spaPhotoStrip img {
+  height: 300px;
+}
+.spaPackages > p:not(.eyebrow) {
+  max-width: 650px;
+  margin: 0 auto 50px;
+  color: #75665d;
+}
+.spaPackages > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px;
+}
+.spaPackages article {
+  padding: 45px 25px;
+  border: 1px solid #e6d7cc;
+}
+.spaPackages article:nth-child(2) {
+  background: #fbefeb;
+  border-color: #dca99b;
+}
+.spaPackages h3 {
+  font-size: 30px;
+}
+.spaPackages .spaPrice {
+  font:
+    35px/1.2 Georgia,
+    serif;
+  color: var(--beauty-accent);
+}
+.spaPackages ul {
+  list-style: none;
+  padding: 0;
+  margin: 30px 0;
+  font-size: 13px;
+  line-height: 2.5;
+}
+.spaRequest {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+  background: #fff;
+}
+.spaRequest > img {
+  height: 100%;
+  min-height: 650px;
+  object-fit: cover;
+}
+.spaRequest .form {
+  max-width: none;
+}
+.spaRequest h2 {
+  font-size: 45px;
+}
+.spaReviews {
+  background: #f5e9e2;
+}
+.spaReviews > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 25px;
+  margin-top: 50px;
+}
+.spaReviews blockquote {
+  margin: 0;
+  padding: 35px 25px;
+  background: #fffaf6;
+  font-size: 14px;
+  text-align: left;
+}
+.spaReviews blockquote:nth-child(2) {
+  background: var(--beauty-accent);
+  color: #fff;
+}
+.spaReviews cite {
+  font-size: 12px;
+  font-style: normal;
+}
+.spaNotes > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 25px;
+  margin-top: 50px;
+  text-align: left;
+}
+.spaNotes img {
+  height: 210px;
+  margin-bottom: 25px;
+}
+.spaNotes h3 {
+  font-size: 25px;
+}
+.spaNotes article p {
+  font-size: 12px;
+  color: #75665d;
+}
+.spaNoteArticle {
+  max-width: 950px;
+  margin: auto;
+}
+.spaNoteArticle h1 {
+  font-size: clamp(42px, 5vw, 70px);
+}
+.spaNoteArticle > img {
+  height: 450px;
+  margin: 45px 0;
+}
+.spaNoteArticle > p:not(.eyebrow) {
+  line-height: 1.9;
+  margin-bottom: 30px;
+}
+.spa .footer {
+  background: #f4e7de;
+  color: #342d29;
+}
+.spa .footerTop p:not(.eyebrow),
+.spa .footerBottom {
+  color: #67584f;
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  .spaHero > div {
+    padding: 70px 35px;
+  }
+  .spaAbout {
+    gap: 45px;
+  }
+  .spaFeaturedGrid {
+    gap: 25px;
+  }
+  .spaFeaturedGrid > img {
+    height: 320px;
+  }
+  .spaTeam .team,
+  .spaNotes > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .spaRequest {
+    gap: 35px;
+  }
+}
+@media (max-width: 767.98px) {
+  .spaHero,
+  .spaAbout,
+  .spaFeaturedGrid,
+  .spaRequest {
+    grid-template-columns: 1fr;
+  }
+  .spaHero > div {
+    padding: 55px 25px;
+  }
+  .spaHero > img {
+    height: 500px;
+  }
+  .spaAbout {
+    gap: 50px;
+  }
+  .spaAbout > img {
+    height: 400px;
+    box-shadow: -12px 12px #f1d9cb;
+  }
+  .spaCategories > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 30px 20px;
+  }
+  .spaCategories h3 {
+    font-size: 22px;
+  }
+  .spaFeaturedGrid {
+    gap: 15px;
+  }
+  .spaFeaturedGrid > div:first-child,
+  .spaFeaturedGrid > div:last-child {
+    text-align: center;
+  }
+  .spaFeaturedGrid > img {
+    height: 380px;
+    max-width: 360px;
+    margin: auto;
+  }
+  .spaCareBand > div {
+    grid-template-columns: 1fr 1fr;
+  }
+  .spaTeam .team,
+  .spaPackages > div,
+  .spaReviews > div,
+  .spaNotes > div {
+    grid-template-columns: 1fr;
+  }
+  .spaTeam .team img {
+    height: 420px;
+  }
+  .spaPhotoStrip {
+    grid-template-columns: 1fr 1fr;
+  }
+  .spaPhotoStrip img {
+    height: 230px;
+  }
+  .spaRequest {
+    gap: 35px;
+  }
+  .spaRequest > img {
+    height: 400px;
+    min-height: 0;
+  }
+  .spaNotes img {
+    height: 300px;
+  }
+  .spaNoteArticle > img {
+    height: 300px;
+  }
+}

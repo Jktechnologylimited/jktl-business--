@@ -30,6 +30,7 @@ export function templateBusinessType(id: string): BusinessType {
     "beauty-atelier": "salon",
     "salon-luxe": "salon",
     "barber-monochrome": "salon",
+    "spa-solace": "aesthetics",
     "med-spa": "aesthetics",
     restaurant: "restaurant",
     photography: "photographer",

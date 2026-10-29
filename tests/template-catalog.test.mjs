@@ -79,7 +79,7 @@ test("public catalog uses existing preview routes and sign-in only for editing; 
       html.indexOf("Law Firm</") < html.indexOf("Church &amp; Ministry</"),
     );
     assert.match(html, /aria-label="Template information"/);
-    assert.match(html, /205/);
+    assert.match(html, /206/);
     assert.match(html, /target="_blank" rel="noopener noreferrer"/);
   }
 });

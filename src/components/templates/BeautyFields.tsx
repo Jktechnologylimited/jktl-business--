@@ -272,6 +272,13 @@ export function BeautyFields({
           80,
         ),
       )}
+      {b.design === "spa" && (
+        <p className="text-sm text-ink-muted">
+          Edit spa articles in Care notes & articles. Each title and answer
+          becomes a readable care-note page. Keep titles unique; changing a
+          title changes its page address.
+        </p>
+      )}
       <h4 className="font-semibold">Search appearance for each page</h4>
       {beautyPagePaths(value).map((path) => {
         const meta = beautyPageMeta(value, path);

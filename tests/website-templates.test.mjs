@@ -40,9 +40,9 @@ const { BeautyWebsite } = loadTs(
 );
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 205);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 203);
-  assert.equal(new Set(all.map((t) => t.id)).size, 205);
+  assert.equal(all.length, 206);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 204);
+  assert.equal(new Set(all.map((t) => t.id)).size, 206);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -681,4 +681,57 @@ test("Crown & Blade preserves its barber design and original booking/gallery con
     ),
   );
   assert.ok(!html.includes("20%"));
+});
+
+test("Solace spa supports editable packages and care-note pages without a separate publishing system", () => {
+  const template = catalogue.getWebsiteTemplate("spa-solace");
+  const draft = catalogue.parseWebsiteDocument(
+    catalogue.templateDraft(template.id, "My Spa"),
+  );
+  assert.equal(draft.beauty.design, "spa");
+  assert.equal(
+    draft.offerings.filter((o) => o.category === "Package").length,
+    3,
+  );
+  const path = catalogue.beautyNotePath(draft.faqs[0].question, 0);
+  assert.ok(catalogue.beautyPagePaths(draft).includes(path));
+  assert.ok(
+    catalogue
+      .beautyPageMeta(draft, path)
+      .title.includes(draft.faqs[0].question),
+  );
+  const html = renderToStaticMarkup(
+    createElement(BeautyWebsite, { template, document: draft, preview: true }),
+  );
+  for (const text of [
+    "Featured rituals",
+    "Our beauty packages",
+    "Make an appointment request",
+    "Notes on beauty &amp; care",
+    "My Spa",
+  ])
+    assert.ok(html.includes(text), text);
+  assert.ok(html.includes("/book?service=renew-package"));
+  const article = renderToStaticMarkup(
+    createElement(BeautyWebsite, { template, document: draft, pagePath: path }),
+  );
+  assert.ok(article.includes(draft.faqs[0].question));
+  assert.ok(article.includes("Start with a conversation."));
+  const edited = structuredClone(draft);
+  edited.faqs[0].answer = "Updated care article content.";
+  assert.ok(
+    renderToStaticMarkup(
+      createElement(BeautyWebsite, {
+        template,
+        document: catalogue.parseWebsiteDocument(edited),
+        pagePath: path,
+      }),
+    ).includes("Updated care article content."),
+  );
+  const duplicate = structuredClone(draft);
+  duplicate.faqs[1].question = duplicate.faqs[0].question;
+  assert.throws(
+    () => catalogue.parseWebsiteDocument(duplicate),
+    /unique care-note titles/,
+  );
 });

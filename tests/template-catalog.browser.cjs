@@ -104,7 +104,7 @@ const { chromium } = require("playwright");
     await page
       .getByRole("combobox", { name: "Filter templates by industry" })
       .selectOption("Beauty & Wellness");
-    assert.match(await gallery.getByRole("status").innerText(), /33 templates/);
+    assert.match(await gallery.getByRole("status").innerText(), /34 templates/);
     assert.equal(await cards.count(), 24);
     const firstThree = await cards
       .locator("h2,h3")
@@ -302,6 +302,7 @@ const { chromium } = require("playwright");
         "beauty-atelier",
         "salon-luxe",
         "barber-monochrome",
+        "spa-solace",
       ]) {
         await preview.goto(origin + "/template-canvas/" + id);
         const signIn = preview.getByRole("link", {
@@ -375,6 +376,67 @@ const { chromium } = require("playwright");
         .getByRole("button", { name: "Send appointment request" })
         .isVisible(),
       true,
+    );
+    await preview.goto(origin + "/templates/spa-solace");
+    await preview
+      .frameLocator("iframe")
+      .getByRole("heading", { name: "Beauty, care and a softer pace." })
+      .waitFor();
+    assert.ok(
+      (
+        await preview
+          .getByRole("link", { name: "Select Template" })
+          .getAttribute("href")
+      ).endsWith("?template=spa-solace"),
+    );
+    for (const path of [
+      "",
+      "/about",
+      "/services",
+      "/services/facial-ritual",
+      "/services/renew-package",
+      "/gallery",
+      "/book",
+      "/contact",
+      "/notes/preparing-for-your-first-spa-visit",
+    ]) {
+      const response = await page.request.get(
+        origin + "/template-canvas/spa-solace" + path,
+      );
+      assert.equal(response.status(), 200, path);
+      assert.ok((await response.text()).includes("Solace Beauty &amp; Spa"));
+    }
+    await preview.goto(origin + "/template-canvas/spa-solace");
+    await preview
+      .getByRole("heading", {
+        name: "Preparing for your first spa visit",
+        exact: true,
+      })
+      .getByRole("link")
+      .click();
+    await preview.waitForURL(/notes\/preparing-for-your-first-spa-visit/);
+    assert.equal(
+      await preview
+        .getByRole("heading", {
+          name: "Preparing for your first spa visit",
+          exact: true,
+        })
+        .isVisible(),
+      true,
+    );
+    await preview.goto(origin + "/template-canvas/spa-solace");
+    const renew = preview
+      .locator("article")
+      .filter({
+        has: preview.getByRole("heading", { name: "Renew", exact: true }),
+      });
+    await renew
+      .getByRole("link", { name: "Request an appointment", exact: true })
+      .click();
+    await preview.waitForURL(/book\?service=renew-package/);
+    assert.equal(
+      await preview.locator('select[name="service"]').inputValue(),
+      "renew-package",
     );
     assert.deepEqual(errors, []);
     console.log(

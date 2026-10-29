@@ -13,7 +13,7 @@ export type TemplateLayout =
   | "minimal"
   | "studio";
 export type BeautyContent = {
-  design?: "atelier" | "luxe" | "barber";
+  design?: "atelier" | "luxe" | "barber" | "spa";
   version: 2;
   demoContent: boolean;
   aboutImage: string;
@@ -1888,6 +1888,302 @@ websiteTemplates.push({
   document: barberDocument,
 });
 
+// Solace is an independent spa starter; prices, people and reviews are editable examples.
+const spaDocument = JSON.parse(
+  JSON.stringify(salon.document),
+) as WebsiteDocument;
+Object.assign(spaDocument, {
+  brandName: "Solace Beauty & Spa",
+  eyebrow: "A LITTLE TIME, JUST FOR YOU",
+  headline: "Beauty, care\nand a softer pace.",
+  intro:
+    "Personal beauty rituals, gentle care and room to pause. Discover a welcoming studio that helps you feel a little more like yourself.",
+  ctaLabel: "Request an appointment",
+  accent: "#c9593e",
+  paper: "#fffaf6",
+  ink: "#342d29",
+  heroImage: "/template-photos/beauty/spa-hero.jpg",
+  seoTitle: "Beauty, care & a softer pace | Solace Beauty & Spa",
+  seoDescription:
+    "Discover personal beauty rituals, relaxing spa visits and thoughtful packages at Solace Beauty & Spa. Meet the team and request your next appointment.",
+  aboutTitle: "A calm space. A personal approach.",
+  aboutText:
+    "We make room for a slower kind of appointment. One that begins with a conversation about your preferences, your routine and what would help you feel comfortable.\n\nFrom a simple refresh to time set aside for yourself, our independent studio brings a thoughtful touch to every visit. We explain what to expect and make space for your questions.",
+  offeringsTitle: "Our beauty & spa services",
+  offerings: [
+    ...[
+      [
+        "relaxation-massage",
+        "Relaxation massage",
+        "A gentle, unhurried session shaped around your comfort and preferences.",
+        "60 minutes",
+        "From ₦25,000",
+        "skin-care.jpg",
+      ],
+      [
+        "facial-ritual",
+        "Facial ritual",
+        "A considered cleanse, hydration and simple care guidance for your routine.",
+        "60 minutes",
+        "From ₦30,000",
+        "skin-hero.jpg",
+      ],
+      [
+        "skin-care",
+        "Skin care consultation",
+        "A conversation about your routine and the care that feels right for you.",
+        "30 minutes",
+        "From ₦15,000",
+        "spa-hero.jpg",
+      ],
+      [
+        "nail-care",
+        "Nail care",
+        "Thoughtful shaping, careful finishing and colour that feels like you.",
+        "45 minutes",
+        "From ₦15,000",
+        "colour.jpg",
+      ],
+      [
+        "makeup",
+        "Makeup artistry",
+        "Soft definition or a creative statement, designed together for your moment.",
+        "75 minutes",
+        "From ₦35,000",
+        "luxe-hero.jpg",
+      ],
+      [
+        "quiet-time",
+        "Quiet-time ritual",
+        "A slower studio visit with a warm welcome and a personal care conversation.",
+        "45 minutes",
+        "From ₦20,000",
+        "spa-interior.jpg",
+      ],
+      [
+        "hand-foot-care",
+        "Hand & foot care",
+        "A careful refresh with gentle shaping, finishing and practical aftercare advice.",
+        "60 minutes",
+        "From ₦22,000",
+        "skin-care.jpg",
+      ],
+      [
+        "occasion-beauty",
+        "Occasion beauty",
+        "A personal consultation and a considered beauty look for your special occasion.",
+        "90 minutes",
+        "By consultation",
+        "stylist.jpg",
+      ],
+    ].map(([slug, title, description, duration, price, image]) => ({
+      slug,
+      title,
+      description,
+      duration,
+      price,
+      image: `/template-photos/beauty/${image}`,
+      category: "Treatment",
+      benefits: [
+        "A personal consultation",
+        "Care shaped around your preferences",
+        "Simple aftercare guidance",
+      ],
+      preparation:
+        "Tell us about allergies, sensitivities, recent treatments and any concerns before your visit. Your team will discuss suitability, timing and final pricing with you.",
+    })),
+    ...[
+      [
+        "restore-package",
+        "Restore",
+        "From ₦40,000",
+        ["Personal consultation", "Facial ritual", "Aftercare conversation"],
+      ],
+      [
+        "renew-package",
+        "Renew",
+        "From ₦60,000",
+        ["Personal consultation", "Relaxation massage", "Hand & foot care"],
+      ],
+      [
+        "celebrate-package",
+        "Celebrate",
+        "From ₦75,000",
+        ["Personal consultation", "Makeup artistry", "Nail care"],
+      ],
+    ].map(([slug, title, price, benefits]) => ({
+      slug: slug as string,
+      title: title as string,
+      price: price as string,
+      benefits: benefits as string[],
+      category: "Package",
+      description:
+        "A considered combination of studio services, with timing and suitability discussed before your appointment.",
+      duration: "By consultation",
+      image: "/template-photos/beauty/spa-interior.jpg",
+      preparation:
+        "Your studio confirms availability, package inclusions and final pricing before the visit. This request does not take payment.",
+    })),
+  ],
+  galleryTitle: "A little look inside",
+  gallery: [
+    {
+      src: "/template-photos/beauty/skin-care.jpg",
+      alt: "A gentle facial care ritual",
+      category: "Care",
+    },
+    {
+      src: "/template-photos/beauty/spa-interior.jpg",
+      alt: "A calm and welcoming spa space",
+      category: "Studio",
+    },
+    {
+      src: "/template-photos/beauty/skin-hero.jpg",
+      alt: "A personal facial treatment in progress",
+      category: "Care",
+    },
+    {
+      src: "/template-photos/beauty/spa-hero.jpg",
+      alt: "A beauty portrait with a natural finish",
+      category: "Beauty",
+    },
+  ],
+  featureTitle: "Thoughtful people. A gentle touch.",
+  featureText:
+    "Different skills, a shared commitment to making you feel welcome.",
+  featureItems: [
+    "Personal consultation",
+    "Comfort comes first",
+    "Transparent conversations",
+    "Care for your routine",
+  ],
+  faqTitle: "Notes on beauty & care",
+  faqs: [
+    {
+      question: "Preparing for your first spa visit",
+      answer:
+        "Start with a conversation. Tell the studio what you would like from the visit, how much time you have and whether there is anything that would make you more comfortable. You can ask about the treatment, the products used and the final price before deciding.\n\nShare any allergies, sensitivities, recent procedures or health concerns before the appointment. A treatment may need to be adapted or postponed. If you are unsure about suitability, speak to a qualified health professional.\n\nArrive with time to settle in, wear something comfortable and bring your questions. Your visit should feel considered and personal, with no pressure to choose a service you do not want.",
+    },
+    {
+      question: "A simpler everyday skin routine",
+      answer:
+        "A good routine can be simple. Introduce changes gradually and pay attention to how your skin feels. Gentle cleansing, suitable hydration and appropriate sun protection are useful topics to discuss with your skin-care professional.\n\nMore products do not automatically mean better care. Ask about ingredients, sensitivities and how a product fits with what you already use. Follow product instructions and stop using anything that causes irritation.\n\nThis is general information, not a diagnosis or personal treatment plan. Persistent irritation, new symptoms or concerns about a skin condition deserve advice from a qualified clinician.",
+    },
+    {
+      question: "Making time for a slower appointment",
+      answer:
+        "Setting aside time for yourself does not need to be complicated. Choose a visit that fits your day and talk with the team about your preferences before it begins. Quiet time, a little conversation or extra explanation can all be part of a personal experience.\n\nYou can ask the practitioner to adjust pressure, pause a service or explain a step. Feeling comfortable includes knowing that you can change your mind.\n\nAfter your appointment, give yourself room to ease back into the day. Ask for any relevant aftercare guidance and choose a pace that feels right for you.",
+    },
+    {
+      question: "Choosing a beauty package",
+      answer:
+        "A package can be a useful way to plan a few services together. Begin with what you actually want from the visit rather than the number of treatments listed. Ask which services are included, how long they take and how the final price is confirmed.\n\nTell the studio about sensitivities, preferences and any timing constraints. Some combinations may not suit every guest, and your team should discuss alternatives before you decide.\n\nA request is not a confirmed reservation or a payment. Ask about the studio's booking, cancellation and aftercare arrangements so you know what to expect.",
+    },
+  ],
+  contactTitle: "Make a little space for yourself.",
+  contactText:
+    "Tell us what you have in mind. We will get in touch to discuss suitability, availability and the right service for you.",
+  reviews: [
+    {
+      name: "Sample guest · Ada",
+      quote:
+        "A warm welcome and time to slow down. Every detail felt considered.",
+      rating: 5,
+    },
+    {
+      name: "Sample guest · Kemi",
+      quote: "They listened to my preferences and explained each step clearly.",
+      rating: 5,
+    },
+    {
+      name: "Sample guest · Zainab",
+      quote:
+        "A calm space, thoughtful care and a lovely little pause in my week.",
+      rating: 5,
+    },
+  ],
+});
+spaDocument.beauty = {
+  ...spaDocument.beauty!,
+  design: "spa",
+  demoContent: true,
+  aboutImage: "/template-photos/beauty/spa-interior.jpg",
+  philosophy: [
+    "Listen first",
+    "Respect your comfort",
+    "Explain each step",
+    "Keep care personal",
+  ],
+  stylists: [
+    {
+      name: "Ada Eze",
+      role: "Skin care artist",
+      bio: "A gentle approach and time for your questions.",
+      image: "/template-photos/beauty/spa-hero.jpg",
+    },
+    {
+      name: "Lola James",
+      role: "Makeup artist",
+      bio: "Personal expression, colour and a considered finish.",
+      image: "/template-photos/beauty/luxe-hero.jpg",
+    },
+    {
+      name: "Zara Cole",
+      role: "Beauty specialist",
+      bio: "An eye for detail and a warm studio welcome.",
+      image: "/template-photos/beauty/stylist.jpg",
+    },
+    {
+      name: "Amara Obi",
+      role: "Nail care artist",
+      bio: "Careful finishing and simple care guidance.",
+      image: "/template-photos/beauty/skin-artist.jpg",
+    },
+  ],
+  pages: [
+    {
+      path: "",
+      title: spaDocument.seoTitle!,
+      description: spaDocument.seoDescription!,
+    },
+    ...[
+      ["about", "Our story"],
+      ["services", "Our services"],
+      ["gallery", "Studio gallery"],
+      ["book", "Request a visit"],
+      ["contact", "Contact"],
+    ].map(([path, title]) => ({
+      path,
+      title: `${title} | Solace Beauty & Spa`,
+      description: spaDocument.intro,
+    })),
+    ...spaDocument.offerings.map((o) => ({
+      path: `services/${o.slug}`,
+      title: `${o.title} | Solace Beauty & Spa`,
+      description: o.description,
+    })),
+  ],
+};
+websiteTemplates.push({
+  id: "spa-solace",
+  name: "Spa & Wellness — Solace",
+  category: "Beauty & Wellness",
+  layout: "portrait",
+  kind: "website",
+  sourceId: "spa-solace",
+  edition: "Spa",
+  sectionOrder: [
+    "about",
+    "offerings",
+    "feature",
+    "gallery",
+    "reviews",
+    "faq",
+    "areas",
+  ],
+  document: spaDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -1918,7 +2214,8 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
     document.seoTitle = (
       document.beauty?.design === "barber"
         ? `Precision cuts & beard care | ${document.brandName}`
-        : document.beauty?.design === "atelier"
+        : document.beauty?.design === "atelier" ||
+            document.beauty?.design === "spa"
           ? `Personal beauty rituals | ${document.brandName}`
           : document.beauty
             ? `Hair, with a personal touch | ${document.brandName}`
@@ -2165,7 +2462,10 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
       throw Error("Please check salon philosophy.");
     result.beauty = {
       version: 2,
-      ...(b.design === "atelier" || b.design === "luxe" || b.design === "barber"
+      ...(b.design === "atelier" ||
+      b.design === "luxe" ||
+      b.design === "barber" ||
+      b.design === "spa"
         ? { design: b.design }
         : {}),
       demoContent: b.demoContent,
@@ -2191,7 +2491,7 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
       pages: values("pages", 24).map((v) => {
         const path = optionalText(v, "path", 120);
         if (
-          !/^(?:about|services(?:\/[a-z0-9-]+)?|gallery|book|contact)?$/.test(
+          !/^(?:about|services(?:\/[a-z0-9-]+)?|notes\/[a-z0-9-]+|gallery|book|contact)?$/.test(
             path,
           )
         )
@@ -2208,6 +2508,13 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     );
     if (new Set(slugs).size !== slugs.length)
       throw Error("Please check duplicate service slugs.");
+    if ((result.beauty as BeautyContent).design === "spa") {
+      const notes = (result.faqs as WebsiteDocument["faqs"]).map((f, i) =>
+        beautyNotePath(f.question, i),
+      );
+      if (new Set(notes).size !== notes.length)
+        throw Error("Please use unique care-note titles.");
+    }
     const pages = (result.beauty as BeautyContent).pages.map((p) => p.path);
     if (new Set(pages).size !== pages.length)
       throw Error("Please check duplicate page SEO settings.");
@@ -2228,6 +2535,11 @@ export function beautyServiceSlug(service: WebsiteOffering, index: number) {
     `service-${index + 1}`
   );
 }
+export function beautyNotePath(question: string, index: number) {
+  return (
+    "notes/" + beautyServiceSlug({ title: question, description: "" }, index)
+  );
+}
 export function beautyPagePaths(doc: WebsiteDocument) {
   return doc.beauty?.version === 2
     ? [
@@ -2238,6 +2550,9 @@ export function beautyPagePaths(doc: WebsiteDocument) {
         "gallery",
         "book",
         "contact",
+        ...(doc.beauty.design === "spa"
+          ? doc.faqs.map((f, i) => beautyNotePath(f.question, i))
+          : []),
       ]
     : [""];
 }
@@ -2246,15 +2561,24 @@ export function beautyPageMeta(doc: WebsiteDocument, path: string) {
   const service = doc.offerings.find(
     (o, i) => path === "services/" + beautyServiceSlug(o, i),
   );
+  const note =
+    doc.beauty?.design === "spa"
+      ? doc.faqs.find((f, i) => beautyNotePath(f.question, i) === path)
+      : undefined;
   return {
     title:
       (path === "" ? doc.seoTitle : undefined) ||
       custom?.title ||
-      (service ? service.title : doc.seoTitle || doc.brandName),
+      (note
+        ? `${note.question} | ${doc.brandName}`.slice(0, 100)
+        : service
+          ? service.title
+          : doc.seoTitle || doc.brandName),
     description:
       (path === "" ? doc.seoDescription : undefined) ||
       custom?.description ||
       service?.description ||
+      (note ? note.answer.slice(0, 155) : undefined) ||
       doc.seoDescription ||
       doc.intro,
   };

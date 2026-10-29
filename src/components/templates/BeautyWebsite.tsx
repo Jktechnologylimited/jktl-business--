@@ -2,6 +2,7 @@
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   beautyServiceSlug,
+  beautyNotePath,
   templateLoginPath,
   type WebsiteTemplate,
   type WebsiteDocument,
@@ -60,6 +61,9 @@ export function BeautyWebsite({
   const atelier = b.design === "atelier";
   const luxe = b.design === "luxe";
   const barber = b.design === "barber";
+  const spa = b.design === "spa";
+  const treatments = doc.offerings.filter((o) => o.category !== "Package");
+  const packages = doc.offerings.filter((o) => o.category === "Package");
   const workGallery = useRef<HTMLDivElement>(null);
   const scrollWork = (direction: number) => {
     const track = workGallery.current;
@@ -84,6 +88,10 @@ export function BeautyWebsite({
     (s, i) => path === `services/${beautyServiceSlug(s, i)}`,
   );
   const service = doc.offerings[serviceIndex];
+  const noteIndex = spa
+    ? doc.faqs.findIndex((f, i) => beautyNotePath(f.question, i) === path)
+    : -1;
+  const note = doc.faqs[noteIndex];
   const phone = b.contact.phone || contact.phone || "",
     email = b.contact.email || contact.email || "";
   const address =
@@ -221,6 +229,7 @@ export function BeautyWebsite({
       : path === "services"
         ? "Services"
         : service?.title ||
+          note?.question ||
           (
             {
               about: "About",
@@ -234,7 +243,7 @@ export function BeautyWebsite({
     <div
       data-layout="portrait"
       data-beauty-version="2"
-      className={`${styles.site} ${atelier ? styles.atelier : ""} ${luxe ? styles.luxe : ""} ${barber ? styles.barber : ""}`}
+      className={`${styles.site} ${atelier ? styles.atelier : ""} ${luxe ? styles.luxe : ""} ${barber ? styles.barber : ""} ${spa ? styles.spa : ""}`}
       style={
         {
           "--beauty-accent": doc.accent,
@@ -322,6 +331,228 @@ export function BeautyWebsite({
         </nav>
       </header>
       <main id="salon-content" tabIndex={-1}>
+        {path === "" && spa && (
+          <>
+            <section className={styles.spaHero}>
+              <div>
+                <p className={styles.eyebrow}>{doc.eyebrow}</p>
+                <h1>{doc.headline}</h1>
+                <p>{doc.intro}</p>
+                {book()}
+              </div>
+              {photo(
+                doc.heroImage,
+                "A beauty portrait with a natural finish",
+                undefined,
+                true,
+              )}
+            </section>
+            <section className={`${styles.section} ${styles.spaAbout}`}>
+              {photo(b.aboutImage, "A calm and welcoming spa space")}
+              <div>
+                <p className={styles.eyebrow}>A WELCOME THAT FEELS PERSONAL</p>
+                <h2>{doc.aboutTitle}</h2>
+                {doc.aboutText.split("\n\n").map((t, i) => (
+                  <p key={i}>{t}</p>
+                ))}
+                {link("about", "Discover our story →", styles.textLink)}
+              </div>
+            </section>
+            <section className={`${styles.section} ${styles.spaCategories}`}>
+              <p className={styles.eyebrow}>DISCOVER YOUR MOMENT</p>
+              <h2>{doc.offeringsTitle}</h2>
+              <div>
+                {treatments.map((service, i) => (
+                  <article key={i}>
+                    <span className={styles.spaSymbol} aria-hidden="true">
+                      ✧
+                    </span>
+                    <h3>
+                      {link(
+                        `services/${beautyServiceSlug(service, doc.offerings.indexOf(service))}`,
+                        service.title,
+                      )}
+                    </h3>
+                    <p>{service.description}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+            <section className={`${styles.section} ${styles.spaFeatured}`}>
+              <p className={styles.eyebrow}>A CONSIDERED APPROACH</p>
+              <h2>Featured rituals</h2>
+              <div className={styles.spaFeaturedGrid}>
+                <div>
+                  {treatments.slice(0, 3).map((service, i) => (
+                    <article key={i}>
+                      <h3>
+                        {link(
+                          `services/${beautyServiceSlug(service, i)}`,
+                          service.title,
+                        )}
+                      </h3>
+                      <p>{service.description}</p>
+                    </article>
+                  ))}
+                </div>
+                {photo(doc.heroImage, "A personal approach to beauty and care")}
+                <div>
+                  {treatments.slice(3, 6).map((service, i) => (
+                    <article key={i}>
+                      <h3>
+                        {link(
+                          `services/${beautyServiceSlug(service, i + 3)}`,
+                          service.title,
+                        )}
+                      </h3>
+                      <p>{service.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+            <section className={styles.spaCareBand} aria-label="Our approach">
+              <h2>Care that starts with you.</h2>
+              <div>
+                {doc.featureItems.map((item, i) => (
+                  <p key={i}>
+                    <span aria-hidden="true">✦</span>
+                    {item}
+                  </p>
+                ))}
+              </div>
+            </section>
+            <section className={`${styles.section} ${styles.spaTeam}`}>
+              <p className={styles.eyebrow}>MEET THE STUDIO TEAM</p>
+              <h2>{doc.featureTitle}</h2>
+              <p>{doc.featureText}</p>
+              <div className={styles.team}>
+                {b.stylists.map((person, i) => (
+                  <article key={i}>
+                    {photo(person.image, `${person.name}, ${person.role}`)}
+                    <div>
+                      <h3>{person.name}</h3>
+                      <p>{person.role}</p>
+                      <p>{person.bio}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+            <div className={styles.spaPhotoStrip}>
+              {doc.gallery.map((image, i) => (
+                <div key={i}>
+                  {link("gallery", photo(image.src, image.alt))}
+                </div>
+              ))}
+            </div>
+            <section className={`${styles.section} ${styles.spaPackages}`}>
+              <p className={styles.eyebrow}>A LITTLE MORE TIME FOR YOU</p>
+              <h2>Our beauty packages</h2>
+              <p>
+                {b.demoContent
+                  ? "Editable example packages and prices. Your studio confirms inclusions and final pricing."
+                  : "Discuss your preferences, package inclusions and final pricing with our studio."}
+              </p>
+              <div>
+                {packages.map((service, i) => (
+                  <article key={i}>
+                    <h3>{service.title}</h3>
+                    <p className={styles.spaPrice}>{service.price}</p>
+                    <p>{service.duration}</p>
+                    <ul>
+                      {service.benefits?.map((benefit, j) => (
+                        <li key={j}>{benefit}</li>
+                      ))}
+                    </ul>
+                    {book(
+                      beautyServiceSlug(
+                        service,
+                        doc.offerings.indexOf(service),
+                      ),
+                    )}
+                  </article>
+                ))}
+              </div>
+            </section>
+            <section className={`${styles.section} ${styles.spaRequest}`}>
+              <div>
+                <p className={styles.eyebrow}>YOUR NEXT VISIT</p>
+                <h2>Make an appointment request</h2>
+                <BeautyRequestForm
+                  kind="appointment"
+                  document={doc}
+                  onRequest={onRequest}
+                />
+              </div>
+              {photo(
+                b.aboutImage,
+                "A welcoming space for your next appointment",
+              )}
+            </section>
+            <section className={`${styles.section} ${styles.spaReviews}`}>
+              <p className={styles.eyebrow}>
+                {b.demoContent && !reviews.length
+                  ? "EDITABLE DEMO TESTIMONIALS"
+                  : "CLIENT STORIES"}
+              </p>
+              <h2>What our guests say</h2>
+              <div>
+                {stories.slice(0, 3).map((story, i) => (
+                  <blockquote key={i}>
+                    <p>“{story.quote}”</p>
+                    <cite>{story.name}</cite>
+                  </blockquote>
+                ))}
+              </div>
+              {!stories.length && <p>Your guests’ words belong here.</p>}
+            </section>
+            <section className={`${styles.section} ${styles.spaNotes}`}>
+              <p className={styles.eyebrow}>FROM THE STUDIO</p>
+              <h2>{doc.faqTitle}</h2>
+              <div>
+                {doc.faqs.slice(0, 4).map((article, i) => (
+                  <article key={i}>
+                    {link(
+                      beautyNotePath(article.question, i),
+                      photo(
+                        doc.gallery[i % doc.gallery.length]?.src ||
+                          doc.heroImage,
+                        article.question,
+                      ),
+                    )}
+                    <h3>
+                      {link(
+                        beautyNotePath(article.question, i),
+                        article.question,
+                      )}
+                    </h3>
+                    <p>{article.answer.split("\n\n")[0].slice(0, 150)}…</p>
+                    {link(
+                      beautyNotePath(article.question, i),
+                      "Read the care note →",
+                      styles.textLink,
+                    )}
+                  </article>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+        {note && (
+          <article className={`${styles.section} ${styles.spaNoteArticle}`}>
+            <p className={styles.eyebrow}>BEAUTY & CARE NOTES</p>
+            <h1>{note.question}</h1>
+            {photo(
+              doc.gallery[noteIndex % doc.gallery.length]?.src || doc.heroImage,
+              note.question,
+            )}
+            {note.answer.split("\n\n").map((paragraph, i) => (
+              <p key={i}>{paragraph}</p>
+            ))}
+            {link("", "← Back to the studio", styles.textLink)}
+          </article>
+        )}
         {path === "" && barber && (
           <>
             <section className={styles.barberHero}>
@@ -612,7 +843,7 @@ export function BeautyWebsite({
             </section>
           </>
         )}
-        {path === "" && !atelier && !luxe && !barber && (
+        {path === "" && !atelier && !luxe && !barber && !spa && (
           <>
             <section className={styles.hero}>
               <div className={styles.heroCopy}>
@@ -724,9 +955,11 @@ export function BeautyWebsite({
                 <h2>
                   {barber
                     ? "Good craft. Good company."
-                    : atelier
-                      ? "Care, with a creative spirit."
-                      : "A thoughtful kind of beauty."}
+                    : spa
+                      ? "A little care. Entirely personal."
+                      : atelier
+                        ? "Care, with a creative spirit."
+                        : "A thoughtful kind of beauty."}
                 </h2>
                 {doc.aboutText.split("\n\n").map((p, i) => (
                   <p key={i}>{p}</p>
@@ -768,7 +1001,7 @@ export function BeautyWebsite({
             {title(
               "THE SERVICE EDIT",
               doc.offeringsTitle,
-              atelier || barber
+              atelier || barber || spa
                 ? doc.intro
                 : "A considered approach to every cut, colour and texture. Explore what feels right for you.",
             )}
@@ -1038,13 +1271,14 @@ export function BeautyWebsite({
             </section>
           </>
         )}
-        {!["book", "contact"].includes(path) && !(luxe && path === "") && (
-          <section className={`${styles.section} ${styles.bookingStrip}`}>
-            <p className={styles.eyebrow}>YOUR NEXT CHAPTER</p>
-            <h2>{doc.contactTitle}</h2>
-            {book()}
-          </section>
-        )}
+        {!["book", "contact"].includes(path) &&
+          !((luxe || spa) && path === "") && (
+            <section className={`${styles.section} ${styles.bookingStrip}`}>
+              <p className={styles.eyebrow}>YOUR NEXT CHAPTER</p>
+              <h2>{doc.contactTitle}</h2>
+              {book()}
+            </section>
+          )}
       </main>
       <footer className={styles.footer}>
         <div className={styles.footerTop}>
