@@ -1144,3 +1144,320 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* A visible account icon on every beauty template, including phone layouts. */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  order: 1;
+  flex-shrink: 0;
+}
+.signIn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.signIn svg {
+  display: block;
+}
+@media (max-width: 767.98px) {
+  .headerActions {
+    order: 0;
+    margin-left: auto;
+    gap: 12px;
+  }
+  .navbar {
+    gap: 12px;
+  }
+  .site .brand {
+    max-width: calc(100% - 140px);
+    white-space: normal;
+  }
+}
+
+/* Velour: a full-bleed salon portrait, burgundy pill navigation and warm cream. */
+.luxe .navbar {
+  position: sticky;
+  top: 14px;
+  z-index: 20;
+  margin: 14px 24px -100px;
+  min-height: 72px;
+  padding: 12px 26px;
+  border: 0;
+  border-radius: 42px;
+  background: var(--beauty-accent);
+  color: #fff7ee;
+}
+.luxe .brand {
+  font-size: 27px;
+  max-width: 240px;
+}
+.luxe .monogram {
+  display: none;
+}
+.luxe .navigation {
+  order: -1;
+  gap: 18px;
+  font-size: 11px;
+}
+.luxe .navBook {
+  border-color: #fff7ee90;
+  border-radius: 30px;
+  padding: 9px 15px;
+}
+.luxe .button {
+  background: var(--beauty-accent);
+  color: #fff7ee !important;
+  border-radius: 30px;
+  padding: 13px 22px;
+}
+.luxeHero {
+  position: relative;
+  min-height: 850px;
+  background: #30251f;
+  color: #fff7ee;
+}
+.luxeHero > img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+}
+.luxeHero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #170e0b10 15%,
+    #170e0b15 35%,
+    #170e0bcc 100%
+  );
+  pointer-events: none;
+}
+.luxeHeroContent {
+  position: relative;
+  z-index: 1;
+  min-height: 850px;
+  padding: 190px 5% 65px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 60px;
+}
+.luxeHeroContent h1 {
+  font-size: clamp(54px, 6vw, 100px);
+  margin-bottom: 0;
+  max-width: 690px;
+}
+.luxeHeroContent > div:last-child {
+  max-width: 330px;
+  padding-bottom: 10px;
+}
+.luxeHeroContent .button {
+  border: 1px solid #fff7ee70;
+}
+.luxeServices {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 90px;
+  align-items: start;
+}
+.luxeServices > div:first-child {
+  position: sticky;
+  top: 130px;
+}
+.luxeServiceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.luxeServiceGrid article {
+  border: 1px solid #50271f20;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.luxeServiceGrid img {
+  height: 245px;
+}
+.luxeServiceGrid article > div {
+  padding: 24px 20px;
+}
+.luxeServiceGrid h3 {
+  font-size: 28px;
+}
+.luxeServiceGrid p {
+  font-size: 12px;
+}
+.luxeServiceGrid .button {
+  font-size: 10px !important;
+  min-height: 44px;
+  padding: 10px 15px;
+}
+.luxeTeam {
+  padding-top: 20px;
+  text-align: center;
+}
+.luxeTeam > p {
+  max-width: 440px;
+  margin: 0 auto 45px;
+}
+.luxeTeam .team {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+  text-align: left;
+  margin-bottom: 35px;
+}
+.luxeTeam .team img {
+  height: 420px;
+  border-radius: 8px;
+}
+.luxeReviews {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+  padding: 80px 7%;
+  background: #fce8c5;
+}
+.luxeReviews > img {
+  height: 680px;
+  object-position: center 25%;
+  border-radius: 8px;
+}
+.luxeReviews blockquote {
+  margin: 40px 0;
+  max-width: 420px;
+}
+.luxeReviews blockquote p {
+  font-size: 19px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+.luxeReviews cite {
+  font-size: 11px;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.luxeVisit {
+  position: relative;
+  min-height: 720px;
+  display: flex;
+  align-items: flex-end;
+  padding: 65px;
+}
+.luxeVisit > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.luxeVisit > div {
+  position: relative;
+  padding: 40px;
+  background: var(--beauty-paper);
+  border-radius: 8px;
+  max-width: 540px;
+}
+.luxe .footer {
+  background: var(--beauty-accent);
+  color: #fff7ee;
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  .luxe .navbar {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: -120px;
+  }
+  .luxe .brand {
+    flex: 1;
+    max-width: none;
+  }
+  .luxe .navigation {
+    order: 2;
+    width: 100%;
+    justify-content: center;
+  }
+  .luxeServices {
+    gap: 35px;
+    padding-inline: 32px;
+  }
+  .luxeServiceGrid {
+    gap: 12px;
+  }
+}
+@media (max-width: 767.98px) {
+  .luxe .navbar {
+    top: 8px;
+    margin: 8px 12px -90px;
+    padding: 12px 18px;
+    border-radius: 28px;
+    min-height: 72px;
+  }
+  .luxe .brand {
+    font-size: 22px;
+    max-width: calc(100% - 140px);
+  }
+  .luxe .navigationOpen {
+    order: 2;
+  }
+  .luxe .menuButton {
+    font-size: 12px;
+  }
+  .luxeHero,
+  .luxeHeroContent {
+    min-height: 800px;
+  }
+  .luxeHeroContent {
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+    gap: 28px;
+    padding: 150px 25px 45px;
+  }
+  .luxeHeroContent h1 {
+    font-size: 58px;
+  }
+  .luxeHeroContent > div:last-child {
+    max-width: 330px;
+  }
+  .luxeServices {
+    display: block;
+  }
+  .luxeServices > div:first-child {
+    position: static;
+    margin-bottom: 40px;
+  }
+  .luxeServiceGrid {
+    grid-template-columns: 1fr;
+  }
+  .luxeServiceGrid img {
+    height: 300px;
+  }
+  .luxeTeam .team {
+    grid-template-columns: 1fr;
+  }
+  .luxeReviews {
+    grid-template-columns: 1fr;
+    padding: 55px 25px;
+    gap: 30px;
+  }
+  .luxeReviews > img {
+    height: 440px;
+  }
+  .luxeVisit {
+    min-height: 650px;
+    padding: 25px;
+  }
+  .luxeVisit > div {
+    padding: 30px 25px;
+  }
+}

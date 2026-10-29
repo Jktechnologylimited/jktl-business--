@@ -104,7 +104,7 @@ const { chromium } = require("playwright");
     await page
       .getByRole("combobox", { name: "Filter templates by industry" })
       .selectOption("Beauty & Wellness");
-    assert.match(await gallery.getByRole("status").innerText(), /31 templates/);
+    assert.match(await gallery.getByRole("status").innerText(), /32 templates/);
     assert.equal(await cards.count(), 24);
     const firstThree = await cards
       .locator("h2,h3")
@@ -151,7 +151,7 @@ const { chromium } = require("playwright");
     await page
       .getByRole("searchbox", { name: "Search website templates" })
       .fill("hair salon");
-    assert.equal(await cards.count(), 10);
+    assert.equal(await cards.count(), 11);
     await page
       .getByRole("button", { name: "All Templates", exact: true })
       .click();
@@ -264,6 +264,67 @@ const { chromium } = require("playwright");
         ),
         false,
       );
+    }
+    await preview.goto(origin + "/templates/salon-luxe");
+    await preview
+      .frameLocator("iframe")
+      .getByRole("heading", { name: "The art of beautifully you." })
+      .waitFor();
+    assert.ok(
+      (
+        await preview
+          .getByRole("link", { name: "Select Template" })
+          .getAttribute("href")
+      ).endsWith("?template=salon-luxe"),
+    );
+    for (const path of [
+      "",
+      "/about",
+      "/services",
+      "/services/signature-cut",
+      "/gallery",
+      "/book",
+      "/contact",
+    ]) {
+      const response = await page.request.get(
+        origin + "/template-canvas/salon-luxe" + path,
+      );
+      assert.equal(response.status(), 200, path);
+      assert.ok((await response.text()).includes("Velour Hair Studio"));
+    }
+    for (const width of [1440, 320, 390]) {
+      await preview.setViewportSize({ width, height: 1000 });
+      for (const id of [
+        "law-firm",
+        "music-label",
+        "blank-website",
+        "hair-salon",
+        "beauty-atelier",
+        "salon-luxe",
+      ]) {
+        await preview.goto(origin + "/template-canvas/" + id);
+        const signIn = preview.getByRole("link", {
+          name: "Sign in to JKTL Business",
+          exact: true,
+        });
+        await signIn.waitFor();
+        assert.equal(
+          await signIn.isVisible(),
+          true,
+          `${width}: ${id} visible login`,
+        );
+        assert.equal(
+          await signIn.getAttribute("href"),
+          "https://business.jktl.com.ng/login?template=" + id,
+        );
+        assert.equal(
+          await preview.evaluate(
+            () => document.documentElement.scrollWidth > innerWidth,
+          ),
+          false,
+          `${width}: ${id} overflow`,
+        );
+      }
     }
     assert.deepEqual(errors, []);
     console.log(

@@ -880,3 +880,37 @@
     display: flex;
   }
 }
+
+/* Account access stays visible when the template navigation collapses. */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  order: 1;
+  flex-shrink: 0;
+}
+.signIn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.signIn svg {
+  display: block;
+}
+@media (max-width: 1100px) {
+  .headerActions {
+    order: 0;
+    margin-left: auto;
+  }
+  .header {
+    gap: 12px;
+  }
+  .header .brand {
+    max-width: calc(100% - 144px);
+  }
+}

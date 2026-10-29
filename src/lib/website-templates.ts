@@ -13,7 +13,7 @@ export type TemplateLayout =
   | "minimal"
   | "studio";
 export type BeautyContent = {
-  design?: "atelier";
+  design?: "atelier" | "luxe";
   version: 2;
   demoContent: boolean;
   aboutImage: string;
@@ -1530,6 +1530,154 @@ websiteTemplates.push({
   document: skinDocument,
 });
 
+// Another independent starter: warm cream, burgundy and a full-bleed salon portrait.
+const luxeDocument = JSON.parse(
+  JSON.stringify(salon.document),
+) as WebsiteDocument;
+Object.assign(luxeDocument, {
+  brandName: "Velour Hair Studio",
+  eyebrow: "A PERSONAL EXPRESSION OF STYLE",
+  headline: "The art of\nbeautifully you.",
+  intro:
+    "Thoughtful cuts, luminous colour and care that celebrates your texture. Discover a more personal kind of salon experience.",
+  ctaLabel: "Request your session",
+  accent: "#50271f",
+  paper: "#faf2eb",
+  ink: "#30251f",
+  heroImage: "/template-photos/beauty/luxe-hero.jpg",
+  seoTitle: "Thoughtful cuts & luminous colour | Velour Hair Studio",
+  seoDescription:
+    "Explore thoughtful cuts, luminous colour and personal hair care at Velour Hair Studio. Meet the artists, discover our services and request your next visit.",
+  aboutTitle: "An eye for detail. A feeling of belonging.",
+  aboutText:
+    "We see a salon visit as a conversation. About your routine, your hair and the way you want to show up in the world. Every appointment begins with listening.\n\nOur independent studio combines thoughtful technique with an easy welcome. From a small refresh to a new direction, we take time to find the look that feels like you.",
+  offeringsTitle: "Our signature services",
+  offerings: [
+    {
+      ...salon.document.offerings[0],
+      slug: "signature-cut",
+      title: "Signature cut & style",
+    },
+    {
+      ...salon.document.offerings[1],
+      slug: "colour-and-light",
+      title: "Colour & light",
+    },
+    {
+      ...salon.document.offerings[2],
+      slug: "texture-ritual",
+      title: "The texture ritual",
+    },
+    {
+      ...salon.document.offerings[3],
+      slug: "occasion-styling",
+      title: "Occasion styling",
+    },
+  ],
+  galleryTitle: "The studio edit",
+  featureTitle: "Meet our artists",
+  featureText:
+    "A shared love of craft. An eye for the details that make a look your own.",
+  contactTitle: "Ready for your next chapter?",
+  contactText:
+    "Your next look starts with a conversation. Tell us what you have in mind and we will be in touch to confirm availability and the right service for you.",
+  reviews: [
+    {
+      name: "Sample guest · Ada",
+      quote:
+        "They took the time to listen. I left with a shape that feels completely like me.",
+      rating: 5,
+    },
+    {
+      name: "Sample guest · Tolu",
+      quote:
+        "A warm welcome and thoughtful care, from the first conversation to the finishing touches.",
+      rating: 5,
+    },
+  ],
+});
+luxeDocument.beauty = {
+  ...luxeDocument.beauty!,
+  design: "luxe",
+  demoContent: true,
+  stylists: [
+    {
+      name: "Amara Eze",
+      role: "Cut & styling artist",
+      bio: "Personal shapes and considered finishes for everyday confidence.",
+      image: "/template-photos/beauty/stylist.jpg",
+    },
+    {
+      name: "Tomi James",
+      role: "Colour artist",
+      bio: "Soft dimension, thoughtful colour and a creative eye for the individual.",
+      image: "/template-photos/beauty/skin-artist.jpg",
+    },
+    {
+      name: "Zuri Cole",
+      role: "Texture specialist",
+      bio: "A gentle approach to texture, care and expressive styling.",
+      image: "/template-photos/beauty/luxe-hero.jpg",
+    },
+  ],
+  pages: [
+    {
+      path: "",
+      title: luxeDocument.seoTitle!,
+      description: luxeDocument.seoDescription!,
+    },
+    {
+      path: "about",
+      title: "Our story | Velour Hair Studio",
+      description: luxeDocument.aboutText.split("\n\n")[0],
+    },
+    {
+      path: "services",
+      title: "Our services | Velour Hair Studio",
+      description: luxeDocument.intro,
+    },
+    ...luxeDocument.offerings.map((service) => ({
+      path: `services/${service.slug}`,
+      title: `${service.title} | Velour Hair Studio`,
+      description: service.description,
+    })),
+    {
+      path: "gallery",
+      title: "Studio gallery | Velour Hair Studio",
+      description: luxeDocument.intro,
+    },
+    {
+      path: "book",
+      title: "Request your session | Velour Hair Studio",
+      description: luxeDocument.contactText,
+    },
+    {
+      path: "contact",
+      title: "Contact | Velour Hair Studio",
+      description: luxeDocument.contactText,
+    },
+  ],
+};
+websiteTemplates.push({
+  id: "salon-luxe",
+  name: "Hair Salon — Velour",
+  category: "Beauty & Wellness",
+  layout: "portrait",
+  kind: "website",
+  sourceId: "salon-luxe",
+  edition: "Luxe",
+  sectionOrder: [
+    "offerings",
+    "about",
+    "reviews",
+    "gallery",
+    "areas",
+    "feature",
+    "faq",
+  ],
+  document: luxeDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -1805,7 +1953,9 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
       throw Error("Please check salon philosophy.");
     result.beauty = {
       version: 2,
-      ...(b.design === "atelier" ? { design: "atelier" as const } : {}),
+      ...(b.design === "atelier" || b.design === "luxe"
+        ? { design: b.design }
+        : {}),
       demoContent: b.demoContent,
       aboutImage: image(text(b, "aboutImage", 2000)),
       philosophy: b.philosophy,

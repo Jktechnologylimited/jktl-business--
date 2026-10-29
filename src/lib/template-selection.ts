@@ -28,6 +28,7 @@ export function templateBusinessType(id: string): BusinessType {
   const mapped: Record<string, BusinessType> = {
     "hair-salon": "salon",
     "beauty-atelier": "salon",
+    "salon-luxe": "salon",
     "med-spa": "aesthetics",
     restaurant: "restaurant",
     photography: "photographer",

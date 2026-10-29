@@ -297,35 +297,9 @@ function LegacyTemplateWebsite({
           )}
           {doc.brandName}
         </a>
-        <button
-          type="button"
-          className={styles.toggle}
-          aria-expanded={open}
-          aria-controls={`template-nav-${template.id}`}
-          onClick={() => setOpen(!open)}
-        >
-          {open ? "Close" : "Menu"}{" "}
-          <span aria-hidden="true">{open ? "×" : "☰"}</span>
-        </button>
-        <nav
-          id={`template-nav-${template.id}`}
-          aria-label={`${doc.brandName} website`}
-          className={open ? styles.expanded : ""}
-          onClick={() => setOpen(false)}
-        >
-          <a href="#home">Home</a>
-          {sectionEnabled("about") && <a href="#about">About</a>}
-          {sectionEnabled("offerings") && <a href="#offerings">Services</a>}
-          {sectionEnabled("gallery") && <a href="#gallery">Gallery</a>}
-          {sectionEnabled("areas") && (
-            <a href="#service-areas">Service areas</a>
-          )}
-          {sectionEnabled("reviews") && <a href="#reviews">Reviews</a>}
-          {bookingAvailable && <a href="#book">Book an appointment</a>}
-          <a href="#contact" className={styles.navContact}>
-            Get in touch ↗
-          </a>
+        <div className={styles.headerActions}>
           <a
+            className={styles.signIn}
             href={
               preview
                 ? `https://business.jktl.com.ng${templateLoginPath(template.id)}`
@@ -347,6 +321,35 @@ function LegacyTemplateWebsite({
               <circle cx="12" cy="8" r="4" />
               <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
             </svg>
+          </a>
+          <button
+            type="button"
+            className={styles.toggle}
+            aria-expanded={open}
+            aria-controls={`template-nav-${template.id}`}
+            onClick={() => setOpen(!open)}
+          >
+            {open ? "Close" : "Menu"}{" "}
+            <span aria-hidden="true">{open ? "×" : "☰"}</span>
+          </button>
+        </div>
+        <nav
+          id={`template-nav-${template.id}`}
+          aria-label={`${doc.brandName} website`}
+          className={open ? styles.expanded : ""}
+          onClick={() => setOpen(false)}
+        >
+          <a href="#home">Home</a>
+          {sectionEnabled("about") && <a href="#about">About</a>}
+          {sectionEnabled("offerings") && <a href="#offerings">Services</a>}
+          {sectionEnabled("gallery") && <a href="#gallery">Gallery</a>}
+          {sectionEnabled("areas") && (
+            <a href="#service-areas">Service areas</a>
+          )}
+          {sectionEnabled("reviews") && <a href="#reviews">Reviews</a>}
+          {bookingAvailable && <a href="#book">Book an appointment</a>}
+          <a href="#contact" className={styles.navContact}>
+            Get in touch ↗
           </a>
         </nav>
       </header>

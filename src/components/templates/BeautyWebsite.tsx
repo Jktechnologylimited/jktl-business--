@@ -2,6 +2,8 @@
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   beautyServiceSlug,
+  templateLoginPath,
+  type WebsiteTemplate,
   type WebsiteDocument,
 } from "@/lib/website-templates";
 import styles from "./BeautyWebsite.module.css";
@@ -18,6 +20,8 @@ export type BeautyRequest = {
 };
 export function BeautyWebsite({
   document: doc,
+  template,
+  preview = false,
   pagePath = "",
   basePath = "",
   initialService = "",
@@ -29,6 +33,8 @@ export function BeautyWebsite({
   onInteraction,
 }: {
   document: WebsiteDocument;
+  template?: WebsiteTemplate;
+  preview?: boolean;
   pagePath?: string;
   basePath?: string;
   initialService?: string;
@@ -52,6 +58,7 @@ export function BeautyWebsite({
 }) {
   const b = doc.beauty!;
   const atelier = b.design === "atelier";
+  const luxe = b.design === "luxe";
   const [menu, setMenu] = useState(false),
     [category, setCategory] = useState("All"),
     [selected, setSelected] = useState(0);
@@ -215,7 +222,7 @@ export function BeautyWebsite({
     <div
       data-layout="portrait"
       data-beauty-version="2"
-      className={`${styles.site} ${atelier ? styles.atelier : ""}`}
+      className={`${styles.site} ${atelier ? styles.atelier : ""} ${luxe ? styles.luxe : ""}`}
       style={
         {
           "--beauty-accent": doc.accent,
@@ -246,14 +253,40 @@ export function BeautyWebsite({
           </>,
           styles.brand,
         )}
-        <button
-          className={styles.menuButton}
-          aria-expanded={menu}
-          aria-controls="salon-navigation"
-          onClick={() => setMenu(!menu)}
-        >
-          {menu ? "Close −" : "Menu +"}
-        </button>
+        <div className={styles.headerActions}>
+          <a
+            className={styles.signIn}
+            href={
+              preview
+                ? `https://business.jktl.com.ng${templateLoginPath(template?.id || "")}`
+                : "https://business.jktl.com.ng/login"
+            }
+            target={preview ? "_top" : undefined}
+            aria-label="Sign in to JKTL Business"
+            title="Sign in to JKTL Business"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+            </svg>
+          </a>
+          <button
+            className={styles.menuButton}
+            aria-expanded={menu}
+            aria-controls="salon-navigation"
+            onClick={() => setMenu(!menu)}
+          >
+            {menu ? "Close −" : "Menu +"}
+          </button>
+        </div>
         <nav
           id="salon-navigation"
           aria-label="Salon navigation"
@@ -272,6 +305,104 @@ export function BeautyWebsite({
         </nav>
       </header>
       <main id="salon-content" tabIndex={-1}>
+        {path === "" && luxe && (
+          <>
+            <section className={styles.luxeHero}>
+              {photo(
+                doc.heroImage,
+                `${doc.brandName} editorial hair portrait`,
+                undefined,
+                true,
+              )}
+              <div className={styles.luxeHeroContent}>
+                <div>
+                  <p className={styles.eyebrow}>{doc.eyebrow}</p>
+                  <h1>{doc.headline}</h1>
+                </div>
+                <div>
+                  <p>{doc.intro}</p>
+                  {book()}
+                </div>
+              </div>
+            </section>
+            <section className={`${styles.section} ${styles.luxeServices}`}>
+              <div>
+                <p className={styles.eyebrow}>
+                  CONSIDERED CUTS. EXPRESSIVE COLOUR.
+                </p>
+                <h2>{doc.offeringsTitle}</h2>
+                <p>{doc.aboutText.split("\n\n")[0]}</p>
+                {link("services", "Explore all services →", styles.textLink)}
+              </div>
+              <div className={styles.luxeServiceGrid}>
+                {doc.offerings.slice(0, 4).map((service, i) => (
+                  <article key={i}>
+                    {link(
+                      `services/${beautyServiceSlug(service, i)}`,
+                      photo(service.image || doc.heroImage, service.title),
+                    )}
+                    <div>
+                      <h3>
+                        {link(
+                          `services/${beautyServiceSlug(service, i)}`,
+                          service.title,
+                        )}
+                      </h3>
+                      <p>{service.description}</p>
+                      <p>
+                        {service.duration} · {service.price}
+                      </p>
+                      {book(beautyServiceSlug(service, i))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+            <section className={`${styles.section} ${styles.luxeTeam}`}>
+              <h2>{doc.featureTitle}</h2>
+              <p>{doc.featureText}</p>
+              <div className={styles.team}>
+                {b.stylists.map((person, i) => (
+                  <article key={i}>
+                    {photo(person.image, `${person.name}, ${person.role}`)}
+                    <div>
+                      <h3>{person.name}</h3>
+                      <p>{person.role}</p>
+                      <p>{person.bio}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              {link("about", "Get to know the studio →", styles.textLink)}
+            </section>
+            <section className={styles.luxeReviews}>
+              <div>
+                <p className={styles.eyebrow}>
+                  {b.demoContent && !reviews.length
+                    ? "EDITABLE DEMO TESTIMONIALS"
+                    : "CLIENT STORIES"}
+                </p>
+                <h2>Words from our clients</h2>
+                {stories.slice(0, 3).map((story, i) => (
+                  <blockquote key={i}>
+                    <cite>{story.name}</cite>
+                    <p>“{story.quote}”</p>
+                  </blockquote>
+                ))}
+                {!stories.length && <p>Your clients’ words belong here.</p>}
+              </div>
+              {photo(doc.heroImage, "A portrait from the studio edit")}
+            </section>
+            <section className={styles.luxeVisit}>
+              {photo(b.aboutImage, "A welcoming salon interior")}
+              <div>
+                <h2>{doc.contactTitle}</h2>
+                <p>{doc.contactText}</p>
+                {book()}
+              </div>
+            </section>
+          </>
+        )}
         {path === "" && atelier && (
           <>
             <section className={styles.atelierHero}>
@@ -339,7 +470,7 @@ export function BeautyWebsite({
             </section>
           </>
         )}
-        {path === "" && !atelier && (
+        {path === "" && !atelier && !luxe && (
           <>
             <section className={styles.hero}>
               <div className={styles.heroCopy}>
@@ -759,7 +890,7 @@ export function BeautyWebsite({
             </section>
           </>
         )}
-        {!["book", "contact"].includes(path) && (
+        {!["book", "contact"].includes(path) && !(luxe && path === "") && (
           <section className={`${styles.section} ${styles.bookingStrip}`}>
             <p className={styles.eyebrow}>YOUR NEXT CHAPTER</p>
             <h2>{doc.contactTitle}</h2>

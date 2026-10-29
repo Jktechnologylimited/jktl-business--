@@ -40,9 +40,9 @@ const { BeautyWebsite } = loadTs(
 );
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 203);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 201);
-  assert.equal(new Set(all.map((t) => t.id)).size, 203);
+  assert.equal(all.length, 204);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 202);
+  assert.equal(new Set(all.map((t) => t.id)).size, 204);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -142,6 +142,17 @@ test("actual full-site renderer renders every template and safely escapes edited
         document: template.document,
         preview: true,
       }),
+    );
+    assert.equal(
+      (html.match(/aria-label="Sign in to JKTL Business"/g) || []).length,
+      1,
+      template.id,
+    );
+    assert.ok(
+      html.includes(
+        `https://business.jktl.com.ng/login?template=${template.id}`,
+      ),
+      template.id,
     );
     if (template.document.beauty) {
       assert.ok(html.includes('id="salon-content"'));
@@ -613,4 +624,31 @@ test("beauty atelier is editable, keeps its design through parsing and renders i
   );
   assert.ok(service.includes("The skin ritual"));
   assert.ok(service.includes("/book?service=skin-ritual"));
+});
+
+test("Velour is an independent editable salon design with working service routes", () => {
+  const template = catalogue.getWebsiteTemplate("salon-luxe");
+  assert.equal(template.document.beauty.design, "luxe");
+  const draft = catalogue.parseWebsiteDocument(
+    catalogue.templateDraft("salon-luxe", "My Salon"),
+  );
+  assert.equal(draft.beauty.design, "luxe");
+  assert.equal(draft.brandName, "My Salon");
+  const html = renderToStaticMarkup(
+    createElement(BeautyWebsite, { document: draft, template, preview: true }),
+  );
+  for (const text of [
+    "Our signature services",
+    "Meet our artists",
+    "Words from our clients",
+    "Ready for your next chapter?",
+    "EDITABLE DEMO TESTIMONIALS",
+  ])
+    assert.ok(html.includes(text), text);
+  assert.ok(html.includes("/services/signature-cut"));
+  assert.ok(html.includes("/book?service=signature-cut"));
+  assert.ok(
+    html.includes("https://business.jktl.com.ng/login?template=salon-luxe"),
+  );
+  assert.notEqual(draft, catalogue.getWebsiteTemplate("hair-salon").document);
 });
