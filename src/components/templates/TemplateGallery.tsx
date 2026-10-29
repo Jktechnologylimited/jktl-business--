@@ -253,7 +253,8 @@ export function TemplateGallery({
             key={template.id}
             className={styles.card}
             initial={false}
-            whileHover={reducedMotion ? undefined : { y: -6 }}
+            animate="rest"
+            whileHover={reducedMotion ? undefined : "hover"}
             transition={{ duration: reducedMotion ? 0 : 0.25, ease: "easeOut" }}
           >
             <div className={styles.preview}>
@@ -269,7 +270,9 @@ export function TemplateGallery({
                   <i />
                   <i />
                 </div>
-                <img
+                <motion.img
+                  variants={{ rest: { scale: 1 }, hover: { scale: 1.025 } }}
+                  transition={{ duration: reducedMotion ? 0 : 0.25, ease: "easeOut" }}
                   src={`/template-previews/${template.id}.jpg`}
                   width={1000}
                   height={676}

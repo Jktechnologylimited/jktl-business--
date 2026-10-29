@@ -104,7 +104,7 @@ const { chromium } = require("playwright");
     await page
       .getByRole("combobox", { name: "Filter templates by industry" })
       .selectOption("Beauty & Wellness");
-    assert.match(await gallery.getByRole("status").innerText(), /32 templates/);
+    assert.match(await gallery.getByRole("status").innerText(), /33 templates/);
     assert.equal(await cards.count(), 24);
     const firstThree = await cards
       .locator("h2,h3")
@@ -301,6 +301,7 @@ const { chromium } = require("playwright");
         "hair-salon",
         "beauty-atelier",
         "salon-luxe",
+        "barber-monochrome",
       ]) {
         await preview.goto(origin + "/template-canvas/" + id);
         const signIn = preview.getByRole("link", {
@@ -326,6 +327,55 @@ const { chromium } = require("playwright");
         );
       }
     }
+    await preview.goto(origin + "/templates/barber-monochrome");
+    await preview
+      .frameLocator("iframe")
+      .getByRole("heading", { name: "Your cut. Your character." })
+      .waitFor();
+    assert.ok(
+      (
+        await preview
+          .getByRole("link", { name: "Select Template" })
+          .getAttribute("href")
+      ).endsWith("?template=barber-monochrome"),
+    );
+    for (const path of [
+      "",
+      "/about",
+      "/services",
+      "/services/traditional-shave",
+      "/gallery",
+      "/book",
+      "/contact",
+    ]) {
+      const response = await page.request.get(
+        origin + "/template-canvas/barber-monochrome" + path,
+      );
+      assert.equal(response.status(), 200, path);
+      assert.ok((await response.text()).includes("Crown &amp; Blade"));
+    }
+    await preview.goto(origin + "/template-canvas/barber-monochrome");
+    await preview.emulateMedia({ reducedMotion: "reduce" });
+    const work = preview.getByRole("region", {
+      name: "Barbershop work gallery",
+    });
+    await preview.getByRole("button", { name: "Next work images" }).click();
+    await preview.waitForFunction(
+      () => document.getElementById("barber-work").scrollLeft > 0,
+    );
+    await preview.getByRole("button", { name: "Previous work images" }).click();
+    assert.equal(await work.evaluate((el) => el.scrollLeft), 0);
+    await preview
+      .getByRole("link", { name: "Request your appointment", exact: true })
+      .first()
+      .click();
+    await preview.waitForURL(/\/book/);
+    assert.equal(
+      await preview
+        .getByRole("button", { name: "Send appointment request" })
+        .isVisible(),
+      true,
+    );
     assert.deepEqual(errors, []);
     console.log(
       "PASS " +

@@ -230,6 +230,7 @@
   background: transparent;
 }
 .info {
+  scroll-margin-top: calc(var(--template-catalog-top, 0px) + 100px);
   position: absolute;
   bottom: 12px;
   left: 18px;

@@ -59,6 +59,18 @@ export function BeautyWebsite({
   const b = doc.beauty!;
   const atelier = b.design === "atelier";
   const luxe = b.design === "luxe";
+  const barber = b.design === "barber";
+  const workGallery = useRef<HTMLDivElement>(null);
+  const scrollWork = (direction: number) => {
+    const track = workGallery.current;
+    if (track)
+      track.scrollBy({
+        left: direction * track.clientWidth * 0.8,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+  };
   const [menu, setMenu] = useState(false),
     [category, setCategory] = useState("All"),
     [selected, setSelected] = useState(0);
@@ -222,7 +234,7 @@ export function BeautyWebsite({
     <div
       data-layout="portrait"
       data-beauty-version="2"
-      className={`${styles.site} ${atelier ? styles.atelier : ""} ${luxe ? styles.luxe : ""}`}
+      className={`${styles.site} ${atelier ? styles.atelier : ""} ${luxe ? styles.luxe : ""} ${barber ? styles.barber : ""}`}
       style={
         {
           "--beauty-accent": doc.accent,
@@ -234,6 +246,11 @@ export function BeautyWebsite({
       <a href="#salon-content" className={styles.skip}>
         Skip to content
       </a>
+      {barber && (
+        <div className={styles.barberTicker} aria-label="Our approach">
+          {doc.featureItems.join("　 ✦　 ")}
+        </div>
+      )}
       <header className={styles.navbar}>
         {link(
           "",
@@ -289,7 +306,7 @@ export function BeautyWebsite({
         </div>
         <nav
           id="salon-navigation"
-          aria-label="Salon navigation"
+          aria-label={barber ? "Barbershop navigation" : "Salon navigation"}
           className={menu ? styles.navigationOpen : styles.navigation}
         >
           {[
@@ -305,6 +322,131 @@ export function BeautyWebsite({
         </nav>
       </header>
       <main id="salon-content" tabIndex={-1}>
+        {path === "" && barber && (
+          <>
+            <section className={styles.barberHero}>
+              <div className={styles.barberHeroSide}>
+                <p className={styles.eyebrow}>{doc.eyebrow}</p>
+                <h1>{doc.headline}</h1>
+                <p>{doc.intro}</p>
+                {book()}
+                <span className={styles.barberVertical} aria-hidden="true">
+                  {doc.brandName}
+                </span>
+              </div>
+              <div className={styles.barberHeroPhotos}>
+                {photo(
+                  doc.heroImage,
+                  "A precision haircut in progress",
+                  undefined,
+                  true,
+                )}
+                {photo(
+                  b.aboutImage,
+                  "Traditional barbering and careful beard care",
+                  undefined,
+                  true,
+                )}
+              </div>
+            </section>
+            <section className={styles.barberServices}>
+              <h2>{doc.offeringsTitle}</h2>
+              <div>
+                {doc.offerings.map((service, i) => (
+                  <article key={i}>
+                    <h3>
+                      {link(
+                        `services/${beautyServiceSlug(service, i)}`,
+                        service.title,
+                      )}
+                    </h3>
+                    <p>{service.duration}</p>
+                    <p>{service.price}</p>
+                    {book(beautyServiceSlug(service, i))}
+                  </article>
+                ))}
+              </div>
+              {b.demoContent && (
+                <p className={styles.finePrint}>
+                  Editable example prices · final services and prices are
+                  confirmed by your barber.
+                </p>
+              )}
+            </section>
+            <section className={styles.barberWork}>
+              <h2>{doc.galleryTitle}</h2>
+              <p>{doc.featureText}</p>
+              <div className={styles.barberWorkControls}>
+                <button
+                  type="button"
+                  aria-label="Previous work images"
+                  aria-controls="barber-work"
+                  onClick={() => scrollWork(-1)}
+                >
+                  ←
+                </button>
+                {link("gallery", "Explore the full gallery →", styles.textLink)}
+                <button
+                  type="button"
+                  aria-label="Next work images"
+                  aria-controls="barber-work"
+                  onClick={() => scrollWork(1)}
+                >
+                  →
+                </button>
+              </div>
+              <div
+                id="barber-work"
+                ref={workGallery}
+                className={styles.barberWorkTrack}
+                tabIndex={0}
+                role="region"
+                aria-label="Barbershop work gallery"
+              >
+                {doc.gallery.map((image, i) => (
+                  <figure key={i}>
+                    {link("gallery", photo(image.src, image.alt))}
+                    <figcaption>{image.alt}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </section>
+            <section className={`${styles.section} ${styles.barberTeam}`}>
+              <h2>{doc.featureTitle}</h2>
+              <p>{doc.featureText}</p>
+              <div className={styles.team}>
+                {b.stylists.map((person, i) => (
+                  <article key={i}>
+                    {photo(person.image, `${person.name}, ${person.role}`)}
+                    <div>
+                      <h3>{person.name}</h3>
+                      <p>{person.role}</p>
+                      <p>{person.bio}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              {link("about", "Our story →", styles.textLink)}
+            </section>
+            <section className={styles.barberReviews}>
+              <p className={styles.eyebrow}>
+                {b.demoContent && !reviews.length
+                  ? "EDITABLE DEMO TESTIMONIALS"
+                  : "CLIENT STORIES"}
+              </p>
+              <h2>What our clients say</h2>
+              <div>
+                {stories.slice(0, 3).map((story, i) => (
+                  <blockquote key={i}>
+                    <p>“{story.quote}”</p>
+                    <cite>{story.name}</cite>
+                  </blockquote>
+                ))}
+              </div>
+              {!stories.length && <p>Your clients’ words belong here.</p>}
+            </section>
+          </>
+        )}
         {path === "" && luxe && (
           <>
             <section className={styles.luxeHero}>
@@ -470,7 +612,7 @@ export function BeautyWebsite({
             </section>
           </>
         )}
-        {path === "" && !atelier && !luxe && (
+        {path === "" && !atelier && !luxe && !barber && (
           <>
             <section className={styles.hero}>
               <div className={styles.heroCopy}>
@@ -572,15 +714,19 @@ export function BeautyWebsite({
             <section className={`${styles.section} ${styles.storySplit}`}>
               {photo(
                 b.aboutImage,
-                "A warm and welcoming salon interior",
+                barber
+                  ? "A close look at thoughtful barbering"
+                  : "A warm and welcoming salon interior",
                 undefined,
                 true,
               )}
               <div>
                 <h2>
-                  {atelier
-                    ? "Care, with a creative spirit."
-                    : "A thoughtful kind of beauty."}
+                  {barber
+                    ? "Good craft. Good company."
+                    : atelier
+                      ? "Care, with a creative spirit."
+                      : "A thoughtful kind of beauty."}
                 </h2>
                 {doc.aboutText.split("\n\n").map((p, i) => (
                   <p key={i}>{p}</p>
@@ -622,7 +768,7 @@ export function BeautyWebsite({
             {title(
               "THE SERVICE EDIT",
               doc.offeringsTitle,
-              atelier
+              atelier || barber
                 ? doc.intro
                 : "A considered approach to every cut, colour and texture. Explore what feels right for you.",
             )}
@@ -725,9 +871,11 @@ export function BeautyWebsite({
             {title(
               "THE STUDIO EDIT",
               doc.galleryTitle,
-              atelier
-                ? "A closer look at our approach to beauty, care and individual expression."
-                : "A closer look at texture, colour, shape and the space around them.",
+              barber
+                ? "A closer look at our cuts, grooming rituals and the tools of the craft."
+                : atelier
+                  ? "A closer look at our approach to beauty, care and individual expression."
+                  : "A closer look at texture, colour, shape and the space around them.",
             )}
             <section className={styles.section}>
               <div
@@ -949,6 +1097,7 @@ export function BeautyWebsite({
             {link("contact", "Get in touch →", styles.textLink)}
           </div>
         </div>
+        {barber && <div className={styles.barberWordmark}>{doc.brandName}</div>}
         <div className={styles.footerBottom}>
           <span>
             {doc.brandName} · {pageTitle}

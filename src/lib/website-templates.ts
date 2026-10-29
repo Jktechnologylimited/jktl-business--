@@ -13,7 +13,7 @@ export type TemplateLayout =
   | "minimal"
   | "studio";
 export type BeautyContent = {
-  design?: "atelier" | "luxe";
+  design?: "atelier" | "luxe" | "barber";
   version: 2;
   demoContent: boolean;
   aboutImage: string;
@@ -1678,6 +1678,216 @@ websiteTemplates.push({
   document: luxeDocument,
 });
 
+// Crown & Blade is a separate monochrome barbershop starter, not a replacement.
+const barberDocument = JSON.parse(
+  JSON.stringify(salon.document),
+) as WebsiteDocument;
+Object.assign(barberDocument, {
+  brandName: "Crown & Blade",
+  eyebrow: "SHARP CRAFT. INDIVIDUAL STYLE.",
+  headline: "Your cut.\nYour character.",
+  intro:
+    "Precision cuts, considered beard care and a chair where you can be yourself. A modern barbershop built around good craft and an easy welcome.",
+  ctaLabel: "Request your appointment",
+  accent: "#f7f7f2",
+  paper: "#111111",
+  ink: "#f7f7f2",
+  heroImage: "/template-photos/beauty/barber-studio.jpg",
+  seoTitle: "Precision cuts & beard care | Crown & Blade",
+  seoDescription:
+    "Discover precision cuts, traditional shaves and considered beard care at Crown & Blade. Explore our work, meet the barbers and request your next appointment.",
+  aboutTitle: "Respect the craft. Make it your own.",
+  aboutText:
+    "A good cut starts with a conversation. We listen to your routine, your texture and the way you want to wear your hair, then bring a careful eye to every line and finish.\n\nOur independent barbershop blends time-honoured care with a modern point of view. An easy welcome, an honest conversation and a look that feels like you.",
+  offeringsTitle: "Our signature services",
+  offerings: [
+    {
+      slug: "signature-cut",
+      title: "Signature haircut",
+      category: "Cuts",
+      description:
+        "A personal consultation, a considered shape and a careful finish. Designed around your texture and everyday routine.",
+      duration: "45–60 minutes",
+      price: "From ₦15,000",
+      image: "/template-photos/beauty/barber-studio.jpg",
+      benefits: [
+        "A personal consultation",
+        "A shape that suits your routine",
+        "Simple styling advice",
+      ],
+      preparation:
+        "Bring a reference or tell us what you would like to change.",
+    },
+    {
+      slug: "traditional-shave",
+      title: "Traditional shave",
+      category: "Shaves",
+      description:
+        "A slower grooming ritual with warm towels and careful finishing. We discuss your skin and preferences before we begin.",
+      duration: "40 minutes",
+      price: "From ₦10,000",
+      image: "/template-photos/beauty/barber-craft.jpg",
+      benefits: [
+        "A considered consultation",
+        "Warm-towel preparation",
+        "A comfortable finish",
+      ],
+      preparation:
+        "Tell your barber about sensitivities, irritation or recent skin treatments.",
+    },
+    {
+      slug: "beard-sculpt",
+      title: "Beard sculpting",
+      category: "Beard care",
+      description:
+        "Balance, shape and definition. A tidy-up or a new direction, finished with guidance for care at home.",
+      duration: "30 minutes",
+      price: "From ₦8,000",
+      image: "/template-photos/beauty/barber-cut.jpg",
+      benefits: [
+        "Personal shape and definition",
+        "A careful finish",
+        "Home-care advice",
+      ],
+      preparation:
+        "Come with your beard as you normally wear it and share the look you have in mind.",
+    },
+  ],
+  galleryTitle: "The art of the craft",
+  gallery: [
+    {
+      src: "/template-photos/beauty/barber-studio.jpg",
+      alt: "A barber carefully shaping a client's haircut",
+      category: "Cuts",
+    },
+    {
+      src: "/template-photos/beauty/barber-craft.jpg",
+      alt: "A traditional barbering ritual in progress",
+      category: "Care",
+    },
+    {
+      src: "/template-photos/beauty/barber-cut.jpg",
+      alt: "Tools of the barbering craft",
+      category: "Studio",
+    },
+  ],
+  featureTitle: "Meet the barbers",
+  featureText: "Different perspectives. A shared respect for the details.",
+  featureItems: [
+    "Precision cuts",
+    "Thoughtful beard care",
+    "Every texture welcome",
+  ],
+  contactTitle: "Your next look starts here.",
+  contactText:
+    "Tell us what you have in mind and when you would like to visit. We will be in touch to confirm your service, timing and final price.",
+  reviews: [
+    {
+      name: "Sample guest · Chidi",
+      quote: "Good conversation, careful work and a cut that feels like me.",
+      rating: 5,
+    },
+    {
+      name: "Sample guest · Wale",
+      quote: "They listened to what I wanted and took care of the details.",
+      rating: 5,
+    },
+    {
+      name: "Sample guest · Emeka",
+      quote:
+        "An easy welcome and a thoughtful finish. A little time well spent.",
+      rating: 5,
+    },
+  ],
+});
+barberDocument.beauty = {
+  ...barberDocument.beauty!,
+  design: "barber",
+  demoContent: true,
+  aboutImage: "/template-photos/beauty/barber-craft.jpg",
+  philosophy: [
+    "Listen before the first cut",
+    "Respect every texture",
+    "Take care of the details",
+  ],
+  stylists: [
+    {
+      name: "Tunde Cole",
+      role: "Cut & shave specialist",
+      bio: "Considered shapes, careful lines and an easy conversation.",
+      image: "/template-photos/beauty/barber-artist-one.jpg",
+    },
+    {
+      name: "Dayo Obi",
+      role: "Texture & styling artist",
+      bio: "A personal approach to texture, shape and everyday style.",
+      image: "/template-photos/beauty/barber-artist-two.jpg",
+    },
+    {
+      name: "Kene James",
+      role: "Beard care specialist",
+      bio: "Thoughtful grooming and a sharp eye for balance and definition.",
+      image: "/template-photos/beauty/barber-artist-three.jpg",
+    },
+  ],
+  pages: [
+    {
+      path: "",
+      title: barberDocument.seoTitle!,
+      description: barberDocument.seoDescription!,
+    },
+    {
+      path: "about",
+      title: "Our story | Crown & Blade",
+      description: barberDocument.aboutText.split("\n\n")[0],
+    },
+    {
+      path: "services",
+      title: "Our services | Crown & Blade",
+      description: barberDocument.intro,
+    },
+    ...barberDocument.offerings.map((service) => ({
+      path: `services/${service.slug}`,
+      title: `${service.title} | Crown & Blade`,
+      description: service.description,
+    })),
+    {
+      path: "gallery",
+      title: "Our work | Crown & Blade",
+      description: barberDocument.intro,
+    },
+    {
+      path: "book",
+      title: "Request a visit | Crown & Blade",
+      description: barberDocument.contactText,
+    },
+    {
+      path: "contact",
+      title: "Contact | Crown & Blade",
+      description: barberDocument.contactText,
+    },
+  ],
+};
+websiteTemplates.push({
+  id: "barber-monochrome",
+  name: "Barbershop — Crown & Blade",
+  category: "Beauty & Wellness",
+  layout: "portrait",
+  kind: "website",
+  sourceId: "barber-monochrome",
+  edition: "Monochrome",
+  sectionOrder: [
+    "offerings",
+    "gallery",
+    "about",
+    "reviews",
+    "areas",
+    "feature",
+    "faq",
+  ],
+  document: barberDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -1706,11 +1916,13 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
   if (brandName?.trim()) {
     document.brandName = brandName.trim().slice(0, 120);
     document.seoTitle = (
-      document.beauty?.design === "atelier"
-        ? `Personal beauty rituals | ${document.brandName}`
-        : document.beauty
-          ? `Hair, with a personal touch | ${document.brandName}`
-          : `${document.brandName} | ${template.name}`
+      document.beauty?.design === "barber"
+        ? `Precision cuts & beard care | ${document.brandName}`
+        : document.beauty?.design === "atelier"
+          ? `Personal beauty rituals | ${document.brandName}`
+          : document.beauty
+            ? `Hair, with a personal touch | ${document.brandName}`
+            : `${document.brandName} | ${template.name}`
     ).slice(0, 100);
   }
   return document;
@@ -1953,7 +2165,7 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
       throw Error("Please check salon philosophy.");
     result.beauty = {
       version: 2,
-      ...(b.design === "atelier" || b.design === "luxe"
+      ...(b.design === "atelier" || b.design === "luxe" || b.design === "barber"
         ? { design: b.design }
         : {}),
       demoContent: b.demoContent,

@@ -40,9 +40,9 @@ const { BeautyWebsite } = loadTs(
 );
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 204);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 202);
-  assert.equal(new Set(all.map((t) => t.id)).size, 204);
+  assert.equal(all.length, 205);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 203);
+  assert.equal(new Set(all.map((t) => t.id)).size, 205);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -651,4 +651,34 @@ test("Velour is an independent editable salon design with working service routes
     html.includes("https://business.jktl.com.ng/login?template=salon-luxe"),
   );
   assert.notEqual(draft, catalogue.getWebsiteTemplate("hair-salon").document);
+});
+
+test("Crown & Blade preserves its barber design and original booking/gallery content", () => {
+  const template = catalogue.getWebsiteTemplate("barber-monochrome");
+  const draft = catalogue.parseWebsiteDocument(
+    catalogue.templateDraft(template.id, "My Barbershop"),
+  );
+  assert.equal(draft.beauty.design, "barber");
+  assert.equal(draft.brandName, "My Barbershop");
+  assert.equal(draft.seoTitle, "Precision cuts & beard care | My Barbershop");
+  const html = renderToStaticMarkup(
+    createElement(BeautyWebsite, { template, document: draft, preview: true }),
+  );
+  for (const text of [
+    "Our signature services",
+    "The art of the craft",
+    "Meet the barbers",
+    "What our clients say",
+    "Barbershop work gallery",
+    "EDITABLE DEMO TESTIMONIALS",
+  ])
+    assert.ok(html.includes(text), text);
+  assert.ok(html.includes("/services/traditional-shave"));
+  assert.ok(html.includes("/book?service=traditional-shave"));
+  assert.ok(
+    html.includes(
+      "https://business.jktl.com.ng/login?template=barber-monochrome",
+    ),
+  );
+  assert.ok(!html.includes("20%"));
 });
