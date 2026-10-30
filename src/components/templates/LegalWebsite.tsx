@@ -254,7 +254,9 @@ export function LegalWebsite({
             <section className={styles.hero} id="home">
               {photo(
                 doc.heroImage,
-                "A considered workspace for professional conversations",
+                doc.legalVariant === "family"
+                  ? "Three professionals in corporate attire discussing a matter in an office"
+                  : "A considered workspace for professional conversations",
                 true,
               )}
               <h1>{doc.headline}</h1>
@@ -305,7 +307,9 @@ export function LegalWebsite({
               <div className={styles.newsBackdrop}>
                 {photo(
                   doc.heroImage,
-                  "Light and space in a professional office",
+                  doc.legalVariant === "family"
+                    ? "Professionals in suits in conversation"
+                    : "Light and space in a professional office",
                 )}
                 {insights()}
               </div>

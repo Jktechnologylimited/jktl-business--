@@ -2343,6 +2343,7 @@ websiteTemplates.push({
 const familyDocument = JSON.parse(JSON.stringify(legalDocument)) as WebsiteDocument;
 Object.assign(familyDocument, {
   legalVariant: "family",
+  heroImage: "/template-photos/legal/family-hero.jpg",
   brandName: "Hartwell & Vale",
   eyebrow: "FAMILY LAW. A THOUGHTFUL WAY FORWARD.",
   headline: "Guidance for life's next chapter.",
