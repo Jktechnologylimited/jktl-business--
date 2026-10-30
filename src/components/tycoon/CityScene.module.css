@@ -1,223 +1,64 @@
 .scene {
-  border: 1px solid #c9b985;
-  border-radius: 20px;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  background: #fdf9ed;
-  box-shadow: 0 16px 45px #11205514;
-}
-.toolbar {
-  padding: 12px 15px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: #fcf7e9;
-  border-bottom: 1px solid #dfd4b7;
-}
-.toolbar > span {
-  font-size: 8px;
-  letter-spacing: 0.12em;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.toolbar i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #4c865e;
-}
-.toolbar > div {
-  display: flex;
-  gap: 6px;
-}
-.toolbar button {
-  background: white;
-  border: 1px solid #dcd1b6;
-  border-radius: 6px;
-  cursor: pointer;
-  padding: 6px 9px;
-  font-size: 10px;
-  color: #23374d;
-}
-.toolbar button:disabled {
-  opacity: 0.4;
-}
-.viewport {
-  overflow: auto;
-  max-height: 830px;
-}
-.city {
-  display: block;
-  min-width: 100%;
-  height: auto;
-}
-.plot {
-  cursor: pointer;
-  outline: none;
-}
-.plot:focus-visible > path:first-child {
-  stroke: #112055;
-  stroke-width: 5;
-}
-.plot:hover > path:first-child {
-  stroke: #896a2e;
-  stroke-width: 3;
-}
-.traffic {
-  pointer-events: none;
-}
-.legend {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 13px 15px;
-  color: #5a695e;
-  background: #fcf7e9;
-  font-size: 9px;
-}
-.legend label {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.legend select {
-  font-size: 10px !important;
-  padding: 6px !important;
-  max-width: 180px !important;
-}
-.night {
-  background: #243c45;
-  border-color: #617a78;
-}
-.night .toolbar,
-.night .legend {
-  background: #162d3e;
-  color: #e7dab6;
-  border-color: #445d67;
-}
-.night .toolbar button {
-  background: #233c50;
-  color: #f4e5c2;
-  border-color: #52666b;
-}
-.scene button:focus-visible,
-.scene select:focus-visible {
-  outline: 3px solid #c9a84c;
-  outline-offset: 2px;
-}
-@media (max-width: 650px) {
-  .toolbar {
-    flex-wrap: wrap;
-    padding: 10px;
-  }
-  .toolbar > span {
-    font-size: 7px;
-  }
-  .toolbar button {
-    font-size: 9px;
-    padding: 6px;
-  }
-  .legend {
-    flex-wrap: wrap;
-  }
-  .legend > span {
-    font-size: 8px;
-  }
-  .legend label {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .city {
-    min-height: 300px;
-  }
-}
-.scene {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  border-radius: 0;
   background: #a8e4f3;
-  box-shadow: none;
 }
 .viewport {
   position: absolute;
   inset: 0;
-  max-height: none;
   display: flex;
   align-items: center;
   overflow: auto;
   scrollbar-width: thin;
+  background: radial-gradient(ellipse at 20% 15%,#ecf9e84d,transparent 55%),
+    repeating-linear-gradient(170deg,#ffffff0c 0 2px,transparent 3px 22px),
+    linear-gradient(#a8deeb,#86c6d9);
 }
-.city {
-  flex: none;
-  min-height: 0;
-  max-width: none;
-}
+/* Only the scroll camera clips. Plot boxes and sprite layers stay overflow-visible. */
+.scaledBounds { position: relative; flex: none; margin: auto; overflow: visible; }
+.canvas { position: absolute; top: 0; left: 0; transform-origin: top left; overflow: visible; }
 .toolbar {
   position: absolute;
   left: 20px;
   top: 43%;
   z-index: 3;
   background: #112055;
-  border: 0;
   border-radius: 24px;
   padding: 9px;
   box-shadow: 0 10px 25px #060e2a30;
 }
-.toolbar > span {
-  display: none;
-}
-.toolbar > div {
-  flex-direction: column;
-}
+.toolbar > div { display: flex; flex-direction: column; gap: 6px; }
 .toolbar button {
+  cursor: pointer;
   border: 0;
   background: transparent;
   color: #fff3cb;
   font-size: 11px;
-  min-width: 36px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 9px 6px;
 }
+.toolbar button:disabled { opacity: .4; }
 .legend {
   position: absolute;
   right: 20px;
   bottom: 130px;
   z-index: 2;
+  padding: 13px 15px;
   border-radius: 18px;
   background: #ffffffed;
+  color: #27384f;
   box-shadow: 0 8px 25px #060e2a15;
+  font-size: 9px;
 }
-.legend > span {
-  display: none;
-}
-.night {
-  background: #132f4b;
-}
-@media (max-width: 800px) {
-  .toolbar {
-    left: 12px;
-    top: 42%;
-    padding: 5px;
-  }
-  .legend {
-    right: 12px;
-    bottom: 205px;
-    padding: 8px;
-    font-size: 8px;
-  }
-  .legend select {
-    max-width: 125px !important;
-    font-size: 8px !important;
-  }
-  .legend label {
-    gap: 6px;
-  }
-  .viewport {
-    align-items: center;
-  }
-  .city {
-    min-height: 0;
-  }
+.legend label { display: flex; gap: 8px; align-items: center; }
+.legend select { font-size: 10px !important; padding: 6px !important; max-width: 180px !important; }
+.scene button:focus-visible, .scene select:focus-visible, .viewport:focus-visible { outline: 3px solid #c9a84c; outline-offset: 2px; }
+.night .viewport { background: radial-gradient(ellipse at 30% 0,#405778,#11263f 85%); }
+.night .legend { background: #162d3e; color: #e7dab6; }
+@media(max-width:800px) {
+  .toolbar { left: 12px; top: 42%; padding: 5px; }
+  .legend { right: 12px; bottom: 205px; padding: 8px; font-size: 8px; }
+  .legend select { max-width: 125px !important; font-size: 8px !important; }
 }

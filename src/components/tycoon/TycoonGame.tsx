@@ -198,6 +198,7 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
             </span>
           </div>
           <CityScene
+            ready={ready}
             state={state}
             slot={slot}
             onSlot={(n) => {

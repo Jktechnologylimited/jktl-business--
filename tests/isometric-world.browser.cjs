@@ -1,0 +1,62 @@
+const assert = require('node:assert/strict');
+const { chromium } = require('playwright');
+(async () => {
+  const origin=process.env.TYCOON_TEST_ORIGIN || 'http://localhost:3142';
+  const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});
+  try {
+    const page=await browser.newPage({viewport:{width:1440,height:1000}});
+    const errors=[];
+    page.on('pageerror',error=>errors.push(error.message));
+    await page.route('**/api/tycoon',route=>route.fulfill({json:{signedIn:false,revision:0,document:null}}));
+    await page.addInitScript(() => localStorage.setItem('jktl-pwa-remind-after', String(Date.now()+86400000)));
+    await page.goto(origin+'/play/tycoon');
+    await page.locator('[data-world]').waitFor();
+    assert.deepEqual(await page.locator('[data-layer]').evaluateAll(nodes=>nodes.map(n=>Number(n.dataset.layer))),[1,2,3,4,5]);
+    assert.equal(await page.locator('[data-plot]').count(),12);
+    await page.locator('[data-plot="0"]').click();
+    await page.getByRole('button',{name:'Open business',exact:true}).click();
+    await page.locator('[data-plot="0"][data-status="building"]').waitFor();
+    assert.match(await page.locator('[data-plot="0"]').innerText(),/Under construction/);
+    await page.locator('[data-plot="0"][data-status="active"]').waitFor();
+    await page.getByText('✦ Open for business',{exact:true}).waitFor();
+    assert.ok(await page.locator('[data-person]').count()>0);
+    const shadow=await page.locator('[data-plot="0"] svg.crisp-pixels').evaluate(n=>getComputedStyle(n).filter);
+    assert.match(shadow,/drop-shadow/);
+    await page.locator('[data-plot="1"]').focus();
+    assert.equal(await page.locator('[data-layer="3"] path').count(),1);
+    await page.getByRole('button',{name:'☾ Night',exact:true}).click();
+    assert.equal(await page.locator('[data-world]').getAttribute('data-night'),'true');
+    await page.getByRole('button',{name:'Ⅱ Pause',exact:true}).click();
+    assert.equal(await page.locator('[data-world]').getAttribute('data-paused'),'true');
+    // The actual moving actor's position and depth stop changing when paused.
+    const before=await page.locator('[data-layer="4"] > div').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('style')));
+    await page.waitForTimeout(150);
+    const after=await page.locator('[data-layer="4"] > div').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('style')));
+    assert.deepEqual(after,before);
+    await page.getByRole('button',{name:'Close game panel',exact:true}).click();
+    await page.screenshot({path:'/workspace/exports/tycoon-isometric-desktop.png'});
+    await page.setViewportSize({width:390,height:844});
+    await page.getByRole('button',{name:'Zoom in city',exact:true}).click();
+    assert.ok(await page.locator('[data-world]').isVisible());
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+    await page.screenshot({path:'/workspace/exports/tycoon-isometric-mobile.png'});
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.getByRole('button',{name:'▶ Resume',exact:true}).click();
+    await page.waitForTimeout(100);
+    const reducedBefore=await page.locator('[data-layer="4"] > div').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('style')));
+    await page.waitForTimeout(150);
+    assert.deepEqual(await page.locator('[data-layer="4"] > div').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('style'))),reducedBefore);
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.evaluate(() => {
+      const saved=JSON.parse(localStorage.getItem('jktl-tycoon-guest-v1'));
+      saved.plots=Array.from({length:12},(_,id)=>({kind:['suya','salon','provisions','logistics','solar','agency'][id%6],level:1+id%3}));
+      localStorage.setItem('jktl-tycoon-guest-v1',JSON.stringify(saved));
+    });
+    await page.setViewportSize({width:1440,height:1000});
+    await page.reload();
+    await page.waitForFunction(()=>document.querySelectorAll('[data-plot][data-status="active"]').length===12);
+    await page.screenshot({path:'/workspace/exports/tycoon-isometric-city.png'});
+    assert.deepEqual(errors,[]);
+    console.log('PASS: five layers, accepted construction, FX, keyboard hover, depth, shadows, night, pause, reduced motion, desktop/mobile.');
+  } finally {await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

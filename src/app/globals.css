@@ -219,3 +219,9 @@ textarea {
 .bg-primary.text-white, .bg-primary-strong.text-white, .bg-info.text-white { color: var(--color-on-primary); }
 .bg-accent.text-white { color: var(--color-on-accent); }
 .bg-danger.text-white { color: var(--color-on-danger); }
+
+/* Opt in on transparent PNG sprites; vector art remains resolution independent. */
+.crisp-pixels {
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
