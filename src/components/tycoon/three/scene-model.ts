@@ -2,6 +2,7 @@ import { ventures, type TycoonState } from "@/lib/tycoon";
 import { landPlots } from "../world/isometric";
 export type Vec3 = [number, number, number];
 export type BoxPart = { position: Vec3; size: Vec3; color: string; plotId?: number; rotation?: number };
+export type Ride = "gwagon" | "lamborghini" | "cybertruck";
 export type Quality = "low" | "high";
 export const profiles = {
   low: { fps: 30, dpr: 1, shadows: false, cars: 4, people: 8 },

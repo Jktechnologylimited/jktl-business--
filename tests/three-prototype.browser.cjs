@@ -15,7 +15,7 @@ const saved={version:1,week:5,cash:700000,city:'Lagos',plots:Array.from({length:
    const page=await context.newPage();const errors=[];
    page.on('pageerror',error=>errors.push(error.message));
    await page.route('**/api/tycoon',route=>route.fulfill({json:{signedIn:false,revision:0,document:null}}));
-   await page.goto(origin+'/play/tycoon?renderer=3d');
+   await page.goto(origin+'/play/tycoon');
    await page.locator('[data-renderer="three"] canvas').waitFor({timeout:60000});
    await page.waitForFunction(()=>Number(document.querySelector('[data-three-stats]')?.dataset.calls)>0,{},{timeout:60000});
    if(mode==='desktop-high') {
@@ -59,19 +59,18 @@ const saved={version:1,week:5,cash:700000,city:'Lagos',plots:Array.from({length:
    await page.emulateMedia({reducedMotion:'reduce'});
    await page.getByRole('button',{name:'▶ Resume',exact:true}).click();
    assert.equal(await page.locator('[data-renderer]').getAttribute('data-animated'),'false');
-   await page.getByRole('button',{name:'Use 2D',exact:true}).click();
-   await page.locator('[data-world]').waitFor();
-   assert.equal((await page.evaluate(()=>JSON.parse(localStorage.getItem('jktl-tycoon-guest-v1')).plots)).length,12);
-   await page.getByRole('button',{name:'Try 3D',exact:true}).click();
+   assert.equal(await page.getByRole('button',{name:'Use 2D',exact:true}).count(),0);
+   assert.equal(await page.locator('[data-world]').count(),0);
    await page.locator('canvas[data-webgl-ready]').waitFor();
-   // A real context-loss event must return to playable 2D without altering the save.
    await page.locator('canvas').evaluate(canvas=>canvas.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
-   await page.locator('[data-world]').waitFor();
-   await page.getByText('3D is unavailable on this device.',{exact:false}).waitFor();
+   await page.getByRole('button',{name:'Retry 3D',exact:true}).waitFor();
+   assert.equal(await page.locator('[data-world]').count(),0);
+   await page.getByRole('button',{name:'Retry 3D',exact:true}).click();
+   await page.locator('canvas[data-webgl-ready]').waitFor();
    assert.deepEqual(errors,[]);
    reports.push({mode,quality,gpu,samples});await context.close();
   }
   fs.writeFileSync('/workspace/exports/tycoon-three-benchmark.json',JSON.stringify({environment:'Cloud Chromium using software SwiftShader WebGL; mobile viewport is not a physical phone.',origin,recordedAt:new Date().toISOString(),reports},null,2));
-  console.log('PASS: populated 3D city, quality limits, GPU budgets, resource stability, keyboard selection, motion controls, renderer switching and context-loss fallback.');
+  console.log('PASS: populated 3D city, quality limits, GPU budgets, resource stability, keyboard selection, motion controls, 3D-only rendering and context-loss retry.');
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1});

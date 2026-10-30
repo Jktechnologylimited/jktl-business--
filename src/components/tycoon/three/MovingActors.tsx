@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { Object3D, type InstancedMesh } from "three";
 import { InstancedBoxes } from "./InstancedBoxes";
 import { profiles, worldPoint, type BoxPart, type Quality } from "./scene-model";
-import type { Ride } from "../CitySprites";
+import type { Ride } from "./scene-model";
 export function MovingActors({quality,paused,ride,built}:{quality:Quality;paused:boolean;ride:Ride;built:number}) {
   const mesh=useRef<InstancedMesh>(null), time=useRef(0);
   const object=useMemo(()=>new Object3D(),[]);

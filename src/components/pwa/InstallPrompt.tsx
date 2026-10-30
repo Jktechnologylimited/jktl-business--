@@ -32,6 +32,7 @@ export function InstallPrompt() {
   const [message, setMessage] = useState("");
   const shown = useRef(false);
   const eligible =
+    path !== "/play/run" &&
     !/^\/(admin|affiliates|affiliate|sites|template-canvas)(\/|$)/.test(path) &&
     !/^\/templates\//.test(path);
   useEffect(() => {

@@ -1,3 +1,5 @@
+> Historical implementation/benchmark record. The DOM/SVG 2D renderer has been removed. Tycoon is now 3D-only; see [current games guide](JKTL_STREET_RUN.md).
+
 # Optional React Three Fiber neighbourhood prototype
 
 Open `/play/tycoon?renderer=3d`, or choose **Try 3D** in the existing city toolbar.

@@ -3,7 +3,7 @@ import { Component, memo, useCallback, useEffect, useMemo, useState, type ReactN
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { TycoonState } from "@/lib/tycoon";
-import type { Ride } from "../CitySprites";
+import type { Ride } from "./scene-model";
 import { landPlots } from "../world/isometric";
 import { useConstruction } from "../world/useWorldMotion";
 import { buildingParts, profiles, roadParts, selectionParts, terrainParts, TREE_POINTS, type Quality } from "./scene-model";
@@ -21,7 +21,7 @@ class RendererBoundary extends Component<{children:ReactNode;onFailure:()=>void}
   state={failed:false};
   static getDerivedStateFromError(){return{failed:true};}
   componentDidCatch(){this.props.onFailure();}
-  render(){return this.state.failed ? <p role="status">3D is unavailable. Returning to the standard city…</p> : this.props.children;}
+  render(){return this.state.failed ? <p role="status">3D is unavailable. Please retry with graphics acceleration enabled.</p> : this.props.children;}
 }
 const StaticGround=memo(function StaticGround(){
   const terrain=useMemo(()=>terrainParts(),[]),roads=useMemo(()=>roadParts(),[]);
@@ -53,7 +53,7 @@ export default function Neighbourhood3D({state,selected,onSlot,night,paused,ride
       <Canvas key={quality} orthographic camera={{position:[19,21,19],zoom:43*zoom,near:.1,far:120}}
         dpr={profile.dpr} shadows={profile.shadows ? "basic" : false} frameloop="demand"
         gl={{antialias:false,alpha:false,powerPreference:'low-power'}}
-        fallback={<p>WebGL is required for the 3D prototype.</p>}
+        fallback={<p>WebGL is required for the 3D game.</p>}
         onCreated={({gl,camera})=>{
           camera.lookAt(0,0,0);
           gl.domElement.setAttribute('aria-label','Interactive 3D business neighbourhood');
@@ -74,12 +74,12 @@ export default function Neighbourhood3D({state,selected,onSlot,night,paused,ride
         <OrbitControls makeDefault enableDamping={false} enableRotate={false} minZoom={10} maxZoom={90} minPolarAngle={Math.PI/5} maxPolarAngle={Math.PI/3}/>
         <RenderDriver fps={profile.fps} animate={animate} onStats={report}/>
       </Canvas>
-      <section className={styles.metrics} aria-label="3D prototype performance">
+      <section className={styles.metrics} aria-label="3D game performance">
         <label>3D quality <select aria-label="3D quality" value={quality} onChange={event=>setQuality(event.target.value as Quality)}><option value="low">Mobile · 30 FPS target</option><option value="high">Desktop · 60 FPS target</option></select></label>
         <output data-three-stats data-fps={stats?.fps ?? ''} data-calls={stats?.calls ?? ''} data-triangles={stats?.triangles ?? ''} data-geometries={stats?.geometries ?? ''} data-textures={stats?.textures ?? ''} data-dpr={stats?.dpr ?? ''}>
           {animate ? stats ? `${stats.fps} FPS · ${stats.calls} draws · ${stats.triangles.toLocaleString()} triangles` : 'Measuring rendered frames…' : 'Motion paused · demand rendering'}
         </output>
-        <small>Prototype · drag to pan, pinch or scroll to zoom. Existing buildings and saves are shared.</small>
+        <small>Drag to pan, pinch or scroll to zoom. Existing buildings and saves are shared.</small>
       </section>
       <div className={styles.accessiblePlots} aria-label="3D city plot controls">
         {plots.map(plot=><button key={plot.id} onClick={()=>onSlot(plot.id)} onFocus={()=>setHover(plot.id)} onBlur={()=>setHover(null)}>Plot {plot.id+1}: {plot.buildingType || 'empty'}</button>)}

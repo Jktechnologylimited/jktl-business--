@@ -1,3 +1,5 @@
+> Historical implementation/benchmark record. The DOM/SVG 2D renderer has been removed. Tycoon is now 3D-only; see [current games guide](JKTL_STREET_RUN.md).
+
 # JKTL Tycoon isometric client architecture
 
 The live Tycoon route remains `/play/tycoon`. The existing `TycoonGame` owns the

@@ -24,9 +24,10 @@ test('mobile quality caps pixel density, moving actors and real-time shadows',()
  assert.ok(model.profiles.low.people<model.profiles.high.people);
  assert.equal(model.profiles.high.fps,60);
 });
-test('3D stays opt-in and is loaded through a client-only dynamic boundary',()=>{
+test('3D is the only game renderer and loads through a client-only dynamic boundary',()=>{
  const source=readFileSync('src/components/tycoon/CityScene.tsx','utf8');
  assert.match(source,/dynamic\(\(\) => import\("\.\/three\/Neighbourhood3D"\)/);
  assert.match(source,/ssr: false/);assert.match(source,/useState\(false\)/);
- assert.match(source,/\? <Neighbourhood3D/);
+ assert.match(source,/<Neighbourhood3D/);
+ assert.doesNotMatch(source,/IsometricWorld|Use 2D|Try 3D/);
 });

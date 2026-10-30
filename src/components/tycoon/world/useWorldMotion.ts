@@ -2,30 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { TycoonState } from "@/lib/tycoon";
 
-/** One throttled clock for all moving actors; no timer or frame loop per sprite. */
-export function useWorldMotion(paused: boolean) {
-  const [seconds, setSeconds] = useState(0);
-  useEffect(() => {
-    const media = matchMedia("(prefers-reduced-motion: reduce)");
-    let frame = 0, previous = 0, accumulated = 0;
-    const tick = (now: number) => {
-      if (previous && !paused && !media.matches && !document.hidden) {
-        accumulated += Math.min(now - previous, 100);
-        if (accumulated >= 1000 / 30) {
-          const elapsed = accumulated / 1000;
-          setSeconds(value => value + elapsed);
-          accumulated = 0;
-        }
-      }
-      previous = now;
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [paused]);
-  return seconds;
-}
-
 /** Presentation only: accepted economy builds remain the sole source of ownership. */
 export function useConstruction(plots: TycoonState["plots"], ready = true) {
   const initialized = useRef(false);
