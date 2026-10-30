@@ -1,4 +1,5 @@
 "use client";
+import {RecordDetailsEditor} from "./record-details-editor";
 
 import { useState } from "react";
 import { Banknote, Check, Copy, Gift, Loader2, Pause, Play, UserPlus, Wallet, X } from "lucide-react";
@@ -209,6 +210,7 @@ export function AffiliateManager({
                   </Button>
                 </div>
               </div>
+              <RecordDetailsEditor kind="affiliate" id={a.id} />
               {a.applicationNote ? <p className="mt-2 text-xs text-ink-muted">&ldquo;{a.applicationNote}&rdquo;</p> : null}
             </div>
           ))}
@@ -362,6 +364,7 @@ export function AffiliateManager({
                 <Stat label="Balance owing" value={formatKobo(a.balanceKobo)} emphasize />
               </div>
 
+              <RecordDetailsEditor kind="affiliate" id={a.id} />
               {payoutFor === a.id ? (
                 <div className="mt-3 flex flex-col gap-3 rounded-xl bg-surface p-3 sm:flex-row sm:items-end">
                   <div className="flex-1">

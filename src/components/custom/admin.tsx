@@ -1,4 +1,5 @@
 "use client";
+import {RecordDetailsEditor} from "@/components/admin/record-details-editor";
 import { ManagedCmsConfig } from "./managed-config";
 import { useState } from "react";
 import * as actions from "@/lib/actions/custom-project-actions";
@@ -153,6 +154,7 @@ export function CustomAdmin({ initial }: { initial: Data }) {
                   }{" "}
                   projects · {c.pilot_ready ? "Pilot ready" : "Pilot pending"}
                 </p>
+                <RecordDetailsEditor kind="customClient" id={String(c.organization_id)} />
                 <ul className="my-3 text-sm">
                   {(data.invitations || [])
                     .filter((i) => i.organization_id === c.organization_id)
@@ -557,7 +559,7 @@ function ProjectForm({
         );
       }}
     >
-      <h2>{p ? String(p.name) : "Attach a custom project"}</h2>
+      <h2>{p ? `Edit project: ${String(p.name)}` : "Attach a custom project"}</h2>
       <label>
         Client
         <select

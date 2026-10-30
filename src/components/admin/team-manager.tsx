@@ -1,4 +1,5 @@
 "use client";
+import {RecordDetailsEditor} from "./record-details-editor";
 
 import { ActionForm } from "@/components/distribution/action-form";
 import { configureGrowthStaffAction } from "@/lib/actions/growth-staff-actions";
@@ -186,6 +187,7 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
                     : "Delete"}
                 </Button>
               </div>
+              <RecordDetailsEditor kind="team" id={member.id} />
               {["writer", "editor"].includes(member.role) && (
                 <EditorialPermissions member={member} />
               )}

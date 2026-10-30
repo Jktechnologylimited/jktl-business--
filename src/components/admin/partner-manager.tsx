@@ -1,4 +1,5 @@
 "use client";
+import {RecordDetailsEditor} from "./record-details-editor";
 import { importLegacyPartnerAction } from "@/lib/actions/legacy-partner-actions";
 import { useState } from "react";
 import { approvePartnerAction } from "@/lib/actions/partner-actions";
@@ -119,6 +120,7 @@ export function PartnerManager({
               <p style={{ whiteSpace: "pre-wrap" }}>
                 {String(p.application_note)}
               </p>
+              <RecordDetailsEditor kind="partner" id={String(p.id)} />
               <p>Agreed rate: {Number(p.commission_bps) / 100}%</p>
               {Boolean(p.partner_agreement) && (
                 <p style={{ whiteSpace: "pre-wrap" }}>
