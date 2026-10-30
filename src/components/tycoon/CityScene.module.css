@@ -62,3 +62,5 @@
   .legend { right: 12px; bottom: 205px; padding: 8px; font-size: 8px; }
   .legend select { max-width: 125px !important; font-size: 8px !important; }
 }
+
+.fallback { position:absolute; bottom:190px; right:20px; max-width:260px; padding:14px; background:#fff8de; color:#132843; border-radius:12px; font-size:11px; z-index:2; }
