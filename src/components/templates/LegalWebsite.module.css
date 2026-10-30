@@ -664,3 +664,58 @@
   font-size: 12px;
   font-style: normal;
 }
+
+/* Family-law edition: scoped so saved counsel sites keep their existing design. */
+.site[data-legal-variant="family"] .header {
+  top: 0; margin: 0; padding: 16px 4%; background: var(--legal-ink); color: var(--legal-paper);
+}
+.site[data-legal-variant="family"] :is(.navContact, .button) {
+  background: var(--legal-accent); color: var(--legal-ink) !important;
+}
+.site[data-legal-variant="family"] .brand { flex-direction: row; align-items: center; gap: 14px; }
+.site[data-legal-variant="family"] .brand strong { font-size: 28px; }
+.site[data-legal-variant="family"] .brand small { font-size: 14px; margin: 0; }
+.site[data-legal-variant="family"] .hero {
+  margin: 0; padding: 0; min-height: 0; display: flex; flex-direction: column; background: var(--legal-ink);
+}
+.site[data-legal-variant="family"] .hero::after { display: none; }
+.site[data-legal-variant="family"] .hero > h1 {
+  order: -1; padding: 40px 4%; margin: 0; font-size: clamp(48px, 7.5vw, 112px); line-height: 1.02;
+}
+.site[data-legal-variant="family"] .hero > img {
+  position: static; height: clamp(300px, 42vw, 600px); opacity: 1;
+}
+.site[data-legal-variant="family"] .heroBottom {
+  border: 0; padding: 30px 4%; background: var(--legal-paper); color: var(--legal-ink);
+}
+.site[data-legal-variant="family"] .about { background: var(--legal-accent); padding-bottom: 85px; }
+.site[data-legal-variant="family"] .about > div { gap: 60px; }
+.site[data-legal-variant="family"] .about img { height: 350px; }
+.site[data-legal-variant="family"] .practiceGrid { grid-template-columns: 1fr; gap: 0; }
+.site[data-legal-variant="family"] .practiceGrid article {
+  min-height: 0; background: transparent; color: inherit; border-top: 1px solid #10214040;
+  padding: 32px 0; display: grid; grid-template-columns: 35px minmax(120px, 240px) 1fr;
+  column-gap: 40px; align-items: start;
+}
+.site[data-legal-variant="family"] .practiceGrid article > img { grid-column: 2; grid-row: 1 / 4; height: 160px; }
+.site[data-legal-variant="family"] .practiceGrid article > :is(h3, p, a) { grid-column: 3; }
+.site[data-legal-variant="family"] .practiceGrid article > a { justify-content: start; }
+.site[data-legal-variant="family"] .teamSection { background: var(--legal-ink); color: var(--legal-paper); }
+.site[data-legal-variant="family"] .teamSection .demo { color: #d4e9f3; }
+.site[data-legal-variant="family"] .attorneys article { padding: 24px; background: var(--legal-paper); color: var(--legal-ink); }
+.site[data-legal-variant="family"] .attorneys img { height: 340px; }
+.site[data-legal-variant="family"] .attorneys article:nth-child(2) { margin-top: 55px; }
+.site[data-legal-variant="family"] .attorneys article:nth-child(3) { margin-top: 110px; }
+.site[data-legal-variant="family"] :is(.news, .contactLayout) { background: var(--legal-accent); }
+.site[data-legal-variant="family"] .footer { background: var(--legal-ink); }
+.site[data-legal-variant="family"] .footerMark { font-size: clamp(65px, 9vw, 130px); }
+@media (max-width: 767.98px) {
+  .site[data-legal-variant="family"] .brand { flex-direction: column; align-items: start; gap: 4px; }
+  .site[data-legal-variant="family"] .brand small { font-size: 11px; }
+  .site[data-legal-variant="family"] .hero > h1 { padding: 35px 24px; }
+  .site[data-legal-variant="family"] .about > div { gap: 30px; }
+  .site[data-legal-variant="family"] .practiceGrid article { grid-template-columns: 30px 1fr; gap: 18px; }
+  .site[data-legal-variant="family"] .practiceGrid article > img { grid-column: 2; grid-row: auto; width: 100%; height: 200px; }
+  .site[data-legal-variant="family"] .practiceGrid article > :is(h3, p, a) { grid-column: 2; }
+  .site[data-legal-variant="family"] .attorneys article:nth-child(n) { margin-top: 0; }
+}

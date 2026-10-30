@@ -106,6 +106,7 @@ export function LegalWebsite({
       {doc.offerings.map((o, i) => (
         <article key={i}>
           <span className={styles.kicker}>0{i + 1}</span>
+          {doc.legalVariant === "family" && o.image && photo(o.image, o.title)}
           <h3>{o.title}</h3>
           <p>{o.description}</p>
           {link(
@@ -173,6 +174,7 @@ export function LegalWebsite({
   return (
     <div
       className={styles.site}
+      data-legal-variant={doc.legalVariant}
       data-legal-template
       style={
         {

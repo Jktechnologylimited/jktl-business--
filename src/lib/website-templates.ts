@@ -42,6 +42,7 @@ export type WebsiteOffering = {
 };
 export type WebsiteDocument = {
   design?: "legal";
+  legalVariant?: "family";
   aboutImage?: string;
   demoContent?: boolean;
   beauty?: BeautyContent;
@@ -2338,6 +2339,54 @@ websiteTemplates.push({
   document: legalDocument,
 });
 
+// Family-law edition: original content inspired by the supplied layout reference.
+const familyDocument = JSON.parse(JSON.stringify(legalDocument)) as WebsiteDocument;
+Object.assign(familyDocument, {
+  legalVariant: "family",
+  brandName: "Hartwell & Vale",
+  eyebrow: "FAMILY LAW. A THOUGHTFUL WAY FORWARD.",
+  headline: "Guidance for life's next chapter.",
+  intro: "Compassionate counsel for your family, with clear advice at every step.",
+  ctaLabel: "Request a consultation",
+  accent: "#d4e9f3",
+  paper: "#fbfced",
+  ink: "#102140",
+  seoTitle: "Family law, with care | Hartwell & Vale",
+  seoDescription: "Discover a thoughtful approach to separation, parenting arrangements, family agreements and estate planning. Meet our sample team and explore a first consultation.",
+  aboutTitle: "Compassion in counsel. Clarity in every decision.",
+  aboutText: "Every family has its own story. We start by listening to yours, understanding your priorities and explaining the options in language that makes sense.\n\nFrom changing relationships to plans for the future, our approach gives you space to ask questions and consider your next step. Scope, availability and fees are agreed before any engagement begins.",
+  offeringsTitle: "Support for what matters most",
+  offerings: [
+    { slug: "separation-divorce", title: "Separation & divorce", image: "/template-photos/legal/office.jpg", description: "Navigate a changing relationship with a clearer understanding of the process and your options.", benefits: ["Discuss your priorities", "Understand the process", "Plan practical next steps"], preparation: "Prepare a brief outline of your situation and important dates. Ask the firm how to share documents securely." },
+    { slug: "parenting-arrangements", title: "Children & parenting", image: "/template-photos/legal/team.jpg", description: "Thoughtful guidance on parenting arrangements, with attention to your family's circumstances.", benefits: ["Understand the family's needs", "Explore available arrangements", "Discuss appropriate professional support"], preparation: "Bring a short summary of your concerns. Avoid including sensitive information about children in the initial form." },
+    { slug: "family-agreements", title: "Family agreements", image: "/template-photos/legal/office.jpg", description: "Discuss agreements and financial arrangements with clear expectations about scope and advice.", benefits: ["Review your priorities", "Discuss information needed", "Understand the next step"], preparation: "Ask which documents are relevant before sending financial or personal information." },
+    { slug: "wills-estate-planning", title: "Wills & future planning", image: "/template-photos/legal/team.jpg", description: "Consider the future with guidance on wills, responsibilities and your family's wishes.", benefits: ["Outline your wishes", "Identify questions for advice", "Discuss suitable planning"], preparation: "Prepare your questions and a general outline of your goals. Specific advice depends on your circumstances and applicable law." },
+  ],
+  galleryTitle: "People who listen. Counsel you can understand.",
+  gallery: [
+    { src: "/template-photos/legal/attorney-one.jpg", alt: "Amara Vale", category: "Sample profile · Family law" },
+    { src: "/template-photos/legal/attorney-two.jpg", alt: "Daniel Hartwell", category: "Sample profile · Family agreements" },
+    { src: "/template-photos/legal/attorney-three.jpg", alt: "Nneka Cole", category: "Sample profile · Future planning" },
+  ],
+  featureTitle: "A more considered conversation",
+  featureText: "You deserve time to be heard, room to ask questions and clarity about what comes next.",
+  featureItems: ["Listen with care", "Explain clearly", "Plan together"],
+  faqTitle: "Before we begin",
+  faqs: [
+    { question: "What should I bring to a first conversation?", answer: "Start with a short outline of your concerns, your questions and any important dates. The firm will explain which documents are needed and how to share them securely.\n\nA first enquiry does not create a lawyer-client relationship. Scope, fees and suitability must be agreed separately." },
+    { question: "Can I send private family information through the form?", answer: "Please keep your initial enquiry general. Do not send sensitive case details, children's information or confidential documents through a public website form.\n\nAsk the firm about an appropriate channel before sharing private information." },
+    { question: "How are fees and next steps agreed?", answer: "Ask what work is included, how fees are calculated and who will keep you informed. The firm should discuss scope and availability before you decide to proceed.\n\nUrgent matters should be raised directly with a qualified lawyer. This website provides general information only." },
+  ],
+  contactTitle: "Begin the conversation.",
+  contactText: "Tell us how we can help, in general terms. We will discuss the appropriate next step before any engagement is agreed.",
+});
+websiteTemplates.push({
+  id: "family-law", name: "Family Law — Hartwell & Vale", category: "Legal & Professional",
+  layout: "editorial", kind: "website", sourceId: "family-law", edition: "Family",
+  sectionOrder: ["about", "offerings", "gallery", "feature", "faq", "areas", "reviews"],
+  document: familyDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -2365,7 +2414,7 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
   ) as WebsiteDocument;
   if (brandName?.trim()) {
     document.brandName = brandName.trim().slice(0, 120);
-    if (document.design === "legal")
+    if (document.design === "legal" && document.legalVariant !== "family")
       document.headline = document.brandName
         .toUpperCase()
         .replace(/\s&\s/, "\n& ");
@@ -2431,6 +2480,10 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   if (source.design !== undefined) {
     if (source.design !== "legal") throw Error("Unsupported website design.");
     result.design = "legal";
+    if (source.legalVariant !== undefined) {
+      if (source.legalVariant !== "family") throw Error("Unsupported website legal variant.");
+      result.legalVariant = "family";
+    }
     if (typeof source.demoContent !== "boolean")
       throw Error("Please check demonstration content settings.");
     result.demoContent = source.demoContent;

@@ -60,7 +60,7 @@ const { TemplateWebsite } = load(
 );
 const draft = () => catalogue.templateDraft("hair-salon", "Studio Example");
 test("one versioned salon entry gains ten real pages; saved v1 salons keep their old document and renderer", () => {
-  assert.equal(catalogue.websiteTemplates.length, 207);
+  assert.equal(catalogue.websiteTemplates.length, 208);
   const doc = draft();
   assert.equal(doc.beauty.version, 2);
   assert.deepEqual(catalogue.parseWebsiteDocument(doc), doc);
@@ -497,4 +497,27 @@ test("legal enquiries reuse tenant-scoped persistence and cannot enter paid appo
   );
   assert.equal(g.writes.length, 0);
   assert.equal(g.bookings.length, 0);
+});
+
+
+test("family-law variant remains editable, preserves existing law sites and renders each linked page", () => {
+  const template = catalogue.getWebsiteTemplate("family-law");
+  const doc = catalogue.templateDraft("family-law", "Client Family Firm");
+  assert.equal(doc.brandName, "Client Family Firm");
+  assert.equal(doc.legalVariant, "family");
+  assert.deepEqual(catalogue.parseWebsiteDocument(doc), doc);
+  assert.equal(catalogue.templateDraft("law-firm-counsel").legalVariant, undefined);
+  for (const path of catalogue.beautyPagePaths(doc)) {
+    const html = renderToStaticMarkup(createElement(LegalWebsite, {
+      template, document: doc, pagePath: path, preview: true,
+      basePath: "/template-canvas/family-law",
+    }));
+    assert.equal((html.match(/<h1[ >]/g) || []).length, 1, path);
+    assert.match(html, /data-legal-variant="family"/);
+    assert.match(html, /login\?template=family-law/);
+    assert.doesNotMatch(html, /undefined|javascript:/);
+  }
+  const invalid = structuredClone(doc);
+  invalid.legalVariant = "unknown";
+  assert.throws(() => catalogue.parseWebsiteDocument(invalid));
 });
