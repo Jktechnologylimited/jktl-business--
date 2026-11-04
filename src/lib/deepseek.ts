@@ -85,7 +85,10 @@ export function deepseekModel(): string {
 }
 
 function baseUrl(): string {
-  return (process.env.DEEPSEEK_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, "");
+  return (process.env.DEEPSEEK_BASE_URL || DEFAULT_BASE_URL).replace(
+    /\/+$/,
+    "",
+  );
 }
 
 export interface ChatCompletionInput {
@@ -118,9 +121,16 @@ interface DeepSeekResponse {
 /** One completion. Never throws for provider or network failures — returns
  * `ok: false` with a `retryable` hint so the engine can decide between
  * retrying once and falling back immediately. */
-export async function chatComplete(input: ChatCompletionInput): Promise<ChatResult> {
+export async function chatComplete(
+  input: ChatCompletionInput,
+): Promise<ChatResult> {
   const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) return { ok: false, error: "DEEPSEEK_API_KEY is not configured.", retryable: false };
+  if (!apiKey)
+    return {
+      ok: false,
+      error: "DEEPSEEK_API_KEY is not configured.",
+      retryable: false,
+    };
 
   const model = deepseekModel();
   const body: Record<string, unknown> = {
@@ -140,7 +150,10 @@ export async function chatComplete(input: ChatCompletionInput): Promise<ChatResu
   try {
     const res = await fetch(`${baseUrl()}/chat/completions`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
       cache: "no-store",
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
@@ -162,7 +175,12 @@ export async function chatComplete(input: ChatCompletionInput): Promise<ChatResu
     }
 
     const choice = data.choices?.[0];
-    if (!choice) return { ok: false, error: "DeepSeek returned no choices.", retryable: true };
+    if (!choice)
+      return {
+        ok: false,
+        error: "DeepSeek returned no choices.",
+        retryable: true,
+      };
 
     // Usage fields are optional in the schema; treat a missing usage block as
     // zero tokens rather than failing the turn — a reply we can't fully
@@ -190,11 +208,106 @@ export async function chatComplete(input: ChatCompletionInput): Promise<ChatResu
       latencyMs: Date.now() - startedAt,
     };
   } catch (err) {
-    const aborted = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+    const aborted =
+      err instanceof Error &&
+      (err.name === "TimeoutError" || err.name === "AbortError");
     return {
       ok: false,
-      error: aborted ? "DeepSeek request timed out." : err instanceof Error ? err.message : "DeepSeek request failed.",
+      error: aborted
+        ? "DeepSeek request timed out."
+        : err instanceof Error
+          ? err.message
+          : "DeepSeek request failed.",
       retryable: true,
     };
+  }
+}
+
+/** General chatbot streaming uses the same server-only transport, with an explicitly verified model. */
+export async function* chatStream(input: {
+  messages: ChatMessage[];
+  model: string;
+  maxTokens: number;
+  signal?: AbortSignal;
+}): AsyncGenerator<{
+  delta?: string;
+  usage?: { input: number; output: number };
+  done?: boolean;
+}> {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey || !input.model) throw Error("AI_NOT_CONFIGURED");
+  const response = await fetch(`${baseUrl()}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: input.model,
+      messages: input.messages,
+      stream: true,
+      stream_options: { include_usage: true },
+      max_tokens: input.maxTokens,
+      temperature: 0.2,
+    }),
+    cache: "no-store",
+    signal: AbortSignal.any([
+      AbortSignal.timeout(25000),
+      ...(input.signal ? [input.signal] : []),
+    ]),
+  });
+  if (!response.ok || !response.body) throw Error("AI_PROVIDER_REJECTED");
+  const reader = response.body.getReader(),
+    decoder = new TextDecoder();
+  let buffer = "",
+    chars = 0,
+    finished = false;
+  try {
+    while (true) {
+      const part = await reader.read();
+      if (part.done) break;
+      buffer += decoder.decode(part.value, { stream: true });
+      if (buffer.length > 64000) throw Error("AI_INVALID_STREAM");
+      let newline: number;
+      while ((newline = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
+        if (!line.startsWith("data:")) continue;
+        const value = line.slice(5).trim();
+        if (value === "[DONE]") {
+          finished = true;
+          continue;
+        }
+        const data = JSON.parse(value);
+        const delta = data.choices?.[0]?.delta?.content;
+        if (typeof delta === "string" && delta) {
+          chars += delta.length;
+          if (chars > 8000) throw Error("AI_OUTPUT_LIMIT");
+          yield { delta };
+        }
+        const usage = data.usage;
+        if (
+          usage &&
+          Number.isSafeInteger(usage.prompt_tokens) &&
+          Number.isSafeInteger(usage.completion_tokens) &&
+          usage.prompt_tokens >= 0 &&
+          usage.completion_tokens >= 0 &&
+          usage.prompt_tokens <= 1000000 &&
+          usage.completion_tokens <= 100000
+        ) {
+          yield {
+            usage: {
+              input: usage.prompt_tokens,
+              output: usage.completion_tokens,
+            },
+          };
+        }
+      }
+    }
+    if (!finished || !chars) throw Error("AI_INCOMPLETE_STREAM");
+    yield { done: true };
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
   }
 }

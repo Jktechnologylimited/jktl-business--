@@ -4,6 +4,7 @@ export const CLIENT_SCOPES = [
   "PUBLISH_WEBSITE",
   "REQUEST_SERVICE_CHANGES",
   "PURCHASE_DOMAINS",
+  "MANAGE_CHATBOT",
 ] as const;
 export function clientScopes(value: unknown): string[] {
   if (!Array.isArray(value) || value.some((s) => !CLIENT_SCOPES.includes(s)))

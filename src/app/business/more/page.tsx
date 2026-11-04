@@ -23,6 +23,7 @@ export default function MorePage() {
       <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
         <T>More</T>
       </h1>
+      <Link href="/business/chatbot" className="rounded-2xl border border-border bg-surface p-5"><strong>JKTL AI Chatbot <FeatureBadge slug="ai-chatbot"/></strong><p className="mt-1 text-sm text-ink-muted">Answers, enquiries and human handoff for your website. Free to start.</p></Link>
       <Link
         href="/business/email"
         className="rounded-2xl border border-border bg-surface p-5"

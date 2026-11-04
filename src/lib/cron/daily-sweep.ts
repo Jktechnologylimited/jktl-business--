@@ -120,6 +120,7 @@ export async function runDailySweep(budgetMs = DEFAULT_BUDGET_MS): Promise<Daily
   /* 1. Money in                                                            */
   /* ---------------------------------------------------------------------- */
 
+
   await step("subscription-collection", async () => {
     const result = await runAutoCharge();
     return `${result.charged} charged, ${result.failed} failed, ${result.noCard} without a card (of ${result.attempted})`;
@@ -405,6 +406,8 @@ export async function runDailySweep(budgetMs = DEFAULT_BUDGET_MS): Promise<Daily
   /* ---------------------------------------------------------------------- */
   /* 6. The slow one, last, with whatever time is left                      */
   /* ---------------------------------------------------------------------- */
+
+  await step("chatbot-maintenance", async()=>{const {maintainChatbots}=await import("@/lib/chatbot/notifications");return JSON.stringify(await maintainChatbots());});
 
   await step("site-build", async () => {
     const job = await getRunningSiteBuildJob();

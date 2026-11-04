@@ -46,6 +46,7 @@ export default async function Layout({
             <Link href="/partners/commercial">Commercial terms</Link>
             <Link href="/partners/resources">Resources</Link>
             <Link href="/partners/clients">Clients</Link>
+            <Link href="/partners/chatbot">AI Chatbots</Link>
             <Link href="/business/distribution">Business account</Link>
             <form action={affiliateLogoutAction}>
               <button>Sign out</button>

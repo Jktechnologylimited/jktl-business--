@@ -511,6 +511,7 @@ test("template-based public sites retain actual booking, product and chat compon
         submitBeautyWebsiteRequestAction: async () => ({ ok: false }),
       },
       "@/components/templates/TemplateWebsite": { TemplateWebsite },
+      "@/components/chatbot/WebsiteChat": { WebsiteChat: () => createElement("div", { "data-general-chatbot": true }) },
       "@/components/templates/PublishedSiteMetrics": loadTs(
         "../src/components/templates/PublishedSiteMetrics.tsx",
         { react: require("react") },

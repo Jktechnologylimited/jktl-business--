@@ -50,7 +50,7 @@ DO $$
 BEGIN
  IF to_regclass('public.partner_client_access') IS NOT NULL THEN
   ALTER TABLE partner_client_access DROP CONSTRAINT IF EXISTS partner_client_access_scopes_check;
-  ALTER TABLE partner_client_access ADD CONSTRAINT partner_client_access_scopes_check CHECK(scopes <@ ARRAY['VIEW_ALLOWED_SERVICES','REQUEST_SERVICE_CHANGES','MANAGE_WEBSITE_CONTENT','PUBLISH_WEBSITE','PURCHASE_DOMAINS']::text[]);
+  ALTER TABLE partner_client_access ADD CONSTRAINT partner_client_access_scopes_check CHECK(scopes <@ ARRAY['VIEW_ALLOWED_SERVICES','REQUEST_SERVICE_CHANGES','MANAGE_WEBSITE_CONTENT','PUBLISH_WEBSITE','PURCHASE_DOMAINS','MANAGE_CHATBOT']::text[]);
  END IF;
 END;
 $$;

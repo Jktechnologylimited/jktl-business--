@@ -54,6 +54,7 @@ export type AdminCapability =
   | "manage_support"
   | "publish_reviews"
   | "manage_email"
+  | "manage_chatbots"
   | "manage_features"
   | "manage_custom"
   | "fulfill_domains"
@@ -73,6 +74,7 @@ const MATRIX: Record<AdminRole, AdminCapability[]> = {
   growth_gaming_lead: ["growth_workspace", ...GROWTH_PERMISSIONS],
   support: ["manage_support", "fulfill_domains"],
   owner: [
+    "manage_chatbots",
     "manage_support",
     "publish_reviews",
     "manage_email",
@@ -198,6 +200,7 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
+  {href:"/admin/chatbot",label:"AI Chatbot",capability:"manage_chatbots"},
   {
     href: "/admin/emails",
     label: "Emails",

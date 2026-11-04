@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   experimental: { serverActions: { bodySizeLimit: "4mb" } },
   async headers() {
     return [
+      {source:"/chatbots/c/:slug",headers:[{key:"Content-Security-Policy",value:"frame-ancestors 'none'"},{key:"X-Frame-Options",value:"DENY"},{key:"Referrer-Policy",value:"no-referrer"}]},
       {
         source: "/:path*",
         headers: [

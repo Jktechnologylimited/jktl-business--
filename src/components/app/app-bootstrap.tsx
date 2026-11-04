@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useBusinessStore } from "@/lib/store";
 
 export function AppBootstrap() {
+  const pathname = usePathname();
   const hydrate = useBusinessStore((s) => s.hydrate);
   const setOnline = useBusinessStore((s) => s.setOnline);
 
   useEffect(() => {
+    // Public chat frames must not restore a Business account or sync private dashboard data.
+    if (pathname.startsWith("/chatbots/")) return;
     hydrate();
 
     const goOnline = () => setOnline(true);
@@ -33,7 +37,7 @@ export function AppBootstrap() {
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
     };
-  }, [hydrate, setOnline]);
+  }, [hydrate, setOnline, pathname]);
 
   return null;
 }

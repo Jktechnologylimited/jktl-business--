@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS partner_workspaces(
 );
 ALTER TABLE partner_client_invitations ADD COLUMN IF NOT EXISTS workspace_id uuid REFERENCES partner_workspaces(id);
 ALTER TABLE partner_client_access DROP CONSTRAINT IF EXISTS partner_client_access_scopes_check;
-ALTER TABLE partner_client_access ADD CONSTRAINT partner_client_access_scopes_check CHECK(scopes <@ ARRAY['VIEW_ALLOWED_SERVICES','REQUEST_SERVICE_CHANGES','MANAGE_WEBSITE_CONTENT','PUBLISH_WEBSITE']::text[]);
+ALTER TABLE partner_client_access ADD CONSTRAINT partner_client_access_scopes_check CHECK(scopes <@ ARRAY['VIEW_ALLOWED_SERVICES','REQUEST_SERVICE_CHANGES','MANAGE_WEBSITE_CONTENT','PUBLISH_WEBSITE','PURCHASE_DOMAINS','MANAGE_CHATBOT']::text[]);
 INSERT INTO feature_registry(slug,name,category,route,description) VALUES('partner-workspace','Partner Workspace','Distribution','/partners/workspace','Multi-client website setup and service operations.'),('partner-support','Partner Support','Distribution','/partners/support','Partner assistance and ticket history.') ON CONFLICT DO NOTHING;
 CREATE TABLE IF NOT EXISTS partner_tickets(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),partner_id uuid NOT NULL REFERENCES affiliates(id),workspace_id uuid REFERENCES partner_workspaces(id),

@@ -1070,3 +1070,8 @@ export async function sendWebsiteRequestEmail(p: {
     { category: "service" },
   );
 }
+
+/** Shared provider, Reply-To and branded footer; no separate chatbot mail system. */
+export async function sendChatbotLeadEmail(input:{to:string;name:string;detail:string}) {
+ return send(input.to,'New JKTL AI Chatbot enquiry',`<p>A visitor has requested a response from your business.</p><p>${escapeHtml(input.name)}</p><p style="white-space:pre-wrap">${escapeHtml(input.detail)}</p>${mailAction('Review chatbot enquiries','https://business.jktl.com.ng/business/chatbot')}`,`${input.name}\n${input.detail}\nhttps://business.jktl.com.ng/business/chatbot`,{category:'service'});
+}

@@ -53,6 +53,7 @@ export default function WebsitePage() {
   }
   return (
     <div className="space-y-7">
+      <Link href="/business/chatbot" className="rounded-xl border border-border p-3 text-sm text-primary">Website → AI Chatbot → Enable</Link>
       <div className="flex flex-wrap justify-between gap-4">
         <div>
           <Link href="/business/domains" className="text-sm font-medium text-primary">Buy or connect a domain — keep your selected website →</Link>
