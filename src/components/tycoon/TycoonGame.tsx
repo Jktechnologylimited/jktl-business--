@@ -87,6 +87,14 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
     plot = state.plots[slot],
     chosen = ventures.find((v) => v.id === kind)!,
     built = state.plots.filter(Boolean).length;
+  function returnToCityOnMobile() {
+    if (
+      window.matchMedia(
+        "(max-width: 900px), (max-width: 1000px) and (max-height: 500px)",
+      ).matches
+    )
+      setPanel("none");
+  }
   async function save() {
     setBusy(true);
     try {
@@ -113,6 +121,15 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
         <Link href="/business" target="_top">
           JKTL <span>BUSINESS TYCOON</span>
         </Link>
+        <button
+          type="button"
+          className={styles.mobileSettings}
+          aria-label="Open city controls"
+          aria-expanded={panel === "scene"}
+          onClick={() => setPanel(panel === "scene" ? "none" : "scene")}
+        >
+          ⚙
+        </button>
         <nav>
           <Link href="https://jktl.com.ng" target="_top">
             Main site ↗
@@ -199,6 +216,8 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
           </div>
           <CityScene
             ready={ready}
+            toolsOpen={panel === "scene"}
+            onCloseTools={() => setPanel("none")}
             state={state}
             slot={slot}
             onSlot={(n) => {
@@ -239,6 +258,43 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
           </details>
         </section>
         <aside className={styles.controls}>
+          <section className={styles.mobileMore}>
+            <h2>Game menu</h2>
+            <p>
+              Level {1 + Math.floor(built / 3)} · {built}/12 businesses ·{" "}
+              {state.city}
+            </p>
+            <label>
+              Your city
+              <select
+                value={state.city}
+                disabled={!ready}
+                onChange={(event) =>
+                  setState((current) => ({
+                    ...current,
+                    city: event.target.value,
+                  }))
+                }
+              >
+                {cities.map((city) => (
+                  <option key={city}>{city}</option>
+                ))}
+              </select>
+            </label>
+            <button type="button" onClick={() => setPanel("scene")}>
+              City & graphics controls
+            </button>
+            <button type="button" onClick={() => setPanel("help")}>
+              How to play
+            </button>
+            <Link href="/play/run">Run & earn points ↗</Link>
+            <Link href="https://jktl.com.ng" target="_top">
+              Main site ↗
+            </Link>
+            <a href="https://jktl.com.ng/pricing" target="_top">
+              Explore JKTL Business
+            </a>
+          </section>
           <section>
             <p className={styles.kicker}>YOUR NEXT MOVE</p>
             <h2>
@@ -289,11 +345,12 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
                 </p>
                 <button
                   disabled={!ready || state.cash < chosen.cost}
-                  onClick={() =>
+                  onClick={() => {
                     setState((s) =>
                       gameAction(s, { type: "build", slot, kind }),
-                    )
-                  }
+                    );
+                    returnToCityOnMobile();
+                  }}
                 >
                   Open business
                 </button>
@@ -399,6 +456,7 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
         ].map(([key, icon, label]) => (
           <button
             key={key}
+            className={key === "help" ? styles.desktopOnly : undefined}
             aria-pressed={panel === key}
             onClick={() => setPanel(panel === key ? "none" : key)}
           >
@@ -406,8 +464,27 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
             {label}
           </button>
         ))}
+        <button
+          type="button"
+          className={styles.mobileOnly}
+          aria-pressed={panel === "menu"}
+          onClick={() => setPanel(panel === "menu" ? "none" : "menu")}
+        >
+          <span aria-hidden="true">☰</span>More
+        </button>
+        <button
+          type="button"
+          className={`${styles.mobileOnly} ${styles.nextWeek}`}
+          disabled={!ready || state.week >= 260}
+          onClick={() =>
+            setState((current) => gameAction(current, { type: "week" }))
+          }
+        >
+          <span aria-hidden="true">→</span>
+          {state.week >= 260 ? "Complete" : "Next week"}
+        </button>
       </nav>
-      {panel !== "none" && (
+      {panel !== "none" && panel !== "scene" && (
         <button
           className={styles.closePanel}
           aria-label="Close game panel"

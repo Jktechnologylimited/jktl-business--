@@ -1,5 +1,5 @@
-.scene { position:absolute; inset:0; touch-action:none; }
-.scene canvas { display:block; outline:none; }
+.scene { position:absolute; inset:0; touch-action:auto; }
+.scene canvas { display:block; outline:none; touch-action:none; }
 .metrics { position:absolute; right:20px; bottom:195px; z-index:1; padding:12px 15px; max-width:320px; border:1px solid #d8c18b; border-radius:14px; background:#0b1935e8; color:#fff4d6; font:11px/1.5 Arial,sans-serif; pointer-events:auto; }
 .metrics label { display:flex; gap:12px; align-items:center; }
 .metrics select { min-height:32px; background:#f8f1da; color:#10233a; border:0; border-radius:6px; padding:4px; max-width:200px; font-size:10px; }
