@@ -95,7 +95,7 @@ test("chase waves give a head start, stop, return and repeat on simulation time"
   const { chaseWave } = await import("../src/lib/runner.ts");
   const at = (seconds, phase = "running") => chaseWave({ seconds, phase });
   assert.equal(at(0).phase, "chasing");
-  assert.ok(at(0).gap >= 4.5);
+  assert.ok(at(0).gap === 8);
   assert.equal(at(6).phase, "resting");
   assert.equal(at(7).presence, 0);
   assert.ok(at(7).gap > at(4).gap);

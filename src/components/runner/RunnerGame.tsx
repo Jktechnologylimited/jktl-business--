@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
-import { Pause } from "lucide-react";
+import { Pause, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   actRun,
@@ -16,6 +16,7 @@ import {
   type RunAction,
   type RunState,
 } from "@/lib/runner";
+import { RunnerAudio } from "@/lib/runner-audio";
 import styles from "./RunnerGame.module.css";
 const Scene = dynamic(() => import("./RunnerScene"), {
   ssr: false,
@@ -25,9 +26,12 @@ const Scene = dynamic(() => import("./RunnerScene"), {
     </p>
   ),
 });
+const SOUND_KEY = "jktl-street-run-sound-v1";
 const RECORD_KEY = "jktl-street-run-record-v1";
 export function RunnerGame() {
   const skipFrame = useRef(true);
+  const audio = useRef<RunnerAudio | null>(null);
+  const [sound, setSound] = useState(true);
   const run = useRef(createRun()),
     runId = useRef(""),
     lastHud = useRef(0),
@@ -38,8 +42,13 @@ export function RunnerGame() {
     [error, setError] = useState(false),
     [attempt, setAttempt] = useState(0),
     [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    audio.current = new RunnerAudio();
+    return () => { audio.current?.dispose(); audio.current = null; };
+  }, []);
   const read = useCallback(() => run.current, []);
   const fail = useCallback(() => {
+    audio.current?.pause();
     skipFrame.current = true;
     run.current = {
       ...run.current,
@@ -56,6 +65,7 @@ export function RunnerGame() {
     const previous = run.current,
       next = advanceRun(previous, delta);
     run.current = next;
+    audio.current?.update(next);
     const now = performance.now();
     if (next.phase !== previous.phase || now - lastHud.current > 150) {
       lastHud.current = now;
@@ -64,11 +74,14 @@ export function RunnerGame() {
     return next;
   }, []);
   const action = useCallback((action: RunAction) => {
-    run.current = actRun(run.current, action);
+    const before = run.current;
+    run.current = actRun(before, action);
+    if (run.current !== before && (action === "jump" || action === "slide")) audio.current?.action(action);
     setView(run.current);
   }, []);
   const pause = useCallback(() => {
     if (run.current.phase === "running") {
+      audio.current?.pause();
       skipFrame.current = true;
       run.current = { ...run.current, phase: "paused" };
       setView(run.current);
@@ -80,6 +93,9 @@ export function RunnerGame() {
     const frame = requestAnimationFrame(() => {
       sync();
       try {
+        const enabled = localStorage.getItem(SOUND_KEY) !== "off";
+        setSound(enabled);
+        audio.current?.setEnabled(enabled);
         setRecord(
           parseRunRecord(
             JSON.parse(localStorage.getItem(RECORD_KEY) || "null"),
@@ -151,7 +167,15 @@ export function RunnerGame() {
     }
   }, [view]);
   const chase = chaseWave(view);
+  function toggleSound() {
+    const enabled = !sound;
+    setSound(enabled);
+    audio.current?.setEnabled(enabled);
+    if (enabled && run.current.phase === "running") audio.current?.unlock();
+    try { localStorage.setItem(SOUND_KEY, enabled ? "on" : "off"); } catch {}
+  }
   function start() {
+    audio.current?.unlock();
     skipFrame.current = true;
     const seed = crypto.getRandomValues(new Uint32Array(1))[0];
     runId.current = crypto.randomUUID?.() || `${seed}-${Date.now()}`;
@@ -160,6 +184,7 @@ export function RunnerGame() {
     root.current?.focus();
   }
   function resume() {
+    audio.current?.unlock();
     skipFrame.current = true;
     run.current = { ...run.current, phase: "running" };
     setView(run.current);
@@ -172,6 +197,7 @@ export function RunnerGame() {
       className={styles.game}
       data-runner
       data-chaser="masquerade"
+      data-sound={sound ? "on" : "off"}
       data-chase-phase={chase.phase}
       data-chase-wave={chase.wave}
       data-chase-gap={chase.gap.toFixed(1)}
@@ -246,6 +272,9 @@ export function RunnerGame() {
           />
         )}
       </div>
+      <button className={styles.sound} onClick={toggleSound} aria-label={sound ? "Mute sounds" : "Enable sounds"} aria-pressed={sound} title={sound ? "Mute sounds" : "Enable sounds"}>
+        {sound ? <Volume2 size={20} aria-hidden="true" /> : <VolumeX size={20} aria-hidden="true" />}
+      </button>
       {view.phase === "running" && (
         <button className={styles.pause} onClick={pause} aria-label="Pause run">
           <Pause size={20} aria-hidden="true" />
@@ -290,7 +319,7 @@ export function RunnerGame() {
               <p>
                 {view.phase === "over"
                   ? `You earned ${view.score.toLocaleString()} points with ${view.coins} coins over ${Math.floor(view.distance)} metres.`
-                  : "You have a head start! The masquerade chases, rests and returns as the pace gradually rises. Jump barriers, slide under signs and dodge vehicles to keep your lead."}
+                  : "You have an 8-metre head start! The masquerade chases, rests and returns as the pace gradually rises. Jump barriers, slide under signs and dodge vehicles to keep your lead."}
               </p>
               <div className={styles.rules}>
                 <span>Distance = 5 points / m</span>

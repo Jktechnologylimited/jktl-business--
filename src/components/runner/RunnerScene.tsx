@@ -201,8 +201,8 @@ function Course({ tick }: { tick: (delta: number) => RunState }) {
         run.phase === "running" ? Math.sin(run.distance * 1.5) * 0.65 : 0;
       if (leftLeg.current) leftLeg.current.rotation.x = stride;
       if (rightLeg.current) rightLeg.current.rotation.x = -stride;
-      if (leftArm.current) leftArm.current.rotation.x = -stride;
-      if (rightArm.current) rightArm.current.rotation.x = stride;
+      if (leftArm.current) leftArm.current.rotation.x = -stride * 1.6;
+      if (rightArm.current) rightArm.current.rotation.x = stride * 1.6;
     }
   });
   return (
@@ -240,10 +240,14 @@ function Course({ tick }: { tick: (delta: number) => RunState }) {
           <group
             key={`arm${id}`}
             ref={ref as React.RefObject<Group>}
-            position={[x as number, 0.93, 0]}
+            position={[x as number * 1.25, 1, 0]}
           >
             <mesh position={[0, -0.18, 0]}>
-              <boxGeometry args={[0.12, 0.42, 0.13]} />
+              <boxGeometry args={[0.14, 0.36, 0.14]} />
+              <meshStandardMaterial color="#79503a" />
+            </mesh>
+            <mesh position={[0, -0.34, -0.12]}>
+              <boxGeometry args={[0.14, 0.14, 0.32]} />
               <meshStandardMaterial color="#79503a" />
             </mesh>
           </group>
@@ -277,7 +281,7 @@ function Scene({ read, tick, phase, onFailure, reduced }: Props) {
       <Canvas
         dpr={1}
         frameloop="demand"
-        camera={{ position: [0, 6.3, 13], fov: 58, near: 0.1, far: 130 }}
+        camera={{ position: [0, 8.5, 19], fov: 58, near: 0.1, far: 130 }}
         gl={{ antialias: false, powerPreference: "low-power" }}
         onCreated={({ camera, gl }) => {
           camera.lookAt(0, 0.8, -10);

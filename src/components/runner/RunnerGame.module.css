@@ -13,3 +13,6 @@
 @media(prefers-reduced-motion:reduce) { .game * { scroll-behavior:auto; animation:none!important; transition:none!important; } }
 
 .header>a { display:flex; align-items:center; gap:8px; }.header>a>span { margin-left:0; }.header img { object-fit:contain; }
+
+.sound { position:absolute; top:145px; right:25px; z-index:5; width:46px; height:46px; display:grid; place-items:center; border:1px solid #d8ba75; border-radius:50%; background:#0b1c3d; color:#ffe2a1; cursor:pointer; }
+@media(max-width:600px) { .sound { top:163px; right:68px; } }

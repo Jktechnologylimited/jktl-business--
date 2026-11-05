@@ -102,7 +102,7 @@ export function MasqueradeChaser({
     root.current.scale.setScalar(chase.presence);
     if (seed.current !== run.seed || run.phase === "ready") {
       seed.current = run.seed;
-      root.current.position.set(0.72, 0, 4.8);
+      root.current.position.set(0.72, 0, 8);
     }
     if (caught) {
       root.current.position.x = run.lane * 1.33 + 0.43;
@@ -113,7 +113,7 @@ export function MasqueradeChaser({
       root.current.position.z =
         chase.gap + (reduced ? 0 : Math.sin(run.seconds * 3) * 0.06);
     } else {
-      root.current.position.z = Math.min(6, chase.gap);
+      root.current.position.z = Math.min(10, chase.gap);
     }
     const running = run.phase === "running" && chase.phase === "chasing",
       stride = running ? Math.sin(run.distance * 1.5 - 1.4) * 0.65 : 0;
@@ -128,7 +128,7 @@ export function MasqueradeChaser({
       if (part.joint) {
         angle =
           (part.joint === "leftLeg" || part.joint === "rightArm" ? 1 : -1) *
-          stride;
+          stride * (part.joint.endsWith("Arm") ? 1.6 : 1);
         const pivot = part.joint.endsWith("Leg") ? 0.57 : 1.21,
           dy = py - pivot;
         py = pivot + dy * Math.cos(angle) - pz * Math.sin(angle);
@@ -147,7 +147,7 @@ export function MasqueradeChaser({
     mesh.current.instanceMatrix.needsUpdate = true;
   });
   return (
-    <group ref={root} position={[0.72, 0, 4.8]} name="masquerade-chaser">
+    <group ref={root} position={[0.72, 0, 8]} name="masquerade-chaser">
       <InstancedBoxes parts={parts} meshRef={mesh} cull={false} />
     </group>
   );

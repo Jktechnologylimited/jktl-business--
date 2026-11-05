@@ -20,7 +20,7 @@ const { hazardAt } = require('../src/lib/runner.ts');
     await page.locator('canvas[data-webgl-ready]').waitFor({ timeout: 60000 });
     await page.getByRole('button', { name: 'Start running', exact: true }).click();
     const root = page.locator('[data-runner]');
-    assert.ok(Number(await root.getAttribute('data-chase-gap')) >= 4.5);
+    assert.ok(Number(await root.getAttribute('data-chase-gap')) >= 7.5);
     await page.screenshot({ path: '/workspace/exports/chase-waves-start-390.png' });
     const seen = new Set();
     let paused = false;

@@ -192,11 +192,11 @@ const smooth = (value: number) => {
 export function chaseWave(run: Pick<RunState, "seconds" | "phase">): ChaseWave {
   const seconds = Math.max(0, Number.isFinite(run.seconds) ? run.seconds : 0);
   let wave = 1,
-    gap = 4.8,
+    gap = 8,
     presence = 1,
     phase: ChasePhase = "chasing";
   if (seconds < 5) {
-    gap = 4.8 - 0.6 * smooth(seconds / 5);
+    gap = 8 - 0.6 * smooth(seconds / 5);
   } else {
     const cycle = Math.floor((seconds - 5) / 13),
       time = (seconds - 5) % 13;
@@ -204,13 +204,13 @@ export function chaseWave(run: Pick<RunState, "seconds" | "phase">): ChaseWave {
       wave = cycle + 1;
       phase = "resting";
       const stoppedAt =
-        cycle === 0 ? 4.2 : Math.max(3.6, 5.5 - (cycle - 1) * 0.15) - 0.8;
+        cycle === 0 ? 7.4 : Math.max(6.8, 8.7 - (cycle - 1) * 0.15) - 0.8;
       gap = stoppedAt + travelled(seconds) - travelled(seconds - time);
       presence = 1 - smooth(time / 0.9);
     } else {
       wave = cycle + 2;
       const elapsed = time - 5,
-        start = Math.max(3.6, 5.5 - cycle * 0.15);
+        start = Math.max(6.8, 8.7 - cycle * 0.15);
       gap = start - 0.8 * smooth(elapsed / 8);
       presence = smooth(elapsed / 1.25);
     }
