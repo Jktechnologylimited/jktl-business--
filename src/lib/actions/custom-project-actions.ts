@@ -57,7 +57,7 @@ export async function customWorkspaceAction() {
           [s.organizationId],
         ),
         query(
-          "SELECT id,project_id,description,amount_kobo,status,due_on,paid_at,reference,authorization_url FROM custom_invoices WHERE organization_id=$1 ORDER BY due_on DESC LIMIT 100",
+          "SELECT id,project_id,description,amount_kobo,CASE WHEN status='PAID' THEN amount_kobo ELSE paid_kobo END AS paid_kobo,version,invoice_number,status,due_on,paid_at,reference,authorization_url FROM custom_invoices WHERE organization_id=$1 AND status<>'DRAFT' ORDER BY due_on DESC LIMIT 100",
           [s.organizationId],
         ),
         query(

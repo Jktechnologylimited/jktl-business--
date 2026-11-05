@@ -335,16 +335,17 @@ export function CustomWorkspace() {
                         <tr key={String(i.id)}>
                           <td>{String(i.description)}</td>
                           <td>{day(i.due_on)}</td>
-                          <td>{money(i.amount_kobo)}</td>
+                          <td>{money(i.amount_kobo)}{i.version===2&&<small className="block">Paid {money(i.paid_kobo)} · Outstanding {money(Number(i.amount_kobo)-Number(i.paid_kobo))}</small>}</td>
                           <td>
                             {String(i.status)}
                             {i.status === "PAID" && (
                               <small className="block">
-                                Receipt {String(i.reference)} · {day(i.paid_at)}
+                                Receipt {String(i.reference || i.invoice_number)} · {day(i.paid_at)}
                               </small>
                             )}
                           </td>
                           <td>
+                            {i.version===2&&<Link href={`/business/custom/${String(i.project_id)}/portal`}>View invoice & payment status</Link>}
                             {i.status === "OPEN" && (
                               <>
                                 <button
