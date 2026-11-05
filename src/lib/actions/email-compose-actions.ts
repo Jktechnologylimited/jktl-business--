@@ -147,7 +147,10 @@ export async function sendComposedEmailAction(raw: {
     throw Error("This message was already queued. Do not send it again.");
   after(async () => {
     try {
-      await flushProgramNotices();
+      await flushProgramNotices({
+        composedId: String(draft.id),
+        limit: Math.min(50, recipients.length),
+      });
     } catch {
       /* existing cron retries queued entries */
     }
@@ -171,7 +174,7 @@ export async function retryComposedEmailAction(id: string) {
   );
   after(async () => {
     try {
-      await flushProgramNotices();
+      await flushProgramNotices({ composedId: id, limit: 50 });
     } catch {}
   });
   return { ok: true as const };

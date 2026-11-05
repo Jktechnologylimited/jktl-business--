@@ -5,6 +5,7 @@ import { query } from "@/lib/custom/service";
 import { ActionForm } from "@/components/distribution/action-form";
 import { retryComposedEmailFormAction } from "@/lib/actions/email-compose-actions";
 export const dynamic = "force-dynamic";
+export const maxDuration = 120;
 export default async function Page() {
   await guardAdminPage("compose_email");
   const a = await requireAdminCapability("compose_email"),

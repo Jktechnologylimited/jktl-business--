@@ -45,5 +45,13 @@ test('business audiences use actual owners, age and publication/domain state; pr
   const queued=(await q('SELECT recipient_email,reply_to,category FROM distribution_program_notices WHERE composed_id=$1',[preview.id]))[0];assert.equal(queued.reply_to,'info@jktl.com.ng');assert.equal(queued.category,'marketing');
   await q("UPDATE email_preferences SET marketing_suppressed=true WHERE email='new@example.test'");assert.deepEqual(await compose.mailRecipients(q,'owner','FREE_SUBDOMAINS',[],undefined,'marketing'),[]);
   assert.equal((await compose.mailRecipients(q,'owner','FREE_SUBDOMAINS',[],undefined,'operational')).length,1);
+
+  // A 21-recipient message is picked in one bounded, campaign-scoped batch.
+  const campaign=(await q("INSERT INTO affiliate_campaigns(subject,body,audience,recipients,created_by,interface,status) VALUES('Batch fixture','Fixture body','BUSINESS_ACCOUNTS','[]',$1,'emails','QUEUED') RETURNING id",[actor.id]))[0];
+  await q("INSERT INTO distribution_program_notices(event_key,recipient_email,subject,detail,path,composed_id) SELECT 'batch-fixture-'||n,'fixture'||n||'@example.test','Batch fixture','Fixture body','/business',$1 FROM generate_series(1,21) n",[campaign.id]);
+  let processed=0;
+  const worker=load('src/lib/distribution/notifications.ts',{'server-only':{},'./push':{flushProgrammePush:async()=>({configured:false,delivered:0,failed:0})},'@/lib/custom/service':{query:q},'@/lib/mail/composed-delivery':{recoverComposedSubmissions:async()=>{},deliverComposedNotice:async(q,n)=>{processed++;await q("UPDATE distribution_program_notices SET send_state='ACCEPTED',delivered_at=now() WHERE id=$1",[n.id]);return{accepted:true,failed:false};}},'@/lib/email':{sendAdminComposedEmail:async()=>{throw Error('No real sends');},sendPartnerNoticeEmail:async()=>{throw Error('No real sends');}}});
+  const oldKey=process.env.RESEND_API_KEY;
+  try{process.env.RESEND_API_KEY='fixture-not-a-provider-key';const result=await worker.flushProgramNotices({composedId:campaign.id,limit:21});assert.equal(processed,21);assert.equal(result.delivered,21);assert.equal((await q('SELECT delivered_at FROM distribution_program_notices WHERE composed_id=$1',[preview.id]))[0].delivered_at,null);}finally{if(oldKey===undefined)delete process.env.RESEND_API_KEY;else process.env.RESEND_API_KEY=oldKey;}
  }finally{await db.close();}
 });

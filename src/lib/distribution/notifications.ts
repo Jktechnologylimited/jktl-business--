@@ -6,7 +6,18 @@ import {
   recoverComposedSubmissions,
 } from "@/lib/mail/composed-delivery";
 import { sendAdminComposedEmail, sendPartnerNoticeEmail } from "@/lib/email";
-export async function flushProgramNotices() {
+export async function flushProgramNotices(
+  options: { composedId?: string; limit?: number } = {},
+) {
+  const composedId = options.composedId || null;
+  const limit = options.limit ?? 20;
+  if (
+    (composedId && !/^[a-f0-9-]{36}$/i.test(composedId)) ||
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 50
+  )
+    throw Error("Invalid notification batch.");
   const push = await flushProgrammePush().catch(() => ({
     configured: true,
     delivered: 0,
@@ -21,7 +32,8 @@ export async function flushProgramNotices() {
     };
   await recoverComposedSubmissions(query);
   const rows = await query(
-    `WITH picked AS(SELECT id FROM distribution_program_notices WHERE delivered_at IS NULL AND suppressed_at IS NULL AND attempts<10 AND(composed_id IS NULL OR send_state='QUEUED') AND(lease_until IS NULL OR lease_until<now()) ORDER BY id LIMIT 20 FOR UPDATE SKIP LOCKED) UPDATE distribution_program_notices n SET lease_until=now()+interval '5 minutes',attempts=attempts+1 FROM picked WHERE n.id=picked.id RETURNING n.*`,
+    `WITH picked AS(SELECT id FROM distribution_program_notices WHERE ($1::uuid IS NULL OR composed_id=$1) AND delivered_at IS NULL AND suppressed_at IS NULL AND attempts<10 AND(composed_id IS NULL OR send_state='QUEUED') AND(lease_until IS NULL OR lease_until<now()) ORDER BY id LIMIT $2 FOR UPDATE SKIP LOCKED) UPDATE distribution_program_notices n SET lease_until=now()+interval '5 minutes',attempts=attempts+1 FROM picked WHERE n.id=picked.id RETURNING n.*`,
+    [composedId, limit],
   );
   let delivered = 0,
     failed = 0;
