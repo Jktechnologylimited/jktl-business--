@@ -198,7 +198,7 @@ function Course({ tick }: { tick: (delta: number) => RunState }) {
       player.current.position.y = jumpHeight(run);
       player.current.scale.y = run.slideLeft > 0 ? 0.48 : 1;
       const stride =
-        run.phase === "running" ? Math.sin(run.seconds * 14) * 0.65 : 0;
+        run.phase === "running" ? Math.sin(run.distance * 1.5) * 0.65 : 0;
       if (leftLeg.current) leftLeg.current.rotation.x = stride;
       if (rightLeg.current) rightLeg.current.rotation.x = -stride;
       if (leftArm.current) leftArm.current.rotation.x = -stride;
@@ -277,10 +277,10 @@ function Scene({ read, tick, phase, onFailure, reduced }: Props) {
       <Canvas
         dpr={1}
         frameloop="demand"
-        camera={{ position: [0, 4.6, 8.5], fov: 58, near: 0.1, far: 130 }}
+        camera={{ position: [0, 6.3, 13], fov: 58, near: 0.1, far: 130 }}
         gl={{ antialias: false, powerPreference: "low-power" }}
         onCreated={({ camera, gl }) => {
-          camera.lookAt(0, 1, -12);
+          camera.lookAt(0, 0.8, -10);
           gl.domElement.setAttribute("aria-label", "JKTL Street Run 3D game");
         }}
       >

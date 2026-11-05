@@ -6,6 +6,8 @@ import { Pause } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   actRun,
+  chaseWave,
+  runSpeed,
   advanceRun,
   createRun,
   emptyRunRecord,
@@ -148,6 +150,7 @@ export function RunnerGame() {
       return () => cancelAnimationFrame(frame);
     }
   }, [view]);
+  const chase = chaseWave(view);
   function start() {
     skipFrame.current = true;
     const seed = crypto.getRandomValues(new Uint32Array(1))[0];
@@ -169,6 +172,10 @@ export function RunnerGame() {
       className={styles.game}
       data-runner
       data-chaser="masquerade"
+      data-chase-phase={chase.phase}
+      data-chase-wave={chase.wave}
+      data-chase-gap={chase.gap.toFixed(1)}
+      data-run-speed={runSpeed(view.seconds).toFixed(2)}
       data-phase={view.phase}
       data-lane={view.lane}
       data-jumping={view.jumpAge !== null}
@@ -251,7 +258,9 @@ export function RunnerGame() {
             {error
               ? "Let’s get you running."
               : view.phase === "over"
-                ? "The masquerade caught up!"
+                ? chase.phase === "caught"
+                  ? "The masquerade caught up!"
+                  : "An obstacle ended your run."
                 : view.phase === "paused"
                   ? "Take a breather."
                   : "Outrun the masquerade."}
@@ -281,7 +290,7 @@ export function RunnerGame() {
               <p>
                 {view.phase === "over"
                   ? `You earned ${view.score.toLocaleString()} points with ${view.coins} coins over ${Math.floor(view.distance)} metres.`
-                  : "A colourful masquerade is on your trail! Collect coins, jump barriers, slide under signs and dodge vehicles. Hit an obstacle and it catches up."}
+                  : "You have a head start! The masquerade chases, rests and returns as the pace gradually rises. Jump barriers, slide under signs and dodge vehicles to keep your lead."}
               </p>
               <div className={styles.rules}>
                 <span>Distance = 5 points / m</span>
@@ -325,9 +334,10 @@ export function RunnerGame() {
           </button>
         </div>
       )}
-      <footer className={styles.footer}>
-        Arrows / WASD · Space to jump · P to pause · Swipe or use the touch
-        buttons
+      <footer className={styles.footer} aria-label="Chase status">
+        {view.phase === "running"
+          ? `${chase.phase === "resting" ? "Masquerade resting" : "Masquerade chasing"} · ${chase.gap.toFixed(1)} m behind · Pace ${(runSpeed(view.seconds) * 3.6).toFixed(0)} km/h`
+          : "Arrows / WASD · Space to jump · P to pause · Swipe or use the touch buttons"}
       </footer>
     </main>
   );

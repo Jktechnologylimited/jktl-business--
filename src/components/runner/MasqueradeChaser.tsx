@@ -5,7 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import { Object3D, type Group, type InstancedMesh } from "three";
 import { InstancedBoxes } from "@/components/tycoon/three/InstancedBoxes";
 import type { BoxPart } from "@/components/tycoon/three/scene-model";
-import type { RunState } from "@/lib/runner";
+import { chaseWave, type RunState } from "@/lib/runner";
 
 type CostumePart = BoxPart & {
   joint?: "leftLeg" | "rightLeg" | "leftArm" | "rightArm";
@@ -96,22 +96,27 @@ export function MasqueradeChaser({
     if (!root.current || !mesh.current || run.phase === "paused") return;
     const x =
       run.lane * 1.33 + (run.lane === 0 ? 0.72 : -Math.sign(run.lane) * 0.42);
-    const caught = run.phase === "over";
+    const chase = chaseWave(run),
+      caught = chase.phase === "caught";
+    root.current.visible = chase.presence > 0.005;
+    root.current.scale.setScalar(chase.presence);
     if (seed.current !== run.seed || run.phase === "ready") {
       seed.current = run.seed;
-      root.current.position.set(0.72, 0, 1.35);
+      root.current.position.set(0.72, 0, 4.8);
     }
     if (caught) {
       root.current.position.x = run.lane * 1.33 + 0.43;
       root.current.position.z = 0.52;
-    } else {
+    } else if (chase.phase === "chasing") {
       const follow = 1 - Math.exp(-6 * Math.min(delta, 0.06));
       root.current.position.x += (x - root.current.position.x) * follow;
       root.current.position.z =
-        1.35 + (reduced ? 0 : Math.sin(run.seconds * 3) * 0.09);
+        chase.gap + (reduced ? 0 : Math.sin(run.seconds * 3) * 0.06);
+    } else {
+      root.current.position.z = Math.min(6, chase.gap);
     }
-    const running = run.phase === "running",
-      stride = running ? Math.sin(run.seconds * 14 - 1.4) * 0.65 : 0;
+    const running = run.phase === "running" && chase.phase === "chasing",
+      stride = running ? Math.sin(run.distance * 1.5 - 1.4) * 0.65 : 0;
     root.current.position.y =
       running && !reduced ? Math.abs(Math.sin(run.seconds * 14)) * 0.055 : 0;
     root.current.rotation.y =
@@ -142,7 +147,7 @@ export function MasqueradeChaser({
     mesh.current.instanceMatrix.needsUpdate = true;
   });
   return (
-    <group ref={root} position={[0.72, 0, 1.35]} name="masquerade-chaser">
+    <group ref={root} position={[0.72, 0, 4.8]} name="masquerade-chaser">
       <InstancedBoxes parts={parts} meshRef={mesh} cull={false} />
     </group>
   );

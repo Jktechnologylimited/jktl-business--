@@ -32,7 +32,7 @@ const {chromium}=require('playwright');
    await page.screenshot({path:`/workspace/exports/jktl-street-run-${width}.png`});
    // Remaining in the centre lane eventually meets one of the deterministic rotating hazards.
    await page.getByRole('button',{name:'Run again',exact:true}).waitFor({timeout:25000});
-   await page.getByRole('heading',{name:'The masquerade caught up!',exact:true}).waitFor();
+   await page.getByRole('heading',{name:/The masquerade caught up!|An obstacle ended your run\./}).waitFor();
    const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('jktl-street-run-record-v1')));
    assert.ok(stored.best>0);assert.equal(stored.runs,1);
    await page.getByRole('button',{name:'Run again',exact:true}).click();
