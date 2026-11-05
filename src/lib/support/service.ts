@@ -151,8 +151,8 @@ export async function createCase(input: {
   message: string;
   customProjectId?: string;
   projectCategory?: string;
-}) {
-  const s = await member();
+}, authenticatedActor?: {userId:string;organizationId:string}) {
+  const s = authenticatedActor || await member();
   await rate("new:" + s.userId, 5);
   const body = redact(text(input.message));
   let project: string | null = null,

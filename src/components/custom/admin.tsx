@@ -1,5 +1,6 @@
 "use client";
 import {RecordDetailsEditor} from "@/components/admin/record-details-editor";
+import { PortalAdmin } from "./portal-admin";
 import { ManagedCmsConfig } from "./managed-config";
 import { useState } from "react";
 import * as actions from "@/lib/actions/custom-project-actions";
@@ -69,6 +70,7 @@ export function CustomAdmin({ initial }: { initial: Data }) {
             "Projects",
             "Services",
             "Invoices",
+            "Billing & Integration",
             "Support",
             "Audit",
           ].map((t) => (
@@ -401,6 +403,7 @@ export function CustomAdmin({ initial }: { initial: Data }) {
             ))}
           </>
         )}
+        {tab === "Billing & Integration" && <PortalAdmin projects={data.projects}/> }
         {tab === "Invoices" && (
           <section className={styles.section}>
             <h2>Custom invoices</h2>

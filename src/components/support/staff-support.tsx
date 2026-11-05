@@ -11,6 +11,7 @@ import { HelpLibrary } from "./help-library";
 type Row = Record<string, unknown>;
 export function StaffSupport() {
   const params = useSearchParams();
+  const [customOnly,setCustomOnly]=useState(false);
   const [queue, setQueue] = useState<Row[]>([]),
     [isOwner, setIsOwner] = useState(false),
     [installEvent, setInstallEvent] = useState<
@@ -226,10 +227,11 @@ export function StaffSupport() {
       )}
       <div className="grid gap-6 xl:grid-cols-[300px_1fr]">
         <aside className="space-y-3">
+          <label className="flex gap-2 text-sm"><input type="checkbox" checked={customOnly} onChange={event=>setCustomOnly(event.target.checked)}/>Custom projects only</label>
           {queue.length === 0 && (
             <p className="text-sm text-ink-muted">No cases in your queue.</p>
           )}
-          {queue.map((c) => (
+          {queue.filter(c=>!customOnly||c.custom_project_id).map((c) => (
             <button
               key={String(c.id)}
               className="block w-full rounded-2xl border border-border bg-paper p-4 text-left text-sm"
@@ -254,6 +256,7 @@ export function StaffSupport() {
               <h2 className="text-xl font-semibold">
                 {String(data.case.subject)}
               </h2>
+              {data.attachments?.map(file=><p key={String(file.id)}><a className="underline" href={`/api/admin/support/${String(data.case.id)}/attachments/${String(file.id)}`}>{String(file.file_name)}</a></p>)}
               {data.project && (
                 <div className="my-4 border border-border p-4 text-sm">
                   <p>

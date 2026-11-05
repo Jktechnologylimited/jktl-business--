@@ -141,6 +141,7 @@ export function CustomWorkspace() {
                         </a>
                       </p>
                       <div className={styles.links}>
+                        <Link href={`/business/custom/${String(p.id)}/portal`}>Billing, invoices & support</Link>
                         <button
                           disabled={
                             busy ||

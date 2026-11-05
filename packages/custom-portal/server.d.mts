@@ -1,0 +1,1 @@
+export function createProjectPortal(options:{projectId:string;key:string;origin?:string;fetcher?:typeof fetch}):(subject:string,path:string,options?:{method?:'GET'|'POST';body?:unknown})=>Promise<Response>;

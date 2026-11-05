@@ -129,7 +129,7 @@ export async function supportQueueAction() {
   return {
     owner: a.role === "owner",
     cases: await query(
-      `SELECT c.id,c.subject,c.status,c.sensitive,c.assigned_to,c.updated_at,o.name AS business_name FROM support_cases c JOIN organizations o ON o.id=c.organization_id WHERE $1='owner' OR(c.sensitive=false AND(c.status='WAITING' AND c.assigned_to IS NULL OR c.assigned_to=$2)) ORDER BY CASE WHEN c.status='ESCALATED' THEN 0 WHEN c.status='WAITING' THEN 1 ELSE 2 END,c.updated_at DESC LIMIT 100`,
+      `SELECT c.id,c.subject,c.status,c.sensitive,c.assigned_to,c.updated_at,c.custom_project_id,o.name AS business_name FROM support_cases c JOIN organizations o ON o.id=c.organization_id WHERE $1='owner' OR(c.sensitive=false AND(c.status='WAITING' AND c.assigned_to IS NULL OR c.assigned_to=$2)) ORDER BY CASE WHEN c.status='ESCALATED' THEN 0 WHEN c.status='WAITING' THEN 1 ELSE 2 END,c.updated_at DESC LIMIT 100`,
       [a.role, a.id],
     ),
   };
@@ -147,6 +147,7 @@ export async function staffSupportCaseAction(caseId: string) {
       "SELECT * FROM(SELECT id,sender,body,guide_ids,created_at FROM support_messages WHERE case_id=$1 ORDER BY created_at DESC,id DESC LIMIT 120) recent ORDER BY created_at,id",
       [c.id],
     ),
+    attachments: await query("SELECT id,file_name,mime,size FROM support_case_attachments WHERE case_id=$1 ORDER BY created_at", [c.id]),
     notes: await query(
       "SELECT id,body,created_at FROM support_notes WHERE case_id=$1 ORDER BY created_at DESC LIMIT 50",
       [c.id],

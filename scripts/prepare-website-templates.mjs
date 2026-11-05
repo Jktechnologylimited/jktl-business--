@@ -48,6 +48,7 @@ if (!url) {
       "064_managed_client_editor.sql",
       "065_record_corrections.sql",
       "066_ai_chatbot.sql",
+      "067_custom_project_portal.sql",
     ].map((name) =>
       readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
     ),

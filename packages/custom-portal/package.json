@@ -1,0 +1,1 @@
+{"name":"@jktl/custom-portal","version":"1.0.0","private":true,"type":"module","exports":{"./server":"./server.mjs","./ui":"./ui.tsx"},"peerDependencies":{"react":"^19.0.0"},"files":["server.mjs","ui.tsx","README.md"]}

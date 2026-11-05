@@ -79,6 +79,7 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
       "utf8",
     ),
   );
+  await db.exec(readFileSync(new URL("../migrations/067_custom_project_portal.sql", import.meta.url),"utf8"));
   const sql = Object.assign(
     (strings, ...values) =>
       q(
@@ -100,6 +101,7 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
     "@/lib/db/client": { getSql: () => sql },
     "@/lib/session": { requireSession: async () => session },
     "./model": model,
+    "./portal-billing": {handlePortalPaymentEvent:async()=>false},
     "@/lib/db/organizations": {
       getUser: async () => ({ email: "owner@example.test" }),
     },

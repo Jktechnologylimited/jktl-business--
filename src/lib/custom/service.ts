@@ -44,8 +44,14 @@ export async function initializeInvoice(
   invoiceId: string,
   org: string,
   userId: string,
-) {
-  const email = (await getUser(userId))?.email;
+): Promise<string> {
+  const user = await getUser(userId);
+  const email = user?.email;
+  const enhanced = (await query("SELECT project_id FROM custom_invoices WHERE id=$1 AND organization_id=$2 AND version=2",[invoiceId,org]))[0];
+  if (enhanced && email) {
+    const { initializePortalPayment } = await import("./portal-billing");
+    return (await initializePortalPayment({projectId:String(enhanced.project_id),organizationId:org,userId,email,name:user?.name || "",scopes:["invoices:pay"]},invoiceId)).url;
+  }
   if (!email) throw Error("Account email required.");
   const ref = "jktl_custom_" + token();
   const rows = await query(
@@ -144,6 +150,8 @@ export async function handleCustomEvent(
   event: string,
   data: Record<string, unknown>,
 ) {
+  const { handlePortalPaymentEvent } = await import("./portal-billing");
+  if (await handlePortalPaymentEvent(event, data)) return true;
   if (event !== "charge.success") return false;
   const reference = typeof data.reference === "string" ? data.reference : "";
   const m = data.metadata as Record<string, unknown> | null;

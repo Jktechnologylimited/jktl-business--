@@ -127,6 +127,7 @@ test("Support permissions, handoff, customer consent, reviews and push use actua
   await db.exec(
     "ALTER TABLE support_cases ADD COLUMN custom_project_id uuid, ADD COLUMN project_category text;CREATE TABLE custom_projects(id uuid PRIMARY KEY,organization_id uuid,name text,website_url text,status text,cms_tested_at timestamptz,cms_fields text[],billing_only boolean DEFAULT false)",
   );
+  await db.exec("CREATE TABLE support_case_attachments(id uuid,case_id uuid,file_name text,mime text,size integer,created_at timestamptz DEFAULT now())");
   let session = { organizationId: org, userId: user },
     admin = { id: agent, role: "support" },
     ai = false,
