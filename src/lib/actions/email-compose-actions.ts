@@ -182,3 +182,73 @@ export async function retryComposedEmailFormAction(f: FormData) {
     throw Error("Confirm the eligible failed recipients before retrying.");
   return retryComposedEmailAction(String(f.get("id") || ""));
 }
+
+/** Read-only account audience review; creates no drafts, notices or consent records. */
+export async function reviewBusinessEmailAudienceAction(input: {
+  audience: string;
+  kind: "marketing" | "operational";
+  selected: string;
+}) {
+  const a = await requireAdminCapability("manage_communications");
+  await rate("business-email-review:" + a.id, 120);
+  const { BUSINESS_EMAIL_AUDIENCES } =
+    await import("@/lib/mail/business-outreach");
+  if (
+    !input ||
+    !Object.hasOwn(BUSINESS_EMAIL_AUDIENCES, input.audience) ||
+    !["marketing", "operational"].includes(input.kind) ||
+    typeof input.selected !== "string" ||
+    input.selected.length > 20000
+  )
+    throw Error("Choose a business audience and message type.");
+  const selected = [
+    ...new Set(
+      input.selected
+        .split(/[\s,]+/)
+        .filter(Boolean)
+        .map((v) => v.toLowerCase()),
+    ),
+  ];
+  const group =
+    input.audience === "SELECTED_BUSINESSES"
+      ? "BUSINESS_ACCOUNTS"
+      : input.audience;
+  const candidates = await mailRecipients(
+    query,
+    a.role,
+    group,
+    [],
+    undefined,
+    "operational",
+  );
+  const eligible =
+    input.audience === "SELECTED_BUSINESSES" && !selected.length
+      ? []
+      : await mailRecipients(
+          query,
+          a.role,
+          input.audience,
+          selected,
+          undefined,
+          input.kind,
+        );
+  const contacts = candidates.length
+    ? await query(
+        `SELECT lower(u.email) AS email,max(u.name) AS name,min(u.created_at) AS joined_at,array_agg(DISTINCT o.name) AS business_names,array_agg(DISTINCT CASE WHEN b.published=true THEN b.subdomain ELSE NULL END) FILTER(WHERE b.published=true) AS published_subdomains,bool_or(b.published=true AND b.subdomain<>'' AND COALESCE(trim(b.custom_domain),'')='') AS free_subdomain,COALESCE(p.marketing_opt_in,false) AS marketing_opt_in,COALESCE(p.marketing_suppressed,false) AS marketing_suppressed,bool_or(COALESCE(x.suppressed,false) OR COALESCE(x.status='suppressed',false)) AS legacy_suppressed FROM users u JOIN organization_members m ON m.user_id=u.id AND m.active=true AND m.role='owner' JOIN organizations o ON o.id=m.organization_id LEFT JOIN business_profiles b ON b.organization_id=o.id LEFT JOIN email_preferences p ON p.email=lower(u.email) LEFT JOIN prospects x ON lower(x.email)=lower(u.email) WHERE lower(u.email)=ANY($1::text[]) GROUP BY lower(u.email),p.marketing_opt_in,p.marketing_suppressed ORDER BY email`,
+        [candidates],
+      )
+    : [];
+  const branding = await currentBranding();
+  return {
+    matched: candidates.length,
+    eligible: eligible.length,
+    contacts: contacts.map(
+      (c): Record<string, unknown> & { eligible: boolean } => ({
+        ...c,
+        eligible: eligible.includes(String(c.email)),
+      }),
+    ),
+    hasPostalAddress: Boolean(branding.postalAddress),
+    replyTo: branding.defaultReplyTo,
+  };
+}

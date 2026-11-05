@@ -1,3 +1,4 @@
+import * as businessOutreach from "../src/lib/mail/business-outreach.ts";
 import * as promotionDefaults from "../src/lib/mail/promotion-defaults.ts";
 import { invitationExpiry } from "../src/lib/mail/invitation-date.ts";
 // All delivery/provider responses are test fixtures. No real emails are sent.
@@ -47,6 +48,7 @@ const invitations = load("../src/lib/mail/invitations.ts", {
   "./addresses": addresses,
 });
 const compose = load("../src/lib/mail/compose.tsx", {
+  "./business-outreach":businessOutreach,
   "server-only": {},
   unified: { unified },
   "remark-parse": { __esModule: true, default: remarkParse },

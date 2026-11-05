@@ -1,4 +1,5 @@
 import "server-only";
+import { BUSINESS_EMAIL_AUDIENCES } from "./business-outreach";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import { escapeHtml } from "./layout";
@@ -8,6 +9,7 @@ import { mailAddress } from "./addresses";
 export const EMAIL_AUDIENCES = {
   SELECTED: "Selected accounts",
   CUSTOMERS: "All customers",
+  ...BUSINESS_EMAIL_AUDIENCES,
   AFFILIATES: "All affiliates",
   ACTIVE_AFFILIATES: "Active affiliates",
   DORMANT_AFFILIATES: "Dormant affiliates",
@@ -45,18 +47,27 @@ export async function mailRecipients(
   if (
     selected.length > 500 ||
     selected.some((v) => !mailAddress(v)) ||
-    (audience === "SELECTED" && !selected.length)
+    (["SELECTED", "SELECTED_BUSINESSES"].includes(audience) && !selected.length)
   )
     throw Error("Choose 1–500 existing accounts.");
   const roleFilter = audience.startsWith("ROLE:") ? audience.slice(5) : "";
   const rows = await q(
     `SELECT DISTINCT lower(r.email) email FROM(
-  SELECT u.email FROM users u WHERE $1 IN('CUSTOMERS','SELECTED') AND $4::boolean AND EXISTS(SELECT 1 FROM organization_members m WHERE m.user_id=u.id AND m.active=true)
+  SELECT u.email FROM users u WHERE $4::boolean AND EXISTS(
+    SELECT 1 FROM organization_members m WHERE m.user_id=u.id AND m.active=true AND(
+      $1 IN('CUSTOMERS','SELECTED') OR m.role='owner' AND(
+        $1 IN('BUSINESS_ACCOUNTS','SELECTED_BUSINESSES')
+        OR $1='NEW_BUSINESSES' AND u.created_at>=now()-interval '30 days'
+        OR $1='EXISTING_BUSINESSES' AND u.created_at<now()-interval '30 days'
+        OR $1='FREE_SUBDOMAINS' AND EXISTS(SELECT 1 FROM business_profiles b WHERE b.organization_id=m.organization_id AND b.published=true AND b.subdomain<>'' AND COALESCE(trim(b.custom_domain),'')='')
+      )
+    )
+  )
   UNION ALL SELECT a.email FROM affiliates a LEFT JOIN affiliate_activity x ON x.affiliate_id=a.id WHERE
    ($1 IN('SELECTED','AFFILIATES','ACTIVE_AFFILIATES','DORMANT_AFFILIATES') AND a.programme='affiliate' AND($1<>'ACTIVE_AFFILIATES' OR a.status='active' AND COALESCE(x.state,'ACTIVE') IN('ACTIVE','WARNED')) AND($1<>'DORMANT_AFFILIATES' OR x.state='DORMANT'))
    OR ($1 IN('SELECTED','PARTNERS','APPROVED_PARTNERS') AND a.programme='partner' AND($1<>'APPROVED_PARTNERS' OR a.status='active' AND a.partner_terms_confirmed=true))
   UNION ALL SELECT email FROM admin_users WHERE $4::boolean AND disabled_at IS NULL AND staff_revoked_at IS NULL AND($1 IN('TEAM','SELECTED') OR $1 LIKE 'ROLE:%' AND role=$3)
- )r WHERE ($1<>'SELECTED' OR lower(r.email)=ANY($2::text[])) AND($5::text IS NULL OR lower(r.email)=$5)
+ )r WHERE ($1 NOT IN('SELECTED','SELECTED_BUSINESSES') OR lower(r.email)=ANY($2::text[])) AND($5::text IS NULL OR lower(r.email)=$5)
  AND($6='operational' OR EXISTS(SELECT 1 FROM email_preferences p WHERE p.email=lower(r.email) AND p.marketing_opt_in=true AND p.marketing_suppressed=false)
  AND NOT EXISTS(SELECT 1 FROM prospects p WHERE lower(p.email)=lower(r.email) AND(p.suppressed=true OR p.status='suppressed')))
  ORDER BY email LIMIT 501`,
