@@ -9,6 +9,7 @@ import {
   BUSINESS_EMAIL_AUDIENCES,
   BUSINESS_OUTREACH_TEMPLATES,
 } from "@/lib/mail/business-outreach";
+import { AFFILIATE_OUTREACH_TEMPLATES } from "@/lib/mail/affiliate-outreach";
 export function ComposeEmail({
   audiences,
   defaultReplyTo,
@@ -145,6 +146,66 @@ export function ComposeEmail({
           <a className="text-primary underline" href="/admin/emails/branding">
             Manage Reply-To and company details
           </a>
+        </section>
+      )}
+      {AFFILIATE_OUTREACH_TEMPLATES.some((template) =>
+        Object.hasOwn(audiences, template.audience),
+      ) && (
+        <section
+          className="space-y-4 rounded-xl border border-border bg-paper p-5"
+          aria-label="Affiliate email starters"
+        >
+          <h3 className="text-xl font-semibold">
+            Help affiliates get ready to promote
+          </h3>
+          <p>
+            Ready-made programme guidance with links to their own dashboards,
+            referral links and current marketing materials. Choose a starter,
+            edit it and preview before sending.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {AFFILIATE_OUTREACH_TEMPLATES.filter((template) =>
+              Object.hasOwn(audiences, template.audience),
+            ).map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                className="rounded-lg border border-border px-4 py-3"
+                disabled={busy}
+                onClick={() =>
+                  change({
+                    audience: template.audience,
+                    kind: template.kind,
+                    subject: template.subject,
+                    body: template.body,
+                    replyTo: approvedReplyTo.includes("info@jktl.com.ng")
+                      ? "info@jktl.com.ng"
+                      : defaultReplyTo,
+                  })
+                }
+              >
+                {template.title}
+              </button>
+            ))}
+          </div>
+          {raw.audience === "NEW_AFFILIATES" && (
+            <p className="text-sm">
+              Targets active affiliates who joined within the last 30 days,
+              excluding dormant, suspended and pending accounts.
+            </p>
+          )}
+          {raw.audience === "EXISTING_AFFILIATES" && (
+            <p className="text-sm">
+              Targets active affiliates who joined more than 30 days ago,
+              excluding dormant, suspended and pending accounts.
+            </p>
+          )}
+          <p className="text-sm text-ink-muted">
+            These starters explain the enrolled affiliate programme. Commission
+            rates and payout conditions remain those assigned to each affiliate.
+            If you change the message into a separate promotional campaign,
+            choose Promotional as the message type.
+          </p>
         </section>
       )}
       <form
@@ -383,6 +444,7 @@ export function ComposeEmail({
         <label>
           Message
           <textarea
+            aria-label="Email message"
             ref={body}
             className="block min-h-56 w-full rounded border border-border bg-paper p-3"
             required

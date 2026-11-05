@@ -12,6 +12,8 @@ export const EMAIL_AUDIENCES = {
   ...BUSINESS_EMAIL_AUDIENCES,
   AFFILIATES: "All affiliates",
   ACTIVE_AFFILIATES: "Active affiliates",
+  NEW_AFFILIATES: "New active affiliates — last 30 days",
+  EXISTING_AFFILIATES: "Existing active affiliates — over 30 days",
   DORMANT_AFFILIATES: "Dormant affiliates",
   PARTNERS: "All partners",
   APPROVED_PARTNERS: "Approved partners",
@@ -22,12 +24,15 @@ export const EMAIL_AUDIENCES = {
 };
 export function authorizeEmailAudience(role: AdminRole, audience: string) {
   if (
+    !can(role, "compose_email") ||
     !Object.hasOwn(EMAIL_AUDIENCES, audience) ||
     (!can(role, "manage_communications") &&
       ![
         "SELECTED",
         "AFFILIATES",
         "ACTIVE_AFFILIATES",
+        "NEW_AFFILIATES",
+        "EXISTING_AFFILIATES",
         "DORMANT_AFFILIATES",
         "PARTNERS",
         "APPROVED_PARTNERS",
@@ -64,7 +69,7 @@ export async function mailRecipients(
     )
   )
   UNION ALL SELECT a.email FROM affiliates a LEFT JOIN affiliate_activity x ON x.affiliate_id=a.id WHERE
-   ($1 IN('SELECTED','AFFILIATES','ACTIVE_AFFILIATES','DORMANT_AFFILIATES') AND a.programme='affiliate' AND($1<>'ACTIVE_AFFILIATES' OR a.status='active' AND COALESCE(x.state,'ACTIVE') IN('ACTIVE','WARNED')) AND($1<>'DORMANT_AFFILIATES' OR x.state='DORMANT'))
+   ($1 IN('SELECTED','AFFILIATES','ACTIVE_AFFILIATES','DORMANT_AFFILIATES','NEW_AFFILIATES','EXISTING_AFFILIATES') AND a.programme='affiliate' AND($1 NOT IN('ACTIVE_AFFILIATES','NEW_AFFILIATES','EXISTING_AFFILIATES') OR a.status='active' AND COALESCE(x.state,'ACTIVE') IN('ACTIVE','WARNED')) AND($1<>'NEW_AFFILIATES' OR a.created_at>=now()-interval '30 days') AND($1<>'EXISTING_AFFILIATES' OR a.created_at<now()-interval '30 days') AND($1<>'DORMANT_AFFILIATES' OR x.state='DORMANT'))
    OR ($1 IN('SELECTED','PARTNERS','APPROVED_PARTNERS') AND a.programme='partner' AND($1<>'APPROVED_PARTNERS' OR a.status='active' AND a.partner_terms_confirmed=true))
   UNION ALL SELECT email FROM admin_users WHERE $4::boolean AND disabled_at IS NULL AND staff_revoked_at IS NULL AND($1 IN('TEAM','SELECTED') OR $1 LIKE 'ROLE:%' AND role=$3)
  )r WHERE ($1 NOT IN('SELECTED','SELECTED_BUSINESSES') OR lower(r.email)=ANY($2::text[])) AND($5::text IS NULL OR lower(r.email)=$5)

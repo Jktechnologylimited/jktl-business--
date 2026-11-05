@@ -18,6 +18,8 @@ export default async function Page() {
           "SELECTED",
           "AFFILIATES",
           "ACTIVE_AFFILIATES",
+          "NEW_AFFILIATES",
+          "EXISTING_AFFILIATES",
           "DORMANT_AFFILIATES",
           "PARTNERS",
           "APPROVED_PARTNERS",

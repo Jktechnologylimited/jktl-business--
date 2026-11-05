@@ -1117,3 +1117,37 @@ test("email branding, invitation list and history server pages render their real
     await f.db.close();
   }
 });
+
+test("affiliate starters target the correct active cohorts and provide working programme guidance without fixed earnings promises", async () => {
+  const {AFFILIATE_OUTREACH_TEMPLATES}=await import('../src/lib/mail/affiliate-outreach.ts');
+  const f=await fixture();
+  try{
+    for(const [email,age,status,programme,state] of [
+      ['new-aff@example.test',2,'active','affiliate','ACTIVE'],
+      ['older-aff@example.test',50,'active','affiliate','WARNED'],
+      ['pending-aff@example.test',1,'pending','affiliate','ACTIVE'],
+      ['suspended-aff@example.test',45,'suspended','affiliate','ACTIVE'],
+      ['dormant-aff@example.test',50,'active','affiliate','DORMANT'],
+      ['partner-not-aff@example.test',2,'active','partner','ACTIVE'],
+    ]){
+      const a=(await f.q("INSERT INTO affiliates(name,email,password_hash,referral_code,programme,status,created_at) VALUES('Fixture',$1,'unused',$2,$3,$4,now()-$5::int*interval '1 day') RETURNING id",[email,email.split('@')[0],programme,status,age]))[0];
+      await f.q("INSERT INTO affiliate_activity(affiliate_id,state) VALUES($1,$2)",[a.id,state]);
+    }
+    assert.deepEqual(await compose.mailRecipients(f.q,'affiliate_manager','NEW_AFFILIATES',[],undefined,'operational'),['new-aff@example.test']);
+    assert.deepEqual(await compose.mailRecipients(f.q,'affiliate_manager','EXISTING_AFFILIATES',[],undefined,'operational'),['older-aff@example.test']);
+    assert.deepEqual(await compose.mailRecipients(f.q,'affiliate_manager','ACTIVE_AFFILIATES',[],undefined,'operational'),['new-aff@example.test','older-aff@example.test']);
+    await assert.rejects(()=>compose.mailRecipients(f.q,'support','NEW_AFFILIATES',[],undefined,'operational'),/permissions/);
+    assert.deepEqual(await compose.mailRecipients(f.q,'affiliate_manager','NEW_AFFILIATES',[],undefined,'marketing'),[]);
+    const validPaths=new Set(['/affiliates','/affiliates/login','/affiliates/resources','/affiliates/commercial','/affiliates/settings','/affiliates/support']);
+    assert.equal(AFFILIATE_OUTREACH_TEMPLATES.length,3);
+    for(const template of AFFILIATE_OUTREACH_TEMPLATES){
+      assert.equal(template.kind,'operational');
+      assert.ok(Object.hasOwn(compose.EMAIL_AUDIENCES,template.audience));
+      assert.doesNotMatch(template.body,/(?:\b15%|\b20%|guaranteed earnings|unlimited commission|instant payout)/i);
+      assert.match(template.body,/qualif|verification/);
+      const rendered=compose.composeBody(template.body);assert.match(rendered.html,/https:\/\/business\.jktl\.com\.ng\/affiliates/);
+      for(const href of template.body.matchAll(/\]\((https:[^)]+)\)/g)){const url=new URL(href[1]);assert.equal(url.origin,'https://business.jktl.com.ng');assert.ok(validPaths.has(url.pathname));}
+    }
+    assert.match(AFFILIATE_OUTREACH_TEMPLATES[2].body,/Replace YOUR_REFERRAL_LINK/);
+  }finally{await f.db.close();}
+});
