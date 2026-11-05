@@ -9,6 +9,7 @@ const {chromium}=require('playwright');
    page.on('pageerror',error=>errors.push(error.message));
    await page.goto((process.env.TYCOON_TEST_ORIGIN||'http://localhost:3142')+'/play/run');
    await page.locator('canvas[data-webgl-ready]').waitFor({timeout:60000});
+   assert.equal(await page.locator('[data-runner]').getAttribute('data-chaser'),'masquerade');
    await page.getByRole('button',{name:'Start running',exact:true}).click();
    await page.waitForFunction(()=>Number(document.querySelector('[data-run-score]').textContent.replace(/,/g,''))>0);
    if(width===390){
@@ -31,6 +32,7 @@ const {chromium}=require('playwright');
    await page.screenshot({path:`/workspace/exports/jktl-street-run-${width}.png`});
    // Remaining in the centre lane eventually meets one of the deterministic rotating hazards.
    await page.getByRole('button',{name:'Run again',exact:true}).waitFor({timeout:25000});
+   await page.getByRole('heading',{name:'The masquerade caught up!',exact:true}).waitFor();
    const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('jktl-street-run-record-v1')));
    assert.ok(stored.best>0);assert.equal(stored.runs,1);
    await page.getByRole('button',{name:'Run again',exact:true}).click();
