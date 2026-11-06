@@ -104,3 +104,36 @@ Do not claim that the pilot is financially live until its actual owner mapping, 
 - Migration 067 applied and repeated against the configured Business database: two existing projects preserved; zero invoices, zero integration keys and zero enabled external integrations. No production customer billing records were generated for testing.
 
 Pending activation: the actual Stick On Chic owner account/local ID mapping, its independent DB for legacy reconciliation, secure project-key installation and controlled Paystack test-mode/email/PWA verification. Shipping the code does not imply these external checks have completed.
+
+## Earn for custom-project owners
+
+Every project card and managed website editor links to **Earn with JKTL**. The
+shared portal also has an Earn tab. `/business/custom/[projectId]/earn` uses the
+existing Business owner login. Connected custom websites can expose the same UI
+through `@jktl/custom-portal/earn`, using their existing local owner login and
+server proxy; Stick On Chic includes `/admin/earn` in its dashboard navigation.
+Independent websites need the existing central portal configuration before
+local Earn can load. This change does not activate unconfigured deployments.
+
+The existing project key **and owner mapping** must grant `earn:read` and
+`earn:write`; older keys do not gain these automatically. Configure the owner
+mapping and rotate a key through the existing Custom Projects integration panel
+when adding these permissions. Only active organization owners may view or
+change Earn, even if an integration key or delegate has those scopes. No new
+secret, client-side credential, database schema or customer wallet is introduced.
+
+New applications reuse the current partner application workflow, start pending,
+and require explicit consent. The authenticated owner's Business identity is
+used, never a submitted user ID or email. Applications record the originating
+project for review. Existing linked partner/affiliate profiles are reused across
+projects. Matching-email accounts require proof through the existing programme
+login before linking; email matching alone cannot reveal earnings or grant access.
+
+Share links become available only for active profiles with applicable approved
+referral terms (including an active REFERRAL contract for policy accounts).
+Percentage partners also need a positive agreed rate and confirmed terms.
+Dormant/suspended affiliates cannot share through Earn. Existing verified-payment
+ledgers, refund adjustments, legacy balances, self-referral checks and payout
+controls remain authoritative. No application, approval, purchase, payout or
+commission policy is activated simply by visiting this page. WhatsApp sharing
+only opens a draft on an explicit click and includes commission disclosure.

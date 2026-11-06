@@ -35,6 +35,7 @@ export default async function Page({
       <h1 className="my-5 text-3xl font-semibold">{data.name}</h1>
       <nav className="flex flex-wrap gap-5 text-sm underline">
         <Link href="/business/custom">My Projects</Link>
+        <Link href={`/business/custom/${projectId}/earn`}>Earn with JKTL</Link>
         <a href={data.websiteUrl} target="_blank" rel="noopener noreferrer">
           View website
         </a>

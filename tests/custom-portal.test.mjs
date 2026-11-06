@@ -65,6 +65,8 @@ test('project-scoped API, immutable invoices, partial payments, duplicate webhoo
  const sdk=createProjectPortal({projectId:project,key,fetcher:async(url,init)=>{captured=new Request(url,init);return new Response('{}');}});
  await sdk('local-owner-1','/invoices');assert.equal((await access.projectActor(captured,project,'invoices:read')).integration,true);assert.ok(rateCalls);
  await assert.rejects(()=>access.projectActor(captured,project,'invoices:read'),/already used/);
+ await sdk('local-owner-1','/earn');assert.equal((await access.projectActor(captured,project,'earn:read')).userId,user);
+ await query("UPDATE custom_project_owners SET scopes=array['billing:read','invoices:read']::text[] WHERE project_id=$1",[project]);await sdk('local-owner-1','/earn');await assert.rejects(()=>access.projectActor(captured,project,'earn:read'),/permission revoked/);await query('UPDATE custom_project_owners SET scopes=$2::text[] WHERE project_id=$1',[project,[...labels.PORTAL_SCOPES]]);
  await sdk('other-owner','/invoices');await assert.rejects(()=>access.projectActor(captured,project,'invoices:read'),/permission revoked/);
  await sdk('local-owner-1','/invoices');await assert.rejects(()=>access.projectActor(captured,otherProject,'invoices:read'),/permission revoked/);
  await assert.rejects(()=>access.projectActor(new Request('https://business.jktl.com.ng/api/v1/custom-projects/'+project+'/invoices',{headers:{authorization:'Bearer '+key}}),project,'invoices:read'),/assertion expired/);

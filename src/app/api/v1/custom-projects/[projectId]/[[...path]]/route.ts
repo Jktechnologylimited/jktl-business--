@@ -1,3 +1,8 @@
+import {
+  projectEarn,
+  applyProjectPartner,
+  connectProjectProgramme,
+} from "@/lib/custom/portal-earn";
 import { after, NextResponse } from "next/server";
 import { projectActor } from "@/lib/custom/portal-access";
 import {
@@ -46,18 +51,40 @@ async function handle(request: Request, context: Context) {
       );
     const body = raw ? JSON.parse(raw) : {};
     const scope =
-      path[0] === "support"
+      path[0] === "earn"
         ? method === "GET"
-          ? "support:read"
-          : "support:write"
-        : path[0] === "billing"
-          ? "billing:read"
-          : path[0] === "payments" || method === "POST"
-            ? "invoices:pay"
-            : "invoices:read";
+          ? "earn:read"
+          : "earn:write"
+        : path[0] === "support"
+          ? method === "GET"
+            ? "support:read"
+            : "support:write"
+          : path[0] === "billing"
+            ? "billing:read"
+            : path[0] === "payments" || method === "POST"
+              ? "invoices:pay"
+              : "invoices:read";
     const actor = await projectActor(request, projectId, scope, raw);
     let data: unknown;
-    if (method === "GET" && path.length === 1 && path[0] === "billing")
+    if (path[0] === "earn" && path.length === 1 && method === "GET")
+      data = await projectEarn(actor);
+    else if (
+      path[0] === "earn" &&
+      path[1] === "apply" &&
+      path.length === 2 &&
+      method === "POST"
+    ) {
+      await applyProjectPartner(actor, body);
+      data = { saved: true };
+    } else if (
+      path[0] === "earn" &&
+      path[1] === "connect" &&
+      path.length === 2 &&
+      method === "POST"
+    ) {
+      await connectProjectProgramme(actor, body);
+      data = { saved: true };
+    } else if (method === "GET" && path.length === 1 && path[0] === "billing")
       data = await portalBilling(actor);
     else if (method === "GET" && path.length === 1 && path[0] === "invoices")
       data = await portalInvoices(actor);
@@ -157,7 +184,7 @@ async function handle(request: Request, context: Context) {
       message,
     );
     const safe =
-      /^(Invoice |Amount |Checkout |Payment |Invalid |Enter |Select |Instalments |Open a new|Support ticket |Choose |Check |Please |Project unavailable)/.test(
+      /^(Invoice |Amount |Checkout |Payment |Invalid |Enter |Select |Instalments |Open a new|Support ticket |Choose |Check |Please |Project unavailable|Only |Read |Complete |An application |Connect |Approved programme |This programme |Could not save application|Use an HTTPS|Business account)/.test(
         message,
       );
     return NextResponse.json(

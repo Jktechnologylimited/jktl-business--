@@ -5,7 +5,7 @@ export function createProjectPortal({ projectId, key, origin = 'https://business
  const base = new URL(origin);
  if (base.protocol !== 'https:' || base.username || base.password || base.pathname !== '/' || base.search || base.hash) throw Error('Use an HTTPS JKTL API origin.');
  return async function request(subject, path, { method = 'GET', body } = {}) {
-  if (!subject || /[\r\n]/.test(subject) || subject.length > 200 || !/^\/(billing|invoices|payments|support)(\/[A-Za-z0-9-]+)*$/.test(path) || !['GET','POST'].includes(method)) throw Error('Invalid project request.');
+  if (!subject || /[\r\n]/.test(subject) || subject.length > 200 || !/^\/(billing|invoices|payments|support|earn)(\/[A-Za-z0-9-]+)*$/.test(path) || !['GET','POST'].includes(method)) throw Error('Invalid project request.');
   const url = new URL(`/api/v1/custom-projects/${projectId}${path}`, base);
   const raw = body === undefined ? '' : JSON.stringify(body);
   const timestamp = String(Date.now()), nonce = randomBytes(24).toString('hex');

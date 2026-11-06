@@ -1,4 +1,5 @@
 "use client";
+import {ProjectEarn} from "./earn";
 import { useCallback, useEffect, useState } from "react";
 type Row = Record<string, unknown>;
 const money = (value: unknown) =>
@@ -10,7 +11,7 @@ export function ProjectPortal({
   initialTab = "billing",
 }: {
   endpoint: string;
-  initialTab?: "billing" | "invoices" | "support";
+  initialTab?: "billing" | "invoices" | "support" | "earn";
 }) {
   const [tab, setTab] = useState(initialTab),
     [data, setData] = useState<Row | null>(null),
@@ -97,7 +98,7 @@ export function ProjectPortal({
   return (
     <section className="space-y-5" aria-label="JKTL project services">
       <nav className="flex flex-wrap gap-3" aria-label="Project services">
-        {(["billing", "invoices", "support"] as const).map((t) => (
+        {(["billing", "invoices", "support", "earn"] as const).map((t) => (
           <button
             className={button}
             key={t}
@@ -115,6 +116,7 @@ export function ProjectPortal({
           Refresh
         </button>
       </nav>
+      {tab === "earn" && <ProjectEarn endpoint={endpoint} />}
       {message && (
         <p role="status" className={card}>
           {message}

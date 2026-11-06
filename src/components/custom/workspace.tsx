@@ -142,6 +142,7 @@ export function CustomWorkspace() {
                       </p>
                       <div className={styles.links}>
                         <Link href={`/business/custom/${String(p.id)}/portal`}>Billing, invoices & support</Link>
+                        <Link href={`/business/custom/${String(p.id)}/earn`}>Earn with JKTL</Link>
                         <button
                           disabled={
                             busy ||

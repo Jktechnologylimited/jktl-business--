@@ -393,9 +393,11 @@ test("accepted new-cohort finance uses verified live payments, bounded service m
         "utf8",
       ),
     ]);
+    const enrollment = load("../src/lib/distribution/program-enrollment.ts", {"server-only":{},"node:crypto":await import("node:crypto"),"@/lib/affiliate-commission":{DEFAULT_TERMS},"@/lib/custom/service":{query},"@/lib/db/auth":{hashPassword:async()=>"fixture-unusable-password"},"@/lib/support/service":{rate:async()=>{}}});
     const programs = load(
       "../src/lib/actions/distribution-program-actions.ts",
       {
+        "@/lib/distribution/program-enrollment": enrollment,
         "node:crypto": await import("node:crypto"),
         "@/lib/affiliate-commission": { DEFAULT_TERMS },
         "@/lib/session": {

@@ -4,6 +4,8 @@ export const PORTAL_SCOPES = [
   "invoices:pay",
   "support:read",
   "support:write",
+  "earn:read",
+  "earn:write",
 ] as const;
 export function portalScopes(value: unknown): string[] {
   if (

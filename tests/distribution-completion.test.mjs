@@ -366,6 +366,7 @@ test("secure Affiliate invitations reuse existing identity, reject mismatched/re
       "@/lib/distribution/notifications": {
         flushProgramNotices: async () => {},
       },
+      "@/lib/distribution/program-enrollment": { submitLinkedProgram: async()=>{} },
       "@/lib/affiliate-commission": { DEFAULT_TERMS: {} },
       "node:crypto": crypto,
       "@/lib/session": {
