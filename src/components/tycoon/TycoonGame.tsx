@@ -14,6 +14,7 @@ import {
   type VentureId,
 } from "@/lib/tycoon";
 import styles from "./TycoonGame.module.css";
+import {GameSwitcher} from "@/components/games/GameSwitcher";
 import { CityScene } from "./CityScene";
 export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
   const loginHref =
@@ -130,10 +131,8 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
         >
           ⚙
         </button>
+        <GameSwitcher current="tycoon"/>
         <nav>
-          <Link href="https://jktl.com.ng" target="_top">
-            Main site ↗
-          </Link>
           {signedIn ? (
             <Link href="/business" target="_top">
               My dashboard
@@ -287,7 +286,9 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
             <button type="button" onClick={() => setPanel("help")}>
               How to play
             </button>
-            <Link href="/play/run">Run & earn points ↗</Link>
+            <Link href="/play/word-hunt" target="_top">Word Hunt ↗</Link>
+            <Link href="/play/run" target="_top">Street Run ↗</Link>
+            <Link href="https://games.jktl.com.ng" target="_top">All games ↗</Link>
             <Link href="https://jktl.com.ng" target="_top">
               Main site ↗
             </Link>

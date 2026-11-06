@@ -962,3 +962,7 @@
     top: calc(87px + env(safe-area-inset-top));
   }
 }
+
+.header { z-index: 20; }
+@media(max-width:600px){.header>a{flex:1;min-width:0}}
+@media(max-width:360px){.header>a span{display:none}}

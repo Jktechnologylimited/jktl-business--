@@ -1,3 +1,17 @@
 import type { Metadata } from "next";
-export const metadata:Metadata={title:"JKTL Games | 3D Tycoon & Street Run",description:"Play JKTL Street Run for coins and points, or build your city in 3D JKTL Business Tycoon. A fictional Nigerian business city with walking customers, luxury cars and founder decisions."};
-export default function Page(){const origin=process.env.GAME_BUSINESS_ORIGIN||"https://business.jktl.com.ng";return <main style={{height:"100dvh",background:"#060e2a",display:"flex",flexDirection:"column"}}><nav aria-label="JKTL games" style={{height:44,flexShrink:0,display:"flex",gap:24,alignItems:"center",padding:"0 20px",color:"#e9d18c",fontSize:12}}><strong>JKTL Games</strong><a href="/play/run" target="_top">Street Run ↗</a><a href="https://fantasy.jktl.com.ng" target="_top">Fantasy ↗</a><a href="https://jktl.com.ng/games" target="_top">Main site ↗</a></nav><iframe title="Play JKTL Business Tycoon" src={`${origin}/play/tycoon?return=games`} style={{width:"100%",flex:1,minHeight:0,border:0,display:"block"}} allow="fullscreen"/></main>;}
+import { GameHub } from "@/components/games/GameHub";
+export const metadata: Metadata = {
+  title: "JKTL Games | Word Hunt, Street Run, Tycoon & Fantasy",
+  description:
+    "Find Nigerian words, outrun the masquerade, build a city or practice the stock market. Explore free JKTL games and switch between them in one place.",
+};
+export default function Page() {
+  return (
+    <GameHub
+      business={
+        process.env.GAME_BUSINESS_ORIGIN || "https://business.jktl.com.ng"
+      }
+      fantasy={process.env.FANTASY_APP_ORIGIN || "https://fantasy.jktl.com.ng"}
+    />
+  );
+}

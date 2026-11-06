@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
         ],
       })),
       {
-        source: "/play/tycoon",
+        source: "/play/:path*",
         headers: [
           {
             key: "Content-Security-Policy",

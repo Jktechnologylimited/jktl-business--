@@ -16,3 +16,5 @@
 
 .sound { position:absolute; top:145px; right:25px; z-index:5; width:46px; height:46px; display:grid; place-items:center; border:1px solid #d8ba75; border-radius:50%; background:#0b1c3d; color:#ffe2a1; cursor:pointer; }
 @media(max-width:600px) { .sound { top:163px; right:68px; } }
+
+.header { z-index: 12; }

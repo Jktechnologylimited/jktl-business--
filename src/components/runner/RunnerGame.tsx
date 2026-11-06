@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import {GameSwitcher} from "@/components/games/GameSwitcher";
 import Link from "next/link";
 import Image from "next/image";
 import { Pause, Volume2, VolumeX } from "lucide-react";
@@ -232,15 +233,12 @@ export function RunnerGame() {
       }}
     >
       <header className={styles.header}>
-        <Link href="/play/tycoon">
+        <Link href="/play">
           <Image src="/jktl-logo.png" width={32} height={32} alt="" priority />
           <b>JKTL</b>
           <span>STREET RUN</span>
         </Link>
-        <nav>
-          <Link href="/play/tycoon">3D Tycoon ↗</Link>
-          <Link href="https://jktl.com.ng/games">Games</Link>
-        </nav>
+        <GameSwitcher current="run" onOpen={pause}/>
       </header>
       <section className={styles.scoreboard} aria-label="Run score">
         <div>
