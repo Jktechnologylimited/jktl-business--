@@ -87,3 +87,7 @@ No visitor names, emails, browsing query strings or persistent visitor IDs are s
 Migration `030_website_metrics.sql` adds event/reporting and rate-limit tables. Business `npm run build` applies both 029 and 030, atomically using the deployment's existing `DATABASE_URL`. Without that binding it explicitly builds a demo only. The live database and deployment were not accessed from this workspace.
 
 Main SEO now has a single Next sitemap/robots source, static canonical routes plus published, non-password-protected CMS pages, landing-page metadata, clearer homepage metadata and internal links. Preview designs remain non-indexed; nonexistent legacy sitemap URLs and duplicate generation have been removed. No SEO ranking or traffic increase is promised.
+
+## Current catalogue photography
+
+Existing and future template defaults use the reviewed locally bundled African photography described in [AFRICAN_TEMPLATE_PHOTOGRAPHY.md](docs/AFRICAN_TEMPLATE_PHOTOGRAPHY.md). It supersedes older default-stock-image source notes in this document. Customer-owned saved documents and images are preserved.

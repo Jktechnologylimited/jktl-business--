@@ -12,6 +12,7 @@ import {
   type WebsiteTemplate,
 } from "@/lib/website-templates";
 import styles from "./TemplateGallery.module.css";
+import { TemplateFilterSelect } from "./TemplateFilterSelect";
 // Show different industries/designs together instead of ten editions of the
 // same starter consecutively. Registry records and identifiers stay unchanged.
 const groups = new Map<string, WebsiteTemplate[]>();
@@ -118,45 +119,34 @@ export function TemplateGallery({
         aria-label="Template filters"
       >
         <div className={styles.filterChoices}>
-          <label>
-            <span className={styles.srOnly}>
-              <T>Type</T>
-            </span>
-            <select
-              aria-label="Filter template type"
-              value={type}
-              onChange={(e) => {
-                const value = e.target.value as typeof type;
-                setType(value);
-                setLimit(24);
-                if (value === "blank") {
-                  setCategory("All industries");
-                  setIndustry("");
-                }
-              }}
-            >
-              <option value="all">{t("Type")}</option>
-              <option value="website">{t("Websites")}</option>
-              <option value="landing">{t("Landing pages")}</option>
-              <option value="blank">{t("Blank templates")}</option>
-            </select>
-          </label>
-          <label data-active={category !== "All industries"}>
-            <span className={styles.srOnly}>
-              <T>Industry</T>
-            </span>
-            <select
-              aria-label="Filter templates by industry"
-              value={category}
-              onChange={(e) => chooseCategory(e.target.value)}
-            >
-              {categories.map((value) => (
-                <option key={value} value={value}>
-                  {t(value === "All industries" ? "Industry" : value)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <TemplateFilterSelect
+            label={t("Filter template type")}
+            value={type}
+            options={[
+              { value: "all", label: t("Type") },
+              { value: "website", label: t("Websites") },
+              { value: "landing", label: t("Landing pages") },
+              { value: "blank", label: t("Blank templates") },
+            ]}
+            onChange={(selected) => {
+              const value = selected as typeof type;
+              setType(value);
+              setLimit(24);
+              if (value === "blank") {
+                setCategory("All industries");
+                setIndustry("");
+              }
+            }}
+          />
+          <TemplateFilterSelect
+            label={t("Filter templates by industry")}
+            value={category}
+            options={categories.map((value) => ({
+              value,
+              label: t(value === "All industries" ? "Industry" : value),
+            }))}
+            onChange={chooseCategory}
+          />
         </div>
         <button type="button" className={styles.reset} onClick={reset}>
           <T>All Templates</T>
@@ -272,7 +262,10 @@ export function TemplateGallery({
                 </div>
                 <motion.img
                   variants={{ rest: { scale: 1 }, hover: { scale: 1.025 } }}
-                  transition={{ duration: reducedMotion ? 0 : 0.25, ease: "easeOut" }}
+                  transition={{
+                    duration: reducedMotion ? 0 : 0.25,
+                    ease: "easeOut",
+                  }}
                   src={`/template-previews/${template.id}.jpg`}
                   width={1000}
                   height={676}

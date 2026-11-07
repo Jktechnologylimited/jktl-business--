@@ -1,0 +1,15 @@
+# Template photography and free-template help
+
+The 206 designed catalogue entries (plus two unchanged blank starting points) now use the locally bundled reviewed photo set under `public/template-photos/african/`. Main and Business share the registry, files and freshly captured preview cards.
+
+The set includes African and Black/diaspora stock portraits, families and professionals across varied complexions and ages, with category-appropriate business, legal, education, healthcare, beauty, barbering, music, hospitality and travel scenes. Each asset's original provider description, search context, Pexels source URL and licence URL are recorded in `sources.json`. Visual review covers composition and suitability; no nationality or identity biography is inferred from a model's appearance. Stock images are sample content, not actual JKTL client results or the demonstration business's real employees.
+
+Use this reviewed set for future template defaults. New imagery should be sourced and reviewed with the same provenance and representation requirements before joining the manifest. Keep actual client logos/screenshots and user-owned photos intact. The default catalogue policy never rewrites existing saved customer documents or restricts customer-uploaded content. Locally bundled `/template-photos/african/*.jpg` paths are supported by the existing document validator.
+
+The public template gallery, landing-page gallery and individual Main preview wrappers now expose the existing President chat. Answers on those routes focus on choosing, editing and publishing free templates, without unrelated affiliate or pricing recommendations. Raw template canvases do not contain a second JKTL chatbot inside their iframe. General marketing pages retain their existing broader guide.
+
+Unknown questions, template errors and explicit human requests open an optional contact form. Submission reuses Main's existing `/api/contact` and `service_inquiries` storage with validated template/page context and optional last-ten-message consent. Notifications reuse Main's existing Resend sender and branded mail renderer, fixed to `info@jktl.com.ng`. The UI confirms only successful storage, distinguishes accepted email submission from notification failure, and provides the existing JKTL WhatsApp contact. This is asynchronous follow-up, not a promise of an immediately available live agent. No separate inbox, chatbot backend or database schema was added.
+
+Production uses the existing Main DATABASE_URL, service_inquiries table, RESEND_API_KEY and verified sender configuration. Tests mock database/email delivery and do not send real enquiries or emails. Existing saved inquiries and template/customer records are preserved.
+
+Verification: `tests/template-chat.test.mjs`, `tests/template-chat.browser.cjs` (gallery and preview, 1440/390/320px), Business catalogue/beauty/storage regression checks, production builds, and all 208 thumbnail captures. The screenshot script now handles legacy, beauty and legal renderers and waits for visible photos/fonts.

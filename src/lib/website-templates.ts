@@ -870,7 +870,7 @@ const baseWebsiteTemplates: WebsiteTemplate[] = seeds.map((s) => ({
     accent: s.accent,
     paper: s.paper,
     ink: s.ink,
-    heroImage: `https://images.pexels.com/photos/${s.photo}/pexels-photo-${s.photo}.jpeg?auto=compress&cs=tinysrgb&w=1400`,
+    heroImage: `/template-art/${s.id}.svg`,
     aboutTitle: s.aboutTitle,
     aboutText: s.aboutText,
     offeringsTitle:
@@ -923,28 +923,6 @@ const baseWebsiteTemplates: WebsiteTemplate[] = seeds.map((s) => ({
       "Tell us a little about what you have in mind. We would love to hear from you.",
   },
 }));
-const unsplashPhotos = [
-  "1589829545856-d10d557cf95f",
-  "1438032005730-c779502df39b",
-  "1503676260728-1c00da094a0b",
-  "1516280440614-37939bbacd81",
-  "1570172619644-dfd03ed5d881",
-  "1560066984-138dadb4c035",
-  "1504307651254-35680f356dfd",
-  "1600585154340-be6161a56a0c",
-  "1517248135467-4c7edcad34c4",
-  "1566073771259-6a8506099945",
-  "1441986300917-64674bd600d8",
-  "1473181488821-2d23949a045a",
-  "1486262715619-67b85e0b08d3",
-  "1519494026892-80bbd2d6fd0d",
-  "1534438327276-14e5300c3a48",
-  "1516035069371-29a1b244cc32",
-  "1511795409834-ef04bbd61622",
-  "1488646953014-85cb44e25828",
-  "1521737711867-e3b97375f902",
-  "1559027615-cd4628902d4a",
-];
 const editions: {
   id: string;
   name: string;
@@ -1038,15 +1016,9 @@ const editions: {
   },
 ];
 export const websiteTemplates: WebsiteTemplate[] = baseWebsiteTemplates.flatMap(
-  (base, index) =>
+  (base) =>
     editions.map((edition, i) => {
       const doc = JSON.parse(JSON.stringify(base.document)) as WebsiteDocument;
-      const photo = unsplashPhotos[index];
-      doc.heroImage = `https://images.unsplash.com/photo-${photo}?auto=format&fit=crop&w=1600&q=85`;
-      doc.gallery = [0, 1, 2].map((n) => ({
-        src: `https://images.unsplash.com/photo-${photo}?auto=format&fit=crop&w=${800 + n * 100}&h=${650 + n * 100}&q=80`,
-        alt: `${base.name} inspiration — Unsplash photograph ${n + 1}`,
-      }));
       doc.logoUrl = "";
       doc.serviceAreas = [];
       doc.socials = [];
@@ -2340,53 +2312,340 @@ websiteTemplates.push({
 });
 
 // Family-law edition: original content inspired by the supplied layout reference.
-const familyDocument = JSON.parse(JSON.stringify(legalDocument)) as WebsiteDocument;
+const familyDocument = JSON.parse(
+  JSON.stringify(legalDocument),
+) as WebsiteDocument;
 Object.assign(familyDocument, {
   legalVariant: "family",
   heroImage: "/template-photos/legal/family-hero.jpg",
   brandName: "Hartwell & Vale",
   eyebrow: "FAMILY LAW. A THOUGHTFUL WAY FORWARD.",
   headline: "Guidance for life's next chapter.",
-  intro: "Compassionate counsel for your family, with clear advice at every step.",
+  intro:
+    "Compassionate counsel for your family, with clear advice at every step.",
   ctaLabel: "Request a consultation",
   accent: "#d4e9f3",
   paper: "#fbfced",
   ink: "#102140",
   seoTitle: "Family law, with care | Hartwell & Vale",
-  seoDescription: "Discover a thoughtful approach to separation, parenting arrangements, family agreements and estate planning. Meet our sample team and explore a first consultation.",
+  seoDescription:
+    "Discover a thoughtful approach to separation, parenting arrangements, family agreements and estate planning. Meet our sample team and explore a first consultation.",
   aboutTitle: "Compassion in counsel. Clarity in every decision.",
-  aboutText: "Every family has its own story. We start by listening to yours, understanding your priorities and explaining the options in language that makes sense.\n\nFrom changing relationships to plans for the future, our approach gives you space to ask questions and consider your next step. Scope, availability and fees are agreed before any engagement begins.",
+  aboutText:
+    "Every family has its own story. We start by listening to yours, understanding your priorities and explaining the options in language that makes sense.\n\nFrom changing relationships to plans for the future, our approach gives you space to ask questions and consider your next step. Scope, availability and fees are agreed before any engagement begins.",
   offeringsTitle: "Support for what matters most",
   offerings: [
-    { slug: "separation-divorce", title: "Separation & divorce", image: "/template-photos/legal/office.jpg", description: "Navigate a changing relationship with a clearer understanding of the process and your options.", benefits: ["Discuss your priorities", "Understand the process", "Plan practical next steps"], preparation: "Prepare a brief outline of your situation and important dates. Ask the firm how to share documents securely." },
-    { slug: "parenting-arrangements", title: "Children & parenting", image: "/template-photos/legal/team.jpg", description: "Thoughtful guidance on parenting arrangements, with attention to your family's circumstances.", benefits: ["Understand the family's needs", "Explore available arrangements", "Discuss appropriate professional support"], preparation: "Bring a short summary of your concerns. Avoid including sensitive information about children in the initial form." },
-    { slug: "family-agreements", title: "Family agreements", image: "/template-photos/legal/office.jpg", description: "Discuss agreements and financial arrangements with clear expectations about scope and advice.", benefits: ["Review your priorities", "Discuss information needed", "Understand the next step"], preparation: "Ask which documents are relevant before sending financial or personal information." },
-    { slug: "wills-estate-planning", title: "Wills & future planning", image: "/template-photos/legal/team.jpg", description: "Consider the future with guidance on wills, responsibilities and your family's wishes.", benefits: ["Outline your wishes", "Identify questions for advice", "Discuss suitable planning"], preparation: "Prepare your questions and a general outline of your goals. Specific advice depends on your circumstances and applicable law." },
+    {
+      slug: "separation-divorce",
+      title: "Separation & divorce",
+      image: "/template-photos/legal/office.jpg",
+      description:
+        "Navigate a changing relationship with a clearer understanding of the process and your options.",
+      benefits: [
+        "Discuss your priorities",
+        "Understand the process",
+        "Plan practical next steps",
+      ],
+      preparation:
+        "Prepare a brief outline of your situation and important dates. Ask the firm how to share documents securely.",
+    },
+    {
+      slug: "parenting-arrangements",
+      title: "Children & parenting",
+      image: "/template-photos/legal/team.jpg",
+      description:
+        "Thoughtful guidance on parenting arrangements, with attention to your family's circumstances.",
+      benefits: [
+        "Understand the family's needs",
+        "Explore available arrangements",
+        "Discuss appropriate professional support",
+      ],
+      preparation:
+        "Bring a short summary of your concerns. Avoid including sensitive information about children in the initial form.",
+    },
+    {
+      slug: "family-agreements",
+      title: "Family agreements",
+      image: "/template-photos/legal/office.jpg",
+      description:
+        "Discuss agreements and financial arrangements with clear expectations about scope and advice.",
+      benefits: [
+        "Review your priorities",
+        "Discuss information needed",
+        "Understand the next step",
+      ],
+      preparation:
+        "Ask which documents are relevant before sending financial or personal information.",
+    },
+    {
+      slug: "wills-estate-planning",
+      title: "Wills & future planning",
+      image: "/template-photos/legal/team.jpg",
+      description:
+        "Consider the future with guidance on wills, responsibilities and your family's wishes.",
+      benefits: [
+        "Outline your wishes",
+        "Identify questions for advice",
+        "Discuss suitable planning",
+      ],
+      preparation:
+        "Prepare your questions and a general outline of your goals. Specific advice depends on your circumstances and applicable law.",
+    },
   ],
   galleryTitle: "People who listen. Counsel you can understand.",
   gallery: [
-    { src: "/template-photos/legal/attorney-one.jpg", alt: "Amara Vale", category: "Sample profile · Family law" },
-    { src: "/template-photos/legal/attorney-two.jpg", alt: "Daniel Hartwell", category: "Sample profile · Family agreements" },
-    { src: "/template-photos/legal/attorney-three.jpg", alt: "Nneka Cole", category: "Sample profile · Future planning" },
+    {
+      src: "/template-photos/legal/attorney-one.jpg",
+      alt: "Amara Vale",
+      category: "Sample profile · Family law",
+    },
+    {
+      src: "/template-photos/legal/attorney-two.jpg",
+      alt: "Daniel Hartwell",
+      category: "Sample profile · Family agreements",
+    },
+    {
+      src: "/template-photos/legal/attorney-three.jpg",
+      alt: "Nneka Cole",
+      category: "Sample profile · Future planning",
+    },
   ],
   featureTitle: "A more considered conversation",
-  featureText: "You deserve time to be heard, room to ask questions and clarity about what comes next.",
+  featureText:
+    "You deserve time to be heard, room to ask questions and clarity about what comes next.",
   featureItems: ["Listen with care", "Explain clearly", "Plan together"],
   faqTitle: "Before we begin",
   faqs: [
-    { question: "What should I bring to a first conversation?", answer: "Start with a short outline of your concerns, your questions and any important dates. The firm will explain which documents are needed and how to share them securely.\n\nA first enquiry does not create a lawyer-client relationship. Scope, fees and suitability must be agreed separately." },
-    { question: "Can I send private family information through the form?", answer: "Please keep your initial enquiry general. Do not send sensitive case details, children's information or confidential documents through a public website form.\n\nAsk the firm about an appropriate channel before sharing private information." },
-    { question: "How are fees and next steps agreed?", answer: "Ask what work is included, how fees are calculated and who will keep you informed. The firm should discuss scope and availability before you decide to proceed.\n\nUrgent matters should be raised directly with a qualified lawyer. This website provides general information only." },
+    {
+      question: "What should I bring to a first conversation?",
+      answer:
+        "Start with a short outline of your concerns, your questions and any important dates. The firm will explain which documents are needed and how to share them securely.\n\nA first enquiry does not create a lawyer-client relationship. Scope, fees and suitability must be agreed separately.",
+    },
+    {
+      question: "Can I send private family information through the form?",
+      answer:
+        "Please keep your initial enquiry general. Do not send sensitive case details, children's information or confidential documents through a public website form.\n\nAsk the firm about an appropriate channel before sharing private information.",
+    },
+    {
+      question: "How are fees and next steps agreed?",
+      answer:
+        "Ask what work is included, how fees are calculated and who will keep you informed. The firm should discuss scope and availability before you decide to proceed.\n\nUrgent matters should be raised directly with a qualified lawyer. This website provides general information only.",
+    },
   ],
   contactTitle: "Begin the conversation.",
-  contactText: "Tell us how we can help, in general terms. We will discuss the appropriate next step before any engagement is agreed.",
+  contactText:
+    "Tell us how we can help, in general terms. We will discuss the appropriate next step before any engagement is agreed.",
 });
 websiteTemplates.push({
-  id: "family-law", name: "Family Law — Hartwell & Vale", category: "Legal & Professional",
-  layout: "editorial", kind: "website", sourceId: "family-law", edition: "Family",
-  sectionOrder: ["about", "offerings", "gallery", "feature", "faq", "areas", "reviews"],
+  id: "family-law",
+  name: "Family Law — Hartwell & Vale",
+  category: "Legal & Professional",
+  layout: "editorial",
+  kind: "website",
+  sourceId: "family-law",
+  edition: "Family",
+  sectionOrder: [
+    "about",
+    "offerings",
+    "gallery",
+    "feature",
+    "faq",
+    "areas",
+    "reviews",
+  ],
   document: familyDocument,
 });
+
+// Catalogue demonstration photography only. Existing saved customer documents are
+// never rewritten by this policy. Add future default photos to the reviewed source manifest.
+const reviewedTemplatePhotos = {
+  "business-woman": {
+    src: "/template-photos/african/business-woman.jpg",
+    alt: "African American woman walking down stairs holding smartphone and bag.",
+  },
+  "business-professional": {
+    src: "/template-photos/african/business-professional.jpg",
+    alt: "Professional African American woman in business attire standing confidently in an office environment.",
+  },
+  "business-elegance": {
+    src: "/template-photos/african/business-elegance.jpg",
+    alt: "Elegant woman in a red dress using a tablet indoors, exuding confidence.",
+  },
+  lawyer: {
+    src: "/template-photos/african/lawyer.jpg",
+    alt: "Elegant portrait of a female barrister in Abuja, showcasing professional legal attire.",
+  },
+  "lawyer-smile": {
+    src: "/template-photos/african/lawyer-smile.jpg",
+    alt: "Smiling female lawyer in traditional legal attire posing confidently indoors.",
+  },
+  "portrait-braids": {
+    src: "/template-photos/african/portrait-braids.jpg",
+    alt: "Striking portrait of a woman with braided hair in a natural setting.",
+  },
+  "portrait-fashion": {
+    src: "/template-photos/african/portrait-fashion.jpg",
+    alt: "Portrait of a woman in a beige dress standing confidently in nature under a blue sky.",
+  },
+  "salon-owner": {
+    src: "/template-photos/african/salon-owner.jpg",
+    alt: "Woman standing in a modern beauty shop, smiling confidently beside shelves of cosmetics.",
+  },
+  "spa-mask": {
+    src: "/template-photos/african/spa-mask.jpg",
+    alt: "Crop African American female with brown eyes cleansing pores with mud mask and looking away",
+  },
+  "spa-treatment": {
+    src: "/template-photos/african/spa-treatment.jpg",
+    alt: "A woman enjoying a peaceful spa treatment, lying topless with eyes closed on a white towel.",
+  },
+  "spa-care": {
+    src: "/template-photos/african/spa-care.jpg",
+    alt: "Portrait of a woman with a facial mask in a calm indoor setting, emphasizing skincare routine.",
+  },
+  "doctor-team": {
+    src: "/template-photos/african/doctor-team.jpg",
+    alt: "Black male and female doctors collaborating in a medical clinic with a tablet.",
+  },
+  "doctor-smile": {
+    src: "/template-photos/african/doctor-smile.jpg",
+    alt: "Cheerful male doctor wearing eyeglasses and a stethoscope, illustrating health care professionalism.",
+  },
+  school: {
+    src: "/template-photos/african/school.jpg",
+    alt: "Engaged students in uniforms attentively participating in a classroom setting.",
+  },
+  community: {
+    src: "/template-photos/african/community.jpg",
+    alt: "Smiling African family dressed in vibrant traditional clothing, sharing a joyful moment outdoors in Nigeria.",
+  },
+  family: {
+    src: "/template-photos/african/family.jpg",
+    alt: "A joyful moment of family bonding captured in a warm embrace indoors.",
+  },
+  music: {
+    src: "/template-photos/african/music.jpg",
+    alt: "Energetic black female singer in red dress performing passionately on stage with a microphone.",
+  },
+  fitness: {
+    src: "/template-photos/african/fitness.jpg",
+    alt: "Confident woman in activewear lifting dumbbells outdoors, embracing fitness and healthy lifestyle.",
+  },
+  chef: {
+    src: "/template-photos/african/chef.jpg",
+    alt: "Two chefs busy preparing dishes in a professional kitchen in Nakuru, Kenya.",
+  },
+  "chef-craft": {
+    src: "/template-photos/african/chef-craft.jpg",
+    alt: "Close-up of a chef seasoning an avocado dish, adding a touch of culinary art to gourmet cooking.",
+  },
+  wedding: {
+    src: "/template-photos/african/wedding.jpg",
+    alt: "Stunning Nigerian bride in traditional attire with rich cultural elements.",
+  },
+  travel: {
+    src: "/template-photos/african/travel.jpg",
+    alt: "Stylish African woman with headwrap and sunglasses posing by the rocks. Fashionable and serene outdoor scene.",
+  },
+  "travel-smile": {
+    src: "/template-photos/african/travel-smile.jpg",
+    alt: "Smiling woman in casual attire with suitcase and passport on yellow background, ready for travel.",
+  },
+  construction: {
+    src: "/template-photos/african/construction.jpg",
+    alt: "From below of African American man in helmet with hammer building house at work",
+  },
+  mechanic: {
+    src: "/template-photos/african/mechanic.jpg",
+    alt: "Positive young black male auto mechanic in comfortable clothes repairing vehicle during work in garage",
+  },
+  "barber-craft": {
+    src: "/template-photos/african/barber-craft.jpg",
+    alt: "Professional barber giving a precise haircut to a client in a stylish barbershop setting.",
+  },
+  "barber-care": {
+    src: "/template-photos/african/barber-care.jpg",
+    alt: "Barber expertly designs hairstyle for senior client using hair clippers in modern barbershop.",
+  },
+  "barber-welcome": {
+    src: "/template-photos/african/barber-welcome.jpg",
+    alt: "Professional barber drapes apron on client in stylish salon, preparing for a haircut session.",
+  },
+  "portrait-man": {
+    src: "/template-photos/african/portrait-man.jpg",
+    alt: "Close-up portrait of a man with an afro hairstyle against a vibrant red background.",
+  },
+  "portrait-elder": {
+    src: "/template-photos/african/portrait-elder.jpg",
+    alt: "Black and white portrait of a man in traditional African attire with a turban.",
+  },
+} as const;
+type ReviewedPhoto = keyof typeof reviewedTemplatePhotos;
+const templatePhotoSets: Record<string, readonly ReviewedPhoto[]> = {
+  "Legal & Professional": ["business-professional", "lawyer", "lawyer-smile"],
+  "Faith & Community": ["community", "family", "school"],
+  Education: ["school", "community", "family"],
+  "Music & Creative": ["music", "portrait-fashion", "portrait-braids"],
+  "Beauty & Wellness": ["salon-owner", "portrait-braids", "portrait-fashion"],
+  "Property & Services": ["construction", "business-woman", "mechanic"],
+  "Food & Hospitality": ["chef", "chef-craft", "travel"],
+  "Retail & Lifestyle": [
+    "portrait-fashion",
+    "business-elegance",
+    "salon-owner",
+  ],
+  "Health & Care": ["doctor-team", "doctor-smile", "business-professional"],
+};
+for (const template of websiteTemplates) {
+  const doc = template.document;
+  if (doc.blank || template.kind === "blank") continue;
+  const source = template.sourceId || template.id;
+  const specific: Record<string, readonly ReviewedPhoto[]> = {
+    "law-firm-counsel": ["business-professional", "lawyer", "lawyer-smile"],
+    "family-law": ["family", "business-professional", "lawyer-smile"],
+    "med-spa": ["spa-mask", "spa-care", "spa-treatment"],
+    "spa-solace": ["spa-treatment", "spa-care", "spa-mask"],
+    "barber-monochrome": ["barber-craft", "barber-care", "barber-welcome"],
+    fitness: ["fitness", "portrait-man", "portrait-braids"],
+    travel: ["travel", "travel-smile", "portrait-fashion"],
+    events: ["wedding", "community", "family"],
+    "auto-service": ["mechanic", "mechanic", "business-woman"],
+    construction: ["construction", "business-woman", "business-professional"],
+    "real-estate": [
+      "business-woman",
+      "business-professional",
+      "business-elegance",
+    ],
+    photography: ["portrait-braids", "portrait-fashion", "portrait-elder"],
+    hotel: ["travel", "chef", "travel-smile"],
+  };
+  const names =
+    specific[source] ||
+    templatePhotoSets[template.category] ||
+    templatePhotoSets["Legal & Professional"];
+  const photo = (index: number) =>
+    reviewedTemplatePhotos[names[index % names.length]];
+  doc.heroImage = photo(0).src;
+  if (doc.aboutImage) doc.aboutImage = photo(1).src;
+  doc.gallery = doc.gallery.map((item, index) => ({
+    ...item,
+    ...photo(index),
+  }));
+  doc.offerings = doc.offerings.map((item, index) =>
+    item.image ? { ...item, image: photo(index).src } : item,
+  );
+  if (doc.beauty) {
+    doc.beauty.aboutImage = photo(1).src;
+    const portraits: readonly ReviewedPhoto[] =
+      doc.beauty.design === "barber"
+        ? ["portrait-man", "portrait-elder", "barber-welcome"]
+        : ["salon-owner", "portrait-fashion", "portrait-braids"];
+    doc.beauty.stylists = doc.beauty.stylists.map((person, index) => ({
+      ...person,
+      image: reviewedTemplatePhotos[portraits[index % portraits.length]].src,
+    }));
+  }
+}
 
 export const templatePageKind = (
   template: WebsiteTemplate,
@@ -2454,7 +2713,9 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   const image = (value: string) => {
     if (
       /^\/template-art\/[a-z0-9-]+\.svg$/.test(value) ||
-      /^\/template-photos\/(?:beauty|legal)\/[a-z0-9-]+\.jpg$/.test(value)
+      /^\/template-photos\/(?:beauty|legal|african)\/[a-z0-9-]+\.jpg$/.test(
+        value,
+      )
     )
       return value;
     try {
@@ -2482,7 +2743,8 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     if (source.design !== "legal") throw Error("Unsupported website design.");
     result.design = "legal";
     if (source.legalVariant !== undefined) {
-      if (source.legalVariant !== "family") throw Error("Unsupported website legal variant.");
+      if (source.legalVariant !== "family")
+        throw Error("Unsupported website legal variant.");
       result.legalVariant = "family";
     }
     if (typeof source.demoContent !== "boolean")

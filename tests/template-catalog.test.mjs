@@ -28,6 +28,40 @@ function load() {
       default: new Proxy({}, { get: (_, key) => String(key) }),
     },
   };
+  const select = { exports: {} };
+  new Function(
+    "require",
+    "module",
+    "exports",
+    ts.transpileModule(
+      readFileSync(
+        new URL(
+          "../src/components/templates/TemplateFilterSelect.tsx",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      {
+        compilerOptions: {
+          module: ts.ModuleKind.CommonJS,
+          target: ts.ScriptTarget.ES2022,
+          jsx: ts.JsxEmit.ReactJSX,
+          esModuleInterop: true,
+        },
+      },
+    ).outputText,
+  )(
+    (name) =>
+      name === "./TemplateFilterSelect.module.css"
+        ? {
+            __esModule: true,
+            default: new Proxy({}, { get: (_, key) => String(key) }),
+          }
+        : require(name),
+    select,
+    select.exports,
+  );
+  dependencies["./TemplateFilterSelect"] = select.exports;
   new Function(
     "require",
     "module",
