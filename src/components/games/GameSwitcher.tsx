@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Gamepad2, X } from "lucide-react";
 import styles from "./Games.module.css";
+import { GameUpdates } from "./GameUpdates";
 import { GAMES } from "@/lib/game-catalog";
 export { GAMES } from "@/lib/game-catalog";
 export function GameSwitcher({
@@ -67,6 +68,7 @@ export function GameSwitcher({
           className={styles.menu}
           aria-label="Switch game"
         >
+          <GameUpdates/>
           <p>YOUR NEXT PLAY</p>
           {GAMES.map((game) => (
             <Link

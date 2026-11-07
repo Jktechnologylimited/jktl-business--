@@ -6,6 +6,7 @@ import { InstancedBoxes } from "@/components/tycoon/three/InstancedBoxes";
 import type { BoxPart } from "@/components/tycoon/three/scene-model";
 import { ContextGuard } from "@/components/tycoon/three/ContextGuard";
 import { RenderDriver } from "@/components/tycoon/three/RenderDriver";
+import { WorldBillboards } from "@/components/games/WorldBillboards";
 import { MasqueradeChaser } from "./MasqueradeChaser";
 import { coinAt, hazardAt, jumpHeight, type RunState } from "@/lib/runner";
 
@@ -298,6 +299,7 @@ function Scene({ read, tick, phase, onFailure, reduced }: Props) {
         />
         <ContextGuard onFailure={onFailure} />
         <Street read={read} />
+        <WorldBillboards low read={read}/>
         <Course tick={tick} />
         <MasqueradeChaser read={read} reduced={reduced} />
         <RenderDriver

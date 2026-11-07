@@ -1,29 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
-import type { Trend } from "@/lib/google-trends";
+import { useState } from "react";
+import { GameUpdates } from "./GameUpdates";
 export function GameGrowth() {
-  const [trends, setTrends] = useState<Trend[]>([]),
-    [state, setState] = useState("Loading trending searches…"),
-    [expanded, setExpanded] = useState(false);
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/game-trends", { signal: controller.signal })
-      .then(async (r) => {
-        if (!r.ok) throw Error();
-        const data = await r.json();
-        setTrends(data.trends || []);
-        setState(
-          data.trends?.length
-            ? ""
-            : "Trending searches are temporarily unavailable.",
-        );
-      })
-      .catch(() => {
-        if (!controller.signal.aborted)
-          setState("Trending searches are temporarily unavailable.");
-      });
-    return () => controller.abort();
-  }, []);
+  const [expanded, setExpanded] = useState(false);
   return (
     <section
       aria-label="Trending topics and free websites"
@@ -85,59 +64,11 @@ export function GameGrowth() {
             textAlign: "left",
           }}
         >
-          Trending searches in Nigeria · Google Trends
+          Matches, news & trending searches
         </button>
         {expanded && (
           <div id="jktl-trending-topics">
-            <p style={{ fontSize: 12, color: "#c4cad7", margin: "10px 0" }}>
-              Search interest, not a JKTL ranking or verified news report.
-              Refreshes about every 30 minutes when the source is available.
-            </p>
-            {state && <p role="status">{state}</p>}
-            <ul
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 14,
-                listStyle: "none",
-                padding: 0,
-              }}
-            >
-              {trends.map((t) => (
-                <li
-                  key={t.title}
-                  style={{
-                    border: "1px solid #39405a",
-                    borderRadius: 12,
-                    padding: 12,
-                    flex: "1 1 220px",
-                  }}
-                >
-                  <a
-                    style={{ color: "#a9ceff", textDecoration: "underline" }}
-                    href={t.searchUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {t.title}
-                  </a>
-                  <p style={{ fontSize: 12, marginTop: 6, color: "#c4cad7" }}>
-                    {t.volume ? `${t.volume} searches · ` : ""}
-                    <time dateTime={t.publishedAt}>
-                      {new Date(t.publishedAt).toLocaleDateString("en-NG")}
-                    </time>
-                  </p>
-                </li>
-              ))}
-            </ul>
-            <a
-              style={{ color: "#a9ceff", textDecoration: "underline" }}
-              href="https://trends.google.com/trending?geo=NG"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View Google Trends source ↗
-            </a>
+            <GameUpdates />
           </div>
         )}
       </div>

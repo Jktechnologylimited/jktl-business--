@@ -31,6 +31,7 @@ import { CameraRig } from "./CameraRig";
 import { MovingActors } from "./MovingActors";
 import { GroundShadows, Trees } from "./WorldDetails";
 import { RenderDriver, type RenderStats } from "./RenderDriver";
+import { WorldBillboards } from "@/components/games/WorldBillboards";
 import styles from "./Prototype.module.css";
 
 export type GraphicsControls = {
@@ -189,6 +190,7 @@ export default function Neighbourhood3D({
           <CameraRig zoom={zoom} />
           <ShadowCache revision={buildings} />
           <StaticGround />
+          <WorldBillboards low={quality === "low"}/>
           <GroundShadows points={shadows} />
           <Trees shadows={profile.shadows} />
           <InstancedBoxes
