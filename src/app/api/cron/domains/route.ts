@@ -1,3 +1,4 @@
+import {runCentralRenewals} from "@/lib/renewals/service";
 import { runEditorialMaintenance } from "@/lib/editorial-operations";
 import {
   monitorAffiliateActivity,
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
       monitorAffiliateActivity(),
       remindAffiliateInvitations(),
       runEditorialMaintenance(),
+      runCentralRenewals(),
     ]);
     // Queue producers finish before the shared notice delivery pass.
     results.push(...(await Promise.allSettled([flushProgramNotices()])));
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
         r.status === "rejected" ||
         (r.status === "fulfilled" &&
           typeof r.value === "object" &&
-          r.value.failed > 0),
+          r.value && (r.value.failed > 0 || ("unknown" in r.value && Number(r.value.unknown)>0))),
     );
     return NextResponse.json(
       {

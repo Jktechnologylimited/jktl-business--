@@ -1,4 +1,5 @@
 import "server-only";
+import {legacyRenewalGate} from "@/lib/renewals/service";
 import { dispatchPaidDomainOrders } from "./fulfillment";
 import { getSql } from "@/lib/db/client";
 import { sendDomainOrderEmail, sendPartnerNoticeEmail } from "@/lib/email";
@@ -6,6 +7,7 @@ import { flushRegistrarAlerts } from "./registrar-admin";
 import { getNotificationPrefs } from "@/lib/db/push";
 import { sendPush } from "@/lib/push";
 export async function enqueueDomainReminders() {
+  if((await legacyRenewalGate("domain_outbox")).enabled)return 0;
   const sql = getSql();
   const rows = await sql.query(
     `INSERT INTO domain_outbox(event_key,organization_id,domain,event,detail)
@@ -16,9 +18,10 @@ WHERE ((a.expires_at AT TIME ZONE 'Africa/Lagos')::date-(now() AT TIME ZONE 'Afr
   return rows.length;
 }
 export async function flushDomainNotifications(limit = 10) {
+  const gate=await legacyRenewalGate("domain_outbox");
   const sql = getSql();
   const ready = await sql.query(
-    `UPDATE domain_outbox SET lease_until=now()+interval '5 minutes',attempts=attempts+1 WHERE id IN(SELECT id FROM domain_outbox WHERE sent_at IS NULL AND (lease_until IS NULL OR lease_until<now()) ORDER BY id FOR UPDATE SKIP LOCKED LIMIT $1) RETURNING *`,
+    `UPDATE domain_outbox SET lease_until=now()+interval '5 minutes',attempts=attempts+1 WHERE id IN(SELECT id FROM domain_outbox WHERE sent_at IS NULL ${gate.filter} AND (lease_until IS NULL OR lease_until<now()) ORDER BY id FOR UPDATE SKIP LOCKED LIMIT $1) RETURNING *`,
     [Math.max(1, Math.min(limit, 50))],
   );
   let sent = 0,

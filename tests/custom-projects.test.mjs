@@ -596,6 +596,7 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
         let success = false,
           notices = [];
         const n = load("../src/lib/custom/notifications.ts", {
+      "@/lib/renewals/service":{legacyRenewalGate:async()=>({enabled:false,filter:""})},
           "server-only": {},
           "./service": service,
           "@/lib/email": {

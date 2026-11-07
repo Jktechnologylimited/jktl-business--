@@ -149,6 +149,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         <Link href="/business/email" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">Business Email <FeatureBadge slug="business-email"/></Link>
         <Link href="/business/custom" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">JKTL Custom <FeatureBadge slug="custom"/></Link>
+        <Link href="/business/renewals" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">Renewals</Link>
         <Link href="/business/domains" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">Domains <FeatureBadge slug="domains"/></Link>
         <Link href="/play/tycoon" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">🎮 Business Tycoon</Link>
         </nav>

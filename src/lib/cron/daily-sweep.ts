@@ -1,4 +1,5 @@
 import "server-only";
+import {runCentralRenewals} from "@/lib/renewals/service";
 import { runAutoCharge } from "@/lib/ai/auto-charge";
 import { runLineRentals } from "@/lib/ai/line-rental";
 import { listNudgeCandidates, runNudges } from "@/lib/db/nudges";
@@ -219,6 +220,9 @@ export async function runDailySweep(budgetMs = DEFAULT_BUDGET_MS): Promise<Daily
   /* ---------------------------------------------------------------------- */
 
   await step("renewal-reminders", async () => {
+    const central=await runCentralRenewals();
+    if(central&&(central.failed||central.unknown))throw Error("Renewal reminders need provider review; check Emails → Renewals");
+    if(central)return `${central.queued} queued; ${central.accepted} accepted; ${central.failed} failed; ${central.unknown} unconfirmed`;
     // Seven days ahead, matched exactly, so one email per renewal cycle. With
     // Hobby's hour-wide window the run still lands on the right day.
     const renewals = await listUpcomingRenewals(7);

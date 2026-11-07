@@ -953,6 +953,7 @@ test("email reminders queue once at 30/14/7/0 days and retry email failures with
   let success = false,
     sends = [];
   const n = load("../src/lib/business-email/notifications.ts", {
+      "@/lib/renewals/service":{legacyRenewalGate:async()=>({enabled:false,filter:""})},
     "server-only": {},
     "./service": { query: q },
     "@/lib/email": {

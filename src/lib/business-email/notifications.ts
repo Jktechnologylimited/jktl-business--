@@ -1,4 +1,5 @@
 import "server-only";
+import {legacyRenewalGate} from "@/lib/renewals/service";
 import { query } from "./service";
 import { sendCustomNoticeEmail } from "@/lib/email";
 export async function runEmailMaintenance() {
@@ -7,11 +8,12 @@ export async function runEmailMaintenance() {
       ?.present
   )
     return { sent: 0, failed: 0 };
-  await query(
+  const gate=await legacyRenewalGate("email_outbox");
+  if(!gate.enabled)await query(
     `INSERT INTO email_outbox(event_key,organization_id,subject,detail) SELECT 'renewal:'||s.id::text||':'||s.renews_at::text||':'||d.days,s.organization_id,'Business Email renewal reminder','Your email service for '||s.domain||' renews on '||(s.renews_at AT TIME ZONE 'Africa/Lagos')::date::text||'. Review current renewal options in Business Email. Automatic charging is disabled.' FROM email_services s LEFT JOIN email_plans p ON p.id=s.plan_id CROSS JOIN LATERAL jsonb_array_elements_text(COALESCE(p.reminder_days,'[30,14,7,0]'::jsonb)) AS d(days) WHERE s.renews_at IS NOT NULL AND ((s.renews_at AT TIME ZONE 'Africa/Lagos')::date-(now() AT TIME ZONE 'Africa/Lagos')::date)=d.days::int ON CONFLICT DO NOTHING`,
   );
   const rows = await query(
-    `UPDATE email_outbox SET lease_until=now()+interval '5 minutes',attempts=attempts+1 WHERE id IN(SELECT id FROM email_outbox WHERE sent_at IS NULL AND(lease_until IS NULL OR lease_until<now()) ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 10) RETURNING *`,
+    `UPDATE email_outbox SET lease_until=now()+interval '5 minutes',attempts=attempts+1 WHERE id IN(SELECT id FROM email_outbox WHERE sent_at IS NULL ${gate.filter} AND(lease_until IS NULL OR lease_until<now()) ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 10) RETURNING *`,
   );
   let sent = 0,
     failed = 0;

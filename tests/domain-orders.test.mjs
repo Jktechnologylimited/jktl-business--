@@ -1160,6 +1160,7 @@ test("renewal reminders use 30/14/7/1 day dates and durable idempotent notice re
     let success = false,
       sends = [];
     const n = load("../src/lib/domains/notifications.ts", {
+      "@/lib/renewals/service":{legacyRenewalGate:async()=>({enabled:false,filter:""})},
       "./fulfillment": { dispatchPaidDomainOrders: async () => 0 },
       "./registrar-admin": {
         flushRegistrarAlerts: async () => ({ sent: 0, failed: 0 }),

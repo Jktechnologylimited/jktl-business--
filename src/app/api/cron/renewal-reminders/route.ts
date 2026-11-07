@@ -1,3 +1,4 @@
+import {runCentralRenewals} from "@/lib/renewals/service";
 import { NextRequest, NextResponse } from "next/server";
 import { listUpcomingRenewals } from "@/lib/db/organizations";
 import { sendRenewalReminderEmail } from "@/lib/email";
@@ -39,6 +40,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const central=await runCentralRenewals();
+    if(central)return NextResponse.json(central,{status:central.failed||central.unknown?207:200});
     const renewals = await listUpcomingRenewals(REMINDER_DAYS_AHEAD);
     const results = await Promise.allSettled(
       renewals.map((r) =>
