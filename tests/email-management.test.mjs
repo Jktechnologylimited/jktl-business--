@@ -1161,14 +1161,16 @@ test("the verified JKTL mail domain replaces retired environment and stored send
       "JKTL Business <jktl-business@mail.ibiz.name.ng>";
     assert.equal(
       addresses.configuredSender(),
-      "John <jktl-business@mail.jktl.com.ng>",
+      "JKTL Business <notifications@mail.jktl.com.ng>",
     );
     const headers = addresses.deliveryHeaders({
       ...configured(),
-      senderDisplayName: "John",
+      senderDisplayName: "JKTL Business",
       senderEmail: "jktl-business@mail.ibiz.name.ng",
     });
-    assert.match(headers.from, /jktl-business@mail\.jktl\.com\.ng/);
+    assert.match(headers.from, /notifications@mail\.jktl\.com\.ng/);
+    assert.match(headers.from, /JKTL Business/);
+    assert.equal(addresses.configuredSender("John <jktl-business@mail.jktl.com.ng>"), "JKTL Business <notifications@mail.jktl.com.ng>");
     assert.doesNotMatch(headers.from, /ibiz/);
     assert.equal(headers.replyTo, "info@jktl.com.ng");
     assert.ok(

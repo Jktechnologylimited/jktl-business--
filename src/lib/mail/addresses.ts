@@ -48,11 +48,12 @@ export function senderIdentity(raw: string) {
 }
 // mail.jktl.com.ng was confirmed provider-verified by JKTL. Never fall back to
 // the retired sender, even when an older deployment still has that env value.
-export const DEFAULT_SENDER = "John <jktl-business@mail.jktl.com.ng>";
+export const DEFAULT_SENDER = "JKTL Business <notifications@mail.jktl.com.ng>";
 export function configuredSender(raw = process.env.RESEND_FROM_EMAIL) {
   const value = raw || DEFAULT_SENDER;
   const identity = senderIdentity(value);
-  return /@(?:[^@.]+\.)*ibiz\.name\.ng$/i.test(identity.email)
+  return /^(?:jktl-business)@mail\.jktl\.com\.ng$/i.test(identity.email) ||
+    /@(?:[^@.]+\.)*ibiz\.name\.ng$/i.test(identity.email)
     ? DEFAULT_SENDER
     : value;
 }
