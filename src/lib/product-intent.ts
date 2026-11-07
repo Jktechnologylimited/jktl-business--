@@ -23,10 +23,12 @@ export function emailIntent(params: Params) {
       ? "?next=team-invite&invite=" + token
       : "";
   }
-  if (params.get("next") === "affiliate-invite") {
+  if (
+    ["affiliate-invite", "partner-invite"].includes(params.get("next") || "")
+  ) {
     const token = params.get("invite") || "";
     return /^[a-f0-9]{64}$/.test(token)
-      ? "?next=affiliate-invite&invite=" + token
+      ? "?next=" + params.get("next") + "&invite=" + token
       : "";
   }
   if (params.get("next") === "programs") {
@@ -70,10 +72,14 @@ export function emailDestination(params: Params) {
       ? "/admin/invitation?token=" + token
       : null;
   }
-  if (params.get("next") === "affiliate-invite") {
+  if (
+    ["affiliate-invite", "partner-invite"].includes(params.get("next") || "")
+  ) {
     const token = params.get("invite") || "";
     return /^[a-f0-9]{64}$/.test(token)
-      ? "/affiliates/invitation?token=" + token
+      ? (params.get("next") === "partner-invite"
+          ? "/partners/invitation?token="
+          : "/affiliates/invitation?token=") + token
       : null;
   }
   if (params.get("next") === "programs") {

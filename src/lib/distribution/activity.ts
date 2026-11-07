@@ -32,9 +32,12 @@ export async function remindAffiliateInvitations() {
     try {
       const sent = await sendPartnerNoticeEmail({
         to: String(r.email),
-        subject: "Your JKTL Affiliate invitation is waiting",
-        detail: `Hello ${r.name}, your JKTL Affiliate invitation is ready. Review the terms and activate using your existing Business account or ordinary signup. This is a replacement secure link; older invitation links no longer work.`,
-        path: "/affiliates/invitation?token=" + token,
+        subject: `Your JKTL ${r.program === "partner" ? "Partner" : "Affiliate"} invitation is waiting`,
+        detail: `Hello ${r.name}, your JKTL ${r.program === "partner" ? "Partner" : "Affiliate"} invitation is ready. Review the terms and activate using your existing Business account or ordinary signup. This is a replacement secure link; older invitation links no longer work.`,
+        path:
+          (r.program === "partner"
+            ? "/partners/invitation?token="
+            : "/affiliates/invitation?token=") + token,
         key: "affiliate-first-reminder-" + r.id + "-" + hash.slice(0, 12),
         category: "invitation",
         replyCategory: r.program as "affiliate" | "partner",

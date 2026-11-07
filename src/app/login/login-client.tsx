@@ -53,11 +53,14 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
       return;
     }
     if (
-      ["distribution", "programs", "affiliate-invite"].includes(
-        params.get("next") || "",
-      )
+      [
+        "distribution",
+        "programs",
+        "affiliate-invite",
+        "partner-invite",
+      ].includes(params.get("next") || "")
     ) {
-      router.replace(emailDestination(params)!);
+      router.replace(emailDestination(params) || "/business");
       return;
     }
     if (params.get("next") === "support") {
@@ -103,9 +106,14 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
     if (hydrated && authenticated && mode === "live") {
       const value = params.get("next");
       if (
-        ["distribution", "programs", "affiliate-invite"].includes(value || "")
+        [
+          "distribution",
+          "programs",
+          "affiliate-invite",
+          "partner-invite",
+        ].includes(value || "")
       )
-        router.replace(emailDestination(params)!);
+        router.replace(emailDestination(params) || "/business");
       else if (value === "support") router.replace("/business/help");
       else if (value === "email")
         router.replace(
@@ -114,7 +122,8 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
               ? "?plan=" + encodeURIComponent(params.get("emailPlan")!)
               : ""),
         );
-      else if (value === "domains") router.replace(emailDestination(params)!);
+      else if (value === "domains")
+        router.replace(emailDestination(params) || "/business");
       else if (value === "custom") router.replace("/business/custom");
       else if (value === "tycoon") router.replace("/play/tycoon");
       else {

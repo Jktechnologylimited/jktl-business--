@@ -60,7 +60,10 @@ export async function inviteAffiliateAction(f: FormData) {
         ? "Your invitation to JKTL Partners"
         : "Your invitation to JKTL Affiliates",
     detail: `Hello ${name},\nJoin JKTL ${program === "partner" ? "Partners" : "Affiliates"} to introduce our business tools to your audience. ${message}\nUse your existing JKTL Business account, or create one and choose your own password. Review the proposed programme terms before accepting. Financial eligibility requires a separately accepted, formally activated agreement. This single-use link expires on the date shown on the invitation page.`,
-    path: "/affiliates/invitation?token=" + token,
+    path:
+      (program === "partner"
+        ? "/partners/invitation?token="
+        : "/affiliates/invitation?token=") + token,
     key: "affiliate-invite-" + rows[0].id,
     category: "invitation",
     replyCategory: program as "affiliate" | "partner",
@@ -100,7 +103,10 @@ export async function resendAffiliateInviteAction(f: FormData) {
         ? "Your secure JKTL Partner invitation"
         : "Your secure JKTL Affiliate invitation",
     detail: `Hello ${r.name}, use this replacement invitation to review and accept your JKTL ${r.program === "partner" ? "Partner" : "Affiliate"} invitation. Previous links no longer work. Choose your own password or sign in with your existing Business account.`,
-    path: "/affiliates/invitation?token=" + token,
+    path:
+      (r.program === "partner"
+        ? "/partners/invitation?token="
+        : "/affiliates/invitation?token=") + token,
     key:
       "affiliate-invite-resend-" +
       r.id +

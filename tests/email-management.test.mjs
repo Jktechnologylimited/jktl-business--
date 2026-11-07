@@ -908,6 +908,7 @@ test("new programme invitations retain approval gates and secure resend rotates 
       "https://example.test" + sent[0].path,
     ).searchParams.get("token");
     assert.equal(sent[0].replyCategory, "partner");
+    assert.match(sent[0].path, /^\/partners\/invitation\?token=/);
     const invitation = (
       await f.q(
         "SELECT * FROM affiliate_invitations WHERE email='partner-invite@example.test'",
@@ -924,6 +925,7 @@ test("new programme invitations retain approval gates and secure resend rotates 
       "https://example.test" + sent.at(-1).path,
     ).searchParams.get("token");
     assert.notEqual(replacement, token);
+    assert.match(sent.at(-1).path, /^\/partners\/invitation\?token=/);
     await assert.rejects(
       program.acceptAffiliateInvitationAction(form({ token, consent: "on" })),
     );
