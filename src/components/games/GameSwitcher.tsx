@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronDown, Gamepad2, X } from "lucide-react";
 import styles from "./Games.module.css";
 export const GAMES = [
+  {id:"skybound",name:"Kora Skybound",icon:"✦",description:"A rooftop platform adventure",href:"/play/skybound"},
   {
     id: "word-hunt",
     name: "Word Hunt",

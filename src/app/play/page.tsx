@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { GameHub } from "@/components/games/GameHub";
 export const metadata: Metadata = {
-  title: "JKTL Games | Word Hunt, Street Run, Tycoon & Fantasy",
+  title: "JKTL Games | Kora Skybound, Word Hunt & More",
   description:
-    "Find Nigerian words, outrun the masquerade, build a city or practice the stock market. Explore free JKTL games and switch between them in one place.",
+    "Jump through Kora Skybound, find Nigerian words, outrun the masquerade, build a city or practice the stock market. Explore free JKTL games and switch between them in one place.",
 };
 export default function Page() {
   return (

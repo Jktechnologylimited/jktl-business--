@@ -1,0 +1,455 @@
+.game {
+  height: 100dvh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #102638;
+  color: #faf0d5;
+  font-family: var(--font-plus-jakarta-sans), Arial, sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+.header {
+  height: 58px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  gap: 12px;
+  background: #0a192c;
+  z-index: 20;
+}
+.header > a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  color: #f8edcb;
+}
+.header > a > b {
+  font-size: 17px;
+}
+.header > a > span {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #dbbc6c;
+  margin-left: 8px;
+}
+.header > div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.header > div > button,
+.hud > button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  min-height: 40px;
+  border: 1px solid #80908c66;
+  border-radius: 10px;
+  background: transparent;
+  color: #f3e7c4;
+  cursor: pointer;
+}
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 11px 25px;
+  background: #163441;
+  flex-shrink: 0;
+}
+.hud > div:first-child {
+  flex: 1;
+}
+.hud small {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: #b9cdbf;
+  margin-bottom: 4px;
+}
+.hud b {
+  display: block;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.hud > div:nth-child(2) b {
+  color: #f4d879;
+}
+.hearts {
+  display: flex;
+  gap: 5px;
+  color: #efaa8a;
+}
+.hud button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.progress {
+  height: 3px;
+  flex-shrink: 0;
+  background: #163441;
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  background: #eed181;
+  transition: width 0.15s;
+}
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  image-rendering: pixelated;
+}
+.stage canvas:focus-visible {
+  outline: 2px solid #f3d77a;
+  outline-offset: -3px;
+}
+.overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92%, 460px);
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  padding: 28px 35px;
+  background: #102936f2;
+  border: 1px solid #e1c47877;
+  box-shadow: 0 18px 60px #091e3344;
+  border-radius: 22px;
+  text-align: center;
+  backdrop-filter: blur(9px);
+}
+.eyebrow {
+  color: #e1c57b;
+  font-size: 8px;
+  letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.overlay h1 {
+  font:
+    500 clamp(32px, 5vw, 57px)/1.02 Georgia,
+    serif;
+  margin: 19px 0 16px;
+  letter-spacing: -1.5px;
+}
+.overlay h1 em {
+  color: #e9cb77;
+  font-weight: 400;
+}
+.overlay > p:not(.eyebrow) {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #d1ddcf;
+}
+.overlay .hint {
+  font-size: 9px !important;
+  margin-bottom: 0;
+}
+.primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 23px;
+  margin: 20px auto 9px;
+  background: #e9c575;
+  color: #153039;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+.result {
+  font-size: 21px;
+  font-weight: 700;
+  color: #f5da8f;
+}
+.result span {
+  display: block;
+  margin-top: 6px;
+  font-weight: 400;
+  font-size: 11px;
+  color: #c5d3c7;
+}
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 10px 24px;
+  background: #0d2637;
+  flex-shrink: 0;
+  user-select: none;
+}
+.controls > div {
+  display: flex;
+  gap: 10px;
+}
+.controls button {
+  width: 65px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid #96a7a255;
+  border-radius: 14px;
+  background: #23434c;
+  color: #f8ebbe;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.controls button:active {
+  background: #e6c975;
+  color: #15343c;
+  transform: translateY(1px);
+}
+.controls button > span {
+  font-size: 7px;
+  letter-spacing: 0.6px;
+}
+.controls > button {
+  width: 84px;
+  background: #a5803e44;
+  border-color: #d9b35b;
+  color: #f4d991;
+}
+.controls > p {
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.6;
+  color: #b9cdbf;
+  margin: 0;
+}
+.controls > p > span {
+  display: none;
+  font-size: 8px;
+  color: #8ba79e;
+  margin-top: 3px;
+}
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 24px 9px;
+  background: #0d2637;
+  font-size: 8px;
+  color: #8da99f;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.footer button {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  padding: 5px;
+  color: #d1c397;
+  font-size: 9px;
+  cursor: pointer;
+}
+.notice {
+  position: absolute;
+  inset: auto 14px 90px;
+  max-width: 430px;
+  margin: auto;
+  padding: 18px;
+  border: 1px solid #cfb96e;
+  background: #102a3c;
+  color: #f8efd5;
+  border-radius: 14px;
+  z-index: 30;
+  font-size: 12px;
+}
+.notice > div {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.notice button {
+  padding: 10px;
+  border: 1px solid #cfb96e;
+  border-radius: 8px;
+  background: #e2c572;
+  color: #15303c;
+  font-weight: 700;
+  cursor: pointer;
+}
+.game :is(button, a):focus-visible {
+  outline: 3px solid #ffe3a1;
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .game {
+    min-height: 0;
+  }
+  .header {
+    height: 52px;
+    padding: 0 12px;
+    gap: 7px;
+  }
+  .header > a {
+    gap: 5px;
+  }
+  .header > a > b {
+    font-size: 14px;
+  }
+  .header > a > span {
+    display: none;
+  }
+  .header > div {
+    gap: 6px;
+  }
+  .header > div > button {
+    width: 34px;
+    min-height: 36px;
+  }
+  .hud {
+    padding: 8px 14px;
+    gap: 16px;
+  }
+  .hud b {
+    font-size: 11px;
+  }
+  .hud small {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+  .hud button {
+    width: 32px;
+    min-height: 32px;
+  }
+  .hearts {
+    gap: 3px;
+  }
+  .hearts svg {
+    width: 13px;
+  }
+  .overlay {
+    padding: 20px 24px;
+    border-radius: 18px;
+  }
+  .overlay h1 {
+    font-size: 42px;
+    margin: 14px 0;
+  }
+  .overlay > p:not(.eyebrow) {
+    font-size: 11px;
+  }
+  .overlay .hint {
+    font-size: 8px !important;
+  }
+  .primary {
+    margin-top: 16px;
+  }
+  .controls {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  .controls > p {
+    font-size: 9px;
+  }
+  .controls > p > span {
+    display: block;
+  }
+  .controls button {
+    width: 57px;
+    height: 59px;
+  }
+  .controls > button {
+    width: 67px;
+  }
+  .footer {
+    padding: 0 14px 8px;
+    font-size: 7px;
+  }
+}
+@media (max-height: 540px) and (min-width: 600px) {
+  .header {
+    height: 43px;
+  }
+  .hud {
+    padding: 5px 20px;
+  }
+  .hud small {
+    font-size: 7px;
+    margin: 0;
+  }
+  .hud b {
+    font-size: 11px;
+  }
+  .hud > button {
+    min-height: 28px;
+    height: 28px;
+  }
+  .controls {
+    position: absolute;
+    bottom: 20px;
+    left: 12px;
+    right: 12px;
+    background: transparent;
+    padding: 0;
+    pointer-events: none;
+  }
+  .controls > div,
+  .controls > button {
+    pointer-events: auto;
+  }
+  .controls > p {
+    display: none;
+  }
+  .controls button {
+    height: 48px;
+    width: 56px;
+    background: #173b49cc;
+  }
+  .footer {
+    height: 20px;
+    padding-bottom: 3px;
+  }
+  .overlay {
+    padding: 17px 25px;
+    width: 410px;
+  }
+  .overlay h1 {
+    font-size: 34px;
+    margin: 8px 0;
+  }
+  .overlay p {
+    margin: 7px 0;
+  }
+  .primary {
+    margin: 10px auto 5px;
+    padding: 11px 20px;
+  }
+  .overlay .hint {
+    display: none;
+  }
+  .eyebrow {
+    font-size: 7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game * {
+    transition: none !important;
+  }
+}
