@@ -1,6 +1,12 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { mixPoints, mixRounds } from "@/lib/arcade-model";
+import {
+  mixPoints,
+  mixRounds,
+  mixDifficulty,
+  normalizeMixWins,
+  MIX_WINS_KEY,
+} from "@/lib/arcade-model";
 import {
   ArcadeFrame,
   GameOverlay,
@@ -8,9 +14,19 @@ import {
   useAutoPause,
   useBest,
 } from "./shared";
+function savedWins() {
+  try {
+    return normalizeMixWins(Number(localStorage.getItem(MIX_WINS_KEY)));
+  } catch {
+    return 0;
+  }
+}
 export function WordMix() {
   const [rounds, setRounds] = useState(() => mixRounds(2026)),
     [index, setIndex] = useState(0),
+    [wins, setWins] = useState(0),
+    [difficulty, setDifficulty] = useState(() => mixDifficulty(0)),
+    [loaded, setLoaded] = useState(false),
     [phase, setPhase] = useState("ready"),
     [answer, setAnswer] = useState<number[]>([]),
     [hints, setHints] = useState(0),
@@ -25,6 +41,16 @@ export function WordMix() {
       [],
     );
   useAutoPause(phase === "playing", pause);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const completed = savedWins();
+      setWins(completed);
+      setDifficulty(mixDifficulty(completed));
+      setRounds(mixRounds(2026, completed));
+      setLoaded(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
   useEffect(() => {
     if (phase !== "playing") return;
     const timer = setInterval(() => setSeconds((n) => n + 1), 1000);
@@ -50,9 +76,17 @@ export function WordMix() {
     const next = score + mixPoints(seconds, hints);
     setScore(next);
     setPhase(index === rounds.length - 1 ? "won" : "round");
-    if (index === rounds.length - 1) record(next);
+    if (index === rounds.length - 1) {
+      record(next);
+      const completed = Math.min(1_000_000, Math.max(wins, savedWins()) + 1);
+      setWins(completed);
+      try {
+        localStorage.setItem(MIX_WINS_KEY, String(completed));
+      } catch {}
+    }
   }
   function play() {
+    if (!loaded) return;
     setPhase("playing");
     board.current?.focus();
   }
@@ -65,7 +99,10 @@ export function WordMix() {
     play();
   }
   function restart() {
-    setRounds(mixRounds(Date.now() >>> 0));
+    const completed = Math.max(wins, savedWins());
+    setWins(completed);
+    setDifficulty(mixDifficulty(completed));
+    setRounds(mixRounds(Date.now() >>> 0, completed));
     setIndex(0);
     setAnswer([]);
     setHints(0);
@@ -85,7 +122,7 @@ export function WordMix() {
       paused={phase === "paused"}
       pause={pause}
       resume={play}
-      stat={`Word ${index + 1}/5 · ${seconds}s · ${hints} hints used`}
+      stat={`${difficulty.name} · Word ${index + 1}/5 · ${wins} wins · ${seconds}s`}
       controls={
         <>
           <button
@@ -99,7 +136,10 @@ export function WordMix() {
           <button
             type="button"
             className={styles.secondary}
-            disabled={phase !== "playing" || hints >= round.word.length - 1}
+            disabled={
+              phase !== "playing" ||
+              hints >= Math.min(round.word.length - 1, difficulty.maxHints)
+            }
             onClick={() => {
               setHints(hints + 1);
               setMessage(
@@ -108,6 +148,7 @@ export function WordMix() {
                   ". Each hint reduces this word’s score by 25 points.",
               );
             }}
+            title={`${hints}/${Math.min(round.word.length - 1, difficulty.maxHints)} hints used`}
           >
             Hint −25
           </button>
@@ -190,9 +231,9 @@ export function WordMix() {
       {phase === "ready" && (
         <GameOverlay
           title="Letters with a little Lagos energy."
-          detail="Five clues. Five jumbled words. Tap or type the letters in order. Hints can help when you’re stuck."
+          detail={`Complete all five words to earn a win. After 5 wins, longer words and two hints per word await. After 10 wins, take on expert clues with just one hint. Progress saves on this device. Current level: ${difficulty.name}.`}
           action={play}
-          label="Mix it up"
+          label={loaded ? "Mix it up" : "Loading your mix…"}
         />
       )}
       {phase === "paused" && (
@@ -216,7 +257,7 @@ export function WordMix() {
       {phase === "won" && (
         <GameOverlay
           title="Five words. Nicely done."
-          detail={`You finished the mix with ${score} points. Try another selection of Nigerian places and business words.`}
+          detail={`${score} points · ${wins} completed wins. ${mixDifficulty(wins).name !== difficulty.name ? `${mixDifficulty(wins).name} unlocked! Your next mix brings longer words, tougher clues and fewer hints.` : difficulty.name === "Expert" ? "Expert level: keep mastering the tougher clues." : `Your next challenge unlocks at ${difficulty.name === "Starter" ? 5 : 10} wins.`}`}
           action={restart}
           label="A fresh mix"
         />

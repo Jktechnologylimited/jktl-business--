@@ -44,8 +44,126 @@ export const MIX_WORDS = [
   { word: "CLIENT", clue: "Someone who uses your professional services." },
   { word: "JOLLOF", clue: "A beloved West African rice dish." },
 ] as const;
-export function mixRounds(seed: number) {
-  return shuffled(MIX_WORDS, seed)
+const MIX_GROWING_WORDS = [
+  {
+    word: "INVOICE",
+    clue: "A request for payment that itemises what was supplied.",
+  },
+  {
+    word: "CAPITAL",
+    clue: "Resources committed before an enterprise can grow.",
+  },
+  {
+    word: "REVENUE",
+    clue: "The top line, before a business deducts its costs.",
+  },
+  { word: "PAYMENT", clue: "The exchange that settles an amount owed." },
+  {
+    word: "NETWORK",
+    clue: "Connections that carry information or open opportunities.",
+  },
+  {
+    word: "CUSTOMER",
+    clue: "The person whose needs turn an offering into a sale.",
+  },
+  {
+    word: "BUSINESS",
+    clue: "An organised venture that supplies goods or services.",
+  },
+  {
+    word: "COMMERCE",
+    clue: "The activity linking producers, traders and buyers.",
+  },
+  {
+    word: "DELIVERY",
+    clue: "The final journey that puts an order in its buyer’s hands.",
+  },
+  {
+    word: "KEYBOARD",
+    clue: "An arrangement of keys that turns finger movements into input.",
+  },
+  {
+    word: "CALABAR",
+    clue: "A Cross River capital known for its annual carnival.",
+  },
+  {
+    word: "HARMATTAN",
+    clue: "A dry, dusty visitor carried south from the Sahara.",
+  },
+] as const;
+const MIX_EXPERT_WORDS = [
+  {
+    word: "ENTERPRISE",
+    clue: "A venture built through initiative and organised effort.",
+  },
+  {
+    word: "INVESTMENT",
+    clue: "A present commitment made in expectation of future returns.",
+  },
+  {
+    word: "NEGOTIATION",
+    clue: "The process of finding terms both sides can accept.",
+  },
+  {
+    word: "SUBSCRIPTION",
+    clue: "Access maintained through recurring payments.",
+  },
+  {
+    word: "BOOKKEEPING",
+    clue: "The systematic recording that lets a business trace its money.",
+  },
+  {
+    word: "FULFILMENT",
+    clue: "The work between receiving an order and completing its promise.",
+  },
+  { word: "INNOVATION", clue: "A useful new approach brought into practice." },
+  {
+    word: "LOGISTICS",
+    clue: "Coordinating movement, storage and timing so goods arrive.",
+  },
+  {
+    word: "PARTNERSHIP",
+    clue: "A shared undertaking governed by mutual responsibilities.",
+  },
+  {
+    word: "TRADEMARK",
+    clue: "A distinguishing sign that identifies the source of goods.",
+  },
+  {
+    word: "EQUILIBRIUM",
+    clue: "The balance point where opposing market forces meet.",
+  },
+  {
+    word: "DIVERSIFY",
+    clue: "Spread exposure across different activities or assets.",
+  },
+] as const;
+export const MIX_WINS_KEY = "jktl-word-mix-wins-v1";
+export function normalizeMixWins(value: unknown): number {
+  return typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= 0 &&
+    value <= 1_000_000
+    ? value
+    : 0;
+}
+export function mixDifficulty(wins: number) {
+  const completed = normalizeMixWins(wins);
+  return completed >= 10
+    ? { name: "Expert", maxHints: 1 }
+    : completed >= 5
+      ? { name: "Challenger", maxHints: 2 }
+      : { name: "Starter", maxHints: 6 };
+}
+export function mixRounds(seed: number, wins = 0) {
+  const difficulty = mixDifficulty(wins);
+  const pool: readonly { word: string; clue: string }[] =
+    difficulty.name === "Expert"
+      ? MIX_EXPERT_WORDS
+      : difficulty.name === "Challenger"
+        ? MIX_GROWING_WORDS
+        : MIX_WORDS;
+  return shuffled(pool, seed)
     .slice(0, 5)
     .map((item, index) => {
       let letters = shuffled([...item.word], seed + index + 1);

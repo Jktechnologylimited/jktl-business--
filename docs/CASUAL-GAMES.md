@@ -28,3 +28,11 @@ Original SVG cover illustrations are in `public/game-covers/`; no reference scre
 - Main production build: `npm run build -- --webpack`.
 
 For local cross-site embedding set Business `GAME_LOCAL_FRAME_ORIGINS=http://localhost:3181` and both servers' `GAME_BUSINESS_ORIGIN=http://localhost:3180`. Production keeps the existing approved public frame origins; no private-page framing policy was loosened.
+
+## Naija Word Mix progression
+
+A win is a completed five-word match, rather than a single solved clue. Matches 1–5 use the Starter pool (5–6 letters). After five completed wins, the next match uses Challenger words (7–9 letters), more indirect clues and at most two hints per word. After ten wins, Expert words (9–12 letters) allow one hint per word. Unlock messages appear on the winning screen. Best-score calculation is unchanged.
+
+Completed wins are saved separately as `jktl-word-mix-wins-v1` in local storage and restored before play. Partial rounds, wrong guesses, pauses and pressing the next-game button do not add wins. Invalid stored counts fall back to zero. If storage is unavailable, progression still works for the current session. This remains guest progress on the current browser/origin, not a synchronized account achievement.
+
+`node tests/word-mix-progression.browser.cjs` (local origin defaults to port 3182) verifies full-match counting, both unlock boundaries, hint limits, reload persistence and long-word controls on narrow and landscape viewports.

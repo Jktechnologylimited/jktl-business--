@@ -127,3 +127,32 @@ test("catalogue has nine unique guest destinations and all four new routes", () 
     assert.ok(g.cover.startsWith("/game-covers/"));
   }
 });
+
+test("word mix advances after five full wins and again at ten, with valid harder puzzles", async () => {
+  const { mixDifficulty, normalizeMixWins } =
+    await import("../src/lib/arcade-model.ts");
+  for (const value of [-1, 1.2, NaN, Infinity, "5", null, 1000001])
+    assert.equal(normalizeMixWins(value), 0);
+  for (const wins of [0, 1, 4])
+    assert.equal(mixDifficulty(wins).name, "Starter");
+  for (const wins of [5, 6, 9])
+    assert.deepEqual(mixDifficulty(wins), { name: "Challenger", maxHints: 2 });
+  for (const wins of [10, 11, 999])
+    assert.deepEqual(mixDifficulty(wins), { name: "Expert", maxHints: 1 });
+  for (const wins of [0, 4, 5, 9, 10, 50])
+    for (let seed = 0; seed < 100; seed++) {
+      const rounds = mixRounds(seed, wins);
+      assert.deepEqual(rounds, mixRounds(seed, wins));
+      assert.equal(new Set(rounds.map((r) => r.word)).size, 5);
+      for (const r of rounds) {
+        assert.equal(
+          [...r.word].sort().join(""),
+          [...r.letters].sort().join(""),
+        );
+        assert.notEqual(r.word, r.letters.join(""));
+        assert.ok(r.clue.length > 10);
+        assert.ok(r.word.length >= (wins >= 10 ? 9 : wins >= 5 ? 7 : 5));
+        assert.ok(r.word.length <= (wins >= 10 ? 12 : wins >= 5 ? 9 : 6));
+      }
+    }
+});
