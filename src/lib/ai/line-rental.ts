@@ -1,3 +1,4 @@
+import { RECEPTIONIST_PAUSED, requireReceptionistAvailable } from "./availability";
 import "server-only";
 import { getSql } from "@/lib/db/client";
 import { chargeWallet, creditWallet, listLineRentalCandidates } from "@/lib/db/receptionist";
@@ -56,6 +57,7 @@ export type LineRentalOutcome =
  * answering, and the console should say so.
  */
 export async function chargeLineRental(orgId: string, now = new Date()): Promise<LineRentalOutcome> {
+  requireReceptionistAvailable();
   const sql = getSql();
   const config = (
     await sql`
@@ -146,6 +148,7 @@ export async function runLineRentals(now = new Date()): Promise<{
   unpaid: number;
   results: LineRentalOutcome[];
 }> {
+  if (RECEPTIONIST_PAUSED) return {attempted:0,charged:0,unpaid:0,results:[]};
   const orgIds = await listLineRentalCandidates();
   const results: LineRentalOutcome[] = [];
   for (const orgId of orgIds) {

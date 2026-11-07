@@ -1,3 +1,4 @@
+import { RECEPTIONIST_PAUSED } from "@/lib/ai/availability";
 import "server-only";
 import {runCentralRenewals} from "@/lib/renewals/service";
 import { runAutoCharge } from "@/lib/ai/auto-charge";
@@ -142,6 +143,7 @@ export async function runDailySweep(budgetMs = DEFAULT_BUDGET_MS): Promise<Daily
   /* ---------------------------------------------------------------------- */
 
   await step("receptionist-reminders", async () => {
+    if (RECEPTIONIST_PAUSED) return "Paused; no receptionist reminders sent";
     const [lowWallets, allDue] = await Promise.all([listLowBalanceWallets(200), listContractsDue(200)]);
 
     const dueContracts = [];

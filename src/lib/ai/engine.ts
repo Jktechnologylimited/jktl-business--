@@ -1,3 +1,4 @@
+import { RECEPTIONIST_PAUSED, RECEPTIONIST_PAUSE_MESSAGE } from "./availability";
 import "server-only";
 import { chatComplete, isDeepSeekConfigured, type ChatMessage, type ToolCall } from "@/lib/deepseek";
 import { getPack, type TriageSeverity } from "./industry-packs";
@@ -294,6 +295,7 @@ export async function runChatTurn(input: ChatTurnInput): Promise<ChatTurnResult>
     session: null,
   };
 
+  if (RECEPTIONIST_PAUSED) return { ...base, reply: RECEPTIONIST_PAUSE_MESSAGE, error: RECEPTIONIST_PAUSE_MESSAGE };
   const session = await getChatSession(input.sessionId);
   if (!session) return { ...base, error: "This chat link has expired." };
   if (session.status === "closed" || session.status === "abandoned") {

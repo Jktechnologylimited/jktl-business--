@@ -1,3 +1,4 @@
+import { RECEPTIONIST_PAUSED } from "./availability";
 import "server-only";
 import { getSql } from "@/lib/db/client";
 import { chargeAuthorization } from "@/lib/paystack";
@@ -116,6 +117,7 @@ async function settleAttempt(
  * organizations and one dead card must not stop the rest of the run.
  */
 export async function collectDueMonth(orgId: string): Promise<ChargeOutcome> {
+  if (RECEPTIONIST_PAUSED) return {status:"not_due"};
   const claimed = await claimNextMonth(orgId);
   if (!claimed) {
     const sql = getSql();
@@ -203,6 +205,7 @@ export async function runAutoCharge(): Promise<{
   noCard: number;
   results: ChargeOutcome[];
 }> {
+  if (RECEPTIONIST_PAUSED) return {attempted:0,charged:0,failed:0,noCard:0,results:[]};
   const candidates = await listAutoChargeCandidates();
   const results: ChargeOutcome[] = [];
 

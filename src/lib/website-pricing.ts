@@ -91,7 +91,7 @@ export const WEBSITE_PLANS = [
       "Advanced automation and reports¹",
       "Higher AI chatbot allowances",
       "Priority onboarding¹",
-      "AI receptionist available separately",
+      "AI receptionist is coming later",
     ],
   },
 ] as const;
@@ -164,7 +164,7 @@ export const DIGITAL_PRODUCTS = [
     description:
       "Discuss AI reception, website chat, missed-call recovery and additional capacity.",
     details: [
-      "AI receptionist is a separately scoped product; existing contracts remain unchanged.",
+      "AI receptionist is temporarily paused; existing records are preserved.",
       "Request a tailored quote covering setup, call and message usage, and the recurring subscription before you commit.",
       "AI chatbot, team seats, storage and automation upgrades need a confirmed quote and explicit usage limits.",
       "No unlimited AI promise or automatic add-on activation. Existing usage and wallet controls remain in place.",

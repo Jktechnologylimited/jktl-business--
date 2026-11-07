@@ -514,17 +514,11 @@ export const HELP_GUIDES: HelpGuide[] = [
     ],
     route: "/business/receptionist",
     summary:
-      "The business receptionist is a separately configured customer-facing service. It is different from JKTL’s platform-support assistant.",
+      "AI receptionist call handling and automated booking are currently paused and cannot be activated or purchased. Direct customers to websites, domains and business email. JKTL platform support and manual bookings remain available.",
     steps: [
-      "Open Receptionist in your Business workspace and inspect the current configuration, service availability and plan before changing anything.",
-      "Review the business name, contact information, services, hours and the fallback/escalation contact. The assistant should not promise a service or appointment that is not configured.",
-      "Read the current activation, phone-line and communication-credit requirements. The free website does not mean every voice, SMS or AI service is free.",
-      "Follow the activation and number/forwarding instructions shown for your account. A completed payment alone does not prove a phone number or provider service is ready.",
-      "Use a permitted test call or website conversation after configuration. Check the greeting, business facts, booking options and the handoff path.",
-      "Verify a test booking in the real business calendar rather than accepting only the assistant’s confirmation text. Prevent duplicate bookings while testing.",
-      "Keep the escalation contact reachable. For clinical or other sensitive industries, the specialized receptionist’s safety and urgent-handoff rules remain separate from general website support.",
-      "If the model/provider is unavailable, the product may use a scripted fallback. Do not advertise an untested integration or guaranteed response for every circumstance.",
-      "For a problem, record the time, channel and non-sensitive session reference. Do not paste patient information, customer conversations or provider API credentials into platform support.",
+      "Call handling and automated receptionist bookings are paused. Do not offer activation, new receptionist payments or automatic charging.",
+      "Help the customer choose or publish a free website, connect their domain or set up business email instead. Manual bookings and platform support remain available.",
+      "For an existing receptionist account, direct billing, history and cancellation questions to Help & support. Existing records are preserved; never promise an automatic restart.",
     ],
     problems: [
       "No responses: check activation/configuration and communication availability before testing again.",

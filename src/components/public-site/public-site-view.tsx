@@ -1,4 +1,5 @@
 "use client";
+import { RECEPTIONIST_PAUSED } from "@/lib/ai/availability";
 import { usePublishedSiteMetrics } from "@/components/templates/PublishedSiteMetrics";
 
 import { submitBeautyWebsiteRequestAction } from "@/lib/actions/public-website-request-actions";
@@ -258,7 +259,7 @@ function LegacyPublicSiteView({
             ) : null}
 
             <div className="mt-6 flex flex-wrap items-center gap-2.5">
-              {aiAssistant?.enabled ? (
+              {(!RECEPTIONIST_PAUSED && aiAssistant?.enabled) ? (
                 <motion.button
                   type="button"
                   onClick={() => {if(aiAssistant?.chatbotId)document.querySelector('[data-jktl-chatbot-host=\"'+aiAssistant.chatbotId+'\"]')?.dispatchEvent(new Event('jktl-chat-open'));else setAiChatOpen(true);}}
@@ -275,12 +276,12 @@ function LegacyPublicSiteView({
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 style={
-                  aiAssistant?.enabled
+                  (!RECEPTIONIST_PAUSED && aiAssistant?.enabled)
                     ? undefined
                     : { backgroundColor: themeColor, color: textColor }
                 }
                 className={
-                  aiAssistant?.enabled
+                  (!RECEPTIONIST_PAUSED && aiAssistant?.enabled)
                     ? "flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-ink shadow-lg"
                     : "flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold shadow-lg"
                 }
@@ -306,7 +307,7 @@ function LegacyPublicSiteView({
               ) : null}
             </div>
 
-            {aiAssistant?.enabled ? (
+            {(!RECEPTIONIST_PAUSED && aiAssistant?.enabled) ? (
               <p className="mt-3 flex items-center gap-1.5 text-xs text-white/85">
                 <Sparkles className="size-3.5" /> Answered in seconds by our AI assistant — day or night, no waiting on hold.
               </p>
@@ -644,7 +645,7 @@ function LegacyPublicSiteView({
         // assistant when the clinic has it switched on, and the scripted
         // decision tree (over the same real service and price data) when it
         // hasn't — so no business is left with a dead chat button.
-        aiAssistant?.chatbotId ? <WebsiteChat botId={aiAssistant.chatbotId} origin={aiAssistant.chatbotOrigin}/> : aiAssistant?.enabled ? (
+        aiAssistant?.chatbotId ? <WebsiteChat botId={aiAssistant.chatbotId} origin={aiAssistant.chatbotOrigin}/> : (!RECEPTIONIST_PAUSED && aiAssistant?.enabled) ? (
           <SiteAiChat
             subdomain={subdomain}
             businessName={profile.displayName}
@@ -693,7 +694,7 @@ function TemplatePublicSite(props: Parameters<typeof LegacyPublicSiteView>[0] & 
     {services.length > 0 && <><h2 className="font-display text-3xl text-ink">Services &amp; appointments</h2><div className="grid gap-4 sm:grid-cols-2">{services.map(service => <button key={service.id} className="rounded-xl border border-border bg-surface p-5 text-left" onClick={() => selectService(service.id)}><strong className="text-ink">{service.name}</strong><p className="mt-2 text-sm text-ink-muted">{service.description}</p><p className="mt-3 text-sm text-ink">{formatKobo(service.priceKobo)} · {service.durationMin} min</p></button>)}</div><PublicBookingForm key={selectedService || 'booking'} subdomain={props.subdomain} services={services} themeColor={theme} textColor={contrast} mode={props.mode} initialServiceId={selectedService}/></>}
     {products.length > 0 && <><h2 className="font-display text-3xl text-ink">Products</h2><div className="grid gap-4 sm:grid-cols-2">{products.map(product => <article key={product.id} className="rounded-xl border border-border bg-surface p-5"><h3 className="font-semibold text-ink">{product.name}</h3><p className="mt-2 text-sm text-ink">{formatKobo(product.priceKobo)}</p></article>)}</div></>}
   </div></section> : undefined;
-  return <div className="jktl-light">{props.previewNotice && <p className="bg-paper p-4 text-center text-xs text-ink-muted">{props.previewNotice}</p>}<TemplateWebsite pagePath={props.pagePath} basePath={props.siteBasePath} initialService={props.initialServiceSlug} onRequest={props.mode==='live'?input=>submitBeautyWebsiteRequestAction(props.subdomain,input):undefined} hideBranding={Boolean(props.profile.websiteHideBranding)} template={props.template} document={props.content} contact={props.profile} accent={theme} preview={props.mode === 'preview'} bookingAvailable={services.length > 0} businessSection={businessSection} reviews={props.testimonials.map(r=>({name:r.customerName,quote:r.quote,rating:r.rating}))} onInteraction={recordInteraction}/>{props.mode === 'live' && (props.aiAssistant?.chatbotId ? <WebsiteChat botId={props.aiAssistant.chatbotId} origin={props.aiAssistant.chatbotOrigin}/> : props.aiAssistant?.enabled ? <SiteAiChat subdomain={props.subdomain} businessName={props.profile.displayName} packLabel={props.aiAssistant.packLabel} greeting={props.aiAssistant.greeting} themeColor={theme} textColor={contrast} services={services.map(s => ({id:s.id,name:s.name,priceKobo:s.priceKobo}))} clinicPhone={props.profile.phone} open={chatOpen} onOpenChange={setChatOpen} onSelectService={selectService}/> : <ChatWidget businessName={props.profile.displayName} services={services} products={products} phone={props.profile.phone} email={props.profile.email} address={props.profile.address} city={props.profile.city} state={props.profile.state} themeColor={theme} textColor={contrast} onSelectService={selectService}/>)}</div>;
+  return <div className="jktl-light">{props.previewNotice && <p className="bg-paper p-4 text-center text-xs text-ink-muted">{props.previewNotice}</p>}<TemplateWebsite pagePath={props.pagePath} basePath={props.siteBasePath} initialService={props.initialServiceSlug} onRequest={props.mode==='live'?input=>submitBeautyWebsiteRequestAction(props.subdomain,input):undefined} hideBranding={Boolean(props.profile.websiteHideBranding)} template={props.template} document={props.content} contact={props.profile} accent={theme} preview={props.mode === 'preview'} bookingAvailable={services.length > 0} businessSection={businessSection} reviews={props.testimonials.map(r=>({name:r.customerName,quote:r.quote,rating:r.rating}))} onInteraction={recordInteraction}/>{props.mode === 'live' && (props.aiAssistant?.chatbotId ? <WebsiteChat botId={props.aiAssistant.chatbotId} origin={props.aiAssistant.chatbotOrigin}/> : (!RECEPTIONIST_PAUSED && props.aiAssistant?.enabled) ? <SiteAiChat subdomain={props.subdomain} businessName={props.profile.displayName} packLabel={props.aiAssistant.packLabel} greeting={props.aiAssistant.greeting} themeColor={theme} textColor={contrast} services={services.map(s => ({id:s.id,name:s.name,priceKobo:s.priceKobo}))} clinicPhone={props.profile.phone} open={chatOpen} onOpenChange={setChatOpen} onSelectService={selectService}/> : <ChatWidget businessName={props.profile.displayName} services={services} products={products} phone={props.profile.phone} email={props.profile.email} address={props.profile.address} city={props.profile.city} state={props.profile.state} themeColor={theme} textColor={contrast} onSelectService={selectService}/>)}</div>;
 }
 /** Existing websites keep their renderer; saved template websites retain real bookings/products/chat. */
 export function PublicSiteView(props: Parameters<typeof LegacyPublicSiteView>[0]) {

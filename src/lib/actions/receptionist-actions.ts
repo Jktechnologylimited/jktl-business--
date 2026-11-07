@@ -1,4 +1,5 @@
 "use server";
+import { RECEPTIONIST_PAUSED, RECEPTIONIST_PAUSE_MESSAGE } from "@/lib/ai/availability";
 
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/session";
@@ -139,6 +140,7 @@ const VALID_PACKS: PackId[] = ["mens_health", "aesthetics", "elderly_care", "gen
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export async function saveReceptionistConfigAction(input: SaveConfigInput): Promise<ActionResult<AiReceptionistConfig>> {
+  if (RECEPTIONIST_PAUSED) return {ok:false,error:RECEPTIONIST_PAUSE_MESSAGE};
   try {
     const { organizationId } = await requireSession();
 
@@ -189,6 +191,7 @@ export async function saveReceptionistConfigAction(input: SaveConfigInput): Prom
 /* -------------------------------------------------------------------------- */
 
 export async function startWalletTopUpAction(amountNaira: number): Promise<ActionResult<{ authorizationUrl: string }>> {
+  if (RECEPTIONIST_PAUSED) return {ok:false,error:RECEPTIONIST_PAUSE_MESSAGE};
   try {
     const { organizationId } = await requireSession();
     const amountKobo = Math.round(amountNaira * 100);
@@ -254,6 +257,7 @@ export async function recordManualTopUpAction(amountNaira: number, reference: st
 export async function startContractPaymentAction(): Promise<
   ActionResult<{ authorizationUrl: string; amountKobo: number; monthIndex: number }>
 > {
+  if (RECEPTIONIST_PAUSED) return {ok:false,error:RECEPTIONIST_PAUSE_MESSAGE};
   try {
     const { organizationId } = await requireSession();
     await ensureForSession(organizationId);
@@ -422,6 +426,7 @@ export interface SimulateResult {
  * wallet charge and a real Twilio send.
  */
 export async function simulateMissedCallAction(callerPhone: string): Promise<ActionResult<SimulateResult>> {
+  if (RECEPTIONIST_PAUSED) return {ok:false,error:RECEPTIONIST_PAUSE_MESSAGE};
   try {
     const { organizationId } = await requireSession();
     const profile = await ensureForSession(organizationId);
@@ -462,6 +467,7 @@ export async function simulateMissedCallAction(callerPhone: string): Promise<Act
 
 /** Re-runs a call whose message never left (empty wallet, provider error). */
 export async function retryMissedCallAction(missedCallId: string): Promise<ActionResult<SimulateResult>> {
+  if (RECEPTIONIST_PAUSED) return {ok:false,error:RECEPTIONIST_PAUSE_MESSAGE};
   try {
     const { organizationId } = await requireSession();
     const call = await getMissedCall(organizationId, missedCallId);
@@ -591,6 +597,7 @@ export async function saveCardFromPaymentAction(reference: string): Promise<Acti
 }
 
 export async function setAutoChargeAction(enabled: boolean): Promise<ActionResult<{ enabled: boolean }>> {
+  if (RECEPTIONIST_PAUSED && enabled) return {ok:false,error:RECEPTIONIST_PAUSE_MESSAGE};
   try {
     const { organizationId } = await requireSession();
     const contract = await getContract(organizationId);
@@ -610,6 +617,7 @@ export async function setAutoChargeAction(enabled: boolean): Promise<ActionResul
 /** Retries a failed collection immediately, for a clinic that has just fixed
  * its card and doesn't want to wait for tomorrow's run. */
 export async function retryChargeNowAction(): Promise<ActionResult<{ status: string; detail: string }>> {
+  if (RECEPTIONIST_PAUSED) return {ok:false,error:RECEPTIONIST_PAUSE_MESSAGE};
   try {
     const { organizationId } = await requireSession();
     const outcome = await collectDueMonth(organizationId);

@@ -1,3 +1,4 @@
+import { RECEPTIONIST_PAUSED, RECEPTIONIST_PAUSE_MESSAGE } from "./availability";
 import "server-only";
 import { handleMissedCall, type InterceptOutcome } from "./missed-call";
 import { verifyWebhookSignature } from "@/lib/twilio";
@@ -104,6 +105,7 @@ export function toParamMap(payload: unknown): Record<string, string> {
 }
 
 export async function handleVoiceWebhookRequest(req: Request): Promise<Response> {
+  if (RECEPTIONIST_PAUSED) return Response.json({ok:true,outcome:"disabled",detail:RECEPTIONIST_PAUSE_MESSAGE});
   // The body has to be read before the signature can be checked: Twilio signs
   // the parameters, not just the URL.
   const payload = await readVoiceBody(req);
@@ -151,12 +153,13 @@ export function describeEndpoint(): Response {
   return Response.json({
     ok: true,
     endpoint: "missed-call",
+    paused: RECEPTIONIST_PAUSED,
     method: "POST",
     configured: {
       twilio: Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN),
       signatureVerification: Boolean(process.env.TWILIO_AUTH_TOKEN),
       deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
     },
-    detail: "POST a Twilio voice event here to trigger the missed-call recovery pipeline. GET only reports configuration.",
+    detail: RECEPTIONIST_PAUSED ? RECEPTIONIST_PAUSE_MESSAGE : "POST a Twilio voice event here to trigger the missed-call recovery pipeline. GET only reports configuration.",
   });
 }

@@ -1,3 +1,4 @@
+import { RECEPTIONIST_PAUSED, RECEPTIONIST_PAUSE_MESSAGE } from "@/lib/ai/availability";
 import { runChatTurn } from "@/lib/ai/engine";
 import { ensureWidgetSession } from "@/lib/ai/missed-call";
 import { packForBusinessType } from "@/lib/ai/industry-packs";
@@ -59,6 +60,7 @@ function parseQuickReply(value: unknown): { kind: "book"; serviceId: string; sta
 }
 
 export async function POST(req: Request): Promise<Response> {
+  if (RECEPTIONIST_PAUSED) return Response.json({ok:false,error:RECEPTIONIST_PAUSE_MESSAGE},{status:503,headers:{"Retry-After":"86400"}});
   let body: ChatRequestBody;
   try {
     body = (await req.json()) as ChatRequestBody;

@@ -1,3 +1,4 @@
+import { RECEPTIONIST_PAUSED } from "@/lib/ai/availability";
 import { NextRequest, NextResponse } from "next/server";
 import { getContract, listContractsDue, listLowBalanceWallets } from "@/lib/db/receptionist";
 import { runAutoCharge } from "@/lib/ai/auto-charge";
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (RECEPTIONIST_PAUSED) return NextResponse.json({ok:true,paused:true});
   try {
     // 1. Take the money first, so anything still due afterwards is genuinely an
     //    exception rather than an artefact of the order things run in.

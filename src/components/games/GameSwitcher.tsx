@@ -87,6 +87,8 @@ export function GameSwitcher({
               {game.id === current && <em>Playing</em>}
             </Link>
           ))}
+          <Link href="https://business.jktl.com.ng/signup" target="_top">Create my free website →</Link>
+          <Link href="https://jktl.com.ng/tools/seo-checker" target="_top">Free SEO checker</Link>
           <Link href="https://games.jktl.com.ng" target="_top">
             All games
           </Link>

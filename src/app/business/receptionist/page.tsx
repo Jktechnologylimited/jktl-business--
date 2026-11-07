@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+import { RECEPTIONIST_PAUSED, RECEPTIONIST_PAUSE_MESSAGE } from "@/lib/ai/availability";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBusinessStore } from "@/lib/store";
@@ -36,6 +38,10 @@ import type { ReceptionistOverview } from "@/lib/ai/types";
  * message rather than a no-op.
  */
 export default function ReceptionistPage() {
+ if (RECEPTIONIST_PAUSED) return <section className="mx-auto max-w-2xl space-y-5 p-6"><p className="text-sm font-semibold text-gold">COMING LATER</p><h1 className="text-3xl font-semibold">AI receptionist is paused</h1><p>{RECEPTIONIST_PAUSE_MESSAGE}</p><p>Focus on your website, domain and business email. Manual bookings and the JKTL support assistant remain available.</p><Link className="inline-block rounded-full bg-primary px-5 py-3 text-white" href="/business/templates">Create my free website</Link><p><Link className="text-blue-600 underline" href="/business/settings">View existing account settings and billing</Link></p></section>;
+ return <ReceptionistWorkspace/>;
+}
+function ReceptionistWorkspace() {
   const mode = useBusinessStore((s) => s.mode);
   const show = useToastStore((s) => s.show);
   const demo = mode === "demo";

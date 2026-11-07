@@ -1,4 +1,5 @@
 "use client";
+import { GameGrowth } from "./GameGrowth";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import {
@@ -183,6 +184,7 @@ export function GameHub({
           JKTL Business <ArrowUpRight size={12} aria-hidden="true" />
         </a>
       </header>
+      <GameGrowth/>
       <div className={styles.catalogueIntro}>
         <div>
           <p className={styles.eyebrow}>A LITTLE PLAY. A LOT OF POSSIBILITY.</p>

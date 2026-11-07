@@ -1,3 +1,4 @@
+import { RECEPTIONIST_PAUSED } from "@/lib/ai/availability";
 import type { BusinessType } from "@/lib/types";
 
 export type NavIcon = "home" | "bookings" | "customers" | "sales" | "more";
@@ -73,7 +74,8 @@ const salon: IndustryConfig = {
       { href: "/business/reports", label: "Reports", description: "Sales, bookings and stock", group: "Money" },
       { href: "/business/analytics", label: "Analytics", description: "Trends, ageing, profit and health", group: "Money" },
       { href: "/business/website", label: "Website", description: "Your public site and online booking", group: "Grow your business" },
-      { href: "/business/receptionist", label: "AI receptionist", description: "Missed-call recovery, chat agent and comms wallet", group: "Grow your business" },
+      {href:"https://jktl.com.ng/tools/seo-checker",label:"Free SEO checker",description:"Check your public website and improve its search foundations",group:"Grow your business"},
+      ...(!RECEPTIONIST_PAUSED ? [{ href: "/business/receptionist", label: "AI receptionist", description: "Missed-call recovery, chat agent and comms wallet", group: "Grow your business" }] : []),
       { href: "/business/import", label: "Import data", description: "Bring in customers, services and products from a spreadsheet", group: "Grow your business" },
       { href: "/business/settings", label: "Settings", description: "Business, team and plan", group: "Account" },
       { href: "/business/help", label: "Help & guides", description: "How-tos and installing the app", group: "Account" },

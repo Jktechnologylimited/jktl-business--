@@ -1,4 +1,5 @@
 "use client";
+import { RECEPTIONIST_PAUSED } from "@/lib/ai/availability";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -77,6 +78,7 @@ export function SubscriptionBilling({ demo }: { demo: boolean }) {
     }
   }
 
+  if (demo && RECEPTIONIST_PAUSED) return null;
   if (demo) {
     return (
       <section className="rounded-2xl border border-border bg-paper p-5">
@@ -193,7 +195,7 @@ export function SubscriptionBilling({ demo }: { demo: boolean }) {
           <input
             type="checkbox"
             checked={contract.autoChargeEnabled}
-            disabled={Boolean(busy) || !contract.hasCard}
+            disabled={Boolean(busy) || !contract.hasCard || (RECEPTIONIST_PAUSED && !contract.autoChargeEnabled)}
             onChange={(e) =>
               void run(
                 "auto",
@@ -219,7 +221,7 @@ export function SubscriptionBilling({ demo }: { demo: boolean }) {
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
             size="sm"
-            disabled={Boolean(busy)}
+            disabled={Boolean(busy) || RECEPTIONIST_PAUSED}
             onClick={() =>
               void run(
                 "pay",
@@ -239,7 +241,7 @@ export function SubscriptionBilling({ demo }: { demo: boolean }) {
             {contract.hasCard ? `Pay month ${monthsPaid + 1}` : `Add a card & pay ${formatKobo(payableKobo, { showKobo: true })}`}
           </Button>
           {contract.hasCard && !contract.autoChargeEnabled ? (
-            <Button size="sm" variant="outline" disabled={Boolean(busy)} onClick={() => void run("retry", retryChargeNowAction, "Payment attempt finished.")}>
+            <Button size="sm" variant="outline" disabled={Boolean(busy) || RECEPTIONIST_PAUSED} onClick={() => void run("retry", retryChargeNowAction, "Payment attempt finished.")}>
               {busy === "retry" ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />} Charge now
             </Button>
           ) : null}
@@ -249,6 +251,7 @@ export function SubscriptionBilling({ demo }: { demo: boolean }) {
         </div>
       ) : null}
 
+      {RECEPTIONIST_PAUSED && <p className="my-4 rounded-lg border border-border p-3 text-sm">The receptionist is paused. New payments, automatic collections and line-rental debits are disabled. Your billing history is preserved. Contact Help &amp; support for account assistance.</p>}
       {/* History: every attempt, successful or not. */}
       {history.length > 0 ? (
         <div className="mt-4 overflow-hidden rounded-xl border border-border">

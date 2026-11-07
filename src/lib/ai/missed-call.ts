@@ -1,3 +1,4 @@
+import { RECEPTIONIST_PAUSED, RECEPTIONIST_PAUSE_MESSAGE, requireReceptionistAvailable } from "./availability";
 import "server-only";
 import { defaultSenderId, isMessagingConfigured, normalizePhoneFor, parseVoiceWebhook, sendSms } from "@/lib/twilio";
 import { AFRICAN_COUNTRIES } from "@/lib/prospects/jurisdictions";
@@ -88,6 +89,7 @@ export function isQuietHours(config: { quietHoursStart: string; quietHoursEnd: s
 }
 
 export async function handleMissedCall(payload: unknown): Promise<InterceptResult> {
+  if (RECEPTIONIST_PAUSED) return {ok:true,outcome:"disabled",detail:RECEPTIONIST_PAUSE_MESSAGE};
   const event = parseVoiceWebhook(payload);
 
   if (!event.callerPhone) {
@@ -381,6 +383,7 @@ export async function ensureWidgetSession(params: {
   /** The business's country, so a visitor's number is read correctly. */
   countryCode?: string;
 }): Promise<{ sessionId: string; reused: boolean }> {
+  requireReceptionistAvailable();
   const visitorKey = (params.visitorKey ?? "").trim().slice(0, 64);
   const dialCode = AFRICAN_COUNTRIES.find((c) => c.code === (params.countryCode || "NG"))?.dialCode || "234";
   const normalized = normalizePhoneFor(params.phone, dialCode);
