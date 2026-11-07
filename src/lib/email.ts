@@ -1,7 +1,11 @@
 import { invitationExpiry } from "@/lib/mail/invitation-date";
 import { uncertainProviderRejection } from "@/lib/mail/provider-outcome";
 import { recordMailAttempt } from "@/lib/mail/history";
-import { deliveryHeaders, mailAddress } from "@/lib/mail/addresses";
+import {
+  configuredSender,
+  deliveryHeaders,
+  mailAddress,
+} from "@/lib/mail/addresses";
 import { currentBranding } from "@/lib/mail/service";
 import { brandEmail, type MailContext } from "@/lib/mail/service";
 import { escapeHtml, mailAction } from "@/lib/mail/layout";
@@ -22,9 +26,7 @@ function getResend(): Resend {
   return cached;
 }
 
-const FROM =
-  process.env.RESEND_FROM_EMAIL ||
-  "JKTL Business <jktl-business@mail.ibiz.name.ng>";
+const FROM = configuredSender();
 
 type EmailResult =
   | { ok: true; providerId?: string }
@@ -76,7 +78,7 @@ export async function sendProspectOutreachEmail(params: {
     if (params.replyTo && !mailAddress(params.replyTo))
       return { ok: false, error: "Invalid Reply-To address." };
     const { error, data } = await getResend().emails.send({
-      from: process.env.RESEND_OUTREACH_FROM_EMAIL || FROM,
+      from: configuredSender(process.env.RESEND_OUTREACH_FROM_EMAIL),
       to: params.to,
       subject: params.subject,
       ...(rendered.preferencesUrl
@@ -1072,6 +1074,16 @@ export async function sendWebsiteRequestEmail(p: {
 }
 
 /** Shared provider, Reply-To and branded footer; no separate chatbot mail system. */
-export async function sendChatbotLeadEmail(input:{to:string;name:string;detail:string}) {
- return send(input.to,'New JKTL AI Chatbot enquiry',`<p>A visitor has requested a response from your business.</p><p>${escapeHtml(input.name)}</p><p style="white-space:pre-wrap">${escapeHtml(input.detail)}</p>${mailAction('Review chatbot enquiries','https://business.jktl.com.ng/business/chatbot')}`,`${input.name}\n${input.detail}\nhttps://business.jktl.com.ng/business/chatbot`,{category:'service'});
+export async function sendChatbotLeadEmail(input: {
+  to: string;
+  name: string;
+  detail: string;
+}) {
+  return send(
+    input.to,
+    "New JKTL AI Chatbot enquiry",
+    `<p>A visitor has requested a response from your business.</p><p>${escapeHtml(input.name)}</p><p style="white-space:pre-wrap">${escapeHtml(input.detail)}</p>${mailAction("Review chatbot enquiries", "https://business.jktl.com.ng/business/chatbot")}`,
+    `${input.name}\n${input.detail}\nhttps://business.jktl.com.ng/business/chatbot`,
+    { category: "service" },
+  );
 }

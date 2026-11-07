@@ -46,18 +46,26 @@ export function senderIdentity(raw: string) {
   if (!email) throw Error("Configured sender email is invalid.");
   return { email, name: match ? match[1].trim() : "JKTL Business" };
 }
+// mail.jktl.com.ng was confirmed provider-verified by JKTL. Never fall back to
+// the retired sender, even when an older deployment still has that env value.
+export const DEFAULT_SENDER = "John <jktl-business@mail.jktl.com.ng>";
+export function configuredSender(raw = process.env.RESEND_FROM_EMAIL) {
+  const value = raw || DEFAULT_SENDER;
+  const identity = senderIdentity(value);
+  return /@(?:[^@.]+\.)*ibiz\.name\.ng$/i.test(identity.email)
+    ? DEFAULT_SENDER
+    : value;
+}
 export function verifiedSenders() {
-  const current = senderIdentity(
-    process.env.RESEND_FROM_EMAIL ||
-      "JKTL Business <jktl-business@mail.ibiz.name.ng>",
-  );
+  const current = senderIdentity(configuredSender());
   return [
     ...new Set([
       current.email,
+      senderIdentity(DEFAULT_SENDER).email,
       ...(process.env.EMAIL_VERIFIED_SENDER_ADDRESSES || "")
         .split(",")
         .map((s) => mailAddress(s.trim()))
-        .filter(Boolean),
+        .filter((s) => s && !/@(?:[^@.]+\.)*ibiz\.name\.ng$/i.test(s)),
     ]),
   ];
 }
@@ -65,11 +73,10 @@ export function deliveryHeaders(
   settings: DeliverySettings,
   options: { replyCategory?: ReplyCategory; replyTo?: string } = {},
 ) {
-  const existing = senderIdentity(
-    process.env.RESEND_FROM_EMAIL ||
-      "JKTL Business <jktl-business@mail.ibiz.name.ng>",
-  );
-  const email = settings.senderEmail || existing.email;
+  const existing = senderIdentity(configuredSender());
+  const email = settings.senderEmail
+    ? senderIdentity(configuredSender(settings.senderEmail)).email
+    : existing.email;
   if (!verifiedSenders().includes(email))
     throw Error(
       "Sender address requires provider verification and secure allowlist configuration.",

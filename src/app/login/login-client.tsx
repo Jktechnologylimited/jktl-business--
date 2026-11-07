@@ -67,6 +67,10 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
       router.replace("/business/help");
       return;
     }
+    if (params.get("next") === "plans") {
+      router.replace("/business/plans");
+      return;
+    }
     if (params.get("next") === "email") {
       router.replace(
         "/business/email" +
@@ -115,6 +119,7 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
       )
         router.replace(emailDestination(params) || "/business");
       else if (value === "support") router.replace("/business/help");
+      else if (value === "plans") router.replace("/business/plans");
       else if (value === "email")
         router.replace(
           "/business/email" +

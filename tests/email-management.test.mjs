@@ -1153,3 +1153,36 @@ test("affiliate starters target the correct active cohorts and provide working p
     assert.match(AFFILIATE_OUTREACH_TEMPLATES[2].body,/Replace YOUR_REFERRAL_LINK/);
   }finally{await f.db.close();}
 });
+
+test("the verified JKTL mail domain replaces retired environment and stored sender identities", () => {
+  const previous = process.env.RESEND_FROM_EMAIL;
+  try {
+    process.env.RESEND_FROM_EMAIL =
+      "JKTL Business <jktl-business@mail.ibiz.name.ng>";
+    assert.equal(
+      addresses.configuredSender(),
+      "John <jktl-business@mail.jktl.com.ng>",
+    );
+    const headers = addresses.deliveryHeaders({
+      ...configured(),
+      senderDisplayName: "John",
+      senderEmail: "jktl-business@mail.ibiz.name.ng",
+    });
+    assert.match(headers.from, /jktl-business@mail\.jktl\.com\.ng/);
+    assert.doesNotMatch(headers.from, /ibiz/);
+    assert.equal(headers.replyTo, "info@jktl.com.ng");
+    assert.ok(
+      addresses
+        .verifiedSenders()
+        .every((email) => !email.includes("ibiz.name.ng")),
+    );
+    assert.throws(() =>
+      addresses.configuredSender(
+        "John\r\nBcc: bad@example.test <a@example.test>",
+      ),
+    );
+  } finally {
+    if (previous === undefined) delete process.env.RESEND_FROM_EMAIL;
+    else process.env.RESEND_FROM_EMAIL = previous;
+  }
+});

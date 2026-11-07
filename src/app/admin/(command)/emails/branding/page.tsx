@@ -3,6 +3,7 @@ import {
   REPLY_CATEGORIES,
   senderIdentity,
   verifiedSenders,
+  configuredSender,
 } from "@/lib/mail/addresses";
 import PromotionSettings from "@/components/mail/promotion-settings";
 import { query } from "@/lib/custom/service";
@@ -13,10 +14,7 @@ export const dynamic = "force-dynamic";
 const input = "block w-full rounded border border-border bg-paper p-3";
 export default async function Page() {
   await guardAdminPage("manage_communications");
-  const sender = senderIdentity(
-    process.env.RESEND_FROM_EMAIL ||
-      "JKTL Business <jktl-business@mail.ibiz.name.ng>",
-  );
+  const sender = senderIdentity(configuredSender());
   const row = (
       await query("SELECT settings,revision FROM email_branding WHERE id=true")
     )[0],

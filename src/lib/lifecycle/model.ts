@@ -51,7 +51,7 @@ export function lifecycleSettings(form: FormData): LifecycleSettings {
     );
   return s;
 }
-export function lifecycleMessage(
+function setupMessage(
   stage: LifecycleStage,
   step: number,
   business: string,
@@ -86,4 +86,45 @@ export function lifecycleMessage(
       category: hasDomain ? ("service" as const) : ("marketing" as const),
     };
   throw Error("No follow-up email is needed for this stage.");
+}
+
+export function lifecycleMessage(
+  stage: LifecycleStage,
+  step: number,
+  business: string,
+  hasDomain: boolean,
+  offerSubscription = false,
+) {
+  const setup = setupMessage(stage, step, business, hasDomain);
+  const setupLabel = {
+    NO_SITE: "Choose my free website template",
+    DRAFT: "Finish publishing my website",
+    FREE_DOMAIN: "Find my custom domain",
+    CONNECT_DOMAIN: "Connect my existing domain",
+    COMPLETE: "Open my website",
+    MANAGED: "Open my project",
+  }[stage];
+  if (offerSubscription || stage === "FREE_DOMAIN") {
+    return {
+      ...setup,
+      subject:
+        step === 2
+          ? "Ready to choose a website subscription for your business?"
+          : "Choose the next website plan for your business",
+      detail:
+        setup.detail +
+        "\n\nReady for a paid website plan? Choose my website plan below to compare the current subscriptions, review what is included, and complete checkout securely in JKTL Business. Your existing template and content stay in place. Choosing a plan does not charge you; payment requires your confirmation. Your free website remains available if you are not ready to upgrade.",
+      category: "marketing" as const,
+      path: "/business/plans",
+      actionLabel: "Choose my website plan",
+      secondaryPath: setup.path,
+      secondaryLabel: setupLabel,
+    };
+  }
+  return {
+    ...setup,
+    actionLabel: setupLabel,
+    secondaryPath: "",
+    secondaryLabel: "",
+  };
 }

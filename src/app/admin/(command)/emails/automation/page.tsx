@@ -158,9 +158,10 @@ export default async function Page() {
           The first observation starts each stage clock, so existing accounts
           are not emailed in a backdated batch. First and second messages are
           limited to one per stage step, with a shared recipient cooldown.
-          Domain offers require marketing permission. Opt-outs and suppressed
-          addresses are respected. Replies go to your configured Reply-To; pause
-          an account if the team is already helping.
+          Subscription offers and domain offers require marketing permission.
+          Other setup messages keep a step-specific action without an upsell.
+          Opt-outs and suppressed addresses are respected. Replies go to your
+          configured Reply-To; pause an account if the team is already helping.
         </p>
         <div className="mt-4 space-y-3">
           {accounts.map((a) => (
@@ -188,6 +189,7 @@ export default async function Page() {
                         1,
                         String(a.business_name),
                         Boolean(a.has_domain),
+                        true,
                       ).subject
                     }
                   </h4>
@@ -198,8 +200,21 @@ export default async function Page() {
                         1,
                         String(a.business_name),
                         Boolean(a.has_domain),
+                        true,
                       ).detail
                     }
+                  </p>
+                  <p className="mt-2 text-sm">
+                    Subscription offer preview for recipients with marketing
+                    permission. Primary button:{" "}
+                    <a
+                      className="text-blue-600 underline"
+                      href="/business/plans"
+                    >
+                      Choose my website plan
+                    </a>
+                    . Customers without permission receive setup guidance
+                    instead.
                   </p>
                 </details>
               )}

@@ -237,6 +237,7 @@ export async function dispatchLifecycle(limit = 10, budgetMs = 7000) {
         Number(event.step),
         String(account.business_name),
         Boolean(account.has_domain),
+        await contactAllowed(String(event.recipient), true),
       );
     if (!event.payload)
       await query("UPDATE lifecycle_events SET payload=$2::jsonb WHERE id=$1", [
@@ -256,7 +257,10 @@ export async function dispatchLifecycle(limit = 10, budgetMs = 7000) {
             .split("\n\n")
             .map((p: string) => `<p>${escapeHtml(p)}</p>`)
             .join("") +
-          mailAction("Continue in JKTL Business", url) +
+          mailAction(message.actionLabel || "Continue in JKTL Business", url) +
+          (message.secondaryPath
+            ? `<p><a href="${escapeHtml("https://business.jktl.com.ng" + message.secondaryPath)}" style="color:#2563eb;text-decoration:underline">${escapeHtml(message.secondaryLabel)}</a></p>`
+            : "") +
           mailAction(
             "Get help from the team",
             "https://business.jktl.com.ng/business/help",
@@ -265,6 +269,12 @@ export async function dispatchLifecycle(limit = 10, budgetMs = 7000) {
           message.detail +
           "\n\n" +
           url +
+          (message.secondaryPath
+            ? "\n" +
+              message.secondaryLabel +
+              ": https://business.jktl.com.ng" +
+              message.secondaryPath
+            : "") +
           "\nHelp: https://business.jktl.com.ng/business/help",
       });
     } catch {

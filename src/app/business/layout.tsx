@@ -7,7 +7,11 @@ import { AppShell } from "@/components/app/shell";
 import { JktlMark } from "@/components/app/logo";
 import { useBusinessStore } from "@/lib/store";
 
-export default function BusinessLayout({ children }: { children: React.ReactNode }) {
+export default function BusinessLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const hydrated = useBusinessStore((s) => s.hydrated);
   const authenticated = useBusinessStore((s) => s.authenticated);
@@ -20,8 +24,14 @@ export default function BusinessLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!hydrated) return;
-    const selected = pendingTemplate(new URLSearchParams(window.location.search).get("template"));
-    const suffix = selected ? `?template=${encodeURIComponent(selected)}` : "";
+    const selected = pendingTemplate(
+      new URLSearchParams(window.location.search).get("template"),
+    );
+    const intent = new URLSearchParams();
+    if (selected) intent.set("template", selected);
+    if (window.location.pathname === "/business/plans")
+      intent.set("next", "plans");
+    const suffix = intent.size ? `?${intent}` : "";
     if (!authenticated) router.replace(`/login${suffix}`);
     else if (!onboardingComplete) router.replace(`/onboarding${suffix}`);
   }, [hydrated, authenticated, onboardingComplete, router]);

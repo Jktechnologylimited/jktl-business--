@@ -40,6 +40,48 @@ test("stage timing catches up once, uses editable valid days and never changes c
     "service",
   );
   assert.throws(() => lifecycleMessage("MANAGED", 1, "Example", false));
+  for (const stage of ["NO_SITE", "DRAFT", "FREE_DOMAIN", "CONNECT_DOMAIN"]) {
+    const message = lifecycleMessage(
+      stage,
+      1,
+      "Example",
+      stage === "CONNECT_DOMAIN",
+      true,
+    );
+    assert.equal(message.path, "/business/plans");
+    assert.equal(message.actionLabel, "Choose my website plan");
+    assert.equal(message.category, "marketing");
+    assert.ok(message.secondaryPath.startsWith("/business/"));
+    assert.match(message.detail, /payment requires your confirmation/);
+  }
+  assert.equal(
+    lifecycleMessage("DRAFT", 1, "Example", false).actionLabel,
+    "Finish publishing my website",
+  );
+});
+test("consented subscription follow-ups render the plan CTA and retain the current website editor", async () => {
+  const f = await fixture();
+  try {
+    const a = await f.account("DRAFT");
+    await f.q(
+      "UPDATE email_preferences SET marketing_opt_in=true WHERE email=$1",
+      [a.email],
+    );
+    await f.svc.reconcileLifecycle();
+    await f.age(a.id, 4);
+    await f.svc.reconcileLifecycle();
+    assert.equal((await f.svc.dispatchLifecycle()).accepted, 1);
+    assert.equal(f.sent[0].category, "marketing");
+    assert.match(f.sent[0].bodyHtml, /Choose my website plan/);
+    assert.match(
+      f.sent[0].bodyHtml,
+      /https:\/\/business.jktl.com.ng\/business\/plans/,
+    );
+    assert.match(f.sent[0].bodyHtml, /Finish publishing my website/);
+    assert.match(f.sent[0].text, /\/business\/website\/template/);
+  } finally {
+    await f.db.close();
+  }
 });
 test("all customers join prospectively, each progress stage resets its clock, stale queues cancel, and custom projects are excluded from start-over prompts", async () => {
   const f = await fixture();
