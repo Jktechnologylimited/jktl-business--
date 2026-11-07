@@ -3,37 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Gamepad2, X } from "lucide-react";
 import styles from "./Games.module.css";
-export const GAMES = [
-  {id:"skybound",name:"Kora Skybound",icon:"✦",description:"A rooftop platform adventure",href:"/play/skybound"},
-  {
-    id: "word-hunt",
-    name: "Word Hunt",
-    icon: "Aa",
-    description: "Find the hidden words",
-    href: "/play/word-hunt",
-  },
-  {
-    id: "run",
-    name: "Street Run",
-    icon: "↗",
-    description: "Outrun the masquerade",
-    href: "/play/run",
-  },
-  {
-    id: "tycoon",
-    name: "Business Tycoon",
-    icon: "▥",
-    description: "Build your Nigerian city",
-    href: "/play/tycoon",
-  },
-  {
-    id: "fantasy",
-    name: "Fantasy",
-    icon: "↗",
-    description: "Practice the stock market",
-    href: "https://fantasy.jktl.com.ng",
-  },
-] as const;
+import { GAMES } from "@/lib/game-catalog";
+export { GAMES } from "@/lib/game-catalog";
 export function GameSwitcher({
   current,
   onOpen,

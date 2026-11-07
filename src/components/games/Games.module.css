@@ -175,3 +175,305 @@
     display: none;
   }
 }
+.back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.catalogue {
+  min-height: 100dvh;
+  background: #080e21;
+  color: #fff5df;
+  padding: 0 max(18px, calc((100vw - 1180px) / 2));
+  padding-bottom: 36px;
+}
+.catalogueTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 26px 0;
+  border-bottom: 1px solid #ffffff18;
+}
+.catalogueTop > a:last-child {
+  font-size: 12px;
+  color: #d5c9aa;
+}
+.catalogueTop .brand {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.brand span {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #e9c86b;
+}
+.catalogueIntro {
+  padding: 50px 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.catalogueIntro h1 {
+  font-size: clamp(32px, 5vw, 58px);
+  line-height: 1.1;
+  letter-spacing: -2px;
+  margin: 12px 0 18px;
+  font-weight: 750;
+}
+.catalogueIntro p:not(.eyebrow) {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #babdd0;
+  max-width: 530px;
+}
+.eyebrow {
+  color: #e4c373;
+  letter-spacing: 2px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.pick {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f2d174;
+  color: #09122b;
+  border: 0;
+  border-radius: 999px;
+  padding: 16px 22px;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 8px 35px #e9bd4022;
+}
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 34px;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ffffff24;
+  background: #111b32;
+  border-radius: 12px;
+  padding: 12px 14px;
+  max-width: 430px;
+  color: #c2c7db;
+}
+.search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: none;
+  color: #fff5df;
+  font: inherit;
+  font-size: 14px;
+}
+.categories {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  scrollbar-width: thin;
+}
+.categories button {
+  white-space: nowrap;
+  background: #142038;
+  border: 1px solid #ffffff18;
+  border-radius: 999px;
+  color: #cbd1df;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.categories button[aria-pressed="true"] {
+  background: #edce7d;
+  border-color: #edce7d;
+  color: #081126;
+}
+.collections section {
+  margin-bottom: 36px;
+}
+.collections h2 {
+  font-size: 20px;
+  letter-spacing: -0.4px;
+  margin: 0 0 18px;
+}
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px;
+}
+.gameCard {
+  position: relative;
+  min-width: 0;
+}
+.gameCard > a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.cover {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #18253c;
+  aspect-ratio: 320/420;
+}
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s;
+}
+.gameCard a:hover img {
+  transform: scale(1.035);
+}
+.playBadge {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff1ce;
+  color: #0c1932;
+  font-size: 10px;
+  font-weight: 800;
+}
+.newBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #ffe1a1;
+  color: #1b2230;
+  font-size: 9px;
+  letter-spacing: 1px;
+  font-weight: 800;
+  padding: 5px 9px;
+  border-radius: 6px;
+}
+.gameCard h3 {
+  font-size: 15px;
+  margin: 13px 30px 6px 0;
+  line-height: 1.4;
+}
+.gameCard p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #aab3c9;
+  margin: 0;
+}
+.favourite {
+  position: absolute;
+  right: 0;
+  bottom: 38px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: #15213a;
+  border: 1px solid #ffffff22;
+  color: #efd180;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.empty {
+  padding: 25px;
+  background: #15213a;
+  border-radius: 14px;
+  color: #bdc5d8;
+  line-height: 1.7;
+}
+.catalogueFooter {
+  text-align: center;
+  color: #98a4bd;
+  font-size: 12px;
+  line-height: 2;
+  padding: 26px 0;
+}
+.catalogueFooter a {
+  color: #e7cc8d;
+}
+.catalogue :is(button, a, input):focus-visible {
+  outline: 3px solid #ffe29a;
+  outline-offset: 4px;
+}
+.catalogue a {
+  -webkit-tap-highlight-color: transparent;
+}
+@media (max-width: 700px) {
+  .catalogueIntro {
+    display: block;
+    padding: 30px 0 26px;
+  }
+  .catalogueIntro h1 {
+    letter-spacing: -1px;
+  }
+  .pick {
+    margin-top: 20px;
+    padding: 12px 20px;
+  }
+  .cardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 14px;
+  }
+  .cover {
+    border-radius: 14px;
+  }
+  .catalogueTop {
+    padding: 20px 0;
+  }
+  .gameCard h3 {
+    font-size: 14px;
+  }
+  .gameCard p {
+    font-size: 11px;
+  }
+  .favourite {
+    bottom: 44px;
+  }
+  .categories {
+    margin-right: -18px;
+  }
+  .collections h2 {
+    font-size: 19px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cover img {
+    transition: none;
+  }
+  .gameCard a:hover img {
+    transform: none;
+  }
+}
+.playBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.catalogueTop > a:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.full {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
