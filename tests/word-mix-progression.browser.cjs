@@ -46,7 +46,14 @@ const { mixRounds, MIX_WINS_KEY } = mod.exports,
     async function solve(seed, wins) {
       for (const [index, r] of mixRounds(seed, wins).entries()) {
         await page.getByLabel("Word mixing board", { exact: true }).focus();
-        await page.keyboard.type(r.word);
+        for (let position = 0; position < r.word.length; position++) {
+          if (
+            (await page
+              .locator(`[data-answer-slot="${position}"]`)
+              .textContent()) !== r.word[position]
+          )
+            await page.keyboard.type(r.word[position]);
+        }
         await page.keyboard.press("Enter");
         assert.equal(
           await page.evaluate(

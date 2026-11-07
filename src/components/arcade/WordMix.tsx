@@ -1,6 +1,10 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  emptyMixAnswer,
+  placeMixTile,
+  undoMixTile,
+  revealMixHint,
   mixPoints,
   mixRounds,
   mixDifficulty,
@@ -28,7 +32,9 @@ export function WordMix() {
     [difficulty, setDifficulty] = useState(() => mixDifficulty(0)),
     [loaded, setLoaded] = useState(false),
     [phase, setPhase] = useState("ready"),
-    [answer, setAnswer] = useState<number[]>([]),
+    [answer, setAnswer] = useState(() =>
+      emptyMixAnswer(mixRounds(2026)[0].word.length),
+    ),
     [hints, setHints] = useState(0),
     [seconds, setSeconds] = useState(0),
     [score, setScore] = useState(0),
@@ -46,7 +52,9 @@ export function WordMix() {
       const completed = savedWins();
       setWins(completed);
       setDifficulty(mixDifficulty(completed));
-      setRounds(mixRounds(2026, completed));
+      const nextRounds = mixRounds(2026, completed);
+      setRounds(nextRounds);
+      setAnswer(emptyMixAnswer(nextRounds[0].word.length));
       setLoaded(true);
     }, 0);
     return () => clearTimeout(timer);
@@ -59,17 +67,21 @@ export function WordMix() {
   function choose(i: number) {
     if (
       phase !== "playing" ||
-      answer.includes(i) ||
-      answer.length >= round.word.length
+      answer.slots.includes(i) ||
+      !answer.slots.includes(null)
     )
       return;
-    setAnswer((a) => [...a, i]);
+    setAnswer((a) => placeMixTile(a, i));
     setMessage("");
     board.current?.focus();
   }
   function submit() {
     if (phase !== "playing") return;
-    if (answer.map((i) => round.letters[i]).join("") !== round.word) {
+    if (
+      answer.slots
+        .map((i) => (i === null ? "_" : round.letters[i]))
+        .join("") !== round.word
+    ) {
       setMessage("Not quite. Use the clue and mix it again.");
       return;
     }
@@ -92,7 +104,7 @@ export function WordMix() {
   }
   function next() {
     setIndex((i) => i + 1);
-    setAnswer([]);
+    setAnswer(emptyMixAnswer(rounds[index + 1].word.length));
     setHints(0);
     setSeconds(0);
     setMessage("");
@@ -102,9 +114,10 @@ export function WordMix() {
     const completed = Math.max(wins, savedWins());
     setWins(completed);
     setDifficulty(mixDifficulty(completed));
-    setRounds(mixRounds(Date.now() >>> 0, completed));
+    const nextRounds = mixRounds(Date.now() >>> 0, completed);
+    setRounds(nextRounds);
     setIndex(0);
-    setAnswer([]);
+    setAnswer(emptyMixAnswer(nextRounds[0].word.length));
     setHints(0);
     setSeconds(0);
     setScore(0);
@@ -128,8 +141,8 @@ export function WordMix() {
           <button
             type="button"
             className={styles.secondary}
-            disabled={phase !== "playing" || !answer.length}
-            onClick={() => setAnswer((a) => a.slice(0, -1))}
+            disabled={phase !== "playing" || !answer.history.length}
+            onClick={() => setAnswer((a) => undoMixTile(a))}
           >
             Undo
           </button>
@@ -138,15 +151,21 @@ export function WordMix() {
             className={styles.secondary}
             disabled={
               phase !== "playing" ||
-              hints >= Math.min(round.word.length - 1, difficulty.maxHints)
+              hints >= Math.min(round.word.length - 1, difficulty.maxHints) ||
+              !answer.slots.some(
+                (tile, position) =>
+                  tile === null || round.letters[tile] !== round.word[position],
+              )
             }
             onClick={() => {
+              const revealed = revealMixHint(round.word, round.letters, answer);
+              if (!revealed) return;
+              setAnswer(revealed.answer);
               setHints(hints + 1);
               setMessage(
-                "Starts with " +
-                  round.word.slice(0, hints + 1) +
-                  ". Each hint reduces this word’s score by 25 points.",
+                `Letter ${round.word[revealed.position]} placed in position ${revealed.position + 1} and locked. This hint reduces your word score by 25 points.`,
               );
+              board.current?.focus();
             }}
             title={`${hints}/${Math.min(round.word.length - 1, difficulty.maxHints)} hints used`}
           >
@@ -155,9 +174,7 @@ export function WordMix() {
           <button
             type="button"
             className={styles.primary}
-            disabled={
-              phase !== "playing" || answer.length !== round.word.length
-            }
+            disabled={phase !== "playing" || answer.slots.includes(null)}
             onClick={submit}
           >
             Check word
@@ -176,12 +193,12 @@ export function WordMix() {
             event.preventDefault();
             const i = round.letters.findIndex(
               (letter, j) =>
-                letter === event.key.toUpperCase() && !answer.includes(j),
+                letter === event.key.toUpperCase() && !answer.slots.includes(j),
             );
             if (i >= 0) choose(i);
           } else if (event.key === "Backspace") {
             event.preventDefault();
-            setAnswer((a) => a.slice(0, -1));
+            setAnswer((a) => undoMixTile(a));
           } else if (
             event.key === "Enter" &&
             !(event.target instanceof HTMLButtonElement)
@@ -198,13 +215,21 @@ export function WordMix() {
         <div
           className={styles.slots}
           aria-label={
-            "Your answer: " + answer.map((i) => round.letters[i]).join("")
+            "Your answer: " +
+            answer.slots
+              .map((i) => (i === null ? "_" : round.letters[i]))
+              .join("")
           }
           aria-live="polite"
         >
           {[...round.word].map((_, i) => (
-            <span key={i}>
-              {answer[i] === undefined ? "" : round.letters[answer[i]]}
+            <span
+              key={i}
+              data-answer-slot={i}
+              data-hinted={answer.locked.includes(i) || undefined}
+              aria-label={`Position ${i + 1}: ${answer.slots[i] === null ? "empty" : round.letters[answer.slots[i]!]}${answer.locked.includes(i) ? ", revealed by hint, locked" : ""}`}
+            >
+              {answer.slots[i] === null ? "" : round.letters[answer.slots[i]!]}
             </span>
           ))}
         </div>
@@ -214,7 +239,7 @@ export function WordMix() {
               type="button"
               key={i}
               aria-label={`Letter ${letter}, tile ${i + 1}`}
-              disabled={phase !== "playing" || answer.includes(i)}
+              disabled={phase !== "playing" || answer.slots.includes(i)}
               onClick={() => choose(i)}
             >
               {letter}
@@ -225,7 +250,8 @@ export function WordMix() {
           {message}
         </p>
         <p className={styles.keyHint}>
-          Tap letters, or type them. Enter checks your word; Backspace undoes.
+          Tap letters, or type them. Hints lock a correct letter in place.
+          Backspace undoes your last chosen letter.
         </p>
       </div>
       {phase === "ready" && (

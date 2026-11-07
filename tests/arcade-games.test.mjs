@@ -156,3 +156,52 @@ test("word mix advances after five full wins and again at ten, with valid harder
       }
     }
 });
+
+test("word hints place and lock correct tiles without duplicates, including repeated and misplaced letters", async () => {
+  const { emptyMixAnswer, placeMixTile, undoMixTile, revealMixHint } =
+    await import("../src/lib/arcade-model.ts");
+  for (const wins of [0, 5, 10])
+    for (let seed = 0; seed < 30; seed++)
+      for (const round of mixRounds(seed, wins)) {
+        let answer = emptyMixAnswer(round.word.length);
+        // Fill every tile in scrambled order, so hints must repair misplaced tiles.
+        for (let tile = 0; tile < round.letters.length; tile++)
+          answer = placeMixTile(answer, tile);
+        let result;
+        while ((result = revealMixHint(round.word, round.letters, answer))) {
+          answer = result.answer;
+          assert.equal(
+            round.letters[answer.slots[result.position]],
+            round.word[result.position],
+          );
+          const used = answer.slots.filter((tile) => tile !== null);
+          assert.equal(new Set(used).size, used.length);
+          for (const position of answer.locked)
+            assert.equal(
+              round.letters[answer.slots[position]],
+              round.word[position],
+            );
+          assert.ok(answer.locked.length <= round.word.length);
+        }
+        while (answer.history.length) answer = undoMixTile(answer);
+        for (const position of answer.locked)
+          assert.equal(
+            round.letters[answer.slots[position]],
+            round.word[position],
+          );
+        for (let position = 0; position < round.word.length; position++)
+          if (answer.slots[position] === null) {
+            const tile = round.letters.findIndex(
+              (letter, index) =>
+                letter === round.word[position] &&
+                !answer.slots.includes(index),
+            );
+            answer = placeMixTile(answer, tile);
+          }
+        assert.equal(
+          answer.slots.map((tile) => round.letters[tile]).join(""),
+          round.word,
+        );
+        assert.equal(revealMixHint(round.word, round.letters, answer), null);
+      }
+});

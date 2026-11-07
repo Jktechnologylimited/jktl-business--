@@ -77,7 +77,10 @@ const origin = process.env.ARCADE_TEST_ORIGIN || "http://localhost:3180";
     await go("/play/word-mix");
     await page.getByRole("button", { name: /Mix it up/ }).click();
     await page.getByRole("button", { name: /Hint/ }).click();
-    await page.getByRole("status").filter({ hasText: "Starts with" }).waitFor();
+    await page
+      .getByRole("status")
+      .filter({ hasText: "placed in position" })
+      .waitFor();
     await page.getByRole("button", { name: "Pause game" }).click();
     await page
       .getByRole("heading", { name: "Let that word simmer." })
@@ -85,7 +88,14 @@ const origin = process.env.ARCADE_TEST_ORIGIN || "http://localhost:3180";
     await page.getByRole("button", { name: /Keep mixing/ }).click();
     for (const [i, round] of model.exports.mixRounds(2026).entries()) {
       await page.getByLabel("Word mixing board", { exact: true }).focus();
-      await page.keyboard.type(round.word);
+      for (let position = 0; position < round.word.length; position++) {
+        if (
+          (await page
+            .locator(`[data-answer-slot="${position}"]`)
+            .textContent()) !== round.word[position]
+        )
+          await page.keyboard.type(round.word[position]);
+      }
       await page.keyboard.press("Enter");
       if (i < 4) {
         await page.getByRole("heading", { name: "That’s the word." }).waitFor();

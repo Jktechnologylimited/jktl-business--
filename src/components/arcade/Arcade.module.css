@@ -576,3 +576,11 @@
     animation: none !important;
   }
 }
+.slots > span[data-hinted] {
+  background: #e7c77520;
+  border: 1px solid #d8ba73;
+  border-bottom-width: 3px;
+  border-radius: 8px;
+  color: #ffe2a1;
+  box-shadow: inset 0 0 12px #edca7114;
+}

@@ -381,3 +381,73 @@ export function sliceLine(
     ],
   };
 }
+
+export type MixAnswer = {
+  slots: (number | null)[];
+  locked: number[];
+  history: number[];
+};
+export function emptyMixAnswer(length: number): MixAnswer {
+  return {
+    slots: Array<number | null>(length).fill(null),
+    locked: [],
+    history: [],
+  };
+}
+export function placeMixTile(answer: MixAnswer, tile: number): MixAnswer {
+  const position = answer.slots.indexOf(null);
+  if (
+    position < 0 ||
+    tile < 0 ||
+    tile >= answer.slots.length ||
+    answer.slots.includes(tile)
+  )
+    return answer;
+  const slots = [...answer.slots];
+  slots[position] = tile;
+  return { ...answer, slots, history: [...answer.history, position] };
+}
+export function undoMixTile(answer: MixAnswer): MixAnswer {
+  const position = answer.history.at(-1);
+  if (position === undefined) return answer;
+  const slots = [...answer.slots];
+  slots[position] = null;
+  return { ...answer, slots, history: answer.history.slice(0, -1) };
+}
+export function revealMixHint(
+  word: string,
+  letters: readonly string[],
+  answer: MixAnswer,
+): { answer: MixAnswer; position: number } | null {
+  const position = answer.slots.findIndex(
+    (tile, index) =>
+      !answer.locked.includes(index) &&
+      (tile === null || letters[tile] !== word[index]),
+  );
+  if (position < 0) return null;
+  const matches = letters.flatMap((letter, tile) =>
+    letter === word[position] ? [tile] : [],
+  );
+  // Prefer an unused tile, then an incorrectly placed one. Never steal a locked hint.
+  const tile =
+    matches.find((tile) => !answer.slots.includes(tile)) ??
+    matches.find((tile) => {
+      const source = answer.slots.indexOf(tile);
+      return !answer.locked.includes(source) && letters[tile] !== word[source];
+    });
+  if (tile === undefined) return null;
+  const source = answer.slots.indexOf(tile),
+    slots = [...answer.slots];
+  if (source >= 0) slots[source] = null;
+  slots[position] = tile;
+  return {
+    position,
+    answer: {
+      slots,
+      locked: [...answer.locked, position],
+      history: answer.history.filter(
+        (index) => index !== source && index !== position,
+      ),
+    },
+  };
+}
