@@ -206,17 +206,7 @@ export async function runDailySweep(budgetMs = DEFAULT_BUDGET_MS): Promise<Daily
   });
 
   /* ---------------------------------------------------------------------- */
-  /* 3. Nudges                                                              */
-  /* ---------------------------------------------------------------------- */
-
-  await step("setup-nudges", async () => {
-    const targets = await listNudgeCandidates(200);
-    const result = await runNudges(targets);
-    return `${result.sent} sent of ${result.evaluated} evaluated`;
-  });
-
-  /* ---------------------------------------------------------------------- */
-  /* 4. Plan renewals and the morning summary                               */
+  /* 3. Renewals, account follow-ups and setup nudges                        */
   /* ---------------------------------------------------------------------- */
 
   await step("renewal-reminders", async () => {
@@ -237,6 +227,20 @@ export async function runDailySweep(budgetMs = DEFAULT_BUDGET_MS): Promise<Daily
       ),
     );
     return `${results.filter((r) => r.status === "fulfilled").length} of ${renewals.length} sent`;
+  });
+
+  await step("customer-lifecycle", async () => {
+    const { runLifecycle } = await import("@/lib/lifecycle/service");
+    const result = await runLifecycle(Math.min(12000, Math.max(0, remaining() - 2000)));
+    if ("failed" in result && (result.failed || result.unknown))
+      throw Error("Account follow-up emails need review in Emails → Account journey.");
+    return JSON.stringify(result);
+  });
+
+  await step("setup-nudges", async () => {
+    const targets = await listNudgeCandidates(200);
+    const result = await runNudges(targets);
+    return `${result.sent} sent of ${result.evaluated} evaluated`;
   });
 
   await step("daily-summary", async () => {

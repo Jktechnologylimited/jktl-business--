@@ -17,7 +17,12 @@ export default async function Layout({
           ["Compose Email", "/admin/emails"],
           ["Invite User", "/admin/emails/invite"],
           ["Email History", "/admin/emails/history"],
-          ...(can(a.role,"manage_communications",a.permissions)?[["Renewals & Reminders","/admin/emails/renewals"]]:[]),
+          ...(can(a.role, "manage_communications", a.permissions)
+            ? [
+                ["Account Journey", "/admin/emails/automation"],
+                ["Renewals & Reminders", "/admin/emails/renewals"],
+              ]
+            : []),
           ...(can(a.role, "manage_communications", a.permissions)
             ? [["Email Branding", "/admin/emails/branding"]]
             : []),
