@@ -9,6 +9,10 @@ export const BUSINESS_EMAIL_AUDIENCES = {
 export type BusinessAudience = keyof typeof BUSINESS_EMAIL_AUDIENCES;
 export const BUSINESS_OUTREACH_TEMPLATES = [
   {
+    id:"founding-setup",title:"Founding customer — hands-on setup help",audience:"SELECTED_BUSINESSES",kind:"operational",subject:"Let’s get your business website ready together",
+    body:"Hello,\n\nThank you for being one of JKTL Business’s early customers. I’d like us to help you get a website you are proud to share.\n\nReply with your business name, logo or brand colours, public contact details, the services or products you want to feature, and any photos or website examples you like. Tell us what you want visitors to do: contact you, book a service, or make an enquiry.\n\nWe can help you choose a template, organise your content, check the site on phone and desktop, and show you how to update it. You can launch with your free JKTL subdomain. If a custom domain or business email would help, we can discuss the available options and prices first.\n\n[Open JKTL Business support](https://business.jktl.com.ng/business/help) if you need hands-on editing assistance. We’ll use the support permissions you approve. Please don’t send passwords, card details or verification codes.\n\nYour feedback will help us improve. Our support does not depend on a review or permission to use your business publicly."
+  },
+  {
     id: "welcome",
     title: "Welcome & setup help",
     audience: "NEW_BUSINESSES",

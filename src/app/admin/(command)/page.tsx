@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { PageHeader } from "@/components/app/page-header";
 import { StatTile } from "@/components/app/stat-tile";
@@ -32,6 +33,7 @@ export default async function AdminHomePage() {
       </div>
       <StatTile label="Combined recorded revenue (all businesses)" value={formatKobo(overview.totalRevenueKobo)} />
 
+      <Link href="/admin/support/care" className="rounded-xl border border-border bg-surface p-4 text-sm font-semibold">Founding customer setup & priority follow-up →</Link>
       <IntegrationHealth />
 
       <AdminBusinessTable businesses={businesses} />

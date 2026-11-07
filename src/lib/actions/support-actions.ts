@@ -126,10 +126,12 @@ async function grantSupportActionCore(caseId: string, scopes: string[]) {
 }
 export async function supportQueueAction() {
   const a = await requireAdminCapability("manage_support");
+  const care=(await query("SELECT to_regclass('public.customer_care') present"))[0]?.present;
+  const careFlag=care?"EXISTS(SELECT 1 FROM customer_care f WHERE f.organization_id=c.organization_id)":"false";
   return {
     owner: a.role === "owner",
     cases: await query(
-      `SELECT c.id,c.subject,c.status,c.sensitive,c.assigned_to,c.updated_at,c.custom_project_id,o.name AS business_name FROM support_cases c JOIN organizations o ON o.id=c.organization_id WHERE $1='owner' OR(c.sensitive=false AND(c.status='WAITING' AND c.assigned_to IS NULL OR c.assigned_to=$2)) ORDER BY CASE WHEN c.status='ESCALATED' THEN 0 WHEN c.status='WAITING' THEN 1 ELSE 2 END,c.updated_at DESC LIMIT 100`,
+      `SELECT c.id,c.organization_id,c.subject,c.status,c.sensitive,c.assigned_to,c.updated_at,c.custom_project_id,${careFlag} AS care_priority,o.name AS business_name FROM support_cases c JOIN organizations o ON o.id=c.organization_id WHERE $1='owner' OR(c.sensitive=false AND(c.status='WAITING' AND c.assigned_to IS NULL OR c.assigned_to=$2)) ORDER BY CASE WHEN c.status='RESOLVED' THEN 1 ELSE 0 END,c.sensitive DESC,CASE WHEN c.status='ESCALATED' THEN 0 ELSE 1 END,CASE WHEN ${careFlag} THEN 0 ELSE 1 END,CASE WHEN c.status='WAITING' THEN 0 ELSE 1 END,c.updated_at DESC LIMIT 100`,
       [a.role, a.id],
     ),
   };

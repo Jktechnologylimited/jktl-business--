@@ -12,6 +12,7 @@ type Row = Record<string, unknown>;
 export function StaffSupport() {
   const params = useSearchParams();
   const [customOnly,setCustomOnly]=useState(false);
+  const [foundingOnly,setFoundingOnly]=useState(false);
   const [queue, setQueue] = useState<Row[]>([]),
     [isOwner, setIsOwner] = useState(false),
     [installEvent, setInstallEvent] = useState<
@@ -231,7 +232,9 @@ export function StaffSupport() {
           {queue.length === 0 && (
             <p className="text-sm text-ink-muted">No cases in your queue.</p>
           )}
-          {queue.filter(c=>!customOnly||c.custom_project_id).map((c) => (
+          <label className="flex gap-2 text-sm"><input type="checkbox" checked={foundingOnly} onChange={e=>setFoundingOnly(e.target.checked)}/>Founding accounts only</label>
+          {params.get("organization")&&<a className="text-sm underline" href="/admin/support">Clear business filter</a>}
+          {queue.filter(c=>(!customOnly||c.custom_project_id)&&(!foundingOnly||c.care_priority)&&(!params.get("organization")||c.organization_id===params.get("organization"))).map((c) => (
             <button
               key={String(c.id)}
               className="block w-full rounded-2xl border border-border bg-paper p-4 text-left text-sm"
@@ -242,6 +245,7 @@ export function StaffSupport() {
               }}
             >
               <strong>{String(c.subject)}</strong>
+              {Boolean(c.care_priority)&&<span className="block text-xs font-semibold text-primary">Founding customer · Priority follow-up</span>}
               <p className="mt-2 text-ink-muted">
                 {String(c.business_name)} · {String(c.status)}
               </p>
