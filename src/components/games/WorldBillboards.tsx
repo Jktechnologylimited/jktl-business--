@@ -119,7 +119,7 @@ export function WorldBillboards({
   }, []);
   const items = useMemo(() => boardItems(feed, now), [feed, now]);
   const matches = items.filter((i) => i.kind === "match"),
-    news = items.filter((i) => i.kind === "news" || i.kind === "trend");
+    news = items.filter((i) => i.kind === "news");
   const chosen = useMemo(() => {
     const pick = (list: BoardItem[]) =>
       list.length ? list[cycle % list.length] : null;

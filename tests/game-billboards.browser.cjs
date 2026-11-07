@@ -32,7 +32,6 @@ function fixture() {
         url: "https://www.bbc.com/news",
       },
     ],
-    trends: [],
   };
 }
 (async () => {

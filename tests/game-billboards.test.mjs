@@ -34,7 +34,6 @@ const feed = (matches) => ({
   matchesAvailable: true,
   coverage: ["Premier League"],
   headlines: [],
-  trends: [],
   checkedAt: observedAt,
 });
 test("live, fixtures, results, postponed games and stale data stay distinct", () => {
@@ -139,16 +138,7 @@ test("provider failures stay partial, news survives and fresh fetches are coales
         target: ts.ScriptTarget.ES2022,
       },
     }).outputText,
-  )(
-    (n) =>
-      n === "./model"
-        ? model
-        : n === "@/lib/google-trends"
-          ? { nigeriaTrends: async () => [] }
-          : require(n),
-    m,
-    m.exports,
-  );
+  )((n) => (n === "./model" ? model : require(n)), m, m.exports);
   try {
     const [a, b] = await Promise.all([
       m.exports.gameWorldFeed(),
@@ -158,6 +148,7 @@ test("provider failures stay partial, news survives and fresh fetches are coales
     assert.equal(calls, 4);
     assert.equal(a.matchesAvailable, true);
     assert.equal(a.matches.length, 0);
+    assert.equal(Object.hasOwn(a, "trends"), false);
     await m.exports.gameWorldFeed();
     assert.equal(calls, 4);
   } finally {

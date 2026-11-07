@@ -1,4 +1,3 @@
-import { nigeriaTrends } from "@/lib/google-trends";
 import { parseMatches, parseHeadlines, watDay, type WorldFeed } from "./model";
 const LEAGUES = [
   ["eng.1", "Premier League"],
@@ -52,7 +51,7 @@ async function collect(): Promise<WorldFeed> {
       );
     }),
   );
-  const [scores, news, trends] = await Promise.all([
+  const [scores, news] = await Promise.all([
     sports,
     fetch("https://feeds.bbci.co.uk/news/world/africa/rss.xml", {
       next: { revalidate: 900 },
@@ -60,16 +59,6 @@ async function collect(): Promise<WorldFeed> {
     })
       .then((r) => body(r, 512000))
       .then((x) => parseHeadlines(x))
-      .catch(() => []),
-    nigeriaTrends()
-      .then((items) =>
-        items.map((i) => ({
-          title: i.title,
-          url: i.searchUrl,
-          publishedAt: i.publishedAt,
-          source: "Google Trends",
-        })),
-      )
       .catch(() => []),
   ]);
   const matches = scores.flatMap((r) =>
@@ -89,7 +78,6 @@ async function collect(): Promise<WorldFeed> {
       (l) => l[1],
     ),
     headlines: news,
-    trends,
     checkedAt: new Date().toISOString(),
   };
 }

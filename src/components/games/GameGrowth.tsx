@@ -5,7 +5,7 @@ export function GameGrowth() {
   const [expanded, setExpanded] = useState(false);
   return (
     <section
-      aria-label="Trending topics and free websites"
+      aria-label="Match updates, news and free websites"
       style={{
         background: "#060e2a",
         color: "#fff",
@@ -52,7 +52,7 @@ export function GameGrowth() {
         <button
           type="button"
           aria-expanded={expanded}
-          aria-controls="jktl-trending-topics"
+          aria-controls="jktl-game-updates"
           onClick={() => setExpanded(!expanded)}
           style={{
             cursor: "pointer",
@@ -64,10 +64,10 @@ export function GameGrowth() {
             textAlign: "left",
           }}
         >
-          Matches, news & trending searches
+          Matches & news
         </button>
         {expanded && (
-          <div id="jktl-trending-topics">
+          <div id="jktl-game-updates">
             <GameUpdates />
           </div>
         )}

@@ -45,11 +45,9 @@ export function GameUpdates() {
           ))}
         </ul>
       )}
-      <h3 style={{ marginTop: 12, fontSize: 14, fontWeight: 700 }}>
-        News &amp; trends
-      </h3>
+      <h3 style={{ marginTop: 12, fontSize: 14, fontWeight: 700 }}>News</h3>
       {items
-        .filter((i) => i.kind === "news" || i.kind === "trend")
+        .filter((i) => i.kind === "news")
         .slice(0, 4)
         .map((i) => (
           <p key={i.url}>
