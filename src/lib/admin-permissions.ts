@@ -12,7 +12,7 @@
  *                        money job.
  *   affiliate_manager  — the partner side: approve, decline, payouts, and the
  *                        reports that let them do it without asking.
- *   analyst            — read-only insight. No state-changing action anywhere.
+ *   analyst            — read-only insight. May generate aggregate report snapshots, but cannot change customer or financial records.
  *
  * Existing operational roles retain their capabilities. Growth staff may have
  * supported workspace permissions individually enabled or revoked by an Owner.
@@ -67,6 +67,7 @@ export type AdminCapability =
   | "run_lead_engine"
   | "import_leads"
   | "view_insights"
+  | "export_insights"
   | "manage_team"
   | "run_daily_job";
 
@@ -108,6 +109,7 @@ const MATRIX: Record<AdminRole, AdminCapability[]> = {
     "view_insights",
   ],
   analyst: [
+    "export_insights",
     // Read-only, deliberately. An "analyst" who can approve a payout is a
     // mislabelled owner.
     "view_insights",
