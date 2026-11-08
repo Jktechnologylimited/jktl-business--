@@ -226,6 +226,17 @@ test("the final provider payload includes one shared invitation footer and reada
     });
     assert.doesNotMatch(payloads.at(-1).html, /Explore More from JKTL/);
     assert.doesNotMatch(payloads.at(-1).text, /Explore More from JKTL/);
+    for (const programme of ["partner", "affiliate"]) {
+      const portal = programme === "partner" ? "partners" : "affiliates";
+      const resetUrl = `https://business.jktl.com.ng/${portal}/reset-password?token=FIXTURE`;
+      await email.sendAffiliatePasswordResetEmail({to:"footer@example.test",name:"Test Recipient",resetUrl,expiresInMinutes:30,programme});
+      const sent = payloads.at(-1);
+      assert.match(sent.subject, programme === "partner" ? /JKTL Partners/ : /JKTL Affiliates/);
+      assert.ok(sent.html.includes(resetUrl));
+      assert.ok(sent.text.includes(resetUrl));
+      assert.ok(!sent.html.includes(`/${programme === "partner" ? "affiliates" : "partners"}/reset-password`));
+      assert.doesNotMatch(sent.html, /Explore More from JKTL/);
+    }
     for (const category of layout.MAIL_CATEGORIES.filter(
       (c) => c !== "security" && c !== "marketing",
     )) {

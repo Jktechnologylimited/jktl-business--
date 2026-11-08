@@ -168,13 +168,14 @@ export async function requestAffiliatePasswordReset(
   email: string,
   requestedIp = "",
   now: Date = new Date(),
+  programme: "partner" | "affiliate" = "affiliate",
 ): Promise<ResetRequestOutcome> {
   const sql = getSql();
   const normalized = email.trim().toLowerCase();
   if (!normalized) return { sent: false, rateLimited: false };
 
   const rows =
-    await sql`SELECT id, status, name FROM affiliates WHERE email = ${normalized} ORDER BY created_at ASC,id LIMIT 1`;
+    await sql`SELECT id, status, name FROM affiliates WHERE email = ${normalized} AND programme = ${programme} ORDER BY created_at ASC,id LIMIT 1`;
   const affiliate = rows[0];
   // Only an active partner can reset. A pending applicant has a password but no
   // approved account, and a suspended one must not be able to get back in.
@@ -240,6 +241,7 @@ export type ResetLookup =
 export async function lookupAffiliatePasswordReset(
   token: string,
   now: Date = new Date(),
+  programme: "partner" | "affiliate" = "affiliate",
 ): Promise<ResetLookup> {
   if (!isPlausibleToken(token)) return { ok: false, state: "expired" };
   const sql = getSql();
@@ -247,7 +249,7 @@ export async function lookupAffiliatePasswordReset(
     SELECT r.id, r.affiliate_id, r.expires_at, r.used_at, r.superseded_at, a.name, a.email, a.status
     FROM affiliate_password_resets r
     JOIN affiliates a ON a.id = r.affiliate_id
-    WHERE r.token_hash = ${hashResetToken(token)}
+    WHERE r.token_hash = ${hashResetToken(token)} AND a.programme = ${programme}
   `;
   const row = rows[0];
   if (!row) return { ok: false, state: "expired" };
@@ -287,28 +289,36 @@ export async function lookupAffiliatePasswordReset(
 export async function completeAffiliatePasswordReset(params: {
   token: string;
   newPassword: string;
+  programme?: "partner" | "affiliate";
 }): Promise<
   { ok: true; affiliateId: string } | { ok: false; state: ResetTokenState }
 > {
   const sql = getSql();
-  const lookup = await lookupAffiliatePasswordReset(params.token);
+  const programme = params.programme ?? "affiliate";
+  const lookup = await lookupAffiliatePasswordReset(
+    params.token,
+    new Date(),
+    programme,
+  );
   if (!lookup.ok) return lookup;
 
   const passwordHash = await bcrypt.hash(params.newPassword, 10);
 
-  // Claim the token first. Only the call that flips `used_at` from NULL proceeds,
-  // so a double submission cannot set the password twice.
+  // Claim, account-status/programme recheck, password update and session revocation are atomic.
   const claimed = await sql`
-    UPDATE affiliate_password_resets SET used_at = now()
-    WHERE id = ${lookup.resetId} AND used_at IS NULL AND superseded_at IS NULL AND expires_at > now()
-    RETURNING id
+    WITH claimed AS (
+      UPDATE affiliate_password_resets r SET used_at=now()
+      FROM affiliates a WHERE r.id=${lookup.resetId} AND r.affiliate_id=a.id
+      AND a.programme=${programme} AND a.status='active'
+      AND r.used_at IS NULL AND r.superseded_at IS NULL AND r.expires_at>now()
+      RETURNING r.affiliate_id
+    ), changed AS (
+      UPDATE affiliates a SET password_hash=${passwordHash} FROM claimed c WHERE a.id=c.affiliate_id RETURNING a.id
+    ), ended AS (
+      DELETE FROM affiliate_sessions s USING changed c WHERE s.affiliate_id=c.id RETURNING s.id
+    ) SELECT id FROM changed
   `;
   if (!claimed[0]) return { ok: false, state: "used" };
-
-  await sql`UPDATE affiliates SET password_hash = ${passwordHash} WHERE id = ${lookup.affiliateId}`;
-
-  // Kicked out everywhere. A stolen session must not survive the reset.
-  await sql`DELETE FROM affiliate_sessions WHERE affiliate_id = ${lookup.affiliateId}`;
 
   return { ok: true, affiliateId: lookup.affiliateId };
 }
@@ -325,4 +335,18 @@ export async function pruneAffiliatePasswordResets(
     RETURNING id
   `;
   return rows.length;
+}
+
+/** Old emailed partner links used the affiliate URL. Resolve only a plausible, stored token. */
+export async function programmeForResetToken(
+  token: string,
+): Promise<"partner" | "affiliate" | null> {
+  if (!isPlausibleToken(token)) return null;
+  const rows =
+    await getSql()`SELECT a.programme FROM affiliate_password_resets r JOIN affiliates a ON a.id=r.affiliate_id WHERE r.token_hash=${hashResetToken(token)} LIMIT 1`;
+  return rows[0]?.programme === "partner"
+    ? "partner"
+    : rows[0]?.programme === "affiliate"
+      ? "affiliate"
+      : null;
 }

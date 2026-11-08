@@ -637,14 +637,16 @@ export async function sendAffiliatePasswordResetEmail(params: {
   name: string;
   resetUrl: string;
   expiresInMinutes: number;
+  programme?: "partner" | "affiliate";
 }): Promise<EmailResult> {
   const { to, name, resetUrl, expiresInMinutes } = params;
+  const programme = params.programme === "partner" ? "partner" : "affiliate";
   const firstName = name.trim().split(/\s+/)[0] || "there";
 
   const html = wrapper(`
-    <p style="margin:0 0 12px;font-size:15px"><strong>Reset your partner password</strong></p>
+    <p style="margin:0 0 12px;font-size:15px"><strong>Reset your ${programme} password</strong></p>
     <p>Hi ${escapeHtml(firstName)},</p>
-    <p>We received a request to reset the password on your JKTL Business partner account.</p>
+    <p>We received a request to reset the password on your JKTL ${programme === "partner" ? "Partners" : "Affiliates"} account.</p>
     <p style="margin:22px 0">
       <a href="${escapeHtml(resetUrl)}" style="background:#112055;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">Set a new password</a>
     </p>
@@ -656,7 +658,7 @@ export async function sendAffiliatePasswordResetEmail(params: {
   const text = [
     `Hi ${firstName},`,
     ``,
-    `We received a request to reset the password on your JKTL Business partner account.`,
+    `We received a request to reset the password on your JKTL ${programme === "partner" ? "Partners" : "Affiliates"} account.`,
     ``,
     `Set a new password: ${resetUrl}`,
     ``,
@@ -664,7 +666,7 @@ export async function sendAffiliatePasswordResetEmail(params: {
     `If you did not ask for this, ignore this email — your password has not changed.`,
   ].join("\n");
 
-  return send(to, "Reset your JKTL Business partner password", html, text, {
+  return send(to, `Reset your JKTL ${programme === "partner" ? "Partners" : "Affiliates"} password`, html, text, {
     category: "security",
   });
 }
@@ -899,7 +901,7 @@ export async function sendPartnerApprovedEmail(p: {
     p.to,
     "Your JKTL Partner account is approved",
     wrapper(
-      `<h2>Welcome to JKTL Partners</h2><p>Hi ${escape(p.name)}, your application has been approved.</p><p>${p.needsPasswordSetup ? `Your earlier application did not include a password. <a href="${escape((process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng") + "/affiliates/forgot-password")}">Request a secure password setup link</a> using your approved email address.` : `Use your existing application password to <a href="${escape(p.signInUrl)}">sign in to your partner workspace</a>.`}</p><p>Your agreed commission rate is ${p.commissionBps / 100}% on qualifying purchases under your partner agreement. No signup or fixed bonus is implied.</p><p>Referral link: ${escape(p.referralLink)}</p>`,
+      `<h2>Welcome to JKTL Partners</h2><p>Hi ${escape(p.name)}, your application has been approved.</p><p>${p.needsPasswordSetup ? `Your earlier application did not include a password. <a href="${escape((process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng") + "/partners/forgot-password")}">Request a secure password setup link</a> using your approved email address.` : `Use your existing application password to <a href="${escape(p.signInUrl)}">sign in to your partner workspace</a>.`}</p><p>Your agreed commission rate is ${p.commissionBps / 100}% on qualifying purchases under your partner agreement. No signup or fixed bonus is implied.</p><p>Referral link: ${escape(p.referralLink)}</p>`,
     ),
     `Your JKTL Partner account is approved. ${p.needsPasswordSetup ? "Request secure password setup from the programme password reset page using your approved email. " : ""}Sign in: ${p.signInUrl}. Your agreed rate is ${p.commissionBps / 100}% on qualifying purchases under your agreement. Referral link: ${p.referralLink}.`,
     { category: "partner" },

@@ -57,6 +57,7 @@ export default async function AffiliateLayout({
         },
         { href: "/affiliates/resources", label: "Marketing Materials" },
         { href: "/affiliates/support", label: "Support" },
+        { href: "/help?topic=affiliates", label: "Knowledge base" },
         { href: "/affiliates/settings", label: "Settings" },
       ]}
       logout={affiliateLogoutAction}

@@ -67,6 +67,7 @@ export type AdminCapability =
   | "run_lead_engine"
   | "import_leads"
   | "view_insights"
+  | "view_knowledge"
   | "export_insights"
   | "manage_team"
   | "run_daily_job";
@@ -122,6 +123,7 @@ export function can(
   overrides: Record<string, boolean> = {},
 ): boolean {
   if (role === "owner") return true;
+  if (capability === "view_knowledge") return role in MATRIX;
   if (
     role === "editor" &&
     (EDITORIAL_PERMISSIONS as readonly string[]).includes(capability)
@@ -202,6 +204,7 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
+  {href:"/admin/knowledge",label:"Knowledge base",capability:"view_knowledge"},
   {href:"/admin/chatbot",label:"AI Chatbot",capability:"manage_chatbots"},
   {
     href: "/admin/emails",

@@ -19,17 +19,7 @@ import {
   referralValue,
 } from "@/lib/affiliate-report";
 import { periodKeyFor } from "@/lib/ai/pricing";
-import {
-  RESET_TOKEN_TTL_MINUTES,
-  resetFailureMessage,
-  validateNewPassword,
-} from "@/lib/affiliate-reset-token";
-import {
-  completeAffiliatePasswordReset,
-  lookupAffiliatePasswordReset,
-  requestAffiliatePasswordReset,
-} from "@/lib/db/affiliate-auth";
-import { sendAffiliatePasswordResetEmail } from "@/lib/email";
+import {requestProgrammePasswordResetAction,checkProgrammeResetTokenAction,resetProgrammePasswordAction} from "./programme-password-actions";
 import {
   listBanks,
   resolveAccountNumber,
@@ -441,67 +431,11 @@ export async function changeAffiliatePasswordAction(
  * on this request, and a partner staring at a "check your inbox" message deserves
  * to know the mail actually left.
  */
-export async function requestAffiliatePasswordResetAction(
-  email: string,
-): Promise<ActionResult<{ message: string }>> {
-  const GENERIC =
-    "If that email belongs to an approved partner, a reset link is on its way. Check your inbox and your spam folder.";
-  try {
-    const address = email.trim();
-    if (!address || !address.includes("@"))
-      return { ok: false, error: "Enter the email address you applied with." };
-
-    const outcome = await requestAffiliatePasswordReset(address);
-
-    if (outcome.rateLimited) {
-      return {
-        ok: false,
-        error:
-          "That address has already been sent a few reset links in the last hour. Wait a little, then try again, or check your inbox.",
-      };
-    }
-
-    if (outcome.sent && outcome.token && outcome.recipient) {
-      const origin = appOrigin();
-      await sendAffiliatePasswordResetEmail({
-        to: outcome.recipient.email,
-        name: outcome.recipient.name,
-        resetUrl: `${origin}/affiliates/reset-password?token=${encodeURIComponent(outcome.token)}`,
-        expiresInMinutes: RESET_TOKEN_TTL_MINUTES,
-      }).catch((err) => {
-        // Logged, never surfaced: whether mail succeeded is not something to
-        // reveal per-address, or the response stops being generic.
-        console.error("affiliate reset email failed:", err);
-      });
-    }
-
-    return { ok: true, data: { message: GENERIC } };
-  } catch (err) {
-    console.error(err);
-    // Still generic. An error path that behaves differently for a known address
-    // is the same oracle by another route.
-    return { ok: true, data: { message: GENERIC } };
-  }
-}
+export async function requestAffiliatePasswordResetAction(email:string):Promise<ActionResult<{message:string}>> { return requestProgrammePasswordResetAction("affiliate",email); }
 
 /** Checks a token before rendering the form, so an expired link says so on the
  * page rather than after the partner has typed a password twice. */
-export async function checkAffiliateResetTokenAction(
-  token: string,
-): Promise<ActionResult<{ name: string; email: string }>> {
-  try {
-    const lookup = await lookupAffiliatePasswordReset(token);
-    if (!lookup.ok)
-      return { ok: false, error: resetFailureMessage(lookup.state) };
-    return { ok: true, data: { name: lookup.name, email: lookup.email } };
-  } catch (err) {
-    console.error(err);
-    return {
-      ok: false,
-      error: "We couldn't check that link. Try opening it again.",
-    };
-  }
-}
+export async function checkAffiliateResetTokenAction(token:string):Promise<ActionResult<{name:string;email:string}>> { return checkProgrammeResetTokenAction("affiliate",token); }
 
 /**
  * Completes the reset.
@@ -511,34 +445,4 @@ export async function checkAffiliateResetTokenAction(
  * reason somebody does this is that they think their password has leaked, and
  * leaving the other session alive would make the whole exercise decorative.
  */
-export async function resetAffiliatePasswordAction(input: {
-  token: string;
-  password: string;
-  confirm: string;
-}): Promise<ActionResult<{ message: string }>> {
-  try {
-    const check = validateNewPassword(input.password, input.confirm);
-    if (!check.ok) return { ok: false, error: check.error };
-
-    const result = await completeAffiliatePasswordReset({
-      token: input.token,
-      newPassword: input.password,
-    });
-    if (!result.ok)
-      return { ok: false, error: resetFailureMessage(result.state) };
-
-    return {
-      ok: true,
-      data: {
-        message:
-          "Your password is set. Sign in with your new password — any other device you were signed in on has been signed out.",
-      },
-    };
-  } catch (err) {
-    console.error(err);
-    return {
-      ok: false,
-      error: "Couldn't reset your password just now. Please try again.",
-    };
-  }
-}
+export async function resetAffiliatePasswordAction(input:{token:string;password:string;confirm:string}):Promise<ActionResult<{message:string}>> { return resetProgrammePasswordAction("affiliate",input); }

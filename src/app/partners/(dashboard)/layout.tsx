@@ -43,6 +43,7 @@ export default async function Layout({
             <Link href="https://jktl.com.ng/partners">Programme</Link>
             <Link href="/partners/workspace">Workspace</Link>
             <Link href="/partners/support">Support</Link>
+            <Link href="/help?topic=partners">Knowledge base</Link>
             <Link href="/partners/commercial">Commercial terms</Link>
             <Link href="/partners/resources">Resources</Link>
             <Link href="/partners/clients">Clients</Link>

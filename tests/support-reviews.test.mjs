@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import ts from "typescript";
 import { PGlite } from "@electric-sql/pglite";
 import * as model from "../src/lib/support/model.ts";
-import * as knowledge from "../src/lib/support/knowledge.ts";
+
 import { can, navFor, normaliseRole } from "../src/lib/admin-permissions.ts";
 const require = createRequire(import.meta.url);
 function load(file, deps) {
@@ -34,11 +34,20 @@ const org = "30000000-0000-4000-8000-000000000001",
   owner = "30000000-0000-4000-8000-000000000006",
   agentB = "30000000-0000-4000-8000-000000000007",
   sessionId = "30000000-0000-4000-8000-000000000008";
+const knowledge = load("../src/lib/support/knowledge.ts", {
+  "@/lib/knowledge/additions": load("../src/lib/knowledge/additions.ts", {}),
+});
+
 test("Support is a scoped role; guides cover real flows and refuse credential harvesting", () => {
   assert.equal(normaliseRole("support"), "support");
   assert.deepEqual(
     navFor("support").map((n) => n.href),
-    ["/admin/partner-support", "/admin/support", "/admin/domains"],
+    [
+      "/admin/knowledge",
+      "/admin/partner-support",
+      "/admin/support",
+      "/admin/domains",
+    ],
   );
   for (const cap of [
     "manage_team",
@@ -127,7 +136,9 @@ test("Support permissions, handoff, customer consent, reviews and push use actua
   await db.exec(
     "ALTER TABLE support_cases ADD COLUMN custom_project_id uuid, ADD COLUMN project_category text;CREATE TABLE custom_projects(id uuid PRIMARY KEY,organization_id uuid,name text,website_url text,status text,cms_tested_at timestamptz,cms_fields text[],billing_only boolean DEFAULT false)",
   );
-  await db.exec("CREATE TABLE support_case_attachments(id uuid,case_id uuid,file_name text,mime text,size integer,created_at timestamptz DEFAULT now())");
+  await db.exec(
+    "CREATE TABLE support_case_attachments(id uuid,case_id uuid,file_name text,mime text,size integer,created_at timestamptz DEFAULT now())",
+  );
   let session = { organizationId: org, userId: user },
     admin = { id: agent, role: "support" },
     ai = false,

@@ -1,3 +1,4 @@
+import { PLATFORM_GUIDES } from "@/lib/knowledge/additions";
 export type HelpGuide = {
   id: string;
   title: string;
@@ -9,6 +10,7 @@ export type HelpGuide = {
   escalate: string;
 };
 export const HELP_GUIDES: HelpGuide[] = [
+  ...PLATFORM_GUIDES,
  {id:'ai-chatbot',title:'Set up JKTL AI Chatbot',tags:['chatbot','AI','embed','FAQ','knowledge','WhatsApp','conversation','allowance'],route:'/business/chatbot',summary:'Activate a free chatbot, add approved knowledge and connect your website. Existing subscriptions provide larger limits.',steps:['Open More → AI Chatbot and create an assistant name and unique public slug.','Add approved FAQs and business details. Test the standalone chat link; without a configured AI provider the widget honestly uses knowledge mode.','Under Installation, enable the bot on your published JKTL builder website, or register your exact external hostname and add the supplied DNS TXT record. Check DNS before copying the verified widget installation code.','AI usage resets each UTC calendar month. Limits are shared across all chatbots in your organisation. FAQ answers and configured contact options remain available after AI limits are reached.','Read Conversations & Leads for visitor requests. Appointment requests remain pending until the business confirms them in Bookings. WhatsApp opens a separate chat; it is not an in-app live agent.','An approved partner needs the explicit Manage Chatbot client permission. Website-editing access alone is insufficient.'],problems:['Widget unavailable: confirm the bot is enabled, the exact hostname is verified, and the public widget URL deployment check passed.','AI unavailable: knowledge mode still works. JKTL must configure a provider key, verify model/token pricing and enable AI generation before live AI replies are offered.','Usage reached: review current plan limits and choose an existing JKTL plan; there is no separate mandatory chatbot subscription.'],escalate:'Ask JKTL support about deployment, domain verification, usage discrepancies or provider availability. Never send an API key or visitor session token.'},
   {
     id: "first-website",
@@ -521,7 +523,7 @@ export const HELP_GUIDES: HelpGuide[] = [
       "For an existing receptionist account, direct billing, history and cancellation questions to Help & support. Existing records are preserved; never promise an automatic restart.",
     ],
     problems: [
-      "No responses: check activation/configuration and communication availability before testing again.",
+      "Call handling is intentionally paused: do not test activation or offer automated bookings until launch is authorized.",
       "Wrong business facts: correct the authoritative business/service settings; a website headline alone may not update receptionist configuration.",
       "Need provider credentials or number changes: request specialist assistance instead of sharing keys in chat.",
     ],
@@ -976,7 +978,7 @@ export function relevantGuides(question: string) {
       question,
     )
   )
-    return ["daily-tools", "first-website", "ai-receptionist"].map((id) =>
+    return ["daily-tools", "first-website", "platform-map"].map((id) =>
       HELP_GUIDES.find((g) => g.id === id)!,
     );
   if (/industr(?:y|ies)/i.test(question))
@@ -1032,7 +1034,7 @@ export function relevantGuides(question: string) {
 }
 export function guideReply(question: string) {
   const guides = relevantGuides(question);
-  const g = guides[0] || HELP_GUIDES[0];
+  const g = guides[0] || HELP_GUIDES.find(g=>g.id==="first-website")!;
   return {
     guides: guides.length ? guides : [g],
     reply:

@@ -15,6 +15,12 @@ export function HelpLibrary() {
     <section className="space-y-5" style={{ overflowWrap: "anywhere" }}>
       <div>
         <h2 className="text-2xl font-semibold">Step-by-step help library</h2>
+        <Link
+          href="/help"
+          className="mt-3 inline-block text-sm font-semibold text-blue-600 underline"
+        >
+          Open the full searchable knowledge base →
+        </Link>
         <p className="mt-2 text-sm text-ink-muted">
           Practical instructions, common errors and when to ask for specialist
           help. Updated for the current JKTL Business workflows.
@@ -62,6 +68,12 @@ export function HelpLibrary() {
             <strong>When to escalate</strong>
             <p>{g.escalate}</p>
           </div>
+          <Link
+            href={`/help/${g.id}`}
+            className="mb-4 block text-sm font-semibold text-blue-600 underline"
+          >
+            Read this guide on its own page →
+          </Link>
           <Link
             className="text-sm font-semibold text-primary underline"
             href={g.route}

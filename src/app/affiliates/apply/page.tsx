@@ -54,7 +54,7 @@ export default function AffiliateApplyPage() {
           approved.
         </p>
         {/*
-          The address is spelled out because it is the thing an approved partner
+          The address is spelled out because it is the thing an approved affiliate
           needs and is most likely to ask for — "where do I sign in?" — and
           because `applying` and `signing in` are two different pages that look
           identical to somebody who has only seen one of them.
@@ -110,7 +110,7 @@ export default function AffiliateApplyPage() {
         </Button>
       </form>
       <p className="mt-6 text-center text-xs text-ink-muted">
-        Already applied, or already a partner?{" "}
+        Already applied, or already an affiliate?{" "}
         <Link href="/affiliates/login" className="font-medium text-primary">
           Sign in at business.jktl.com.ng/affiliates/login
         </Link>

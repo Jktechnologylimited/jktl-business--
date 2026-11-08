@@ -1,4 +1,5 @@
 "use client";
+import {PasswordInput} from "@/components/ui/password-input";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -112,9 +113,8 @@ export function PartnerAuth({ apply = false }: { apply?: boolean }) {
             </label>
             <label>
               Password
-              <input
+              <PasswordInput
                 name="password"
-                type="password"
                 required
                 minLength={apply ? 12 : 1}
                 maxLength={128}
@@ -147,8 +147,7 @@ export function PartnerAuth({ apply = false }: { apply?: boolean }) {
           <Link href={apply ? "/partners/login" : "/partners/apply"}>
             {apply ? "Partner sign in" : "Apply as a partner"}
           </Link>
-          <Link href="/affiliates/forgot-password">Reset password</Link>
-          <Link href="/affiliates/login">Affiliate sign in</Link>
+          <Link href="/partners/forgot-password">Reset password</Link>
         </div>
       </div>
     </SignInFrame>
