@@ -1,8 +1,9 @@
 "use client";
+import { SiteList } from "@/components/websites/site-list";
+import { AddressPicker } from "@/components/websites/address-picker";
 import { T } from "@/components/i18n/LanguageProvider";
 import Link from "next/link";
 import { useState } from "react";
-import { TemplateGallery } from "@/components/templates/TemplateGallery";
 import { useBusinessStore } from "@/lib/store";
 import { getWebsiteTemplate } from "@/lib/website-templates";
 import { CustomDomainField } from "@/components/website/custom-domain-field";
@@ -53,67 +54,45 @@ export default function WebsitePage() {
   }
   return (
     <div className="space-y-7">
-      <Link href="/business/chatbot" className="rounded-xl border border-border p-3 text-sm text-primary">Website → AI Chatbot → Enable</Link>
-      <div className="flex flex-wrap justify-between gap-4">
-        <div>
-          <Link href="/business/domains" className="text-sm font-medium text-primary">Buy or connect a domain — keep your selected website →</Link>
-      <h1 className="font-display text-3xl">
-            <T>Websites & landing pages</T>
-          </h1>
+      <SiteList mode={mode} />
+      {template && (
+        <section className="rounded-xl border border-border bg-surface p-5">
+          <h2 className="font-semibold">
+            {template
+              ? template.name
+              : "Choose your website or landing-page design"}
+          </h2>
           <p className="mt-2 text-sm text-ink-muted">
-            <T>
-              Choose a 2026 design, start blank, edit your content and measure
-              published results.
-            </T>
+            {template
+              ? `${profile.published ? "Published" : "Unpublished"} · ${profile.subdomain}.jktl.com.ng`
+              : "The fixed-layout editor has been replaced by the template editor. Any existing published site stays online until you save a new design."}
           </p>
-        </div>
-        <Link
-          className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-primary"
-          href="/business/website/metrics"
-        >
-          <T>View website metrics →</T>
-        </Link>
-      </div>
-      <section className="rounded-xl border border-border bg-surface p-5">
-        <h2 className="font-semibold">
-          {template
-            ? template.name
-            : "Choose your website or landing-page design"}
-        </h2>
-        <p className="mt-2 text-sm text-ink-muted">
-          {template
-            ? `${profile.published ? "Published" : "Unpublished"} · ${profile.subdomain}.jktl.com.ng`
-            : "The fixed-layout editor has been replaced by the template editor. Any existing published site stays online until you save a new design."}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-4 text-sm text-primary">
-          <Link
-            className="underline"
-            href={`/business/website/template?template=${template?.id || "blank-website"}`}
-          >
-            {template ? "Edit selected template" : "Start a blank website"} →
-          </Link>
-          <Link
-            className="underline"
-            href="/business/website/template?template=blank-landing"
-          >
-            <T>Start a blank landing page →</T>
-          </Link>
-        </div>
-      </section>
+          <div className="mt-4 flex flex-wrap gap-4 text-sm text-primary">
+            <Link
+              className="underline"
+              href={`/business/website/template?template=${template?.id || "blank-website"}`}
+            >
+              {template ? "Edit selected template" : "Start a blank website"} →
+            </Link>
+            <Link
+              className="underline"
+              href="/business/website/new?template=blank-landing"
+            >
+              <T>Start a blank landing page →</T>
+            </Link>
+          </div>
+        </section>
+      )}
       <details className="rounded-xl border border-border bg-surface p-5">
         <summary className="cursor-pointer font-semibold">
-          <T>Website address, business logo & custom domain</T>
+          <T>Original website address, business logo & custom domain</T>
         </summary>
         <div className="mt-5 space-y-5">
-          <label className="block text-sm">
-            <T>JKTL website address</T>
-            <input
-              className="mt-2 block w-full rounded-lg border border-border bg-paper p-3"
-              value={subdomain}
-              onChange={(e) => setSubdomain(e.target.value)}
-              autoCapitalize="off"
-            />
-          </label>
+          <AddressPicker
+            value={subdomain}
+            onChange={setSubdomain}
+            exclude="primary"
+          />
           <LogoUploadField
             businessName={profile.displayName}
             value={logoUrl}
@@ -142,7 +121,6 @@ export default function WebsitePage() {
           />
         </div>
       </details>
-      <TemplateGallery insideBusiness />
     </div>
   );
 }

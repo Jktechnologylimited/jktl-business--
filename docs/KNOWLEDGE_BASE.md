@@ -2,7 +2,7 @@
 
 Public entry: `https://business.jktl.com.ng/help` (no sign-in to read). Team entry: **Team → Knowledge base**, `/admin/knowledge` (authenticated Team access).
 
-The initial release contains 55 public guides and 15 private Team runbooks. Topics cover setup, templates and publishing, domains and renewals, Business Email, checkout and subscriptions, everyday business tools, account/PWA/security, support, Partners, Affiliates, Custom projects, chatbot, games and public resources. Team runbooks cover permissions/invitations, support handling, customer care, service fulfillment, branded email, lifecycle/renewal operations, partner percentages, distribution finance, Custom integration/billing, Editorial, investor reports and Growth/Gaming.
+The initial release contains 56 public guides and 15 private Team runbooks. Topics cover setup, templates and publishing, domains and renewals, Business Email, checkout and subscriptions, everyday business tools, account/PWA/security, support, Partners, Affiliates, Custom projects, chatbot, games and public resources. Team runbooks cover permissions/invitations, support handling, customer care, service fulfillment, branded email, lifecycle/renewal operations, partner percentages, distribution finance, Custom integration/billing, Editorial, investor reports and Growth/Gaming.
 
 ## Reading and sharing
 

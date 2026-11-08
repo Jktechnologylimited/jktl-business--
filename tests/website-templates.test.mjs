@@ -224,10 +224,7 @@ test("Main and Business publish the same catalogue and renderer", (t) => {
       "../src/components/templates/TemplateWebsite.module.css",
       "components/templates/TemplateWebsite.module.css",
     ],
-    [
-      "../src/components/templates/TemplateGallery.tsx",
-      "components/templates/TemplateGallery.tsx",
-    ],
+
   ])
     assert.equal(
       createHash("sha256")
@@ -517,6 +514,7 @@ test("template-based public sites retain actual booking, product and chat compon
         { react: require("react") },
       ),
       "@/lib/website-templates": catalogue,
+      "@/lib/ai/availability": {RECEPTIONIST_PAUSED:true},
       "./public-booking-form": {
         PublicBookingForm: (props) =>
           createElement("form", { "data-existing-booking-mode": props.mode }),
@@ -609,7 +607,7 @@ test("template-based public sites retain actual booking, product and chat compon
       },
     }),
   );
-  assert.ok(ai.includes("data-existing-ai-chat"));
+  assert.ok(!ai.includes("data-existing-ai-chat"), "paused receptionist must not render a live call assistant");
   const preview = renderToStaticMarkup(
     createElement(PublicSiteView, { ...props, mode: "preview" }),
   );

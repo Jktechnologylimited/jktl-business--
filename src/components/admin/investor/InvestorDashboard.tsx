@@ -104,7 +104,7 @@ export function InvestorDashboard({ report }: { report: InvestorReport }) {
           }
         />
         <Tile
-          label="Published JKTL templates · current"
+          label="Businesses with a published website · current"
           value={a ? String(a.published) : "Unavailable"}
           detail={
             a

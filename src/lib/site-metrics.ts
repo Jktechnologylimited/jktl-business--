@@ -34,8 +34,23 @@ export async function recordSiteEvent(
     eventId: string;
     event: string;
     kind: string;
+    siteId?: string | null;
+    subdomain?: string;
   },
 ) {
+  if (event.subdomain)
+    return query(
+      `INSERT INTO website_metric_events(organization_id,event_id,template_id,page_kind,event_type,site_id,subdomain) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(organization_id,event_id) DO NOTHING RETURNING event_id`,
+      [
+        event.organizationId,
+        event.eventId,
+        event.templateId,
+        event.kind,
+        event.event,
+        event.siteId || null,
+        event.subdomain,
+      ],
+    );
   return query(
     `INSERT INTO website_metric_events(organization_id,event_id,template_id,page_kind,event_type) VALUES($1,$2,$3,$4,$5) ON CONFLICT(organization_id,event_id) DO NOTHING RETURNING event_id`,
     [
@@ -47,9 +62,15 @@ export async function recordSiteEvent(
     ],
   );
 }
-export async function siteMetrics(query: MetricsQuery, organizationId: string) {
+export async function siteMetrics(
+  query: MetricsQuery,
+  organizationId: string,
+  siteId?: string,
+) {
   return query(
-    `SELECT template_id,page_kind,COUNT(*) FILTER(WHERE event_type='view')::integer AS views,COUNT(*) FILTER(WHERE event_type='cta')::integer AS cta_clicks,COUNT(*) FILTER(WHERE event_type='contact')::integer AS contact_clicks,COUNT(*) FILTER(WHERE event_type='booking')::integer AS bookings FROM website_metric_events WHERE organization_id=$1 AND created_at>=now()-interval '30 days' GROUP BY template_id,page_kind ORDER BY views DESC`,
-    [organizationId],
+    `SELECT template_id,page_kind,COUNT(*) FILTER(WHERE event_type='view')::integer AS views,COUNT(*) FILTER(WHERE event_type='cta')::integer AS cta_clicks,COUNT(*) FILTER(WHERE event_type='contact')::integer AS contact_clicks,COUNT(*) FILTER(WHERE event_type='booking')::integer AS bookings FROM website_metric_events WHERE organization_id=$1 AND created_at>=now()-interval '30 days' ${siteId === "primary" ? "AND site_id IS NULL" : siteId ? "AND site_id=$2::uuid" : ""} GROUP BY template_id,page_kind ORDER BY views DESC`,
+    siteId && siteId !== "primary"
+      ? [organizationId, siteId]
+      : [organizationId],
   );
 }

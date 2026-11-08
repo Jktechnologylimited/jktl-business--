@@ -1,6 +1,44 @@
 import type { HelpGuide } from "@/lib/support/knowledge";
 export const PLATFORM_GUIDES: HelpGuide[] = [
   {
+    id: "multiple-websites",
+    title: "Create multiple websites and choose available subdomains",
+    tags: [
+      "multiple",
+      "websites",
+      "sites",
+      "subdomain",
+      "address",
+      "suggestions",
+      "publish",
+      "upgrade",
+      "custom",
+      "blank",
+    ],
+    route: "/business/website",
+    summary:
+      "Keep separate template websites or landing pages in one Business account, each with its own content and JKTL address.",
+    steps: [
+      "Open Your websites. Published sites, drafts and mapped Custom projects are listed here. Your existing original website stays in place.",
+      "Choose Create website. Enter a website name and select an industry template, a blank website for a custom design, or a blank landing page. Browsing the visual template library also opens this creation flow.",
+      "Type a subdomain of 3–30 characters. Wait for the availability result. Use an available suggestion if the name is taken; availability is checked again when you create the draft. Reserved platform names cannot be used.",
+      "Create the draft and edit its content. Each added website has an independent draft and revision; saving it does not replace your other sites. Only authorized owners and managers can save or publish.",
+      "Preview the desktop and mobile layout, replace sample details and reviews, then enable Publish website and save. A successful live publication returns you to Your websites.",
+      "Use the always-visible website URL, Copy link or View website action on the site card. A reserved draft address becomes publicly accessible only after publication.",
+      "Upgrade remains visible in the app navigation, website list and editor. Existing account billing and checkout rules apply; creating another draft does not itself make a payment or subscription.",
+      "Open Metrics from a site card to view that website’s recorded events. The combined Metrics link shows activity across the business account.",
+      "Existing connected Custom projects appear with their own workspace and website link. A blank template is an editable custom design; it does not automatically import source code or connect a separately hosted project. Original-site domain settings remain in the original website settings section.",
+    ],
+    problems: [
+      "Address taken at save: another account may have claimed it since the check. Choose a suggestion and retry; never assume a search result reserves the name.",
+      "A version conflict means another session changed that site. Reload the latest site before saving; do not overwrite a different website.",
+      "A draft public URL does not display a live site until publishing succeeds.",
+    ],
+    escalate:
+      "Ask support about missing site cards, an address collision or a paid upgrade discrepancy. Do not send passwords, database URLs or source-code secrets.",
+  },
+
+  {
     id: "platform-map",
     title: "Find your way around the JKTL platform",
     tags: [

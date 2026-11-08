@@ -1,6 +1,7 @@
 "use client";
 import { T, useLanguage } from "@/components/i18n/LanguageProvider";
 import Link from "next/link";
+import { useBusinessStore } from "@/lib/store";
 import { useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Search, X } from "lucide-react";
@@ -35,6 +36,7 @@ export function TemplateGallery({
   initialType?: "all" | "website" | "landing" | "blank";
 }) {
   const { t } = useLanguage();
+  const mode = useBusinessStore((s) => s.mode);
   const reducedMotion = useReducedMotion();
   const [type, setType] = useState(initialType),
     [limit, setLimit] = useState(24),
@@ -87,7 +89,9 @@ export function TemplateGallery({
   }
   const editPath = (id: string) =>
     insideBusiness
-      ? templateEditorPath(id)
+      ? mode === "demo"
+        ? templateEditorPath(id)
+        : `/business/website/new?template=${encodeURIComponent(id)}`
       : `https://business.jktl.com.ng${templateLoginPath(id)}`;
   return (
     <section

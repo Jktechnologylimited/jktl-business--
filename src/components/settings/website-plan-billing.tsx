@@ -28,17 +28,23 @@ type Data = Extract<
   Awaited<ReturnType<typeof getWebsiteBillingAction>>,
   { ok: true }
 >["data"];
-export function WebsitePlanBilling() {
+export function WebsitePlanBilling({
+  siteId,
+  siteTemplate,
+}: { siteId?: string; siteTemplate?: string } = {}) {
   const mode = useBusinessStore((s) => s.mode);
   const selectedTemplateId = useBusinessStore(
     (s) => s.data.profile.websiteTemplateId,
   );
   const existing =
+    getWebsiteTemplate(siteTemplate) ||
     getWebsiteTemplate(pendingTemplate()) ||
     getWebsiteTemplate(selectedTemplateId);
-  const continuePath = existing
-    ? templateEditorPath(existing.id)
-    : "/business/website";
+  const continuePath = siteId
+    ? "/business/website/template?site=" + siteId
+    : existing
+      ? templateEditorPath(existing.id)
+      : "/business/website";
   const hydrated = useBusinessStore((s) => s.hydrated);
   const setInfrastructure = useBusinessStore((s) => s.setInfrastructure);
   const [data, setData] = useState<Data | null>(null),

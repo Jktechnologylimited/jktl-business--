@@ -127,6 +127,8 @@ export async function updateBusinessProfile(
  * before saving. */
 export async function isSubdomainAvailable(subdomain: string, excludingOrgId: string): Promise<boolean> {
   const sql = getSql();
+  try { const claimed=await sql`SELECT 1 FROM website_subdomains WHERE subdomain=${subdomain} AND NOT(organization_id=${excludingOrgId} AND site_id IS NULL)`; return claimed.length===0; }
+  catch(error){if(!['42P01','42703'].includes(String((error as {code?:string}).code)))throw error;}
   const rows = await sql`
     SELECT 1 FROM business_profiles WHERE subdomain = ${subdomain} AND organization_id <> ${excludingOrgId}
   `;

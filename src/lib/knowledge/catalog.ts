@@ -75,7 +75,8 @@ export function topicFor(g: HelpGuide): Topic {
     return "games";
   if (["first-website", "platform-map", "account-to-published"].includes(id))
     return "getting-started";
-  if (["templates", "saving", "metrics"].includes(id)) return "websites";
+  if (["templates", "saving", "metrics", "multiple-websites"].includes(id))
+    return "websites";
   if (
     [
       "domains",

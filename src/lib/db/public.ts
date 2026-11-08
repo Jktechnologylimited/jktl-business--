@@ -134,8 +134,35 @@ export async function getPublicSiteBySubdomain(
   const sql = getSql();
   const rows =
     await sql`SELECT * FROM business_profiles WHERE subdomain = ${subdomain} AND published = true`;
-  if (!rows[0]) return null;
-  const profile = mapProfile(rows[0]);
+  let row = rows[0];
+  if (!row) {
+    try {
+      const extra =
+        await sql`SELECT to_jsonb(p) base,w.id,w.name,w.subdomain,w.template_id,w.document,w.revision,w.published FROM business_websites w JOIN business_profiles p ON p.organization_id=w.organization_id WHERE w.subdomain=${subdomain} AND w.published=true LIMIT 1`;
+      const w = extra[0];
+      if (w)
+        row = {
+          ...(w.base as Record<string, unknown>),
+          id: w.id,
+          display_name: w.name,
+          subdomain: w.subdomain,
+          custom_domain: "",
+          custom_domain_verified: false,
+          website_template_id: w.template_id,
+          website_document: w.document,
+          website_revision: w.revision,
+          published: w.published,
+          theme_color: (w.document as { accent?: string })?.accent,
+        };
+    } catch (error) {
+      if (
+        !["42P01", "42703"].includes(String((error as { code?: string }).code))
+      )
+        throw error;
+    }
+  }
+  if (!row) return null;
+  const profile = mapProfile(row);
   try {
     const plans =
       await sql`SELECT plan_id FROM website_plan_subscriptions WHERE organization_id=${profile.organizationId} AND period_end>now()`;
@@ -172,7 +199,16 @@ export async function getOrganizationIdBySubdomain(
   const sql = getSql();
   const rows =
     await sql`SELECT organization_id FROM business_profiles WHERE subdomain = ${subdomain}`;
-  return rows[0] ? (rows[0].organization_id as string) : null;
+  if (rows[0]) return rows[0].organization_id as string;
+  try {
+    const extra =
+      await sql`SELECT organization_id FROM business_websites WHERE subdomain=${subdomain}`;
+    return extra[0] ? String(extra[0].organization_id) : null;
+  } catch (error) {
+    if (["42P01", "42703"].includes(String((error as { code?: string }).code)))
+      return null;
+    throw error;
+  }
 }
 
 /**

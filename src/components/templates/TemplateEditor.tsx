@@ -2,6 +2,7 @@
 import { T } from "@/components/i18n/LanguageProvider";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   getWebsiteTemplate,
   templateDraft,
@@ -16,6 +17,7 @@ import {
   rememberTemplateSessionDraft,
 } from "@/lib/template-selection";
 import { useBusinessStore } from "@/lib/store";
+import { saveAdditionalWebsiteAction } from "@/lib/actions/multiple-website-actions";
 import { saveWebsiteTemplateAction } from "@/lib/actions/website-template-actions";
 import type { BusinessProfile } from "@/lib/types";
 import { BeautyFields } from "./BeautyFields";
@@ -23,21 +25,28 @@ import { TemplateCanvas } from "./TemplateCanvas";
 export function TemplateEditor({
   initialProfile,
   selectedId,
+  siteId,
 }: {
   initialProfile: BusinessProfile | null;
   selectedId: string;
+  siteId?: string;
 }) {
+  const router = useRouter();
   const storedProfile = useBusinessStore((s) => s.data.profile);
-  const mode = useBusinessStore((s) => s.mode);
+  const storedMode = useBusinessStore((s) => s.mode);
+  const mode = siteId ? "live" : storedMode;
   const setProfile = useBusinessStore((s) => s.setWebsiteProfile);
   const profile = initialProfile || storedProfile;
+  const draftKey = siteId
+    ? profile.organizationId + ":site:" + siteId
+    : profile.organizationId;
   const template =
     getWebsiteTemplate(selectedId) ||
     getWebsiteTemplate(profile.websiteTemplateId) ||
     getWebsiteTemplate("law-firm")!;
   const [content, setContent] = useState<WebsiteDocument>(() => {
     const draft = readTemplateSessionDraft(
-      profile.organizationId,
+      draftKey,
       template.id,
       profile.websiteRevision || 0,
     );
@@ -59,16 +68,11 @@ export function TemplateEditor({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   useEffect(() => {
-    rememberTemplate(template.id);
-  }, [template.id]);
+    if (!siteId) rememberTemplate(template.id);
+  }, [template.id, siteId]);
   useEffect(() => {
-    rememberTemplateSessionDraft(
-      profile.organizationId,
-      template.id,
-      revision,
-      content,
-    );
-  }, [profile.organizationId, template.id, revision, content]);
+    rememberTemplateSessionDraft(draftKey, template.id, revision, content);
+  }, [draftKey, template.id, revision, content]);
   const update = <K extends keyof WebsiteDocument>(
     key: K,
     value: WebsiteDocument[K],
@@ -124,7 +128,10 @@ export function TemplateEditor({
       return;
     }
     try {
-      const result = await saveWebsiteTemplateAction({
+      const result = await (
+        siteId ? saveAdditionalWebsiteAction : saveWebsiteTemplateAction
+      )({
+        id: siteId || "",
         templateId: template.id,
         document,
         revision,
@@ -134,7 +141,7 @@ export function TemplateEditor({
         setError(result.error);
         return;
       }
-      setProfile(result.data);
+      if (!siteId) setProfile(result.data);
       setRevision(result.data.websiteRevision || revision + 1);
       clearPendingTemplate();
       setMessage(
@@ -142,6 +149,7 @@ export function TemplateEditor({
           ? "Website saved and published."
           : "Website draft saved.",
       );
+      if (result.data.published) router.push("/business/website");
     } catch {
       setError(
         "Unable to save right now. Check your connection and try again.",
@@ -180,11 +188,31 @@ export function TemplateEditor({
   );
   return (
     <div className="space-y-6">
-      <div className="mb-4 flex justify-end">
-        <Link href="/business/plans" className="text-sm text-primary underline">
-          <T>Website plans — keep this design →</T>
+      <nav
+        aria-label="Website actions"
+        className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-paper p-4"
+      >
+        <Link
+          href="/business/website"
+          className="text-sm font-semibold text-blue-600 underline"
+        >
+          ← All your websites
         </Link>
-      </div>
+        <a
+          href={`https://${profile.subdomain}.jktl.com.ng`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="break-all text-sm font-semibold text-blue-600 underline"
+        >
+          {profile.subdomain}.jktl.com.ng ↗
+        </a>
+        <Link
+          href={siteId ? `/business/plans?site=${siteId}` : "/business/plans"}
+          className="rounded-full bg-[#c9a84c] px-6 py-3 font-semibold text-[#060e2a] shadow-md"
+        >
+          Upgrade ✦
+        </Link>
+      </nav>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <Link
@@ -779,6 +807,12 @@ export function TemplateEditor({
             <summary className="cursor-pointer font-semibold">
               <T>Reviews</T>
             </summary>
+            <Link
+              href="/business/website"
+              className="mt-4 inline-block text-sm font-semibold text-blue-600 underline"
+            >
+              Your published sites & website links →
+            </Link>
             <p className="mt-3 text-xs text-ink-muted">
               <T>
                 Publish only genuine feedback you have permission to use. Sample

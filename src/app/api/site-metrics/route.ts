@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unknown template." }, { status: 400 });
     const sql = getSql();
     const rows =
-      await sql`SELECT organization_id,subdomain,custom_domain,custom_domain_verified FROM business_profiles WHERE subdomain=${event.subdomain} AND website_template_id=${event.templateId} AND published=true LIMIT 1`;
+      await sql`SELECT organization_id,subdomain,custom_domain,custom_domain_verified,NULL::uuid site_id FROM business_profiles WHERE subdomain=${event.subdomain} AND website_template_id=${event.templateId} AND published=true
+      UNION ALL SELECT organization_id,subdomain,'' custom_domain,false custom_domain_verified,id site_id FROM business_websites WHERE subdomain=${event.subdomain} AND template_id=${event.templateId} AND published=true LIMIT 1`;
     const profile = rows[0];
     if (!profile)
       return NextResponse.json(
@@ -74,6 +75,8 @@ export async function POST(request: NextRequest) {
       eventId: event.eventId,
       event: event.event,
       kind: templatePageKind(template),
+      siteId: profile.site_id ? String(profile.site_id) : null,
+      subdomain: event.subdomain,
     });
     if (Date.now() - lastRateCleanup > 3600000) {
       lastRateCleanup = Date.now();

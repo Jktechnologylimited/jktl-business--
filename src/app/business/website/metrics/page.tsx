@@ -5,7 +5,17 @@ import { getSql } from "@/lib/db/client";
 import { siteMetrics } from "@/lib/site-metrics";
 import { getWebsiteTemplate } from "@/lib/website-templates";
 export const dynamic = "force-dynamic";
-export default async function WebsiteMetricsPage() {
+export default async function WebsiteMetricsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ site?: string }>;
+}) {
+  const { site } = await searchParams;
+  const siteId =
+    site === "primary" ||
+    (site && /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(site))
+      ? site
+      : undefined;
   const session = await getSession();
   if (!session)
     return (
@@ -30,6 +40,7 @@ export default async function WebsiteMetricsPage() {
     rows = await siteMetrics(
       (text, params) => getSql().query(text, params),
       session.organizationId,
+      siteId,
     );
   } catch {
     unavailable = true;
@@ -50,6 +61,11 @@ export default async function WebsiteMetricsPage() {
           time. Views are page loads, not unique people. Previews and demo
           activity are excluded.
         </T>
+      </p>
+      <p className="text-sm text-ink-muted">
+        {siteId
+          ? "Showing this website only."
+          : "Showing all websites in this business account."}
       </p>
       {unavailable ? (
         <p role="alert">

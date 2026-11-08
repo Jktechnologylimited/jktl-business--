@@ -62,7 +62,7 @@ export async function createPublicBookingAction(subdomain: string, input: Public
     if (!booking) return { ok: false, error: "That service isn't available right now." };
 
     // Attribute a conversion only after the real booking has been persisted.
-    try { const profile=await getBusinessProfile(organizationId);const template=getWebsiteTemplate(profile?.websiteTemplateId);if(profile?.published&&template)await recordSiteEvent((text,params)=>getSql().query(text,params),{organizationId,templateId:template.id,eventId:booking.id,event:'booking',kind:templatePageKind(template)}); } catch { /* Metrics must never break a saved booking. */ }
+    try { const rows=await getSql().query("SELECT website_template_id template_id,NULL::uuid site_id FROM business_profiles WHERE subdomain=$1 AND published=true UNION ALL SELECT template_id,id site_id FROM business_websites WHERE subdomain=$1 AND published=true LIMIT 1",[subdomain.trim().toLowerCase()]);const site=rows[0];const template=getWebsiteTemplate(String(site?.template_id||''));if(site&&template)await recordSiteEvent((text,params)=>getSql().query(text,params),{organizationId,templateId:template.id,eventId:booking.id,event:'booking',kind:templatePageKind(template),siteId:site.site_id?String(site.site_id):null,subdomain:subdomain.trim().toLowerCase()}); } catch { /* Metrics must never break a saved booking. */ }
 
     // Best-effort: the booking is already saved either way.
     void (async () => {

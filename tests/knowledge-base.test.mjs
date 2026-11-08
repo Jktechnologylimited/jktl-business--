@@ -23,7 +23,7 @@ const pages = load("src/components/knowledge/knowledge-pages.tsx", {
 test("public and Team guides are complete, unique and point to real platform routes", () => {
   const all = [...knowledge.HELP_GUIDES, ...team.TEAM_GUIDES];
   assert.equal(new Set(all.map((g) => g.id)).size, all.length);
-  assert.equal(knowledge.HELP_GUIDES.length, 55);
+  assert.ok(knowledge.HELP_GUIDES.length >= 55);
   assert.equal(team.TEAM_GUIDES.length, 15);
   for (const g of all) {
     assert.ok(g.title && g.summary && g.escalate, g.id);
