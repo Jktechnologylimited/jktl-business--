@@ -12,6 +12,7 @@ import {
   type WebsiteDocument,
 } from "@/lib/website-templates";
 import styles from "./TemplateWebsite.module.css";
+import { DressmakerWebsite } from "./DressmakerWebsite";
 import { LegalWebsite } from "./LegalWebsite";
 import { BeautyWebsite, type BeautyRequest } from "./BeautyWebsite";
 export type TemplateContact = {
@@ -497,6 +498,8 @@ export function TemplateWebsite(
     ) => Promise<{ ok: boolean; error?: string }>;
   },
 ) {
+  if (props.document.design === "dressmaker")
+    return <DressmakerWebsite {...props} />;
   if (props.document.design === "legal") return <LegalWebsite {...props} />;
   if (props.document.beauty?.version === 2) return <BeautyWebsite {...props} />;
   return <LegacyTemplateWebsite {...props} />;

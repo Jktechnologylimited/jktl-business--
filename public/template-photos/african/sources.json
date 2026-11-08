@@ -268,5 +268,86 @@
     "source": "https://www.pexels.com/photo/40154321/",
     "asset": "https://images.pexels.com/photos/40154321/pexels-photo-40154321.jpeg?auto=compress&cs=tinysrgb&w=1600",
     "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "atelier-veil",
+    "id": 24554127,
+    "description": "Elegant African bride in white wedding dress smiling brightly indoors, capturing happiness.",
+    "providerSearch": "black bride wedding dress",
+    "source": "https://www.pexels.com/photo/portrait-of-a-smiling-bride-in-a-white-wedding-dress-and-veil-24554127/",
+    "asset": "https://images.pexels.com/photos/24554127/pexels-photo-24554127.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "atelier-blue",
+    "id": 39296285,
+    "description": "Elegant woman in a stylish ruffled dress standing on a staircase, exuding grace and fashion in Rwanda.",
+    "providerSearch": "african woman evening dress",
+    "source": "https://www.pexels.com/photo/elegant-woman-in-ruffled-dress-on-staircase-39296285/",
+    "asset": "https://images.pexels.com/photos/39296285/pexels-photo-39296285.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "atelier-work",
+    "id": 37409123,
+    "description": "African-American woman expertly sewing fabric on an industrial sewing machine.",
+    "providerSearch": "black seamstress",
+    "source": "https://www.pexels.com/photo/skilled-tailor-at-work-with-sewing-machine-37409123/",
+    "asset": "https://images.pexels.com/photos/37409123/pexels-photo-37409123.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "atelier-bride",
+    "id": 20810489,
+    "description": "Stunning portrait of a black bride in an elegant wedding dress, exuding grace.",
+    "providerSearch": "black bride wedding dress",
+    "source": "https://www.pexels.com/photo/bride-sitting-in-wedding-dress-20810489/",
+    "asset": "https://images.pexels.com/photos/20810489/pexels-photo-20810489.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "atelier-hands",
+    "id": 38500515,
+    "description": "Close-up of hands operating a vintage sewing machine in Lagos, Nigeria.",
+    "providerSearch": "black seamstress",
+    "source": "https://www.pexels.com/photo/artisan-sewing-scene-in-lagos-nigeria-38500515/",
+    "asset": "https://images.pexels.com/photos/38500515/pexels-photo-38500515.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "atelier-sun",
+    "id": 28124786,
+    "description": "A striking photo of a woman in a dramatic yellow dress, highlighted against a soft-lit indoor backdrop.",
+    "providerSearch": "african woman evening dress",
+    "source": "https://www.pexels.com/photo/model-in-drapes-28124786/",
+    "asset": "https://images.pexels.com/photos/28124786/pexels-photo-28124786.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "atelier-mirror",
+    "id": 4025348,
+    "description": "Stunning black and white portrait of a bride admiring her reflection in a mirror.",
+    "providerSearch": "black bride wedding dress",
+    "source": "https://www.pexels.com/photo/gorgeous-ethnic-woman-reflected-in-mirror-4025348/",
+    "asset": "https://images.pexels.com/photos/4025348/pexels-photo-4025348.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "atelier-silk",
+    "id": 18783213,
+    "description": "Black woman in elegant metallic dress posing on chair against classic black backdrop.",
+    "providerSearch": "african woman evening dress",
+    "source": "https://www.pexels.com/photo/woman-in-black-dress-18783213/",
+    "asset": "https://images.pexels.com/photos/18783213/pexels-photo-18783213.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "atelier-studio",
+    "id": 9850419,
+    "description": "Two designers focused on a sewing project in a modern, well-lit atelier workspace.",
+    "providerSearch": "black seamstress",
+    "source": "https://www.pexels.com/photo/man-sitting-in-front-of-a-sewing-machine-9850419/",
+    "asset": "https://images.pexels.com/photos/9850419/pexels-photo-9850419.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
   }
 ]

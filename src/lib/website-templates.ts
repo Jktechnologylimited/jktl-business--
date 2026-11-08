@@ -41,7 +41,7 @@ export type WebsiteOffering = {
   preparation?: string;
 };
 export type WebsiteDocument = {
-  design?: "legal";
+  design?: "legal" | "dressmaker";
   legalVariant?: "family";
   aboutImage?: string;
   demoContent?: boolean;
@@ -2647,6 +2647,131 @@ for (const template of websiteTemplates) {
   }
 }
 
+// Original dressmaker starter, informed by the supplied November reference archive.
+// Add after the category photo pass so its reviewed fashion-specific images stay intact.
+const atelierPhoto = (name: string) =>
+  `/template-photos/african/atelier-${name}.jpg`;
+const dressmakerDocument: WebsiteDocument = {
+  ...JSON.parse(
+    JSON.stringify(websiteTemplates.find((t) => t.id === "fashion")!.document),
+  ),
+  design: "dressmaker",
+  demoContent: true,
+  brandName: "Élan Atelier",
+  eyebrow: "Bespoke dressmaking · Bridal & occasionwear",
+  headline: "Made to be\nremembered.",
+  intro:
+    "A dress that feels like you. Thoughtfully designed, carefully fitted, and made for the moments you’ll keep forever.",
+  ctaLabel: "Request a consultation",
+  accent: "#686b55",
+  paper: "#f5f4ed",
+  ink: "#292b23",
+  heroImage: atelierPhoto("bride"),
+  seoTitle: "Élan Atelier | Bespoke Bridal & Occasionwear",
+  seoDescription:
+    "Discover bespoke bridal dresses and occasionwear at Élan Atelier. Explore the collection, our dressmaking process and start your personal consultation.",
+  aboutTitle: "A little poetry in every stitch.",
+  aboutText:
+    "We begin with a conversation, a feeling, a moment you want to remember. From the first sketch to the final fitting, your story shapes every detail.\n\nOur atelier brings considered silhouettes, beautiful fabrics and thoughtful craftsmanship together to create something entirely yours.",
+  offeringsTitle: "From our atelier",
+  offerings: [
+    {
+      title: "The Ivory Story",
+      description:
+        "A considered bridal silhouette, created around your movement, your personality and your celebration. Discuss fabrics, finishing and fitting at your consultation.",
+      image: atelierPhoto("veil"),
+      price: "Made to order · Enquire for a personal quote",
+    },
+    {
+      title: "The Silver Hour",
+      description:
+        "Fluid occasionwear with a sculptural finish. A starting point for a personal design, with the fit, length and details considered together.",
+      image: atelierPhoto("silk"),
+      price: "Made to order · Enquire for a personal quote",
+    },
+    {
+      title: "The Golden Muse",
+      description:
+        "Expressive volume and a joyful colour story for a moment that deserves to be remembered. Explore your own interpretation with the atelier.",
+      image: atelierPhoto("sun"),
+      price: "Made to order · Enquire for a personal quote",
+    },
+    {
+      title: "The Blue Reverie",
+      description:
+        "Soft structure and considered layers, shaped for your occasion. Discover a personal approach to colour, coverage and finishing.",
+      image: atelierPhoto("blue"),
+      price: "Made to order · Enquire for a personal quote",
+    },
+  ],
+  featureTitle: "Our journey together",
+  featureText:
+    "A personal process, with room to dream and time to get the details right.",
+  featureItems: [
+    "The conversation — Tell us about your occasion, your inspiration and how you want to feel.",
+    "The creation — We explore silhouette, fabric and finishing, then shape the design around you.",
+    "The final fitting — Thoughtful adjustments bring everything together, ready for your moment.",
+  ],
+  galleryTitle: "In the making",
+  gallery: [
+    {
+      src: atelierPhoto("studio"),
+      alt: "Fashion designers working in a light-filled atelier",
+      category: "The atelier",
+    },
+    {
+      src: atelierPhoto("hands"),
+      alt: "Close-up of hands guiding fabric through a sewing machine in Lagos",
+      category: "Made with intention",
+    },
+    {
+      src: atelierPhoto("mirror"),
+      alt: "Bride admiring her dress in a mirror in black and white",
+      category: "The finishing touch",
+    },
+    {
+      src: atelierPhoto("work"),
+      alt: "Seamstress working with fabric at an industrial sewing machine",
+      category: "A slower kind of craft",
+    },
+  ],
+  faqTitle: "Before we begin",
+  faqs: [
+    {
+      question: "How does a bespoke commission begin?",
+      answer:
+        "Start with a consultation enquiry. Share your occasion, preferred date and any inspiration. The atelier will discuss the design process and confirm the next steps with you.",
+    },
+    {
+      question: "Can I personalise a look from the collection?",
+      answer:
+        "The collection offers a starting point for a conversation. Fabric, colour, fit and finishing are discussed together before a commission is agreed.",
+    },
+    {
+      question: "When should I enquire?",
+      answer:
+        "Get in touch as early as possible. Your atelier will confirm current availability, fitting requirements and a realistic lead time before you commit.",
+    },
+  ],
+  contactTitle: "Let’s make it yours.",
+  contactText:
+    "Tell us about the moment you’re dressing for. We’d love to hear your ideas and help you explore what comes next.",
+  serviceAreas: ["Your city · By appointment"],
+  socials: [],
+  reviews: [],
+};
+websiteTemplates.push({
+  id: "dressmaker-atelier",
+  name: "Dressmaker — Élan Atelier",
+  category: "Retail & Lifestyle",
+  layout: "catalogue",
+  kind: "website",
+  sourceId: "dressmaker-atelier",
+  edition: "Bespoke",
+  sectionOrder: ["about", "offerings", "feature", "gallery", "faq", "areas"],
+  document: dressmakerDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -2740,8 +2865,9 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     throw new Error("Unsupported website content version.");
   const result: Record<string, unknown> = { version: 1 };
   if (source.design !== undefined) {
-    if (source.design !== "legal") throw Error("Unsupported website design.");
-    result.design = "legal";
+    if (!["legal", "dressmaker"].includes(String(source.design)))
+      throw Error("Unsupported website design.");
+    result.design = source.design;
     if (source.legalVariant !== undefined) {
       if (source.legalVariant !== "family")
         throw Error("Unsupported website legal variant.");

@@ -50,11 +50,25 @@ const { LegalWebsite } = loadTs(
     },
   },
 );
+const { DressmakerWebsite } = loadTs(
+  "../src/components/templates/DressmakerWebsite.tsx",
+  {
+    react: require("react"),
+    "react/jsx-runtime": require("react/jsx-runtime"),
+    "framer-motion": require("framer-motion"),
+    "lucide-react": require("lucide-react"),
+    "@/lib/website-templates": catalogue,
+    "./DressmakerWebsite.module.css": {
+      __esModule: true,
+      default: new Proxy({}, { get: (_, key) => String(key) }),
+    },
+  },
+);
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 208);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 206);
-  assert.equal(new Set(all.map((t) => t.id)).size, 208);
+  assert.equal(all.length, 209);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 207);
+  assert.equal(new Set(all.map((t) => t.id)).size, 209);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -142,6 +156,7 @@ test("actual full-site renderer renders every template and safely escapes edited
       "react/jsx-runtime": require("react/jsx-runtime"),
       "./BeautyWebsite": { BeautyWebsite },
       "./LegalWebsite": { LegalWebsite },
+      "./DressmakerWebsite": { DressmakerWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -220,11 +235,12 @@ test("Main and Business publish the same catalogue and renderer", (t) => {
       "../src/components/templates/TemplateWebsite.tsx",
       "components/templates/TemplateWebsite.tsx",
     ],
+    ["../src/components/templates/DressmakerWebsite.tsx", "components/templates/DressmakerWebsite.tsx"],
+    ["../src/components/templates/DressmakerWebsite.module.css", "components/templates/DressmakerWebsite.module.css"],
     [
       "../src/components/templates/TemplateWebsite.module.css",
       "components/templates/TemplateWebsite.module.css",
     ],
-
   ])
     assert.equal(
       createHash("sha256")
@@ -489,6 +505,7 @@ test("template-based public sites retain actual booking, product and chat compon
       "react/jsx-runtime": require("react/jsx-runtime"),
       "./BeautyWebsite": { BeautyWebsite },
       "./LegalWebsite": { LegalWebsite },
+      "./DressmakerWebsite": { DressmakerWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -508,13 +525,16 @@ test("template-based public sites retain actual booking, product and chat compon
         submitBeautyWebsiteRequestAction: async () => ({ ok: false }),
       },
       "@/components/templates/TemplateWebsite": { TemplateWebsite },
-      "@/components/chatbot/WebsiteChat": { WebsiteChat: () => createElement("div", { "data-general-chatbot": true }) },
+      "@/components/chatbot/WebsiteChat": {
+        WebsiteChat: () =>
+          createElement("div", { "data-general-chatbot": true }),
+      },
       "@/components/templates/PublishedSiteMetrics": loadTs(
         "../src/components/templates/PublishedSiteMetrics.tsx",
         { react: require("react") },
       ),
       "@/lib/website-templates": catalogue,
-      "@/lib/ai/availability": {RECEPTIONIST_PAUSED:true},
+      "@/lib/ai/availability": { RECEPTIONIST_PAUSED: true },
       "./public-booking-form": {
         PublicBookingForm: (props) =>
           createElement("form", { "data-existing-booking-mode": props.mode }),
@@ -607,7 +627,10 @@ test("template-based public sites retain actual booking, product and chat compon
       },
     }),
   );
-  assert.ok(!ai.includes("data-existing-ai-chat"), "paused receptionist must not render a live call assistant");
+  assert.ok(
+    !ai.includes("data-existing-ai-chat"),
+    "paused receptionist must not render a live call assistant",
+  );
   const preview = renderToStaticMarkup(
     createElement(PublicSiteView, { ...props, mode: "preview" }),
   );
@@ -811,4 +834,63 @@ test("editorial legal design preserves editable profiles and supports practice/i
   assert.ok(html.includes("Our lawyer"));
   assert.ok(html.includes("Our practice"));
   assert.ok(!html.includes("Editable sample profiles"));
+});
+
+test("dressmaker starter round-trips editable content and never invents live contact details or reviews", () => {
+  const template = catalogue.getWebsiteTemplate("dressmaker-atelier");
+  assert.ok(template);
+  const d = catalogue.templateDraft(template.id, "My Atelier");
+  assert.equal(d.design, "dressmaker");
+  assert.equal(d.brandName, "My Atelier");
+  assert.deepEqual(catalogue.parseWebsiteDocument(d), d);
+  assert.equal(d.offerings.length, 4);
+  const html = renderToStaticMarkup(
+    createElement(DressmakerWebsite, { template, document: d, preview: true }),
+  );
+  assert.equal((html.match(/<h1/g) || []).length, 1);
+  assert.match(html, /Made to be/);
+  assert.match(html, /Collection details/);
+  assert.doesNotMatch(html, /Stories from the fitting room/);
+  assert.match(html, /No enquiry is sent/);
+  assert.ok(!html.includes("wix.com"));
+  const live = renderToStaticMarkup(
+    createElement(DressmakerWebsite, {
+      template,
+      document: {
+        ...d,
+        demoContent: false,
+        reviews: [
+          {
+            name: "Actual Client",
+            quote: "A thoughtful fitting experience.",
+            rating: 5,
+          },
+        ],
+      },
+      contact: {
+        email: "atelier@example.test",
+        phone: "+2348000000000",
+        city: "Lagos",
+      },
+    }),
+  );
+  assert.match(live, /mailto:atelier@example.test/);
+  assert.match(live, /Actual Client/);
+  const edited = {
+    ...d,
+    offerings: d.offerings.map((v, i) =>
+      i
+        ? v
+        : {
+            ...v,
+            title: "My bridal collection",
+            image: "https://example.test/bridal.jpg",
+            price: "Enquire",
+          },
+    ),
+  };
+  assert.equal(
+    catalogue.parseWebsiteDocument(edited).offerings[0].title,
+    "My bridal collection",
+  );
 });

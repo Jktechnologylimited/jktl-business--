@@ -271,6 +271,7 @@ export function TemplateEditor({
                   </label>
                 </>
               )}
+              {content.design === "dressmaker" && <label className="flex gap-3 text-sm"><input type="checkbox" checked={content.demoContent ?? true} onChange={e=>update("demoContent",e.target.checked)}/>Show sample-content label. Turn this off after replacing sample content and adding genuine customer reviews.</label>}
               <button
                 type="button"
                 className="text-xs text-primary underline"
@@ -364,6 +365,42 @@ export function TemplateEditor({
                       }
                     />
                   </label>
+                  {content.design === "dressmaker" && (
+                    <>
+                      <label className="block text-sm">
+                        Collection image URL
+                        <input
+                          className={field}
+                          value={item.image || ""}
+                          maxLength={2000}
+                          onChange={(e) =>
+                            update(
+                              "offerings",
+                              content.offerings.map((v, n) =>
+                                n === i ? { ...v, image: e.target.value } : v,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                      <label className="block text-sm">
+                        Price or enquiry label
+                        <input
+                          className={field}
+                          value={item.price || ""}
+                          maxLength={120}
+                          onChange={(e) =>
+                            update(
+                              "offerings",
+                              content.offerings.map((v, n) =>
+                                n === i ? { ...v, price: e.target.value } : v,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                    </>
+                  )}
                   {content.design === "legal" && (
                     <>
                       <label className="block text-sm">

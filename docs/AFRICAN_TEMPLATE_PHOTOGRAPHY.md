@@ -1,6 +1,6 @@
 # Template photography and free-template help
 
-The 206 designed catalogue entries (plus two unchanged blank starting points) now use the locally bundled reviewed photo set under `public/template-photos/african/`. Main and Business share the registry, files and freshly captured preview cards.
+The 207 designed catalogue entries (plus two unchanged blank starting points) now use the locally bundled reviewed photo set under `public/template-photos/african/`. Main and Business share the registry, files and freshly captured preview cards.
 
 The set includes African and Black/diaspora stock portraits, families and professionals across varied complexions and ages, with category-appropriate business, legal, education, healthcare, beauty, barbering, music, hospitality and travel scenes. Each asset's original provider description, search context, Pexels source URL and licence URL are recorded in `sources.json`. Visual review covers composition and suitability; no nationality or identity biography is inferred from a model's appearance. Stock images are sample content, not actual JKTL client results or the demonstration business's real employees.
 
@@ -12,4 +12,4 @@ Unknown questions, template errors and explicit human requests open an optional 
 
 Production uses the existing Main DATABASE_URL, service_inquiries table, RESEND_API_KEY and verified sender configuration. Tests mock database/email delivery and do not send real enquiries or emails. Existing saved inquiries and template/customer records are preserved.
 
-Verification: `tests/template-chat.test.mjs`, `tests/template-chat.browser.cjs` (gallery and preview, 1440/390/320px), Business catalogue/beauty/storage regression checks, production builds, and all 208 thumbnail captures. The screenshot script now handles legacy, beauty and legal renderers and waits for visible photos/fonts.
+Verification: `tests/template-chat.test.mjs`, `tests/template-chat.browser.cjs` (gallery and preview, 1440/390/320px), Business catalogue/beauty/storage regression checks, production builds, and the 208 existing thumbnail captures plus the new dressmaker capture. The screenshot script now handles legacy, beauty and legal renderers and waits for visible photos/fonts.
