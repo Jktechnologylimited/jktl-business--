@@ -33,6 +33,13 @@ export async function CommercialDashboard() {
       ),
     ],
   );
+  const rateChanges =
+    a.programme === "partner"
+      ? await query(
+          "SELECT contract_id,previous_bps,rate_bps,effective_at FROM partner_commission_changes WHERE affiliate_id=$1 ORDER BY effective_at DESC,id DESC LIMIT 20",
+          [a.id],
+        )
+      : [];
   const bank = (
     await query(
       "SELECT bank_code,bank_name,account_number,account_name,bank_verified_at,referral_code,commission_model FROM affiliates WHERE id=$1",
@@ -77,6 +84,31 @@ export async function CommercialDashboard() {
   return (
     <div className="space-y-6 text-ink">
       <h1 className="text-3xl font-semibold">Agreements & verified earnings</h1>
+      {rateChanges.length > 0 && (
+        <section className="rounded-xl border border-border bg-paper p-5">
+          <h2 className="font-semibold">Agreed commission updates</h2>
+          <p className="mt-2 text-sm text-ink-muted">
+            Website percentage changes apply from the dates shown. Earlier
+            earnings retain their original amounts; the issued agreements below
+            remain on record.
+          </p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {rateChanges.map((change, index) => (
+              <li key={index}>
+                {!change.contract_id && bank?.commission_model === "policy"
+                  ? "Proposed (commercial agreement required): "
+                  : ""}
+                {Number(change.previous_bps) / 100}% →{" "}
+                {Number(change.rate_bps) / 100}% ·{" "}
+                {new Date(String(change.effective_at)).toLocaleString("en-NG", {
+                  timeZone: "Africa/Lagos",
+                })}{" "}
+                WAT
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <nav className="flex flex-wrap gap-4" aria-label="Earnings sections">
         <a className="underline" href="#referrals">
           Referrals

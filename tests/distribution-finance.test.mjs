@@ -83,6 +83,15 @@ test("accepted new-cohort finance uses verified live payments, bounded service m
         "utf8",
       ),
     ]);
+    await db.exec(
+      readFileSync(
+        new URL(
+          "../migrations/072_partner_commission_changes.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
     let role = "owner";
     const deps = {
       "@/lib/distribution/product-rules": productRules,
@@ -152,6 +161,10 @@ test("accepted new-cohort finance uses verified live payments, bounded service m
     const engine = load("../src/lib/distribution/finance.ts", {
       "server-only": {},
       "./product-rules": productRules,
+      "./partner-rates": load("../src/lib/distribution/partner-rates.ts", {
+        "server-only": {},
+        "@/lib/custom/service": { query },
+      }),
       "@/lib/custom/service": { query },
       "@/lib/paystack": {
         verifyTransaction: async (ref) => ({ ...verified.get(ref), domain }),
@@ -393,7 +406,16 @@ test("accepted new-cohort finance uses verified live payments, bounded service m
         "utf8",
       ),
     ]);
-    const enrollment = load("../src/lib/distribution/program-enrollment.ts", {"server-only":{},"node:crypto":await import("node:crypto"),"@/lib/affiliate-commission":{DEFAULT_TERMS},"@/lib/custom/service":{query},"@/lib/db/auth":{hashPassword:async()=>"fixture-unusable-password"},"@/lib/support/service":{rate:async()=>{}}});
+    const enrollment = load("../src/lib/distribution/program-enrollment.ts", {
+      "server-only": {},
+      "node:crypto": await import("node:crypto"),
+      "@/lib/affiliate-commission": { DEFAULT_TERMS },
+      "@/lib/custom/service": { query },
+      "@/lib/db/auth": {
+        hashPassword: async () => "fixture-unusable-password",
+      },
+      "@/lib/support/service": { rate: async () => {} },
+    });
     const programs = load(
       "../src/lib/actions/distribution-program-actions.ts",
       {

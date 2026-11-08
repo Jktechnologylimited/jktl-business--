@@ -1,5 +1,6 @@
 "use client";
-import {RecordDetailsEditor} from "./record-details-editor";
+import { PartnerRateEditor } from "./partner-rate-editor";
+import { RecordDetailsEditor } from "./record-details-editor";
 import { importLegacyPartnerAction } from "@/lib/actions/legacy-partner-actions";
 import { useState } from "react";
 import { approvePartnerAction } from "@/lib/actions/partner-actions";
@@ -121,7 +122,43 @@ export function PartnerManager({
                 {String(p.application_note)}
               </p>
               <RecordDetailsEditor kind="partner" id={String(p.id)} />
-              <p>Agreed rate: {Number(p.commission_bps) / 100}%</p>
+              <p>
+                {p.commission_model === "policy" && !p.active_referral_contract
+                  ? "Proposed rate"
+                  : "Agreed rate"}
+                : {Number(p.commission_bps) / 100}%
+              </p>
+              {["active", "suspended"].includes(String(p.status)) &&
+                ["percentage", "policy"].includes(
+                  String(p.commission_model),
+                ) && (
+                  <PartnerRateEditor
+                    id={String(p.id)}
+                    bps={Number(p.commission_bps)}
+                    policy={p.commission_model === "policy"}
+                    proposal={
+                      p.commission_model === "policy" &&
+                      !p.active_referral_contract
+                    }
+                    onSaved={(bps) =>
+                      setRows((current) =>
+                        current.map((row) =>
+                          row.id === p.id
+                            ? { ...row, commission_bps: bps }
+                            : row,
+                        ),
+                      )
+                    }
+                  />
+                )}
+              {p.commission_model === "policy" && (
+                <a
+                  href="/admin/distribution/finance"
+                  className="text-blue-600 underline"
+                >
+                  View product and reseller commercial terms
+                </a>
+              )}
               {Boolean(p.partner_agreement) && (
                 <p style={{ whiteSpace: "pre-wrap" }}>
                   Agreement: {String(p.partner_agreement)}
@@ -138,24 +175,27 @@ export function PartnerManager({
                       () =>
                         approvePartnerAction(
                           String(p.id),
-                          Number(d.get("bps")),
+                          Math.round(Number(d.get("percent")) * 100),
                           String(d.get("agreement")),
                         ),
                       "active",
                       {
-                        commission_bps: Number(d.get("bps")),
+                        commission_bps: Math.round(
+                          Number(d.get("percent")) * 100,
+                        ),
                         partner_agreement: String(d.get("agreement")),
                       },
                     );
                   }}
                 >
                   <label>
-                    Agreed commission (basis points: 100 = 1%)
+                    Agreed commission (%)
                     <input
-                      name="bps"
+                      name="percent"
                       type="number"
                       min={0}
-                      max={10000}
+                      max={100}
+                      step="0.01"
                       required
                     />
                   </label>

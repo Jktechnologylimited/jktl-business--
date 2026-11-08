@@ -1,4 +1,5 @@
 import "server-only";
+import { partnerWebsiteRate } from "./partner-rates";
 import { productRules, nativeCommission } from "./product-rules";
 import { query } from "@/lib/custom/service";
 import { verifyTransaction } from "@/lib/paystack";
@@ -30,6 +31,12 @@ export async function reconcileDistributionPayments() {
         continue;
       if (!Array.isArray(terms.plans) || !terms.plans.includes(p.plan_id))
         continue;
+      const rateBps = await partnerWebsiteRate(
+        String(p.affiliate_id),
+        String(p.contract_id),
+        new Date(String(p.paid_at)).toISOString(),
+        Number(terms.rateBps),
+      );
       const r = await query(
         `WITH guarded AS(SELECT c.id FROM distribution_contracts c JOIN affiliates a ON a.id=c.affiliate_id WHERE c.id=$1 AND c.status='ACTIVE' AND c.model='REFERRAL' AND a.status='active' AND a.commission_model='policy' AND NOT EXISTS(SELECT 1 FROM distribution_payment_risks z WHERE z.reference=$2 AND NOT EXISTS(SELECT 1 FROM distribution_risk_state rs WHERE rs.reference=z.reference AND rs.state='CLEARED')) FOR UPDATE OF c),proof AS(INSERT INTO distribution_verified_payments(reference,contract_id,organization_id,amount_kobo,fees_kobo,provider_transaction,months) SELECT $2,$1,$3,$4,$5,$6,$7::integer FROM guarded ON CONFLICT DO NOTHING RETURNING *),allocated AS(INSERT INTO distribution_customer_periods(contract_id,organization_id,paid_months,last_allocation) SELECT $1,$3,LEAST($7::integer,$15::integer),LEAST($7::integer,$15::integer) FROM proof ON CONFLICT(contract_id,organization_id,product) DO UPDATE SET last_allocation=LEAST($7::integer,$15::integer-distribution_customer_periods.paid_months),paid_months=distribution_customer_periods.paid_months+LEAST($7::integer,$15::integer-distribution_customer_periods.paid_months) RETURNING last_allocation),net AS(SELECT GREATEST(0,$4::bigint-$5::bigint-floor($4::numeric*$8::numeric/(10000+$8))::bigint-$9::bigint) AS amount,last_allocation FROM allocated),ledger AS(INSERT INTO distribution_ledger(reference,affiliate_id,contract_id,organization_id,currency,net_kobo,rate_bps,amount_kobo,eligible_months,available_at) SELECT $2,$10,$1,$3,'NGN',amount,$11::integer,LEAST($12::bigint,GREATEST(0,amount-$13::bigint),floor(floor(amount::numeric*last_allocation/$7::integer)*$11::integer/10000)::bigint),last_allocation,now()+make_interval(days=>$14) FROM net RETURNING reference) INSERT INTO distribution_audit(actor_id,event,affiliate_id,detail) SELECT 'system','VERIFIED_COMMISSION_PENDING',$10,jsonb_build_object('reference',reference) FROM ledger RETURNING id`,
         [
@@ -43,7 +50,7 @@ export async function reconcileDistributionPayments() {
           Number(terms.taxBps),
           Number(terms.thirdPartyCostKobo),
           p.affiliate_id,
-          Number(terms.rateBps),
+          rateBps,
           Number(terms.capKobo),
           Number(terms.marginReserveKobo),
           Number(terms.holdDays),

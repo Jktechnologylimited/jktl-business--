@@ -205,6 +205,10 @@ test("native Email, domains and custom projects share verified ledger, actual co
     const deps = {
         "server-only": {},
         "./product-rules": rules,
+        "./partner-rates": load("../src/lib/distribution/partner-rates.ts", {
+          "server-only": {},
+          "@/lib/custom/service": { query },
+        }),
         "@/lib/distribution/product-rules": rules,
         "@/lib/custom/service": { query },
         "@/lib/paystack": {
