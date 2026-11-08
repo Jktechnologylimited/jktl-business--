@@ -92,12 +92,12 @@ export const PLATFORM_GUIDES: HelpGuide[] = [
     summary:
       "Use the partner client workflow and explicitly granted client permissions to help a business create and manage its website.",
     steps: [
-      "Sign into an approved Partners account and open Clients or Workspace. Check that the client relationship is listed and authorized.",
-      "Use the client invitation or account-creation workflow provided there. Keep the client’s identity and business separate from your own partner profile.",
+      "Sign into an approved Partners account. Open Clients & websites, create or select the client workspace, and check the owner relationship. The studio separates Website, Owner & access, Services & payments, and Client handover.",
+      "Create the client draft using the business name and owner contact details. In Owner & access, create the private invitation link. Keep the client’s identity and business separate from your own partner profile.",
       "Have the client accept any required invitation or grant access. A referral link alone is not permission to edit private account data.",
       "Open the authorized client workspace, confirm the client name, then choose or edit its template. Use desktop/mobile previews and replace sample content.",
-      "Save and publish only the content the client has approved. Verify the live client address after publication.",
-      "For domains, email or other purchases, review the quote, billing party and scope. Confirm whether the client or partner is responsible for paying.",
+      "Save and preview the content on desktop and mobile. Publishing requires the owner’s separate Publish website permission; use View live site after a successful publication.",
+      "In Services & payments, use authorized domain checkout or request email/other services. Open the Services & payments dashboard for quotes. Partner-billed quotes lead to the linked Business billing account; customer-billed quotes are approved and paid by the client owner.",
       "Use the existing client workspace for upgrades. Ask for additional permissions if you need chatbot or other management tools; website-editing permission is not universal access.",
     ],
     problems: [

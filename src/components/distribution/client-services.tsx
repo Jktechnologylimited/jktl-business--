@@ -6,7 +6,13 @@ import {
   partnerDomainAvailabilityAction,
   partnerNativeServiceRequestAction,
 } from "@/lib/actions/partner-product-actions";
-export function ClientServices({ id }: { id: string }) {
+export function ClientServices({
+  id,
+  canPurchaseDomains = false,
+}: {
+  id: string;
+  canPurchaseDomains?: boolean;
+}) {
   const [data, setData] = useState<Awaited<
       ReturnType<typeof partnerProductStatusAction>
     > | null>(null),
@@ -62,11 +68,18 @@ export function ClientServices({ id }: { id: string }) {
   return (
     <section className="space-y-5 rounded-xl border border-border p-5">
       <h2 className="text-xl font-semibold">Client products & provisioning</h2>
-      <PartnerDomainOrder
-        workspaceId={id}
-        prices={data.prices}
-        assets={data.domains}
-      />
+      {canPurchaseDomains ? (
+        <PartnerDomainOrder
+          workspaceId={id}
+          prices={data.prices}
+          assets={data.domains}
+        />
+      ) : (
+        <p className="rounded-xl bg-surface p-4 text-sm leading-7">
+          Ask the owner to grant Purchase domains permission before opening a
+          client domain checkout.
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-danger">
           {error}

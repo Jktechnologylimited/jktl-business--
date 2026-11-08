@@ -57,7 +57,8 @@ export async function partnerWorkspaceDataAction(id: string) {
     );
     website = r[0] || null;
   }
-  return { workspace: w, registry, website };
+  const grants = w.organization_id ? await query("SELECT scopes FROM partner_client_access WHERE partner_id=$1 AND organization_id=$2 AND revoked_at IS NULL",[w.partner_id,w.organization_id]) : [];
+  return { workspace: w, registry, website, scopes: (grants[0]?.scopes || []) as string[] };
 }
 export async function savePartnerWebsiteAction(input: {
   id: string;

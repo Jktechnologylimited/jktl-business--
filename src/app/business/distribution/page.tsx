@@ -74,7 +74,8 @@ export default async function Page({
           {quotes.map((q) => (
             <article
               key={String(q.id)}
-              className="space-y-3 rounded-xl border border-border p-5"
+              id={"quote-" + String(q.id)}
+              className="scroll-mt-24 space-y-3 rounded-xl border border-border p-5"
             >
               <strong>
                 ₦{(Number(q.amount_kobo) / 100).toLocaleString("en-NG")} ·{" "}

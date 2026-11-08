@@ -1,11 +1,10 @@
-import { JktlMark } from "@/components/app/logo";
-import { ThemeControl } from "@/components/settings/theme-control";
+import { PartnerShell } from "@/components/partners/partner-shell";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getAffiliateSession } from "@/lib/affiliate-session";
 import { query } from "@/lib/custom/service";
 import { affiliateLogoutAction } from "@/lib/actions/affiliate-actions";
 export const dynamic = "force-dynamic";
+export const metadata = { robots: { index: false, follow: false } };
 export default async function Layout({
   children,
 }: {
@@ -23,39 +22,8 @@ export default async function Layout({
   )
     redirect("/partners/login");
   return (
-    <div className="min-h-dvh bg-paper">
-      <header className="bg-[#060e2a] px-6 py-8 text-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5">
-          <div>
-            <Link href="/partners" aria-label="JKTL Partners home">
-              <JktlMark className="mb-3 size-14" />
-            </Link>
-            <p className="text-xs tracking-widest text-[#c9a84c]">
-              JKTL PARTNERS
-            </p>
-            <h1 className="mt-2 text-2xl">
-              Your relationships. Shared growth.
-            </h1>
-            <p className="mt-2 text-sm text-white/65">{s.name}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-5 text-sm">
-            <ThemeControl />
-            <Link href="https://jktl.com.ng/partners">Programme</Link>
-            <Link href="/partners/workspace">Workspace</Link>
-            <Link href="/partners/support">Support</Link>
-            <Link href="/help?topic=partners">Knowledge base</Link>
-            <Link href="/partners/commercial">Commercial terms</Link>
-            <Link href="/partners/resources">Resources</Link>
-            <Link href="/partners/clients">Clients</Link>
-            <Link href="/partners/chatbot">AI Chatbots</Link>
-            <Link href="/business/distribution">Business account</Link>
-            <form action={affiliateLogoutAction}>
-              <button>Sign out</button>
-            </form>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-5 py-8">{children}</main>
-    </div>
+    <PartnerShell name={s.name} logout={affiliateLogoutAction}>
+      {children}
+    </PartnerShell>
   );
 }

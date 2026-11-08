@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/distribution/action-form";
 import { approvedPartner } from "@/lib/partners/access";
 import { query } from "@/lib/custom/service";
 import { PartnerWorkspace } from "@/components/distribution/partner-workspace";
@@ -6,33 +7,36 @@ export const dynamic = "force-dynamic";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ id?: string }>;
+  searchParams: Promise<{ id?: string; new?: string }>;
 }) {
   const p = await approvedPartner();
-  const { id } = await searchParams;
+  const { id, new: create } = await searchParams;
   const clients = await query(
     "SELECT id,business_name,organization_id FROM partner_workspaces WHERE partner_id=$1 ORDER BY created_at DESC",
     [p.id],
   );
   const products = await query(
-    "SELECT slug,name,partner_mode FROM feature_registry WHERE partner_mode<>'UNAVAILABLE' ORDER BY name",
+    "SELECT slug,name,partner_mode FROM feature_registry WHERE partner_mode<>'UNAVAILABLE' AND slug<>'ai-receptionist' ORDER BY name",
   );
   return (
     <div className="space-y-7 text-ink">
-      <h1 className="text-3xl font-semibold">Client service workspace</h1>
+      <h1 className="text-3xl font-semibold">Clients &amp; websites</h1>
       <p>
-        Prepare client drafts, obtain the owner’s authorization, then manage
-        approved services. Client purchases and third-party provisioning still
-        follow JKTL’s payment and approval controls.
+        Create the client workspace, build their website and connect the owner.
+        Publish with permission, then add the services the business needs.
       </p>
       <details
-        open={!clients.length}
+        id="new-client"
+        open={!clients.length || create === "1"}
         className="rounded-xl border border-border p-5"
       >
-        <summary className="text-xl font-semibold">
-          Create client workspace
-        </summary>
-        <form
+        <summary className="text-xl font-semibold">Create a new client</summary>
+        <p className="mt-3 text-sm leading-7 text-ink-muted">
+          Start with the business and its owner’s contact details. This creates
+          a private draft; the owner connects their Business account through an
+          invitation. No payment is taken.
+        </p>
+        <ActionForm
           action={createPartnerWorkspaceAction}
           className="mt-5 grid gap-4 md:grid-cols-2"
         >
@@ -73,16 +77,17 @@ export default async function Page({
             {products.map((r) => (
               <label className="flex gap-3" key={String(r.slug)}>
                 <input type="checkbox" name="services" value={String(r.slug)} />
-                {String(r.name)} · {String(r.partner_mode)}
+                {String(r.name)}
               </label>
             ))}
           </fieldset>
           <button className="self-end rounded-lg bg-primary p-3 text-on-primary">
-            Create draft client
+            Create client & start building
           </button>
-        </form>
+        </ActionForm>
       </details>
       <PartnerWorkspace
+        key={id || "workspace"}
         clients={clients.map((c) => ({
           id: String(c.id),
           name: String(c.business_name),
