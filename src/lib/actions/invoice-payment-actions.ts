@@ -1,8 +1,13 @@
 "use server";
 
+import { payoutReady } from "@/lib/invoicing/policy";
 import { getPublicInvoice } from "@/lib/db/invoices";
 import { getPaymentSettings } from "@/lib/db/payments";
-import { initializeInvoicePayment, verifyTransaction, INVOICE_PLATFORM_FEE_KOBO } from "@/lib/paystack";
+import {
+  initializeInvoicePayment,
+  verifyTransaction,
+  INVOICE_PLATFORM_FEE_KOBO,
+} from "@/lib/paystack";
 import type { ActionResult } from "./types";
 
 function appOrigin(): string {
@@ -21,29 +26,54 @@ function appOrigin(): string {
  * thing gating this, the same trust model as a payment link from any
  * other provider.
  */
-export async function initiateInvoicePaymentAction(invoiceId: string): Promise<ActionResult<{ authorizationUrl: string }>> {
+export async function initiateInvoicePaymentAction(
+  invoiceId: string,
+): Promise<ActionResult<{ authorizationUrl: string }>> {
   try {
     const invoice = await getPublicInvoice(invoiceId);
     if (!invoice) return { ok: false, error: "Invoice not found." };
-    if (invoice.status === "paid") return { ok: false, error: "This invoice has already been paid." };
-    if (!invoice.payoutReady) return { ok: false, error: "This business hasn't set up online payments yet." };
+    if (invoice.status === "draft")
+      return { ok: false, error: "This invoice has not been issued yet." };
+    if (invoice.status === "paid")
+      return { ok: false, error: "This invoice has already been paid." };
+    if (!invoice.payoutReady)
+      return {
+        ok: false,
+        error: "This business hasn't set up online payments yet.",
+      };
 
     const settings = await getPaymentSettings(invoice.organizationId);
+    if (!payoutReady(settings))
+      return {
+        ok: false,
+        error: "Online payments are not set up for this business.",
+      };
+    if (!Number.isSafeInteger(invoice.totalKobo) || invoice.totalKobo <= 0)
+      return { ok: false, error: "This invoice does not require a payment." };
     const amountKobo = invoice.totalKobo + INVOICE_PLATFORM_FEE_KOBO;
 
     const { authorizationUrl } = await initializeInvoicePayment({
-      email: invoice.customerEmail || `invoice-${invoice.number.toLowerCase()}@jktl.com.ng`,
+      email:
+        invoice.customerEmail ||
+        `invoice-${invoice.number.toLowerCase()}@jktl.com.ng`,
       amountKobo,
       subaccountCode: settings.subaccountCode,
       transactionChargeKobo: INVOICE_PLATFORM_FEE_KOBO,
       callbackUrl: `${appOrigin()}/pay/${invoiceId}/callback`,
-      metadata: { type: "invoice_payment", organizationId: invoice.organizationId, invoiceId },
+      metadata: {
+        type: "invoice_payment",
+        organizationId: invoice.organizationId,
+        invoiceId,
+      },
     });
 
     return { ok: true, data: { authorizationUrl } };
   } catch (err) {
     console.error(err);
-    return { ok: false, error: "Couldn't start payment right now — please try again." };
+    return {
+      ok: false,
+      error: "Couldn't start payment right now — please try again.",
+    };
   }
 }
 
@@ -52,7 +82,9 @@ export async function initiateInvoicePaymentAction(invoiceId: string): Promise<A
  * src/app/api/webhooks/paystack) remains the authoritative source that
  * actually marks the invoice paid, exactly like the existing billing
  * checkout's `confirmCheckoutAction` / webhook pair. */
-export async function verifyInvoicePaymentAction(reference: string): Promise<ActionResult<{ status: string }>> {
+export async function verifyInvoicePaymentAction(
+  reference: string,
+): Promise<ActionResult<{ status: string }>> {
   try {
     const data = await verifyTransaction(reference);
     return { ok: true, data: { status: data.status } };

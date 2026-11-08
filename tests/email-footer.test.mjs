@@ -1,3 +1,4 @@
+import * as invoicePolicy from "../src/lib/invoicing/policy.ts";
 // Provider responses and addresses are fixtures. No SMTP/Resend/Gmail send occurs.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -144,6 +145,7 @@ test("the final provider payload includes one shared invitation footer and reada
       };
     }
     const email = load("../src/lib/email.ts", {
+      "@/lib/invoicing/policy": invoicePolicy,
       resend: { Resend },
       "@/lib/mail/service": f.service,
       "@/lib/mail/layout": layout,

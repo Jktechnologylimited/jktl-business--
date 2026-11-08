@@ -1,3 +1,4 @@
+import * as invoicePolicy from "../src/lib/invoicing/policy.ts";
 import * as businessOutreach from "../src/lib/mail/business-outreach.ts";
 import * as promotionDefaults from "../src/lib/mail/promotion-defaults.ts";
 import { invitationExpiry } from "../src/lib/mail/invitation-date.ts";
@@ -713,6 +714,7 @@ test("shared Resend sender applies verified Reply-To to real event helpers and r
     }
     process.env.RESEND_API_KEY = "synthetic-not-a-provider-key";
     const email = load("../src/lib/email.ts", {
+      "@/lib/invoicing/policy": invoicePolicy,
       resend: { Resend: FakeResend },
       "@/lib/mail/service": service,
       "@/lib/mail/layout": layout,

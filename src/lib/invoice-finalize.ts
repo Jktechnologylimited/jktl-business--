@@ -1,7 +1,10 @@
 import "server-only";
 import { getCustomer } from "@/lib/db/customers";
-import { getBusinessProfile } from "@/lib/db/organizations";
-import { sendPaymentReceiptEmail } from "@/lib/email";
+import { getBusinessProfile, getOwnerEmail } from "@/lib/db/organizations";
+import {
+  sendPaymentReceiptEmail,
+  sendBusinessInvoicePaidEmail,
+} from "@/lib/email";
 import { notifyInvoicePaid, notifyPaymentReceived } from "@/lib/notify";
 import type { Invoice } from "@/lib/types";
 
@@ -26,12 +29,13 @@ export async function finalizeInvoicePaid(
   invoice: Invoice,
   details: InvoicePaymentDetails = {},
 ): Promise<void> {
-  // Fire both pushes without awaiting: they are independent, and neither should
-  // delay the other. `notifyPaymentReceived` is the one that leads with the
-  // amount, because "money arrived" is the notification a business actually
-  // wants; the invoice-number one stays for continuity with existing clients.
-  void notifyInvoicePaid(organizationId, { number: invoice.number, totalKobo: invoice.totalKobo });
-  void notifyPaymentReceived(organizationId, {
+  // Await best-effort notification delivery so serverless response completion
+  // cannot discard in-flight provider requests.
+  await notifyInvoicePaid(organizationId, {
+    number: invoice.number,
+    totalKobo: invoice.totalKobo,
+  });
+  await notifyPaymentReceived(organizationId, {
     amountKobo: invoice.totalKobo,
     customerName: "Your customer",
     invoiceNumber: invoice.number,
@@ -39,10 +43,22 @@ export async function finalizeInvoicePaid(
   });
 
   try {
-    const [customer, profile] = await Promise.all([
+    const [customer, profile, ownerEmail] = await Promise.all([
       getCustomer(organizationId, invoice.customerId),
       getBusinessProfile(organizationId),
+      getOwnerEmail(organizationId),
     ]);
+    if (ownerEmail && profile)
+      await sendBusinessInvoicePaidEmail({
+        to: ownerEmail,
+        businessName: profile.displayName,
+        customerName: customer?.name || "Your customer",
+        invoiceNumber: invoice.number,
+        totalKobo: invoice.totalKobo,
+        reference: details.reference || "",
+        invoiceId: invoice.id,
+        online: invoice.paidVia === "online",
+      }).catch(() => undefined);
     if (customer?.email && profile) {
       await sendPaymentReceiptEmail({
         to: customer.email,

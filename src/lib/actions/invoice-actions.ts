@@ -1,9 +1,11 @@
 "use server";
 
+import { invoiceAccess } from "@/lib/invoicing/access";
+import { getPaymentSettings } from "@/lib/db/payments";
+import { payoutReady, BANK_REQUIRED } from "@/lib/invoicing/policy";
 import * as db from "@/lib/db/invoices";
 import { getCustomer } from "@/lib/db/customers";
 import { getBusinessProfile } from "@/lib/db/organizations";
-import { requireSession } from "@/lib/session";
 import { sendInvoiceEmail } from "@/lib/email";
 import { notifyInvoiceSent } from "@/lib/notify";
 import { finalizeInvoicePaid } from "@/lib/invoice-finalize";
@@ -14,12 +16,18 @@ import type { Invoice, InvoiceItem, InvoiceStatus } from "@/lib/types";
 function appOrigin(): string {
   const explicit = process.env.NEXT_PUBLIC_APP_URL;
   if (explicit) return explicit.replace(/\/+$/, "");
-  return `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || "jktl.com.ng"}`;
+  return `https://business.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || "jktl.com.ng"}`;
 }
 
-export async function createInvoiceAction(input: db.InvoiceInput): Promise<ActionResult<{ invoice: Invoice; items: InvoiceItem[] }>> {
+export async function createInvoiceAction(
+  input: db.InvoiceInput,
+): Promise<ActionResult<{ invoice: Invoice; items: InvoiceItem[] }>> {
   try {
-    const { organizationId } = await requireSession();
+    const { organizationId } = await invoiceAccess();
+    if (!payoutReady(await getPaymentSettings(organizationId)))
+      return { ok: false, error: BANK_REQUIRED };
+    if (!(await getCustomer(organizationId, input.customerId)))
+      return { ok: false, error: "Customer not found." };
     return { ok: true, data: await db.createInvoice(organizationId, input) };
   } catch (err) {
     console.error(err);
@@ -27,14 +35,21 @@ export async function createInvoiceAction(input: db.InvoiceInput): Promise<Actio
   }
 }
 
-export async function updateInvoiceStatusAction(id: string, status: InvoiceStatus): Promise<ActionResult<Invoice>> {
+export async function updateInvoiceStatusAction(
+  id: string,
+  status: InvoiceStatus,
+): Promise<ActionResult<Invoice>> {
   try {
-    const { organizationId } = await requireSession();
+    const { organizationId } = await invoiceAccess();
+    const previous = await db.getInvoice(organizationId, id);
+    if (previous?.status === "paid") return { ok: true, data: previous };
     const invoice = await db.updateInvoiceStatus(organizationId, id, status);
     if (!invoice) return { ok: false, error: "Invoice not found." };
 
     if (status === "paid") {
-      void finalizeInvoicePaid(organizationId, invoice, { method: "cash or transfer" });
+      await finalizeInvoicePaid(organizationId, invoice, {
+        method: "cash or transfer",
+      });
     }
 
     return { ok: true, data: invoice };
@@ -46,9 +61,13 @@ export async function updateInvoiceStatusAction(id: string, status: InvoiceStatu
 
 /** Explicit send, triggered from the invoice detail page — not automatic on
  * create, since drafts shouldn't go out and the owner may want to review first. */
-export async function sendInvoiceEmailAction(id: string): Promise<ActionResult<null>> {
+export async function sendInvoiceEmailAction(
+  id: string,
+): Promise<ActionResult<null>> {
   try {
-    const { organizationId } = await requireSession();
+    const { organizationId } = await invoiceAccess();
+    if (!payoutReady(await getPaymentSettings(organizationId)))
+      return { ok: false, error: BANK_REQUIRED };
     const [invoice, items, profile] = await Promise.all([
       db.getInvoice(organizationId, id),
       db.getInvoiceItems(organizationId, id),
@@ -56,7 +75,17 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult<n
     ]);
     if (!invoice || !profile) return { ok: false, error: "Invoice not found." };
     const customer = await getCustomer(organizationId, invoice.customerId);
-    if (!customer?.email) return { ok: false, error: "This customer has no email on file." };
+    if (!customer?.email)
+      return { ok: false, error: "This customer has no email on file." };
+
+    if (invoice.status === "paid")
+      return {
+        ok: false,
+        error: "This invoice is already paid. Use its receipt instead.",
+      };
+    // Sending issues the draft, making its payment link available to the payer.
+    if (invoice.status === "draft")
+      await db.updateInvoiceStatus(organizationId, id, "pending");
 
     // The public payment link goes in the email, so the customer can settle it
     // in two taps instead of reading bank details across to their banking app.
@@ -69,7 +98,11 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult<n
       invoiceNumber: invoice.number,
       totalKobo: invoice.totalKobo,
       dueDate: invoice.dueDate,
-      lines: items.map((i) => ({ description: i.description, quantity: i.quantity, totalKobo: i.totalKobo })),
+      lines: items.map((i) => ({
+        description: i.description,
+        quantity: i.quantity,
+        totalKobo: i.totalKobo,
+      })),
       payUrl,
       businessPhone: profile.phone,
     });
@@ -78,7 +111,7 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult<n
     // Best-effort, and after the send: the business wants to know a request for
     // money has actually gone out, but that must never be the reason the send
     // is reported as failed.
-    void notifyInvoiceSent(organizationId, {
+    await notifyInvoiceSent(organizationId, {
       number: invoice.number,
       totalKobo: invoice.totalKobo,
       customerName: customer.name,
@@ -92,9 +125,11 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult<n
   }
 }
 
-export async function deleteInvoiceAction(id: string): Promise<ActionResult<null>> {
+export async function deleteInvoiceAction(
+  id: string,
+): Promise<ActionResult<null>> {
   try {
-    const { organizationId } = await requireSession();
+    const { organizationId } = await invoiceAccess();
     await db.deleteInvoice(organizationId, id);
     return { ok: true, data: null };
   } catch (err) {

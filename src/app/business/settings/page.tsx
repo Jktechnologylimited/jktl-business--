@@ -63,7 +63,10 @@ export default function SettingsPage() {
     typeof window !== "undefined" &&
     window.location.search.includes("billing=callback")
       ? "infrastructure"
-      : "business",
+      : typeof window !== "undefined" &&
+          new URLSearchParams(window.location.search).get("tab") === "payments"
+        ? "payments"
+        : "business",
   );
   const [addingMember, setAddingMember] = useState(false);
   const [removingMember, setRemovingMember] =
@@ -193,7 +196,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <StatusPill tone={m.role === "owner" ? "primary" : "neutral"}>
-                  {m.role === "staff" ? "Team" : m.role[0].toUpperCase() + m.role.slice(1)}
+                  {m.role === "staff"
+                    ? "Team"
+                    : m.role[0].toUpperCase() + m.role.slice(1)}
                 </StatusPill>
                 {m.role !== "owner" ? (
                   <button

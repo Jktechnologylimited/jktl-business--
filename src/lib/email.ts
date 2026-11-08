@@ -1,3 +1,4 @@
+import { businessInvoiceSender } from "@/lib/invoicing/policy";
 import { invitationExpiry } from "@/lib/mail/invitation-date";
 import { uncertainProviderRejection } from "@/lib/mail/provider-outcome";
 import { recordMailAttempt } from "@/lib/mail/history";
@@ -130,6 +131,7 @@ async function send(
   text: string,
   context: MailContext = {},
   key?: string,
+  invoiceBusinessName?: string,
 ): Promise<EmailResult> {
   if (!to || !to.includes("@"))
     return { ok: false, error: "No valid recipient email." };
@@ -143,6 +145,9 @@ async function send(
     const { error, data } = await provider.emails.send(
       {
         ...(rendered.delivery || { from: FROM }),
+        ...(invoiceBusinessName
+          ? { from: businessInvoiceSender(invoiceBusinessName) }
+          : {}),
         to,
         subject,
         ...(context.category === "marketing" && rendered.preferencesUrl
@@ -366,6 +371,8 @@ export async function sendInvoiceEmail(params: {
     html,
     text,
     { category: "payment" },
+    undefined,
+    businessName,
   );
 }
 
@@ -401,7 +408,7 @@ export async function sendPaymentReceiptEmail(params: {
     <p>We've received your payment for invoice <strong>#${escapeHtml(invoiceNumber)}</strong> to ${escapeHtml(businessName)}.</p>
     <p style="background:#f5f0df;border-radius:10px;padding:14px 16px;margin:16px 0">
       <span style="font-size:22px;font-weight:700">${formatKobo(totalKobo)}</span><br/>
-      <span style="font-size:13px;color:#3b4451">Paid ${formatShortDate(paidAt)}${reference ? ` · Reference ${reference}` : ""}</span>
+      <span style="font-size:13px;color:#3b4451">Paid ${formatShortDate(paidAt)}${reference ? ` · Reference ${escapeHtml(reference)}` : ""}</span>
     </p>
     <p style="font-size:13px;color:#5b6470">Keep this email as your receipt. ${escapeHtml(businessName)} has been notified that the invoice is settled.</p>
   `);
@@ -412,6 +419,8 @@ export async function sendPaymentReceiptEmail(params: {
     html,
     text,
     { category: "payment" },
+    undefined,
+    businessName,
   );
 }
 
@@ -666,9 +675,15 @@ export async function sendAffiliatePasswordResetEmail(params: {
     `If you did not ask for this, ignore this email — your password has not changed.`,
   ].join("\n");
 
-  return send(to, `Reset your JKTL ${programme === "partner" ? "Partners" : "Affiliates"} password`, html, text, {
-    category: "security",
-  });
+  return send(
+    to,
+    `Reset your JKTL ${programme === "partner" ? "Partners" : "Affiliates"} password`,
+    html,
+    text,
+    {
+      category: "security",
+    },
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1087,5 +1102,31 @@ export async function sendChatbotLeadEmail(input: {
     `<p>A visitor has requested a response from your business.</p><p>${escapeHtml(input.name)}</p><p style="white-space:pre-wrap">${escapeHtml(input.detail)}</p>${mailAction("Review chatbot enquiries", "https://business.jktl.com.ng/business/chatbot")}`,
     `${input.name}\n${input.detail}\nhttps://business.jktl.com.ng/business/chatbot`,
     { category: "service" },
+  );
+}
+
+/** Business-owner notice: payment confirmation is distinct from bank settlement. */
+export async function sendBusinessInvoicePaidEmail(p: {
+  to: string;
+  businessName: string;
+  customerName: string;
+  invoiceNumber: string;
+  totalKobo: number;
+  reference: string;
+  invoiceId: string;
+  online: boolean;
+}) {
+  const settlement = p.online
+    ? "The payment was routed to your configured Paystack subaccount. Bank settlement follows Paystack’s settlement schedule; this email does not confirm a bank credit."
+    : "This invoice was marked paid manually. No automatic bank transfer was initiated.";
+  const url = `https://business.jktl.com.ng/business/invoices/${encodeURIComponent(p.invoiceId)}`;
+  return send(
+    p.to,
+    `Payment received for ${p.businessName} · ${p.invoiceNumber}`,
+    `<p><strong>${escapeHtml(p.customerName)}</strong> paid ${formatKobo(p.totalKobo)} for invoice <strong>${escapeHtml(p.invoiceNumber)}</strong>.</p><p>${escapeHtml(settlement)}</p>${p.reference ? `<p>Reference: ${escapeHtml(p.reference)}</p>` : ""}${mailAction(url, "View invoice")}`,
+    `${p.customerName} · ${formatKobo(p.totalKobo)} · Invoice ${p.invoiceNumber}\n${settlement}\nReference: ${p.reference}\nView invoice: ${url}`,
+    { category: "payment" },
+    `invoice-paid-${p.invoiceId}-${p.reference || "manual"}`,
+    p.businessName,
   );
 }

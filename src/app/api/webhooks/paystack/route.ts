@@ -23,7 +23,8 @@ import {
   findOrgIdByOwnerEmail,
   recordWebhookEventOnce,
 } from "@/lib/db/billing";
-import { markInvoicePaidOnline } from "@/lib/db/invoices";
+import { validInvoicePayment } from "@/lib/invoicing/policy";
+import { getInvoice, markInvoicePaidOnline } from "@/lib/db/invoices";
 import {
   activateReceptionistContract,
   applyContractPayment,
@@ -478,6 +479,15 @@ async function handleInvoicePaymentSuccess(
     return;
   }
 
+  const expected = await getInvoice(organizationId, invoiceId);
+  if (
+    !expected ||
+    expected.status === "draft" ||
+    !validInvoicePayment(data, expected.totalKobo, INVOICE_PLATFORM_FEE_KOBO)
+  ) {
+    console.error("invoice-payment: amount/currency/invoice mismatch");
+    return;
+  }
   const invoice = await markInvoicePaidOnline(organizationId, invoiceId, {
     reference: (data.reference as string) ?? "",
     platformFeeKobo: INVOICE_PLATFORM_FEE_KOBO,

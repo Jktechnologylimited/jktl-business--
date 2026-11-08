@@ -39,25 +39,35 @@ function mapItem(row: Record<string, unknown>): InvoiceItem {
 
 export async function listInvoices(orgId: string): Promise<Invoice[]> {
   const sql = getSql();
-  const rows = await sql`SELECT * FROM invoices WHERE organization_id = ${orgId} ORDER BY issue_date DESC`;
+  const rows =
+    await sql`SELECT * FROM invoices WHERE organization_id = ${orgId} ORDER BY issue_date DESC`;
   return rows.map(mapInvoice);
 }
 
-export async function getInvoice(orgId: string, id: string): Promise<Invoice | null> {
+export async function getInvoice(
+  orgId: string,
+  id: string,
+): Promise<Invoice | null> {
   const sql = getSql();
-  const rows = await sql`SELECT * FROM invoices WHERE id = ${id} AND organization_id = ${orgId}`;
+  const rows =
+    await sql`SELECT * FROM invoices WHERE id = ${id} AND organization_id = ${orgId}`;
   return rows[0] ? mapInvoice(rows[0]) : null;
 }
 
 export async function listInvoiceItems(orgId: string): Promise<InvoiceItem[]> {
   const sql = getSql();
-  const rows = await sql`SELECT * FROM invoice_items WHERE organization_id = ${orgId}`;
+  const rows =
+    await sql`SELECT * FROM invoice_items WHERE organization_id = ${orgId}`;
   return rows.map(mapItem);
 }
 
-export async function getInvoiceItems(orgId: string, invoiceId: string): Promise<InvoiceItem[]> {
+export async function getInvoiceItems(
+  orgId: string,
+  invoiceId: string,
+): Promise<InvoiceItem[]> {
   const sql = getSql();
-  const rows = await sql`SELECT * FROM invoice_items WHERE invoice_id = ${invoiceId} AND organization_id = ${orgId}`;
+  const rows =
+    await sql`SELECT * FROM invoice_items WHERE invoice_id = ${invoiceId} AND organization_id = ${orgId}`;
   return rows.map(mapItem);
 }
 
@@ -79,27 +89,62 @@ export interface InvoiceInput {
   status: InvoiceStatus;
 }
 
-export async function createInvoice(orgId: string, input: InvoiceInput): Promise<{ invoice: Invoice; items: InvoiceItem[] }> {
+export async function createInvoice(
+  orgId: string,
+  input: InvoiceInput,
+): Promise<{ invoice: Invoice; items: InvoiceItem[] }> {
   const sql = getSql();
-  const subtotalKobo = input.items.reduce((sum, i) => sum + i.quantity * i.unitPriceKobo, 0);
-  const totalKobo = Math.max(0, subtotalKobo - input.discountKobo);
+  if (
+    !input ||
+    !Array.isArray(input.items) ||
+    input.items.length < 1 ||
+    input.items.length > 100 ||
+    !["draft", "pending", "paid", "overdue"].includes(input.status) ||
+    !Number.isSafeInteger(input.discountKobo) ||
+    input.discountKobo < 0 ||
+    input.items.some(
+      (i) =>
+        !Number.isSafeInteger(i.quantity) ||
+        i.quantity < 1 ||
+        !Number.isSafeInteger(i.unitPriceKobo) ||
+        i.unitPriceKobo < 0 ||
+        typeof i.description !== "string" ||
+        !i.description.trim() ||
+        i.description.length > 2000,
+    )
+  )
+    throw Error("Check invoice items and amounts.");
+  const subtotalKobo = input.items.reduce(
+    (sum, i) => sum + i.quantity * i.unitPriceKobo,
+    0,
+  );
+  if (!Number.isSafeInteger(subtotalKobo) || input.discountKobo > subtotalKobo)
+    throw Error("Check invoice total and discount.");
+  const totalKobo = subtotalKobo - input.discountKobo;
   const itemsJson = JSON.stringify(
-    input.items.map((i) => ({ id: i.id, description: i.description, quantity: i.quantity, unit_price_kobo: i.unitPriceKobo })),
+    input.items.map((i) => ({
+      id: i.id,
+      description: i.description,
+      quantity: i.quantity,
+      unit_price_kobo: i.unitPriceKobo,
+    })),
   );
   const paidAt = input.status === "paid" ? new Date().toISOString() : null;
 
   const rows = await sql`
     WITH new_invoice AS (
       INSERT INTO invoices (id, organization_id, number, customer_id, status, due_date, subtotal_kobo, discount_kobo, total_kobo, notes, paid_at)
-      VALUES (${input.id}, ${orgId}, ${input.number}, ${input.customerId}, ${input.status}, ${input.dueDate}, ${subtotalKobo}, ${input.discountKobo}, ${totalKobo}, ${input.notes}, ${paidAt})
-      ON CONFLICT (id) DO UPDATE SET notes = excluded.notes
+      SELECT ${input.id}, ${orgId}, ${input.number}, ${input.customerId}, ${input.status}, ${input.dueDate}::date, ${subtotalKobo}, ${input.discountKobo}, ${totalKobo}, ${input.notes}, ${paidAt}::timestamptz
+      WHERE EXISTS(SELECT 1 FROM payment_settings ps WHERE ps.organization_id=${orgId} AND ps.paystack_subaccount_code ~ '^ACCT_[A-Za-z0-9]+$' AND ps.settlement_account_number ~ '^[0-9]{10}$' AND btrim(ps.settlement_account_name)<>'' AND ps.settlement_bank_code<>'')
+      AND EXISTS(SELECT 1 FROM customers c WHERE c.id=${input.customerId} AND c.organization_id=${orgId})
+      ON CONFLICT (id) DO UPDATE SET notes = excluded.notes WHERE invoices.organization_id=${orgId} AND invoices.customer_id=excluded.customer_id
       RETURNING *
     ),
     inserted_items AS (
       INSERT INTO invoice_items (id, organization_id, invoice_id, description, quantity, unit_price_kobo, total_kobo)
       SELECT item.id, ${orgId}, new_invoice.id, item.description, item.quantity, item.unit_price_kobo, item.quantity * item.unit_price_kobo
       FROM new_invoice, jsonb_to_recordset(${itemsJson}::jsonb) AS item(id uuid, description text, quantity int, unit_price_kobo bigint)
-      ON CONFLICT (id) DO UPDATE SET quantity = excluded.quantity
+      ON CONFLICT (id) DO UPDATE SET quantity = excluded.quantity WHERE invoice_items.organization_id=${orgId} AND invoice_items.invoice_id=excluded.invoice_id
       RETURNING *
     )
     SELECT
@@ -107,22 +152,31 @@ export async function createInvoice(orgId: string, input: InvoiceInput): Promise
       (SELECT coalesce(jsonb_agg(inserted_items), '[]'::jsonb) FROM inserted_items) AS items
   `;
 
+  if (!rows[0]?.invoice)
+    throw Error(
+      "A verified receiving bank account and a customer in your business are required.",
+    );
   return {
     invoice: mapInvoice(rows[0].invoice as Record<string, unknown>),
     items: (rows[0].items as Record<string, unknown>[]).map(mapItem),
   };
 }
 
-export async function updateInvoiceStatus(orgId: string, id: string, status: InvoiceStatus): Promise<Invoice | null> {
+export async function updateInvoiceStatus(
+  orgId: string,
+  id: string,
+  status: InvoiceStatus,
+): Promise<Invoice | null> {
   const sql = getSql();
   const paidAt = status === "paid" ? new Date().toISOString() : null;
   // Explicitly stamps paid_via = 'manual' on this path (rather than leaving
   // whatever was there before) so an invoice that was once paid online,
   // reverted to pending, and marked paid again by hand here doesn't keep
   // reporting itself as an online/platform-fee payment it no longer is.
-  const rows = status === "paid"
-    ? await sql`UPDATE invoices SET status = ${status}, paid_at = ${paidAt}, paid_via = 'manual', platform_fee_kobo = 0, payment_reference = '' WHERE id = ${id} AND organization_id = ${orgId} RETURNING *`
-    : await sql`UPDATE invoices SET status = ${status} WHERE id = ${id} AND organization_id = ${orgId} RETURNING *`;
+  const rows =
+    status === "paid"
+      ? await sql`UPDATE invoices SET status = ${status}, paid_at = ${paidAt}, paid_via = 'manual', platform_fee_kobo = 0, payment_reference = '' WHERE id = ${id} AND organization_id = ${orgId} AND status <> 'paid' RETURNING *`
+      : await sql`UPDATE invoices SET status = ${status} WHERE id = ${id} AND organization_id = ${orgId} RETURNING *`;
   return rows[0] ? mapInvoice(rows[0]) : null;
 }
 
@@ -180,7 +234,12 @@ export interface PublicInvoice {
   businessAddress: string;
   businessCity: string;
   businessState: string;
-  items: Array<{ description: string; quantity: number; unitPriceKobo: number; totalKobo: number }>;
+  items: Array<{
+    description: string;
+    quantity: number;
+    unitPriceKobo: number;
+    totalKobo: number;
+  }>;
   /** True once the business has a working Paystack Subaccount — gates
    * whether the public page shows a "Pay now" button at all. */
   payoutReady: boolean;
@@ -198,7 +257,9 @@ export interface PublicInvoice {
  * Deliberately returns only what a payer needs to see: never the
  * customer's own name, phone, or notes on the invoice.
  */
-export async function getPublicInvoice(invoiceId: string): Promise<PublicInvoice | null> {
+export async function getPublicInvoice(
+  invoiceId: string,
+): Promise<PublicInvoice | null> {
   const sql = getSql();
   const rows = await sql`
     SELECT
@@ -219,7 +280,8 @@ export async function getPublicInvoice(invoiceId: string): Promise<PublicInvoice
   if (!row) return null;
 
   const orgId = row.organization_id as string;
-  const itemRows = await sql`SELECT description, quantity, unit_price_kobo, total_kobo FROM invoice_items WHERE invoice_id = ${invoiceId} AND organization_id = ${orgId}`;
+  const itemRows =
+    await sql`SELECT description, quantity, unit_price_kobo, total_kobo FROM invoice_items WHERE invoice_id = ${invoiceId} AND organization_id = ${orgId}`;
 
   return {
     id: row.id as string,

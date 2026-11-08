@@ -7,6 +7,7 @@ import { id as makeId } from "@/lib/ids";
 import { addOutboxEntry, getCachedTenant, outboxCount, putCachedTenant } from "@/lib/offline/idb";
 import { onSyncProgress, processOutbox } from "@/lib/offline/sync";
 import { signupAction, loginAction, logoutAction, currentSessionAction } from "@/lib/actions/auth-actions";
+import { createInvoiceAction } from "@/lib/actions/invoice-actions";
 import { pullAllAction } from "@/lib/actions/sync-actions";
 import type {
   BookingStatus,
@@ -261,7 +262,7 @@ interface BusinessStore {
   addExpense: (input: NewExpenseInput) => void;
   deleteExpense: (id: string) => void;
 
-  addInvoice: (input: NewInvoiceInput) => Invoice;
+  addInvoice: (input: NewInvoiceInput) => Promise<Invoice>;
   updateInvoiceStatus: (id: string, status: InvoiceStatus) => void;
   deleteInvoice: (id: string) => void;
 
@@ -629,7 +630,7 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
   },
 
   // ---- Invoices ----
-  addInvoice: (input) => {
+  addInvoice: async (input) => {
     const mode = get().mode;
     const orgId = get().data.organization.id;
     const nextNumber = get().data.invoices.length + 1;
@@ -663,10 +664,51 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
       unitPriceKobo: line.unitPriceKobo,
       totalKobo: line.quantity * line.unitPriceKobo,
     }));
-    set((state) => ({ data: { ...state.data, invoices: [invoice, ...state.data.invoices], invoiceItems: [...items, ...state.data.invoiceItems] } }));
-    get().enqueueSync("invoice.create", {
-      input: { id: invoiceId, number, customerId: input.customerId, items: items.map((i) => ({ id: i.id, description: i.description, quantity: i.quantity, unitPriceKobo: i.unitPriceKobo })), discountKobo: input.discountKobo, dueDate: input.dueDate, notes: input.notes, status: input.status },
-    });
+    if (mode === "live") {
+      const result = await createInvoiceAction({
+        id: invoiceId,
+        number,
+        customerId: input.customerId,
+        items: items.map((i) => ({
+          id: i.id,
+          description: i.description,
+          quantity: i.quantity,
+          unitPriceKobo: i.unitPriceKobo,
+        })),
+        discountKobo: input.discountKobo,
+        dueDate: input.dueDate,
+        notes: input.notes,
+        status: input.status,
+      });
+      if (!result.ok) throw Error(result.error);
+      if (get().data.organization.id !== orgId)
+        throw Error("Your business account changed. Reload invoices.");
+      set((state) => ({
+        data: {
+          ...state.data,
+          invoices: [
+            result.data.invoice,
+            ...state.data.invoices.filter(
+              (i) => i.id !== result.data.invoice.id,
+            ),
+          ],
+          invoiceItems: [
+            ...state.data.invoiceItems.filter(
+              (i) => i.invoiceId !== result.data.invoice.id,
+            ),
+            ...result.data.items,
+          ],
+        },
+      }));
+    } else {
+      set((state) => ({
+        data: {
+          ...state.data,
+          invoices: [invoice, ...state.data.invoices],
+          invoiceItems: [...items, ...state.data.invoiceItems],
+        },
+      }));
+    }
     get().persistCache();
     return invoice;
   },

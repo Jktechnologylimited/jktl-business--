@@ -1,7 +1,7 @@
 "use client";
 import { T } from "@/components/i18n/LanguageProvider";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
@@ -15,6 +15,8 @@ import { useBusinessStore } from "@/lib/store";
 import { useToastStore } from "@/lib/toast";
 import { customerName } from "@/lib/selectors";
 import { formatKobo, formatShortDate } from "@/lib/format";
+import { getPaymentSettingsAction } from "@/lib/actions/payment-settings-actions";
+import { payoutReady } from "@/lib/invoicing/policy";
 import type { InvoiceStatus } from "@/lib/types";
 
 type Tab = "all" | InvoiceStatus;
@@ -24,6 +26,58 @@ export default function InvoicesPage() {
   const addInvoice = useBusinessStore((s) => s.addInvoice);
   const showToast = useToastStore((s) => s.show);
 
+  const mode = useBusinessStore((s) => s.mode);
+  const [bank, setBank] = useState<{
+    ready: boolean;
+    error: string;
+    loaded: boolean;
+  }>({ ready: false, error: "", loaded: false });
+  const [checking, setChecking] = useState(false);
+  async function checkBank() {
+    setChecking(true);
+    try {
+      const r = await getPaymentSettingsAction();
+      setBank(
+        r.ok
+          ? { ready: payoutReady(r.data), error: "", loaded: true }
+          : { ready: false, error: r.error, loaded: true },
+      );
+    } catch {
+      setBank({
+        ready: false,
+        error: "Could not check your receiving account. Please retry.",
+        loaded: true,
+      });
+    } finally {
+      setChecking(false);
+    }
+  }
+  useEffect(() => {
+    if (mode !== "live") return;
+    let active = true;
+    void getPaymentSettingsAction()
+      .then((r) => {
+        if (active)
+          setBank(
+            r.ok
+              ? { ready: payoutReady(r.data), error: "", loaded: true }
+              : { ready: false, error: r.error, loaded: true },
+          );
+      })
+      .catch(() => {
+        if (active)
+          setBank({
+            ready: false,
+            error: "Could not check payment settings. Please retry.",
+            loaded: true,
+          });
+      });
+    return () => {
+      active = false;
+    };
+  }, [mode, data.organization.id]);
+  const canCreate =
+    data.customers.length > 0 && (mode !== "live" || bank.ready);
   const [tab, setTab] = useState<Tab>("all");
   const [adding, setAdding] = useState(false);
 
@@ -46,7 +100,7 @@ export default function InvoicesPage() {
           <Button
             size="sm"
             onClick={() => setAdding(true)}
-            disabled={data.customers.length === 0}
+            disabled={!canCreate}
           >
             <Plus className="size-4" />
             <T>Create</T>
@@ -54,6 +108,41 @@ export default function InvoicesPage() {
         }
       />
 
+      {mode === "live" && !bank.ready && (
+        <section
+          className="rounded-2xl border border-primary/30 bg-surface p-5 space-y-3"
+          aria-label="Receiving bank account"
+        >
+          <h2 className="font-semibold">Set up your receiving bank account</h2>
+          <p className="text-sm text-ink-muted">
+            Verify and save your bank details before creating invoices. Customer
+            payments are routed through Paystack to this account, with
+            settlement on Paystack’s schedule.
+          </p>
+          <p role="status" className="text-sm">
+            {bank.error ||
+              (bank.loaded
+                ? "A verified receiving account is required."
+                : "Checking payment setup…")}
+          </p>
+          <div className="flex flex-wrap gap-4 items-center">
+            <Link
+              className="rounded-xl bg-primary px-4 py-3 font-semibold text-white"
+              href="/business/settings?tab=payments"
+            >
+              Add bank account
+            </Link>
+            <button
+              type="button"
+              disabled={checking}
+              className="text-sm underline"
+              onClick={checkBank}
+            >
+              {checking ? "Checking…" : "Check again"}
+            </button>
+          </div>
+        </section>
+      )}
       {data.invoices.length > 0 ? (
         <FilterTabs<Tab>
           options={[
@@ -74,10 +163,7 @@ export default function InvoicesPage() {
           title="No invoices yet"
           description="Create an invoice for a customer to track what they owe you."
           action={
-            <Button
-              onClick={() => setAdding(true)}
-              disabled={data.customers.length === 0}
-            >
+            <Button onClick={() => setAdding(true)} disabled={!canCreate}>
               <T>Create invoice</T>
             </Button>
           }
@@ -124,8 +210,8 @@ export default function InvoicesPage() {
         <InvoiceForm
           customers={data.customers}
           onCancel={() => setAdding(false)}
-          onSubmit={(input) => {
-            addInvoice(input);
+          onSubmit={async (input) => {
+            await addInvoice(input);
             setAdding(false);
             showToast("Invoice created");
           }}

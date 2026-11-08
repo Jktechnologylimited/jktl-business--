@@ -364,7 +364,7 @@ export async function createSubaccount(params: {
     method: "POST",
     body: JSON.stringify({
       business_name: params.businessName,
-      bank_code: params.bankCode,
+      settlement_bank: params.bankCode,
       account_number: params.accountNumber,
       percentage_charge: 0,
     }),
@@ -413,6 +413,7 @@ export async function initializeInvoicePayment(params: {
     body: JSON.stringify({
       email: params.email,
       amount: params.amountKobo,
+      currency: "NGN",
       subaccount: params.subaccountCode,
       transaction_charge: params.transactionChargeKobo,
       bearer: "account",

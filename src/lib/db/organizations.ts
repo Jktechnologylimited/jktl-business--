@@ -172,7 +172,7 @@ export async function updateWebsiteSettings(orgId: string, patch: WebsiteSetting
 export async function getOwnerEmail(orgId: string): Promise<string> {
   const sql = getSql();
   const rows = await sql`
-    SELECT email FROM organization_members WHERE organization_id = ${orgId} AND role = 'owner' LIMIT 1
+    SELECT COALESCE(NULLIF(u.email,''),m.email) AS email FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.organization_id = ${orgId} AND m.role = 'owner' AND m.active=true ORDER BY m.created_at,m.id LIMIT 1
   `;
   return (rows[0]?.email as string) ?? "";
 }
