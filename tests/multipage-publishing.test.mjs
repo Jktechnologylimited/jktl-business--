@@ -105,7 +105,12 @@ test("published generic and dressmaker pages resolve actual routes and correct p
   }
 });
 test("published sitemap and actual child-page handler follow the same website route registry", async () => {
-  for (const id of ["fashion", "dressmaker-atelier", "blank-landing"]) {
+  for (const id of [
+    "fashion",
+    "dressmaker-atelier",
+    "jewellery-luxe",
+    "blank-landing",
+  ]) {
     const f = setup(id),
       deps = {
         "@/lib/db/public": f.db,

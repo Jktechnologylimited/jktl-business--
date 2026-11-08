@@ -257,6 +257,13 @@ export function TemplateEditor({
               {text("intro", "Introduction", true)}
               {text("ctaLabel", "Main button label", false, 60)}
               {text("heroImage", "Hero image HTTPS URL", false, 2000)}
+              {content.design === "jewellery" &&
+                text(
+                  "aboutImage",
+                  "Story and campaign photograph",
+                  false,
+                  2000,
+                )}
               {content.design === "legal" && (
                 <>
                   {text("aboutImage", "Firm photograph", false, 2000)}
@@ -271,7 +278,18 @@ export function TemplateEditor({
                   </label>
                 </>
               )}
-              {content.design === "dressmaker" && <label className="flex gap-3 text-sm"><input type="checkbox" checked={content.demoContent ?? true} onChange={e=>update("demoContent",e.target.checked)}/>Show sample-content label. Turn this off after replacing sample content and adding genuine customer reviews.</label>}
+              {(content.design === "dressmaker" ||
+                content.design === "jewellery") && (
+                <label className="flex gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={content.demoContent ?? true}
+                    onChange={(e) => update("demoContent", e.target.checked)}
+                  />
+                  Show sample-content label. Turn this off after replacing
+                  sample content and adding genuine customer reviews.
+                </label>
+              )}
               <button
                 type="button"
                 className="text-xs text-primary underline"
@@ -365,8 +383,29 @@ export function TemplateEditor({
                       }
                     />
                   </label>
-                  {content.design === "dressmaker" && (
+                  {(content.design === "dressmaker" ||
+                    content.design === "jewellery") && (
                     <>
+                      {content.design === "jewellery" && (
+                        <label className="block text-sm">
+                          Product category
+                          <input
+                            className={field}
+                            value={item.category || ""}
+                            maxLength={80}
+                            onChange={(e) =>
+                              update(
+                                "offerings",
+                                content.offerings.map((v, n) =>
+                                  n === i
+                                    ? { ...v, category: e.target.value }
+                                    : v,
+                                ),
+                              )
+                            }
+                          />
+                        </label>
+                      )}
                       <label className="block text-sm">
                         Collection image URL
                         <input

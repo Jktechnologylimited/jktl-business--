@@ -83,7 +83,7 @@ require("next/dist/compiled/webpack/webpack").webpack(
           executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
           args: ["--no-sandbox"],
         });
-        for (const id of ["fashion", "dressmaker-atelier"])
+        for (const id of ["fashion", "dressmaker-atelier", "jewellery-luxe"])
           for (const width of [1440, 390]) {
             const p = await browser.newPage({
                 viewport: { width, height: 1000 },
@@ -105,14 +105,14 @@ require("next/dist/compiled/webpack/webpack").webpack(
             await frame
               .locator(
                 'header a[href$="/' +
-                  (id === "fashion" ? "about" : "atelier") +
+                  (id === "dressmaker-atelier" ? "atelier" : "about") +
                   '"]:visible',
               )
               .click();
             await frame
               .getByRole("heading", {
                 level: 1,
-                name: id === "fashion" ? "About us" : "Our atelier",
+                name: id === "dressmaker-atelier" ? "Our atelier" : "About us",
               })
               .waitFor();
             if (

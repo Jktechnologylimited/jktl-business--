@@ -64,11 +64,25 @@ const { DressmakerWebsite } = loadTs(
     },
   },
 );
+const { JewelleryWebsite } = loadTs(
+  "../src/components/templates/JewelleryWebsite.tsx",
+  {
+    react: require("react"),
+    "react/jsx-runtime": require("react/jsx-runtime"),
+    "framer-motion": require("framer-motion"),
+    "lucide-react": require("lucide-react"),
+    "@/lib/website-templates": catalogue,
+    "./JewelleryWebsite.module.css": {
+      __esModule: true,
+      default: new Proxy({}, { get: (_, key) => String(key) }),
+    },
+  },
+);
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 209);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 207);
-  assert.equal(new Set(all.map((t) => t.id)).size, 209);
+  assert.equal(all.length, 210);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 208);
+  assert.equal(new Set(all.map((t) => t.id)).size, 210);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -157,6 +171,7 @@ test("actual full-site renderer renders every template and safely escapes edited
       "./BeautyWebsite": { BeautyWebsite },
       "./LegalWebsite": { LegalWebsite },
       "./DressmakerWebsite": { DressmakerWebsite },
+      "./JewelleryWebsite": { JewelleryWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -212,8 +227,16 @@ test("actual full-site renderer renders every template and safely escapes edited
           template.id + "/" + path,
         );
         assert.ok(pageHtml.length > 1200);
-        const heading=catalogue.websitePageMeta(template,template.document,path).heading;
-        if(heading)assert.ok(pageHtml.includes(heading.replaceAll("&","&amp;")),template.id+"/"+path+" heading");
+        const heading = catalogue.websitePageMeta(
+          template,
+          template.document,
+          path,
+        ).heading;
+        if (heading)
+          assert.ok(
+            pageHtml.includes(heading.replaceAll("&", "&amp;")),
+            template.id + "/" + path + " heading",
+          );
       }
       continue;
     }
@@ -263,6 +286,14 @@ test("Main and Business publish the same catalogue and renderer", (t) => {
     return t.skip("Optional paired-checkout consistency check.");
   for (const [a, b] of [
     ["../src/lib/website-templates.ts", "lib/website-templates.ts"],
+    [
+      "../src/components/templates/JewelleryWebsite.tsx",
+      "components/templates/JewelleryWebsite.tsx",
+    ],
+    [
+      "../src/components/templates/JewelleryWebsite.module.css",
+      "components/templates/JewelleryWebsite.module.css",
+    ],
     [
       "../src/components/templates/TemplateWebsite.tsx",
       "components/templates/TemplateWebsite.tsx",
@@ -544,6 +575,7 @@ test("template-based public sites retain actual booking, product and chat compon
       "./BeautyWebsite": { BeautyWebsite },
       "./LegalWebsite": { LegalWebsite },
       "./DressmakerWebsite": { DressmakerWebsite },
+      "./JewelleryWebsite": { JewelleryWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -975,4 +1007,68 @@ test("all website templates have real routes; landing pages remain single-page",
       .websitePagePaths(catalogue.getWebsiteTemplate("dressmaker-atelier"))
       .includes("collection/the-ivory-story"),
   );
+});
+
+test("luxury jewellery supports editable categories and real product pages without a fake checkout", () => {
+  const t = catalogue.getWebsiteTemplate("jewellery-luxe"),
+    d = catalogue.templateDraft(t.id, "My jewellery boutique");
+  assert.deepEqual(catalogue.parseWebsiteDocument(d), d);
+  assert.equal(d.design, "jewellery");
+  assert.deepEqual(
+    catalogue.jewelleryCategories(d).map((c) => c.name),
+    ["Earrings", "Necklaces", "Rings"],
+  );
+  for (const path of catalogue.websitePagePaths(t, d)) {
+    const html = renderToStaticMarkup(
+      createElement(JewelleryWebsite, {
+        template: t,
+        document: d,
+        pagePath: path,
+        basePath: "/template-canvas/" + t.id,
+        preview: true,
+      }),
+    );
+    assert.equal((html.match(/<h1/g) || []).length, 1, path);
+    assert.ok(!html.includes("wix.com"));
+    assert.ok(!html.includes("checkout"));
+  }
+  const category = renderToStaticMarkup(
+    createElement(JewelleryWebsite, {
+      template: t,
+      document: d,
+      pagePath: "shop/rings",
+      preview: true,
+    }),
+  );
+  assert.match(category, /The Lightcatcher Ring/);
+  assert.doesNotMatch(category, /The Ripple Hoops/);
+  assert.match(category, /Enquire for price/);
+  const bad = {
+    ...d,
+    offerings: d.offerings.map((p, i) =>
+      i === 1 ? { ...p, title: d.offerings[0].title } : p,
+    ),
+  };
+  assert.throws(() => catalogue.parseWebsiteDocument(bad), /unique/);
+  const custom = {
+    ...d,
+    offerings: d.offerings.map((p, i) =>
+      i ? p : { ...p, category: "Brooches", price: "Enquire for sizing" },
+    ),
+  };
+  assert.equal(
+    catalogue.parseWebsiteDocument(custom).offerings[0].category,
+    "Brooches",
+  );
+  assert.ok(catalogue.websitePagePaths(t, custom).includes("shop/brooches"));
+  const contact = renderToStaticMarkup(
+    createElement(JewelleryWebsite, {
+      template: t,
+      document: d,
+      pagePath: "contact",
+      preview: true,
+    }),
+  );
+  assert.match(contact, /Preview only/);
+  assert.doesNotMatch(contact, /example.com|@nacre/);
 });

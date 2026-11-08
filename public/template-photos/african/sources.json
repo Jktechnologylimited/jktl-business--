@@ -349,5 +349,86 @@
     "source": "https://www.pexels.com/photo/man-sitting-in-front-of-a-sewing-machine-9850419/",
     "asset": "https://images.pexels.com/photos/9850419/pexels-photo-9850419.jpeg?auto=compress&cs=tinysrgb&w=1600",
     "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "jewel-solitaire",
+    "id": 12194367,
+    "description": "Close-up of a luxurious gold engagement ring with diamonds on a white background.",
+    "providerSearch": "gold ring product",
+    "source": "https://www.pexels.com/photo/a-beautiful-engagement-ring-12194367/",
+    "asset": "https://images.pexels.com/photos/12194367/pexels-photo-12194367.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "jewel-chain",
+    "id": 12194379,
+    "description": "Minimalist gold necklace elegantly displayed on a stand, perfect for luxury jewelry collections.",
+    "providerSearch": "gold necklace product",
+    "source": "https://www.pexels.com/photo/a-gold-necklace-on-white-necklace-holder-12194379/",
+    "asset": "https://images.pexels.com/photos/12194379/pexels-photo-12194379.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "jewel-rings",
+    "id": 30541187,
+    "description": "Gold and diamond rings elegantly displayed on a minimalist background with a modern aesthetic.",
+    "providerSearch": "gold ring product",
+    "source": "https://www.pexels.com/photo/elegant-gold-and-diamond-rings-in-minimalist-setting-30541187/",
+    "asset": "https://images.pexels.com/photos/30541187/pexels-photo-30541187.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "jewel-hero",
+    "id": 22619770,
+    "description": "Sophisticated portrait featuring a woman with intricate gold earrings and elegant makeup.",
+    "providerSearch": "black woman gold earrings",
+    "source": "https://www.pexels.com/photo/portrait-of-woman-wearing-golden-jewelry-22619770/",
+    "asset": "https://images.pexels.com/photos/22619770/pexels-photo-22619770.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "jewel-drop",
+    "id": 12194365,
+    "description": "Close-up of elegant gold earrings elegantly displayed on a minimalistic white platform.",
+    "providerSearch": "gold earrings product",
+    "source": "https://www.pexels.com/photo/platinum-earrings-in-close-up-shot-12194365/",
+    "asset": "https://images.pexels.com/photos/12194365/pexels-photo-12194365.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "jewel-pendant",
+    "id": 27535671,
+    "description": "Minimalist photo of a gold necklace with pearls and a gemstone on a white geometric stand.",
+    "providerSearch": "gold necklace product",
+    "source": "https://www.pexels.com/photo/collar-diana-27535671/",
+    "asset": "https://images.pexels.com/photos/27535671/pexels-photo-27535671.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "jewel-hoops",
+    "id": 12194361,
+    "description": "A pair of stylish gold earrings elegantly presented on a minimalist circular display.",
+    "providerSearch": "gold earrings product",
+    "source": "https://www.pexels.com/photo/a-pair-of-gold-earrings-12194361/",
+    "asset": "https://images.pexels.com/photos/12194361/pexels-photo-12194361.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "jewel-editorial",
+    "id": 35023552,
+    "description": "Elegant portrait of a woman showcasing unique rings and earrings.",
+    "providerSearch": "black woman gold earrings",
+    "source": "https://www.pexels.com/photo/close-up-portrait-of-woman-with-stylish-jewelry-35023552/",
+    "asset": "https://images.pexels.com/photos/35023552/pexels-photo-35023552.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "name": "jewel-profile",
+    "id": 34628927,
+    "description": "Side profile of a woman with intricate braids and an ornate earring on a dark background.",
+    "providerSearch": "black woman gold earrings",
+    "source": "https://www.pexels.com/photo/elegant-side-profile-with-braided-hairstyle-and-earring-34628927/",
+    "asset": "https://images.pexels.com/photos/34628927/pexels-photo-34628927.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "license": "https://www.pexels.com/license/"
   }
 ]

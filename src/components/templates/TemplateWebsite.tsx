@@ -16,6 +16,7 @@ import {
   type WebsiteDocument,
 } from "@/lib/website-templates";
 import styles from "./TemplateWebsite.module.css";
+import { JewelleryWebsite } from "./JewelleryWebsite";
 import { DressmakerWebsite } from "./DressmakerWebsite";
 import { LegalWebsite } from "./LegalWebsite";
 import { BeautyWebsite, type BeautyRequest } from "./BeautyWebsite";
@@ -646,6 +647,8 @@ export function TemplateWebsite(
 ) {
   if (templatePageKind(props.template) === "landing")
     return <LegacyTemplateWebsite {...props} />;
+  if (props.document.design === "jewellery")
+    return <JewelleryWebsite {...props} />;
   if (props.document.design === "dressmaker")
     return <DressmakerWebsite {...props} />;
   if (props.document.design === "legal") return <LegalWebsite {...props} />;

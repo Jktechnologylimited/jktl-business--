@@ -41,7 +41,7 @@ export type WebsiteOffering = {
   preparation?: string;
 };
 export type WebsiteDocument = {
-  design?: "legal" | "dressmaker";
+  design?: "legal" | "dressmaker" | "jewellery";
   legalVariant?: "family";
   aboutImage?: string;
   demoContent?: boolean;
@@ -2772,6 +2772,142 @@ websiteTemplates.push({
   document: dressmakerDocument,
 });
 
+const jewelleryPhoto = (name: string) =>
+  `/template-photos/african/jewel-${name}.jpg`;
+const jewelleryDocument: WebsiteDocument = {
+  ...JSON.parse(JSON.stringify(dressmakerDocument)),
+  design: "jewellery",
+  brandName: "Nacre & Gold",
+  eyebrow: "Jewellery, with feeling.",
+  headline: "Small details.\nExtraordinary days.",
+  intro:
+    "Considered pieces for your own kind of beautiful. Discover sculptural forms, soft details and the everyday pleasure of wearing something you love.",
+  ctaLabel: "Explore the collection",
+  accent: "#8c7550",
+  paper: "#faf9f6",
+  ink: "#24231f",
+  heroImage: jewelleryPhoto("hero"),
+  aboutImage: jewelleryPhoto("profile"),
+  seoTitle: "Nacre & Gold | Considered Jewellery & Personal Style",
+  seoDescription:
+    "Explore the Nacre & Gold jewellery collection: earrings, necklaces and rings. Discover our story, find your favourite piece and enquire with the boutique.",
+  aboutTitle: "The beauty of a personal detail.",
+  aboutText:
+    "Jewellery can hold a little of who we are: a favourite shape, a familiar texture, a feeling we return to. Nacre & Gold is a demonstration boutique inspired by those quiet, personal connections.\n\nUse this space to tell your own story, introduce your approach to choosing pieces and help customers understand what makes your collection yours.",
+  offeringsTitle: "The considered edit",
+  offerings: [
+    {
+      title: "Sculpted Leaf Earrings",
+      description:
+        "An organic silhouette with a softly textured finish. Ask the boutique about the material, dimensions, care and current availability before ordering.",
+      category: "Earrings",
+      image: jewelleryPhoto("hoops"),
+      price: "Enquire for price",
+    },
+    {
+      title: "The Ripple Hoops",
+      description:
+        "A sculptural pair with fluid curves and a light-catching surface. Enquire for verified product details, sizing and a personal quotation.",
+      category: "Earrings",
+      image: jewelleryPhoto("drop"),
+      price: "Enquire for price",
+    },
+    {
+      title: "The Fine Line Chain",
+      description:
+        "A clean, considered chain to wear your own way. The boutique can confirm the composition, length, fastening and available options.",
+      category: "Necklaces",
+      image: jewelleryPhoto("chain"),
+      price: "Enquire for price",
+    },
+    {
+      title: "The Keepsake Pendant",
+      description:
+        "A small statement with a thoughtful setting. Contact the boutique to discuss the piece, its specifications and your preferred delivery or collection arrangements.",
+      category: "Necklaces",
+      image: jewelleryPhoto("pendant"),
+      price: "Enquire for price",
+    },
+    {
+      title: "The Lightcatcher Ring",
+      description:
+        "A bright focal point in a classic silhouette. Request confirmed stone and metal specifications, sizing advice and availability directly from the boutique.",
+      category: "Rings",
+      image: jewelleryPhoto("solitaire"),
+      price: "Enquire for price",
+    },
+    {
+      title: "The Parallel Rings",
+      description:
+        "A complementary pair with a modern profile. Ask about sizing, materials, finishing and personal ordering options before making a purchase.",
+      category: "Rings",
+      image: jewelleryPhoto("rings"),
+      price: "Enquire for price",
+    },
+  ],
+  featureTitle: "A little light, every day.",
+  featureText:
+    "Expressive shapes. Thoughtful details. Jewellery that leaves room for you.",
+  featureItems: [
+    "Find your form — Explore the edit and discover the shapes you are drawn to.",
+    "Ask the details — Confirm the materials, measurements and availability with your boutique.",
+    "Make it personal — Discuss sizing, gifting and how you would like to receive your piece.",
+  ],
+  galleryTitle: "Worn your way",
+  gallery: [
+    {
+      src: jewelleryPhoto("profile"),
+      alt: "Profile portrait featuring an ornate earring and carefully braided hair",
+      category: "A sculptural expression",
+    },
+    {
+      src: jewelleryPhoto("editorial"),
+      alt: "Fashion portrait with expressive gold-toned rings and statement earrings",
+      category: "Everyday expression",
+    },
+    {
+      src: jewelleryPhoto("hero"),
+      alt: "Portrait with intricate earrings and warm, elegant styling",
+      category: "The finishing detail",
+    },
+  ],
+  faqTitle: "Care, sizing & ordering",
+  faqs: [
+    {
+      question: "How do I order a piece?",
+      answer:
+        "Open a piece and send an enquiry to the boutique. Confirm its price, specifications and availability, then agree the payment and delivery or collection arrangements directly with the business.",
+    },
+    {
+      question: "How should I care for my jewellery?",
+      answer:
+        "Care depends on the exact materials and finish. Ask the boutique for the manufacturer’s care instructions for your piece. Store pieces separately and check care guidance before using cleaning products.",
+    },
+    {
+      question: "Can you help with ring sizes or a gift?",
+      answer:
+        "Share your requirements with the boutique before ordering. The business can confirm its sizing guidance, packaging options and any applicable exchange or adjustment policy.",
+    },
+  ],
+  contactTitle: "Let’s find your next favourite.",
+  contactText:
+    "Ask about a piece, discuss a gift or find out more about the collection. Your boutique will confirm product details and ordering arrangements with you.",
+  serviceAreas: ["Your city · Visits by arrangement"],
+  socials: [],
+  reviews: [],
+};
+websiteTemplates.push({
+  id: "jewellery-luxe",
+  name: "Jewellery Store — Nacre & Gold",
+  category: "Retail & Lifestyle",
+  layout: "catalogue",
+  kind: "website",
+  sourceId: "jewellery-luxe",
+  edition: "Luxe",
+  sectionOrder: ["offerings", "about", "feature", "gallery", "faq", "areas"],
+  document: jewelleryDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -2865,7 +3001,7 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     throw new Error("Unsupported website content version.");
   const result: Record<string, unknown> = { version: 1 };
   if (source.design !== undefined) {
-    if (!["legal", "dressmaker"].includes(String(source.design)))
+    if (!["legal", "dressmaker", "jewellery"].includes(String(source.design)))
       throw Error("Unsupported website design.");
     result.design = source.design;
     if (source.legalVariant !== undefined) {
@@ -3135,12 +3271,17 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     if (new Set(paths).size !== paths.length)
       throw Error("Please use unique practice and article titles.");
   }
-  if (result.design === "dressmaker") {
+  if (result.design === "dressmaker" || result.design === "jewellery") {
     const slugs = (result.offerings as WebsiteOffering[]).map(
       beautyServiceSlug,
     );
     if (new Set(slugs).size !== slugs.length)
       throw Error("Please use unique collection names or URLs.");
+  }
+  if (result.design === "jewellery") {
+    const categories = jewelleryCategories(result as WebsiteDocument);
+    if (new Set(categories.map((c) => c.slug)).size !== categories.length)
+      throw Error("Please use unique product category URLs.");
   }
   return result as WebsiteDocument;
 }
@@ -3263,6 +3404,20 @@ export function beautyPageMeta(doc: WebsiteDocument, path: string) {
   };
 }
 
+export function jewelleryCategories(doc: WebsiteDocument) {
+  const names = [
+    ...new Map(
+      doc.offerings.map((o) => {
+        const n = o.category?.trim() || "The collection";
+        return [n.toLowerCase(), n] as const;
+      }),
+    ).values(),
+  ];
+  return names.map((name, i) => ({
+    name,
+    slug: beautyServiceSlug({ title: name, description: "" }, i),
+  }));
+}
 /** Every website has real routes; landing-page templates retain anchor navigation. */
 export function websitePagePaths(
   template: WebsiteTemplate,
@@ -3271,6 +3426,17 @@ export function websitePagePaths(
   if (templatePageKind(template) === "landing") return [""];
   if (doc.design === "legal" || doc.beauty?.version === 2)
     return beautyPagePaths(doc);
+  if (doc.design === "jewellery")
+    return [
+      "",
+      "shop",
+      ...jewelleryCategories(doc).map((c) => "shop/" + c.slug),
+      ...doc.offerings.map((o, i) => "pieces/" + beautyServiceSlug(o, i)),
+      "about",
+      "editorial",
+      "care",
+      "contact",
+    ];
   if (doc.design === "dressmaker")
     return [
       "",
@@ -3317,12 +3483,22 @@ export function websitePageMeta(
     };
   }
   const look =
-    doc.design === "dressmaker"
+    doc.design === "dressmaker" || doc.design === "jewellery"
       ? doc.offerings.find(
-          (o, i) => path === "collection/" + beautyServiceSlug(o, i),
+          (o, i) =>
+            path ===
+            (doc.design === "jewellery" ? "pieces/" : "collection/") +
+              beautyServiceSlug(o, i),
         )
       : undefined;
+  const category =
+    doc.design === "jewellery"
+      ? jewelleryCategories(doc).find((c) => path === "shop/" + c.slug)
+      : undefined;
   const labels: Record<string, string> = {
+    shop: "Shop the collection",
+    editorial: "The journal",
+    care: "Care & questions",
     about: "About us",
     services: "Services",
     gallery: "Gallery",
@@ -3336,6 +3512,9 @@ export function websitePageMeta(
     "our-process": "Our process",
   };
   const descriptions: Record<string, string> = {
+    shop: doc.offerings.map((o) => o.title).join(" · "),
+    editorial: doc.featureText,
+    care: doc.faqs[0]?.answer || doc.intro,
     about: doc.aboutText,
     atelier: doc.aboutText,
     services: doc.offerings
@@ -3353,7 +3532,12 @@ export function websitePageMeta(
       doc.brandName +
       " and get in touch to discuss your needs.",
   };
-  const heading = look?.title || labels[path] || doc.headline || doc.brandName;
+  const heading =
+    look?.title ||
+    category?.name ||
+    labels[path] ||
+    doc.headline ||
+    doc.brandName;
   return {
     heading,
     title: path
@@ -3361,6 +3545,9 @@ export function websitePageMeta(
       : doc.seoTitle || `${doc.brandName} | ${template.name}`,
     description: (
       look?.description ||
+      (category
+        ? `Explore ${category.name.toLowerCase()} at ${doc.brandName}. ${doc.intro}`
+        : "") ||
       (path ? descriptions[path] : doc.seoDescription) ||
       doc.intro ||
       `Learn more about ${doc.brandName || "this business"}, explore services and get in touch.`
