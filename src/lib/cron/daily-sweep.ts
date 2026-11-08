@@ -231,6 +231,11 @@ export async function runDailySweep(budgetMs = DEFAULT_BUDGET_MS): Promise<Daily
     return `${results.filter((r) => r.status === "fulfilled").length} of ${renewals.length} sent`;
   });
 
+  await step("growth-evidence", async () => {
+    const { growthMaintenance } = await import("@/lib/growth/revenue-service");
+    return JSON.stringify(await growthMaintenance());
+  });
+
   await step("customer-lifecycle", async () => {
     const { runLifecycle } = await import("@/lib/lifecycle/service");
     const result = await runLifecycle(Math.min(12000, Math.max(0, remaining() - 2000)));

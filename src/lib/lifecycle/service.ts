@@ -6,6 +6,8 @@ import { sendAdminComposedEmail } from "@/lib/email";
 import { escapeHtml, mailAction } from "@/lib/mail/layout";
 import {
   lifecycleMessage,
+  journeyMessage,
+  type JourneyPurpose,
   lifecycleStep,
   type LifecycleStage,
   type LifecycleSettings,
@@ -43,13 +45,13 @@ export async function reconcileLifecycle() {
     `INSERT INTO lifecycle_accounts(organization_id,stage,recipient) SELECT organization_id,stage,recipient FROM lifecycle_current ON CONFLICT(organization_id) DO UPDATE SET stage=excluded.stage,recipient=excluded.recipient,cycle=gen_random_uuid(),stage_started_at=now(),updated_at=now() WHERE lifecycle_accounts.stage IS DISTINCT FROM excluded.stage OR lifecycle_accounts.recipient IS DISTINCT FROM excluded.recipient`,
   );
   await query(
-    `UPDATE lifecycle_events e SET state='CANCELLED',last_error='ACCOUNT_PROGRESS_CHANGED',updated_at=now() WHERE e.state IN('QUEUED','FAILED') AND NOT EXISTS(SELECT 1 FROM lifecycle_current c JOIN lifecycle_accounts a USING(organization_id) WHERE c.organization_id=e.organization_id AND a.cycle=e.cycle AND c.stage=e.stage AND c.recipient=e.recipient)`,
+    `UPDATE lifecycle_events e SET state='CANCELLED',last_error='ACCOUNT_PROGRESS_CHANGED',updated_at=now() WHERE e.state IN('QUEUED','FAILED') AND COALESCE(to_jsonb(e)->>'purpose','SETUP')='SETUP' AND NOT EXISTS(SELECT 1 FROM lifecycle_current c JOIN lifecycle_accounts a USING(organization_id) WHERE c.organization_id=e.organization_id AND a.cycle=e.cycle AND c.stage=e.stage AND c.recipient=e.recipient)`,
   );
   await query(
     `UPDATE lifecycle_handoffs h SET status='DONE',revision=revision+1,updated_at=now() WHERE status<>'DONE' AND h.cycle_key LIKE 'stage:%' AND NOT EXISTS(SELECT 1 FROM lifecycle_accounts a JOIN lifecycle_current c USING(organization_id) WHERE a.organization_id=h.organization_id AND h.cycle_key='stage:'||a.cycle::text AND a.stage=c.stage AND c.stage IN('NO_SITE','DRAFT','FREE_DOMAIN','CONNECT_DOMAIN'))`,
   );
   await query(
-    `UPDATE lifecycle_events e SET state='CANCELLED',last_error='LATER_STEP_DUE',updated_at=now() FROM lifecycle_accounts a WHERE e.organization_id=a.organization_id AND e.cycle=a.cycle AND e.step=1 AND e.state IN('QUEUED','FAILED') AND a.stage_started_at<=now()-$1*interval '1 day'`,
+    `UPDATE lifecycle_events e SET state='CANCELLED',last_error='LATER_STEP_DUE',updated_at=now() FROM lifecycle_accounts a WHERE e.organization_id=a.organization_id AND e.cycle=a.cycle AND e.step=1 AND COALESCE(to_jsonb(e)->>'purpose','SETUP')='SETUP' AND e.state IN('QUEUED','FAILED') AND a.stage_started_at<=now()-$1*interval '1 day'`,
     [settings.second_days],
   );
   const accounts = await query(
@@ -104,7 +106,7 @@ export async function reconcileLifecycle() {
   const queued = planned.length
     ? (
         await query(
-          `INSERT INTO lifecycle_events(organization_id,cycle,stage,step,recipient) SELECT plan.organization_id,plan.cycle,plan.stage,plan.step,plan.recipient FROM jsonb_to_recordset($1::jsonb) AS plan(organization_id uuid,cycle uuid,stage text,step integer,recipient text) WHERE NOT EXISTS(SELECT 1 FROM lifecycle_events e WHERE e.organization_id=plan.organization_id AND e.cycle=plan.cycle AND(e.step>=plan.step OR e.state IN('QUEUED','FAILED','SUBMITTING','UNKNOWN'))) ON CONFLICT DO NOTHING RETURNING id`,
+          `INSERT INTO lifecycle_events(organization_id,cycle,stage,step,recipient) SELECT plan.organization_id,plan.cycle,plan.stage,plan.step,plan.recipient FROM jsonb_to_recordset($1::jsonb) AS plan(organization_id uuid,cycle uuid,stage text,step integer,recipient text) WHERE NOT EXISTS(SELECT 1 FROM lifecycle_events e WHERE e.organization_id=plan.organization_id AND e.cycle=plan.cycle AND COALESCE(to_jsonb(e)->>'purpose','SETUP')='SETUP' AND(e.step>=plan.step OR e.state IN('QUEUED','FAILED','SUBMITTING','UNKNOWN'))) ON CONFLICT DO NOTHING RETURNING id`,
           [JSON.stringify(planned)],
         )
       ).length
@@ -168,6 +170,7 @@ export async function dispatchLifecycle(limit = 10, budgetMs = 7000) {
       throw error;
     }
     if (!event) break;
+    const special = Boolean(event.purpose && event.purpose !== "SETUP");
     const account = (
       await query(
         `SELECT a.*,c.business_name,c.has_domain,c.stage current_stage,c.recipient current_recipient,EXTRACT(EPOCH FROM(now()-a.stage_started_at))/86400 days FROM lifecycle_accounts a JOIN lifecycle_current c USING(organization_id) WHERE a.organization_id=$1`,
@@ -185,6 +188,7 @@ export async function dispatchLifecycle(limit = 10, budgetMs = 7000) {
       continue;
     }
     if (
+      !special &&
       account &&
       Number(account.days) <
         (Number(event.step) === 2 ? settings.second_days : settings.first_days)
@@ -204,14 +208,14 @@ export async function dispatchLifecycle(limit = 10, budgetMs = 7000) {
     }
     const valid =
       account &&
-      account.cycle === event.cycle &&
-      account.stage === event.stage &&
-      account.current_stage === event.stage &&
+      (special || account.cycle === event.cycle) &&
+      (special || account.stage === event.stage) &&
+      (special || account.current_stage === event.stage) &&
       account.current_recipient === event.recipient &&
       (!account.paused_until ||
         new Date(String(account.paused_until)) <= new Date()) &&
-      Number(account.days) < settings.human_days;
-    if (!valid) {
+      (special || Number(account.days) < settings.human_days);
+    if (!valid || (special && !(await journeySignalRelevant(event)))) {
       await query(
         "UPDATE lifecycle_events SET state='CANCELLED',lease_until=NULL,last_error='PROGRESS_OR_PAUSE_CHANGED',updated_at=now() WHERE id=$1",
         [event.id],
@@ -221,7 +225,9 @@ export async function dispatchLifecycle(limit = 10, budgetMs = 7000) {
     if (
       !(await contactAllowed(
         String(event.recipient),
-        event.stage === "FREE_DOMAIN",
+        special
+          ? event.purpose === "PAID_FEATURE"
+          : event.stage === "FREE_DOMAIN",
       ))
     ) {
       await query(
@@ -232,13 +238,18 @@ export async function dispatchLifecycle(limit = 10, budgetMs = 7000) {
     }
     const message =
       event.payload ||
-      lifecycleMessage(
-        event.stage as LifecycleStage,
-        Number(event.step),
-        String(account.business_name),
-        Boolean(account.has_domain),
-        await contactAllowed(String(event.recipient), true),
-      );
+      (special
+        ? journeyMessage(
+            event.purpose as JourneyPurpose,
+            String(account.business_name),
+          )
+        : lifecycleMessage(
+            event.stage as LifecycleStage,
+            Number(event.step),
+            String(account.business_name),
+            Boolean(account.has_domain),
+            await contactAllowed(String(event.recipient), true),
+          ));
     if (!event.payload)
       await query("UPDATE lifecycle_events SET payload=$2::jsonb WHERE id=$1", [
         event.id,
@@ -316,6 +327,40 @@ export async function runLifecycle(budgetMs = 7000) {
   if (!(await lifecycleInstalled())) return { installed: false };
   await reconcileLifecycleMail();
   const scan = await reconcileLifecycle();
+  await reconcileJourneySignals();
   const delivery = await dispatchLifecycle(10, budgetMs);
   return { installed: true, ...scan, ...delivery };
+}
+
+/** Event-driven emails share the existing consent, cooldown, lease and human-review machinery. */
+export async function journeySignalRelevant(event: Record<string, unknown>) {
+  const rows = await query(
+    `SELECT s.id FROM growth_signals s JOIN lifecycle_current c USING(organization_id)
+ WHERE s.id=$1 AND s.organization_id=$2 AND s.kind=$3 AND s.occurred_at>now()-interval '14 days'
+ AND (s.kind<>'PUBLISHED' OR c.stage IN('FREE_DOMAIN','CONNECT_DOMAIN','COMPLETE'))
+ AND (s.kind<>'PAYMENT_FAILED' OR EXISTS(SELECT 1 FROM website_plan_subscriptions w WHERE w.organization_id=s.organization_id AND w.status='past_due'))
+ AND (s.kind<>'PAID_FEATURE' OR NOT EXISTS(SELECT 1 FROM website_plan_subscriptions w WHERE w.organization_id=s.organization_id AND w.period_end>now()))`,
+    [event.signal_id, event.organization_id, event.purpose],
+  );
+  return rows.length > 0;
+}
+export async function reconcileJourneySignals() {
+  if (
+    !(await query("SELECT to_regclass('public.growth_signals') present"))[0]
+      ?.present
+  )
+    return;
+  await query(`INSERT INTO lifecycle_events(organization_id,cycle,stage,step,recipient,purpose,signal_id)
+ SELECT s.organization_id,s.id,c.stage,1,c.recipient,s.kind,s.id FROM growth_signals s JOIN lifecycle_accounts a USING(organization_id) JOIN lifecycle_current c USING(organization_id)
+ WHERE s.occurred_at>now()-interval '7 days' AND c.recipient IS NOT NULL AND (a.paused_until IS NULL OR a.paused_until<=now())
+ AND (s.kind<>'PAID_FEATURE' OR s.occurred_at<now()-interval '1 day')
+ AND NOT EXISTS(SELECT 1 FROM lifecycle_events e WHERE e.signal_id=s.id)
+ AND NOT EXISTS(SELECT 1 FROM lifecycle_events e WHERE e.organization_id=s.organization_id AND e.purpose=s.kind AND e.created_at>now()-interval '30 days')
+ ON CONFLICT DO NOTHING`);
+  await query(`INSERT INTO lifecycle_handoffs(organization_id,cycle_key,reason)
+ SELECT s.organization_id,'signal:'||s.id::text,'Website payment still needs attention after an automated reminder. Review verified payment history with the customer; do not charge or change their website without permission.' FROM growth_signals s JOIN website_plan_subscriptions w USING(organization_id)
+ WHERE s.kind='PAYMENT_FAILED' AND w.status='past_due' AND s.occurred_at<=now()-interval '7 days' AND s.occurred_at>now()-interval '30 days' ON CONFLICT DO NOTHING`);
+  await query(
+    `UPDATE lifecycle_handoffs h SET status='DONE',revision=revision+1,updated_at=now() FROM growth_signals s WHERE h.cycle_key='signal:'||s.id::text AND h.status<>'DONE' AND s.kind='PAYMENT_FAILED' AND NOT EXISTS(SELECT 1 FROM website_plan_subscriptions w WHERE w.organization_id=s.organization_id AND w.status='past_due')`,
+  );
 }

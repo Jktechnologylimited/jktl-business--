@@ -15,9 +15,10 @@ export function GrowthOverview({ report }: { report: InvestorReport }) {
   const denominator = a ? a.total - a.custom : 0;
   const stages = [
     {
-      label: "Visitors",
+      label: "All visitors",
       value: null,
-      detail: "Main-site visitor tracking is not available.",
+      detail:
+        "Total visitor coverage is not measured; the consenting-browser cohort is shown separately below.",
     },
     {
       label: "Registered self-serve businesses",

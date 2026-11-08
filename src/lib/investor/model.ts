@@ -124,6 +124,45 @@ export type InvestorReport = {
   partners: Section<Partners>;
   portfolio: Section<Portfolio>;
   // Optional to keep existing immutable report snapshots readable.
+  collections?: Section<{
+    gross: number;
+    transactions: number;
+    risk: number;
+    legacyGross: number;
+  }>;
+  companyRecurring?: Section<{
+    mrr: number;
+    arr: number;
+    services: number;
+    products: { product: string; mrr: number; services: number }[];
+    legacyHostingExcluded: number;
+    customCandidatesExcluded: number;
+  }>;
+  conversion?: Section<{
+    visitors: number;
+    registered: number;
+    selected: number;
+    published: number;
+    paid: number;
+    coverage: string;
+  }>;
+  movements?: Section<{
+    daysCompared: number;
+    churnedMrr: number;
+    newMrr: number;
+    expansionMrr: number;
+    contractionMrr: number;
+    series: { day: string; net: number }[];
+  }>;
+  acquisitionCosts?: Section<{
+    sources: {
+      source: string;
+      spend: number;
+      newPaying: number;
+      cac: number | null;
+    }[];
+    unallocatedSpend: number;
+  }>;
   activation?: Section<Activation>;
   acquisition?: Section<Acquisition>;
   receivables?: Section<Receivables>;
@@ -236,6 +275,22 @@ export function assertSafeNumbers(value: unknown) {
 }
 export const DEFINITIONS = [
   [
+    "Verified covered recurring revenue",
+    "Website plans, paid licensed Business Email matched to current orders, accepted active recurring Custom services with settled current invoices, and explicitly reconciled legacy hosting payments. Annual values normalize over their actual periods. Ambiguous overlap and missing payment evidence are excluded and disclosed. This is covered run-rate, not all-company recognized revenue.",
+  ],
+  [
+    "Observed run-rate movements",
+    "Daily snapshots compare identical service keys on consecutive WAT days. New, expansion, contraction and lost MRR are movements in covered paid service run-rate; source gaps skip comparisons rather than reporting false churn. No pre-installation history is fabricated.",
+  ],
+  [
+    "Consented visitor cohort",
+    "First-seen consenting browser identifiers in the selected period, linked at signup with a first-party cookie. Later selected/published/paid milestones are observed through snapshot time. The strict funnel requires prior stages. Identifiers expire after 30 days; these are not all visitors or distinct people.",
+  ],
+  [
+    "Acquisition cost",
+    "Verified spend entered by an authorized team member, allocated by referral account and spend date. CAC is spend divided by businesses whose first retained covered payment occurs in the period. Missing cost evidence or a zero customer denominator yields unavailable CAC. Costs can precede purchases; compare periods and attribution coverage before drawing conclusions.",
+  ],
+  [
     "Registered businesses",
     "Current organizations with an active registered owner, excluding demo/unclaimed prospect sites. Monthly cohorts use organization creation dates for this current population, not historical active-user counts.",
   ],
@@ -289,8 +344,8 @@ export const LIMITATIONS = [
   "Provider live/test mode is not uniformly stored across these ledgers. Reconcile live-mode provider and bank statements before external circulation.",
   "Receipt coverage excludes standalone legacy hosting, paused AI-receptionist schedules, offline payments not recorded with evidence, and services billed outside this database.",
   "Fees, tax, payroll, wholesale costs and complete operating expenses are not consolidated: gross margin, profit, burn and runway are unavailable.",
-  "Platform-wide unique users, DAU/MAU, guest-game traffic, retention, CAC and LTV are unavailable. Acquisition covers recorded first-touch affiliate/partner referrals only, not all marketing channels.",
-  "Historical MRR and historical account-stage changes are not reconstructed. Generated reports preserve snapshots going forward.",
+  "Platform-wide unique users, DAU/MAU, guest-game traffic, retention and LTV are unavailable. Conversion covers consenting browsers only. CAC uses evidenced, attributed costs and first retained payments in the selected period; cost coverage may be incomplete.",
+  "Historical MRR before installation is not reconstructed. Consecutive daily evidence snapshots measure observed service run-rate movements going forward, not cancellation intent or recognized accounting revenue.",
 ];
 export function csvCell(value: unknown) {
   let s = String(value ?? "");
@@ -331,6 +386,14 @@ export function reportCsv(report: InvestorReport) {
             "available",
             "held",
             "paidOut",
+            "legacyGross",
+            "spend",
+            "cac",
+            "newMrr",
+            "churnedMrr",
+            "expansionMrr",
+            "contractionMrr",
+            "unallocatedSpend",
             "outstanding",
             "overdue",
             "underReview",
@@ -347,7 +410,16 @@ export function reportCsv(report: InvestorReport) {
         ];
         rows.push(
           columns.map((column) =>
-            ["gross", "refunds", "risk", "retained"].includes(column)
+            [
+              "gross",
+              "refunds",
+              "risk",
+              "retained",
+              "mrr",
+              "net",
+              "spend",
+              "cac",
+            ].includes(column)
               ? column + " (NGN kobo)"
               : column,
           ),

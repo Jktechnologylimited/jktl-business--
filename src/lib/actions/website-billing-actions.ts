@@ -113,6 +113,7 @@ async function providerPlan(
 export async function getWebsiteBillingAction() {
   try {
     const { query, organizationId } = await owner();
+    await import("@/lib/growth/revenue-service").then(m => m.recordPaidFeature(organizationId)).catch(() => {});
     const subscription = await currentWebsitePlan(query, organizationId);
     const payments = await query(
       `SELECT reference,plan_id,interval,amount_kobo,currency,paid_at,period_end FROM website_plan_payments WHERE organization_id=$1 ORDER BY paid_at DESC LIMIT 50`,

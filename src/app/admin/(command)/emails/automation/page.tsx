@@ -258,7 +258,10 @@ export default async function Page() {
             className="mt-3 rounded-lg border border-border p-3 text-sm"
           >
             <b>{String(e.business_name || "Account")}</b> · {String(e.stage)} ·
-            Step {Number(e.step)} · <b>{String(e.state)}</b>
+            {e.purpose && e.purpose !== "SETUP"
+              ? String(e.purpose).replaceAll("_", " ")
+              : `Setup step ${Number(e.step)}`}{" "}
+            · <b>{String(e.state)}</b>
             <p>
               {String(e.recipient)} · {date(e.updated_at)}
             </p>

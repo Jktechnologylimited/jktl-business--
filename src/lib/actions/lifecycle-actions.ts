@@ -10,6 +10,7 @@ import { lifecycleSettings } from "@/lib/lifecycle/model";
 import {
   dispatchLifecycle,
   reconcileLifecycle,
+  reconcileJourneySignals,
   reconcileLifecycleMail,
 } from "@/lib/lifecycle/service";
 const refresh = () => {
@@ -48,6 +49,7 @@ export async function scanLifecycleAction() {
   const a = await requireAdminCapability("manage_communications");
   await reconcileLifecycleMail();
   await reconcileLifecycle();
+  await reconcileJourneySignals();
   await audit(a.id, "LIFECYCLE_SCAN", null);
   refresh();
 }

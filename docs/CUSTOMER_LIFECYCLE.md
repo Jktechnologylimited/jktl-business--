@@ -62,3 +62,8 @@ The shared sender defaults to `JKTL Business <notifications@mail.jktl.com.ng>`, 
 The updated Business and Main production builds, TypeScript checks, scoped lint checks and email tests passed. The actual built Business app was checked in Chromium at desktop and mobile widths: `/business/plans` redirects signed-out visitors to `/login?next=plans`, and the signup link retains that intent. No customer login, checkout, charge or email was executed by the browser check. Shared Email Branding was updated in the existing database to the new sender while preserving the existing signature and Reply-To.
 
 The production build now explicitly uses `next build --turbopack`. The uploaded Vercel log confirmed that the webpack Google Fonts loader failure also affected deployment; the Turbopack production build avoids that loader path while retaining all existing font definitions. The shared sender display name and address are now JKTL Business and notifications@mail.jktl.com.ng. Previous jktl-business@mail.jktl.com.ng environment values are also mapped to this sender.
+
+
+## Event-driven completion update — 8 November 2026
+
+Migration 075 feeds publication, first chatbot enquiry, payment-failure and consented plan-exploration signals into this same queue. Setup reminders, pauses, cooldowns and provider-review safeguards remain in force. See [Growth completion](GROWTH_COMPLETION.md) for eligibility, human fallback and release checks. Prepared locally; no production migration or customer dispatch was performed during the deployment hold.

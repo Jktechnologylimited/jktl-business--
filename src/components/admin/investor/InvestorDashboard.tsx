@@ -1,4 +1,5 @@
 "use client";
+import { RevenueIntelligence } from "./RevenueIntelligence";
 import { GrowthOverview } from "./GrowthOverview";
 import {
   Area,
@@ -95,6 +96,7 @@ export function InvestorDashboard({ report }: { report: InvestorReport }) {
   return (
     <div className="space-y-6 text-ink">
       <GrowthOverview report={report} />
+      <RevenueIntelligence report={report} />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Tile
           label="Registered businesses · current"

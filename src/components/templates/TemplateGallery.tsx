@@ -31,8 +31,10 @@ const browsingTemplates = Array.from(
 export function TemplateGallery({
   insideBusiness = false,
   initialType = "all",
+  onSelectTemplate,
 }: {
   insideBusiness?: boolean;
+  onSelectTemplate?: (id: string) => void;
   initialType?: "all" | "website" | "landing" | "blank";
 }) {
   const { t } = useLanguage();
@@ -284,13 +286,24 @@ export function TemplateGallery({
                 />
               </Link>
               <div className={styles.overlay}>
-                <Link
-                  href={editPath(template.id)}
-                  className={styles.edit}
-                  aria-label={`Edit ${template.name} template`}
-                >
-                  <T>Edit</T>
-                </Link>
+                {onSelectTemplate ? (
+                  <button
+                    type="button"
+                    className={styles.edit}
+                    onClick={() => onSelectTemplate(template.id)}
+                    aria-label={`Select ${template.name} template`}
+                  >
+                    Select template
+                  </button>
+                ) : (
+                  <Link
+                    href={editPath(template.id)}
+                    className={styles.edit}
+                    aria-label={`Edit ${template.name} template`}
+                  >
+                    <T>Edit</T>
+                  </Link>
+                )}
                 <Link
                   href={`/templates/${template.id}`}
                   target="_blank"

@@ -58,6 +58,7 @@ export async function signupAction(
     const { userId, organizationId } = await signup(input);
     await startSession(userId, organizationId);
     await consumeReferralVisit(organizationId).catch(() => {});
+    await import("@/lib/growth/visits").then(m => m.consumeGrowthVisit(organizationId)).catch(() => {});
     await sendWelcomeEmail(input.email, input.name, input.businessName).catch(
       () => undefined,
     );

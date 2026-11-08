@@ -299,6 +299,8 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
     renewalDate,
   });
 
+  await import("@/lib/growth/revenue-service").then(m => m.recordLegacyPaidEvidence(orgId, data)).catch(() => console.error("Legacy reporting evidence needs reconciliation"));
+
   // Cache the reusable card token from this charge — see
   // `chargeAuthorization` in src/lib/paystack.ts. Only ever a *reusable*
   // one; a non-reusable authorization can't charge again later, so saving

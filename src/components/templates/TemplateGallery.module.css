@@ -199,7 +199,7 @@
   visibility: visible;
   pointer-events: auto;
 }
-.overlay > a {
+.overlay > :is(a, button) {
   display: grid;
   place-items: center;
   min-height: 44px;
@@ -209,6 +209,10 @@
   font-size: 14px;
   text-decoration: none;
   font-weight: 500;
+}
+.overlay button {
+  font-family: inherit;
+  cursor: pointer;
 }
 .overlay .edit {
   background: #060e2a;
@@ -475,7 +479,7 @@
     padding: 12px;
     background: #fffdf8;
   }
-  .overlay > a {
+  .overlay > :is(a, button) {
     width: auto;
     padding: 10px 15px;
     font-size: 12px;

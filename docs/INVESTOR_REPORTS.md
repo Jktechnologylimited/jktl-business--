@@ -29,3 +29,6 @@ These are unaudited management reports. Live/test payment mode is not uniformly 
 ## Activation and acquisition extension — 8 November 2026
 
 The existing Insights screen now includes a Growth & Revenue Overview, independent first-observed activation milestones, recorded referral-source performance and current Custom receivables. These are optional report sections so saved historical snapshots remain readable. Migration 074 starts forward-only milestone observation; it is prepared locally and not applied during the deployment hold. See [the activation/revenue audit](GROWTH_ACTIVATION_REVENUE.md) for definitions, implemented changes, remaining work and rollout checks. Website MRR/ARR remains conservative and separate from collections, receivables and unsupported recurring-service estimates.
+
+
+The [completion update](GROWTH_COMPLETION.md) adds covered company recurring revenue, extended collections, consented conversion cohorts, daily run-rate movements, acquisition-cost controls and operational verification records. These require additive migration 075; original snapshot payloads remain readable. Historical values and live operational guarantees are not fabricated.

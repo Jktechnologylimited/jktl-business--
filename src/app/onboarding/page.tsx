@@ -1,4 +1,5 @@
 "use client";
+import { TemplateGallery } from "@/components/templates/TemplateGallery";
 import { updateBusinessProfileAction } from "@/lib/actions/business-actions";
 import { emailDestination } from "@/lib/product-intent";
 import { T } from "@/components/i18n/LanguageProvider";
@@ -18,12 +19,14 @@ import { cn } from "@/lib/utils";
 import {
   pendingTemplate,
   templateBusinessType,
+  rememberTemplate,
 } from "@/lib/template-selection";
 import { templateEditorPath } from "@/lib/website-templates";
 import type { BusinessType } from "@/lib/types";
 
 const STEPS = [
   "Business type",
+  "Choose a template",
   "Business details",
   "First service",
   "Finish",
@@ -45,6 +48,9 @@ function OnboardingForm() {
       ? templateBusinessType(params.get("template")!)
       : profile.businessType,
   );
+  const [selectedTemplate, setSelectedTemplate] = useState(() =>
+    pendingTemplate(params.get("template")),
+  );
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [phone, setPhone] = useState(profile.phone);
   const [city, setCity] = useState(profile.city);
@@ -59,7 +65,7 @@ function OnboardingForm() {
     // Only a fresh signup needs the account created here — resuming
     // onboarding after a reload (account already exists) just advances.
     if (!pendingSignup) {
-      setStep(1);
+      setStep(selectedTemplate || emailDestination(params) ? 2 : 1);
       return;
     }
     setCreatingAccount(true);
@@ -70,12 +76,12 @@ function OnboardingForm() {
       setAccountError(result.error);
       return;
     }
-    setStep(1);
+    setStep(selectedTemplate || emailDestination(params) ? 2 : 1);
   }
 
   function nextStep() {
     if (step === 0) return void continueFromBusinessType();
-    if (step === 1 && (!displayName.trim() || !phone.trim())) {
+    if (step === 2 && (!displayName.trim() || !phone.trim())) {
       setAccountError(
         "Enter your business name and contact phone number to continue.",
       );
@@ -110,7 +116,7 @@ function OnboardingForm() {
       setCreatingAccount(false);
       return;
     }
-    const selected = pendingTemplate(params.get("template"));
+    const selected = selectedTemplate;
     router.push(
       emailDestination(params) ||
         (selected ? templateEditorPath(selected) : "/business"),
@@ -118,7 +124,12 @@ function OnboardingForm() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 py-8">
+    <div
+      className={cn(
+        "mx-auto flex min-h-dvh flex-col px-6 py-8",
+        step === 1 ? "w-full max-w-6xl" : "max-w-md",
+      )}
+    >
       <div className="flex items-center gap-2">
         <JktlMark className="size-8" />
         <span className="font-display text-sm font-semibold text-ink">
@@ -186,6 +197,32 @@ function OnboardingForm() {
       ) : null}
 
       {step === 1 ? (
+        <div className="mt-8">
+          <h1 className="font-display text-xl font-bold text-ink">
+            Choose your free website template
+          </h1>
+          <p className="mt-2 text-sm text-ink-muted">
+            Preview any design without leaving your setup. Selecting one opens
+            the business-details step; nothing is published yet.
+          </p>
+          {selectedTemplate ? (
+            <Button className="mt-4" onClick={() => setStep(2)}>
+              Keep my selected template
+            </Button>
+          ) : null}
+          <TemplateGallery
+            insideBusiness
+            initialType="website"
+            onSelectTemplate={(id) => {
+              rememberTemplate(id);
+              setSelectedTemplate(id);
+              setStep(2);
+            }}
+          />
+        </div>
+      ) : null}
+
+      {step === 2 ? (
         <div className="mt-8 flex-1">
           <h1 className="font-display text-xl font-bold tracking-tight text-ink">
             <T>Tell us about </T>
@@ -233,7 +270,7 @@ function OnboardingForm() {
         </div>
       ) : null}
 
-      {step === 2 ? (
+      {step === 3 ? (
         <div className="mt-8 flex-1">
           <h1 className="font-display text-xl font-bold tracking-tight text-ink">
             <T>Add your first </T>
@@ -258,7 +295,7 @@ function OnboardingForm() {
               <ServiceForm
                 categories={industry.serviceCategories}
                 cancelLabel="Skip for now"
-                onCancel={() => setStep(3)}
+                onCancel={() => setStep(4)}
                 onSubmit={(input) => {
                   addService(input);
                   setAddedService(true);
@@ -269,7 +306,7 @@ function OnboardingForm() {
         </div>
       ) : null}
 
-      {step === 3 ? (
+      {step === 4 ? (
         <div className="mt-8 flex flex-1 flex-col items-center text-center">
           <div className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
             <Check className="size-7" />
@@ -280,9 +317,9 @@ function OnboardingForm() {
           </h1>
           <p className="mt-2 max-w-xs text-sm text-ink-muted">
             <T>
-              Your account is ready. Next, choose a free template, add your logo
-              and contact details, preview your pages and publish on an
-              available JKTL address.
+              Your account is ready. Continue to your selected website or
+              product. For your website, add your logo, check your pages and
+              contact details, preview and publish on an available JKTL address.
             </T>
           </p>
           <WelcomeNote businessName={displayName} />
@@ -294,7 +331,7 @@ function OnboardingForm() {
           {accountError}
         </p>
       ) : null}
-      {!(step === 2 && !addedService) ? (
+      {step !== 1 && !(step === 3 && !addedService) ? (
         <div className="mt-8 flex gap-3">
           {step > 0 ? (
             <Button
@@ -307,7 +344,7 @@ function OnboardingForm() {
               <T>Back</T>
             </Button>
           ) : null}
-          {step < 3 ? (
+          {step < 4 ? (
             <Button
               type="button"
               className="flex-1"
@@ -327,7 +364,7 @@ function OnboardingForm() {
                 ? "Saving details…"
                 : emailDestination(params)
                   ? "Continue to your selected product"
-                  : pendingTemplate(params.get("template"))
+                  : selectedTemplate
                     ? "Customize my website"
                     : "Continue to my website checklist"}
             </Button>

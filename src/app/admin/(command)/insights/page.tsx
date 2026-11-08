@@ -1,6 +1,7 @@
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { getAdminSession } from "@/lib/admin-session";
 import { can } from "@/lib/admin-permissions";
+import { GrowthControls } from "@/components/admin/investor/GrowthControls";
 import { InvestorDashboard } from "@/components/admin/investor/InvestorDashboard";
 import { ActionForm } from "@/components/distribution/action-form";
 import { generateInvestorReportAction } from "@/lib/actions/investor-report-actions";
@@ -155,6 +156,9 @@ export default async function Page({
         </section>
       )}
       <InvestorDashboard report={report} />
+      {admin && can(admin.role, "manage_team", admin.permissions) && (
+        <GrowthControls operational />
+      )}
       <section className="rounded-2xl border border-border bg-paper p-5">
         <h2 className="text-lg font-semibold">Saved report snapshots</h2>
         {!history.length ? (

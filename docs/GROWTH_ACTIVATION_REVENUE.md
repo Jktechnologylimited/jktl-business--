@@ -35,7 +35,7 @@ Local production builds must skip prebuild hooks during the hold: `NODE_USE_ENV_
 
 Isolated tests cover milestone deduplication/eligibility/no historical backfill, current draft/Custom routing, receivables with instalments and excluded records, acquisition deduplication/refunds and existing report permissions/digests/PDF/CSV. Browser fixtures render the actual onboarding, checklist and overview at 1440, 390 and 320 pixels; they verify persisted contact values, selected-template continuation, failed-save recovery, all four website states and no viewport overflow. Fixtures do not authenticate as customers or access production services.
 
-## Remaining phased work and launch checks
+## Initial follow-on list (superseded by the completion update)
 
 1. Activation: the existing onboarding wizard still collects business details and an optional first service before its editor/checklist handoff; an embedded template chooser before details is a separate UX enhancement. True visitor-to-registration and time-to-publish cohorts need privacy-conscious event/session attribution on Main and Business. Do not infer unique visitors from template views.
 2. Revenue: validate accepted recurring-contract coverage for other products, record historical plan/revenue changes for churn/expansion, consolidate acquisition costs before CAC, and verify provider/live-mode reconciliation operationally. Do not alter current entitlement or cancellation rules merely to improve a metric.
@@ -46,3 +46,6 @@ Isolated tests cover milestone deduplication/eligibility/no historical backfill,
 ### Local validation results
 
 Final production Turbopack build passed with migration hooks skipped. TypeScript and scoped ESLint checks passed. The activation/revenue, investor-report, website-plan billing and lifecycle suites passed (25 tests total). Browser checks passed at all three widths, including selected-template preservation and failed-save recovery. No live database migration, provider transaction, customer email, push or deployment was performed.
+
+
+The follow-on engineering above is now implemented; see [Growth completion](GROWTH_COMPLETION.md) for current scope, evidence definitions and the release-dependent external verification. The deployment hold remains in effect.

@@ -310,6 +310,63 @@ export async function investorPdf(report: InvestorReport) {
       );
     } else line("Referral sources unavailable.");
   }
+  if (
+    report.companyRecurring ||
+    report.conversion ||
+    report.movements ||
+    report.acquisitionCosts
+  ) {
+    newPage("Recurring revenue and conversion intelligence");
+    if (report.collections?.available) {
+      const c = report.collections.data;
+      line(
+        `Covered verified gross collections ${money(c.gross)}; ${c.transactions} transactions; reconciled legacy hosting ${money(c.legacyGross)}; recorded risk ${money(c.risk)}. Before refunds, fees and tax.`,
+      );
+    }
+    if (report.companyRecurring?.available) {
+      const r = report.companyRecurring.data;
+      line(
+        `Covered verified MRR ${money(r.mrr)}; annual run-rate ${money(r.arr)}; ${r.services} recurring services.`,
+        11,
+        true,
+      );
+      for (const p of r.products)
+        line(`${p.product}: ${money(p.mrr)} MRR (${p.services} services).`);
+      line(
+        `Excluded legacy records ${r.legacyHostingExcluded}; excluded Custom candidates ${r.customCandidatesExcluded}. One-time fees and unpaid proposals excluded.`,
+      );
+    } else line("Company recurring evidence unavailable.");
+    if (report.conversion?.available) {
+      const c = report.conversion.data;
+      line("Consented visitor cohort", 13, true);
+      line(
+        `${c.visitors} browsers; ${c.registered} registered; ${c.selected} selected; ${c.published} published; ${c.paid} paid.`,
+      );
+      line(c.coverage);
+    } else line("Consent-based conversion sources unavailable.");
+    if (report.movements?.available) {
+      const m = report.movements.data;
+      line("Observed service run-rate movements", 13, true);
+      if (m.daysCompared)
+        line(
+          `${m.daysCompared} consecutive daily comparisons; new ${money(m.newMrr)}, expansion ${money(m.expansionMrr)}, contraction ${money(m.contractionMrr)}, lost MRR ${money(m.churnedMrr)}.`,
+        );
+      else
+        line(
+          "No consecutive daily comparison baseline yet. Historical movements are not invented.",
+        );
+    }
+    if (report.acquisitionCosts?.available) {
+      line("Evidenced acquisition cost", 13, true);
+      for (const a of report.acquisitionCosts.data.sources)
+        line(
+          `${a.source}: spend ${money(a.spend)}; new paying ${a.newPaying}; period CAC ${a.cac === null ? "unavailable" : money(a.cac)}.`,
+        );
+      line(
+        `Unallocated spend ${money(report.acquisitionCosts.data.unallocatedSpend)}. Attribution and cost coverage may be incomplete.`,
+      );
+    }
+  }
   newPage("Definitions, coverage and management notes");
   line("Source availability", 13, true);
   for (const key of [

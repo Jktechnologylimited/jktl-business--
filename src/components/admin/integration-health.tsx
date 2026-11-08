@@ -53,7 +53,7 @@ export function IntegrationHealth() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-ink">{status.name}</p>
               {status.configured ? (
-                <p className="text-xs text-ink-muted">Connected.</p>
+                <p className="text-xs text-ink-muted">Configured. Live delivery and provider health require verification.</p>
               ) : (
                 <>
                   <p className="text-xs text-danger">{status.consequence}</p>

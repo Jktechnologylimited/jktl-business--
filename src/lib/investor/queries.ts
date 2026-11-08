@@ -85,7 +85,80 @@ const receivables = `WITH open_invoices AS(
  'overdue',COALESCE(sum(balance) FILTER(WHERE due_on<($4::timestamptz AT TIME ZONE 'Africa/Lagos')::date),0),
  'underReview',COALESCE(sum(balance) FILTER(WHERE payment_review),0)
 ) data FROM open_invoices`;
+export const COMPANY_RECURRING_CTE = `${RECEIPTS_CTE}, website_latest AS(
+ SELECT DISTINCT ON(organization_id) * FROM receipts WHERE product='Website plans' ORDER BY organization_id,paid_at DESC,reference
+), website_recurring AS(
+ SELECT 'website:'||s.organization_id::text service_key,s.organization_id,'Website plans' product,round(p.amount_kobo::numeric/CASE WHEN s.interval='yearly' THEN 12 ELSE 1 END)::bigint mrr
+ FROM website_plan_subscriptions s JOIN website_latest p USING(organization_id) JOIN lifecycle_current c USING(organization_id)
+ WHERE s.status='active' AND s.period_end>$4 AND p.paid_period_end>$4 AND p.retained=p.amount_kobo AND s.plan_id=p.plan_id AND s.interval=p.billing_interval
+), legacy_recurring AS(
+ SELECT 'legacy:'||i.organization_id::text service_key,i.organization_id,'Legacy hosting' product,round(p.amount_kobo::numeric/p.months)::bigint mrr
+ FROM infrastructure_accounts i JOIN lifecycle_current c USING(organization_id) JOIN LATERAL(SELECT * FROM growth_legacy_payments p WHERE p.organization_id=i.organization_id ORDER BY paid_at DESC,reference LIMIT 1)p ON true
+ WHERE i.subscription_status='active' AND i.renewal_date>=($4::timestamptz AT TIME ZONE 'Africa/Lagos')::date AND p.period_end>$4 AND p.amount_kobo=i.price_kobo_per_cycle AND NOT EXISTS(SELECT 1 FROM website_recurring w WHERE w.organization_id=i.organization_id)
+ AND NOT EXISTS(SELECT 1 FROM distribution_payment_risks z WHERE z.reference=p.reference AND NOT EXISTS(SELECT 1 FROM distribution_risk_state r WHERE r.reference=z.reference AND r.state='CLEARED'))
+), email_latest AS(
+ SELECT DISTINCT ON(service_id) * FROM email_orders WHERE paid_at IS NOT NULL AND provider_transaction IS NOT NULL ORDER BY service_id,paid_at DESC,id
+), email_recurring AS(
+ SELECT 'email:'||e.id::text service_key,e.organization_id,'Business email' product,round(p.amount_kobo::numeric/p.period_months)::bigint mrr
+ FROM email_services e JOIN lifecycle_current c USING(organization_id) JOIN email_latest p ON p.service_id=e.id AND p.organization_id=e.organization_id
+ JOIN receipts r ON r.reference=p.reference AND r.organization_id=e.organization_id AND r.product='Business email'
+ WHERE e.status='ACTIVE' AND e.license_type='PAID' AND e.renews_at>$4 AND p.period_months BETWEEN 1 AND 36 AND e.period_months=p.period_months AND e.period_price_kobo=p.amount_kobo AND e.plan_id=p.plan_id AND p.consent_at IS NOT NULL AND r.retained=r.amount_kobo
+), custom_recurring AS(
+ SELECT 'custom:'||s.id::text service_key,s.organization_id,'Custom recurring services' product,round((s.amount_kobo-s.discount_kobo)::numeric/CASE WHEN s.interval='ANNUAL' THEN 12 ELSE 1 END)::bigint mrr
+ FROM custom_services s JOIN lifecycle_current c USING(organization_id)
+ WHERE s.status='ACTIVE' AND s.accepted_at IS NOT NULL AND s.accepted_by IS NOT NULL AND s.interval IN('MONTHLY','ANNUAL') AND s.starts_on<=($4::timestamptz AT TIME ZONE 'Africa/Lagos')::date
+ AND NOT (s.category='HOSTING' AND (EXISTS(SELECT 1 FROM website_recurring w WHERE w.organization_id=s.organization_id) OR EXISTS(SELECT 1 FROM legacy_recurring l WHERE l.organization_id=s.organization_id)))
+ AND NOT (s.category='EMAIL' AND EXISTS(SELECT 1 FROM email_recurring e WHERE e.organization_id=s.organization_id))
+ AND EXISTS(SELECT 1 FROM custom_invoices i WHERE i.service_id=s.id AND i.organization_id=s.organization_id AND i.status='PAID' AND i.currency='NGN' AND i.amount_kobo=s.amount_kobo-s.discount_kobo AND i.paid_at<$4 AND i.due_on<=($4::timestamptz AT TIME ZONE 'Africa/Lagos')::date AND i.due_on+CASE WHEN s.interval='ANNUAL' THEN interval '1 year' ELSE interval '1 month' END>$4
+ AND (SELECT COALESCE(sum(r.retained),0) FROM receipts r WHERE r.organization_id=s.organization_id AND r.product='Custom projects' AND (r.reference=i.reference OR EXISTS(SELECT 1 FROM custom_invoice_payments p WHERE p.invoice_id=i.id AND p.reference=r.reference)))>=i.amount_kobo)
+), recurring_items AS(SELECT * FROM website_recurring UNION ALL SELECT * FROM email_recurring UNION ALL SELECT * FROM custom_recurring UNION ALL SELECT * FROM legacy_recurring)
+`;
+const allReceipts = `${RECEIPTS_CTE}, all_receipts AS(
+ SELECT reference,provider,organization_id,amount_kobo,paid_at,risk FROM receipts
+ UNION ALL SELECT p.reference,p.provider_transaction,p.organization_id,p.amount_kobo,p.paid_at,CASE WHEN EXISTS(SELECT 1 FROM distribution_payment_risks z WHERE z.reference=p.reference AND NOT EXISTS(SELECT 1 FROM distribution_risk_state s WHERE s.reference=z.reference AND s.state='CLEARED')) THEN p.amount_kobo ELSE 0 END
+ FROM growth_legacy_payments p JOIN lifecycle_current c USING(organization_id) WHERE p.paid_at<$4 AND NOT EXISTS(SELECT 1 FROM receipts r WHERE r.reference=p.reference OR r.provider=p.provider_transaction)
+)`;
+const collections = `${allReceipts} SELECT jsonb_build_object('gross',COALESCE(sum(amount_kobo),0),'transactions',count(*),'risk',COALESCE(sum(risk),0),'legacyGross',COALESCE(sum(amount_kobo) FILTER(WHERE EXISTS(SELECT 1 FROM growth_legacy_payments p WHERE p.reference=all_receipts.reference)),0)) data FROM all_receipts WHERE paid_at>=$1 AND paid_at<LEAST($2::timestamptz,$4::timestamptz)`;
+const companyRecurring = `${COMPANY_RECURRING_CTE} SELECT jsonb_build_object('mrr',COALESCE(sum(mrr),0),'arr',COALESCE(sum(mrr),0)*12,'services',count(*),'products',COALESCE((SELECT jsonb_agg(t ORDER BY product) FROM(SELECT product,sum(mrr) mrr,count(*) services FROM recurring_items GROUP BY product)t),'[]'),'legacyHostingExcluded',(SELECT count(*) FROM infrastructure_accounts i JOIN lifecycle_current c USING(organization_id) WHERE subscription_status='active' AND renewal_date>=($4::timestamptz AT TIME ZONE 'Africa/Lagos')::date AND NOT EXISTS(SELECT 1 FROM legacy_recurring l WHERE l.organization_id=i.organization_id) AND NOT EXISTS(SELECT 1 FROM website_recurring w WHERE w.organization_id=i.organization_id)),'customCandidatesExcluded',(SELECT count(*) FROM custom_services s JOIN lifecycle_current c USING(organization_id) WHERE s.status='ACTIVE' AND s.interval IN('MONTHLY','ANNUAL') AND NOT EXISTS(SELECT 1 FROM custom_recurring r WHERE r.service_key='custom:'||s.id::text))) data FROM recurring_items`;
+const conversion = `WITH visitors AS(SELECT v.* FROM growth_visits v WHERE v.created_at>=$1 AND v.created_at<LEAST($2::timestamptz,$4::timestamptz)), flags AS(
+ SELECT v.*,EXISTS(SELECT 1 FROM activation_milestones m WHERE m.organization_id=v.organization_id AND m.milestone='template_selected' AND m.occurred_at>v.created_at AND m.occurred_at<$4) selected,
+ EXISTS(SELECT 1 FROM activation_milestones m WHERE m.organization_id=v.organization_id AND m.milestone='website_published' AND m.occurred_at>v.created_at AND m.occurred_at<$4) published,
+ EXISTS(SELECT 1 FROM activation_milestones m WHERE m.organization_id=v.organization_id AND m.milestone='website_paid' AND m.occurred_at>v.created_at AND m.occurred_at<$4) paid FROM visitors v
+) SELECT jsonb_build_object('visitors',count(*),'registered',count(*) FILTER(WHERE organization_id IS NOT NULL),'selected',count(*) FILTER(WHERE organization_id IS NOT NULL AND selected),'published',count(*) FILTER(WHERE organization_id IS NOT NULL AND selected AND published),'paid',count(*) FILTER(WHERE organization_id IS NOT NULL AND selected AND published AND paid),'coverage','Consenting browsers first seen in the selected period; 30-day retention. Milestones observed by report time. Not all visitors, people or lifetime conversions.') data FROM flags`;
+const acquisitionCosts = `${allReceipts}, first_paid AS(SELECT organization_id,min(paid_at) first_at FROM all_receipts WHERE amount_kobo>risk AND NOT EXISTS(SELECT 1 FROM receipts r WHERE r.reference=all_receipts.reference AND r.retained=0) GROUP BY organization_id), customers AS(SELECT f.organization_id,a.affiliate_id FROM first_paid f JOIN lifecycle_current c USING(organization_id) JOIN affiliate_referrals a USING(organization_id) WHERE f.first_at>=$1 AND f.first_at<LEAST($2::timestamptz,$4::timestamptz)), costs AS(SELECT affiliate_id,sum(amount_kobo) spend FROM growth_acquisition_costs WHERE voided_at IS NULL AND spent_on>=($1::timestamptz AT TIME ZONE 'Africa/Lagos')::date AND spent_on<($2::timestamptz AT TIME ZONE 'Africa/Lagos')::date GROUP BY affiliate_id) SELECT jsonb_build_object('sources',COALESCE((SELECT jsonb_agg(t ORDER BY source) FROM(SELECT a.name source,COALESCE(c.spend,0) spend,(SELECT count(*) FROM customers x WHERE x.affiliate_id=a.id) "newPaying",CASE WHEN c.spend>0 AND EXISTS(SELECT 1 FROM customers x WHERE x.affiliate_id=a.id) THEN round(c.spend::numeric/(SELECT count(*) FROM customers x WHERE x.affiliate_id=a.id)) ELSE NULL END cac FROM affiliates a LEFT JOIN costs c ON c.affiliate_id=a.id)t),'[]'),'unallocatedSpend',COALESCE((SELECT spend FROM costs WHERE affiliate_id IS NULL),0)) data`;
+const movements = `WITH ranked AS(SELECT *,lag(items) OVER(ORDER BY day) previous_items,lag(day) OVER(ORDER BY day) previous_day FROM growth_recurring_snapshots WHERE day<=($4::timestamptz AT TIME ZONE 'Africa/Lagos')::date), pairs AS(SELECT * FROM ranked WHERE day>=($1::timestamptz AT TIME ZONE 'Africa/Lagos')::date AND day<($2::timestamptz AT TIME ZONE 'Africa/Lagos')::date AND previous_day=day-1), deltas AS(SELECT p.day,b.service_key key,COALESCE(b.new_mrr,0) current_mrr,COALESCE(b.old_mrr,0) previous_mrr FROM pairs p CROSS JOIN LATERAL(SELECT COALESCE(n.service_key,o.service_key) service_key,n.mrr new_mrr,o.mrr old_mrr FROM jsonb_to_recordset(p.items) AS n(service_key text,mrr bigint) FULL JOIN jsonb_to_recordset(p.previous_items) AS o(service_key text,mrr bigint) USING(service_key)) b) SELECT jsonb_build_object('daysCompared',(SELECT count(*) FROM pairs),'churnedMrr',COALESCE(sum(previous_mrr) FILTER(WHERE current_mrr=0),0),'newMrr',COALESCE(sum(current_mrr) FILTER(WHERE previous_mrr=0),0),'expansionMrr',COALESCE(sum(current_mrr-previous_mrr) FILTER(WHERE previous_mrr>0 AND current_mrr>previous_mrr),0),'contractionMrr',COALESCE(sum(previous_mrr-current_mrr) FILTER(WHERE current_mrr>0 AND current_mrr<previous_mrr),0),'series',COALESCE((SELECT jsonb_agg(t ORDER BY day) FROM(SELECT day,sum(current_mrr-previous_mrr) net FROM deltas GROUP BY day)t),'[]')) data FROM deltas`;
+
 export const SOURCES = {
+  collections: {
+    sql: collections,
+    tables: [...RECEIPT_TABLES, "growth_legacy_payments"],
+  },
+  companyRecurring: {
+    sql: companyRecurring,
+    tables: [
+      ...RECEIPT_TABLES,
+      "website_plan_subscriptions",
+      "email_services",
+      "custom_services",
+      "infrastructure_accounts",
+      "growth_legacy_payments",
+    ],
+  },
+  conversion: {
+    sql: conversion,
+    tables: ["growth_visits", "activation_milestones"],
+  },
+  acquisitionCosts: {
+    sql: acquisitionCosts,
+    tables: [
+      ...RECEIPT_TABLES,
+      "affiliates",
+      "affiliate_referrals",
+      "growth_acquisition_costs",
+      "growth_legacy_payments",
+    ],
+  },
+  movements: { sql: movements, tables: ["growth_recurring_snapshots"] },
   activation: {
     sql: activation,
     tables: [

@@ -128,3 +128,39 @@ export function lifecycleMessage(
     secondaryLabel: "",
   };
 }
+
+export type JourneyPurpose =
+  "PUBLISHED" | "FIRST_ENQUIRY" | "PAYMENT_FAILED" | "PAID_FEATURE";
+export function journeyMessage(purpose: JourneyPurpose, business: string) {
+  const messages = {
+    PUBLISHED: {
+      subject: "Your website is published — here are your next steps",
+      detail: `Hello ${business},\n\nCongratulations on publishing your website. Check your business details, contact links and services, then copy your website address and share it with customers. Your free JKTL address remains available.\n\nOpen your websites below to review your pages or ask the team for help.`,
+      path: "/business/website",
+      actionLabel: "Review and share my website",
+      category: "service" as const,
+    },
+    FIRST_ENQUIRY: {
+      subject: "Your website has received an enquiry",
+      detail: `Hello ${business},\n\nYour website chatbot has recorded an enquiry. Open your chatbot leads to review the request and reply using the customer’s permitted contact details. Do not assume the customer has agreed to marketing messages.\n\nUse your customer records to organise follow-up and contact the team if you need help.`,
+      path: "/business/chatbot",
+      actionLabel: "Review my enquiries",
+      category: "service" as const,
+    },
+    PAYMENT_FAILED: {
+      subject: "Please review your website subscription payment",
+      detail: `Hello ${business},\n\nA website subscription payment needs attention. Open your current subscription in JKTL Business to review payment history and the available provider controls. If you were charged or a payment is pending, contact support before starting another payment.\n\nWe will never ask for your password or card details by email. Your free JKTL website address does not itself require a paid subscription.`,
+      path: "/business/plans",
+      actionLabel: "Review subscription and payment",
+      category: "service" as const,
+    },
+    PAID_FEATURE: {
+      subject: "Choose the website plan that fits your next step",
+      detail: `Hello ${business},\n\nYou recently explored website plans. Compare current features and subscription prices in your account and choose an upgrade if it fits your business. Your selected website and its content stay in place.\n\nYour free website remains available. Opening the plans page never charges you; checkout requires your confirmation.`,
+      path: "/business/plans",
+      actionLabel: "Compare my website plans",
+      category: "marketing" as const,
+    },
+  };
+  return { ...messages[purpose], secondaryPath: "", secondaryLabel: "" };
+}

@@ -143,6 +143,8 @@ export async function confirmCheckoutAction(
       renewalDate,
     });
 
+    await import("@/lib/growth/revenue-service").then(m => m.recordLegacyPaidEvidence(organizationId, data as unknown as Record<string,unknown>)).catch(() => console.error("Legacy reporting evidence needs reconciliation"));
+
     const infra = await getInfrastructure(organizationId);
     if (!infra)
       return {
