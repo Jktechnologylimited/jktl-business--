@@ -233,7 +233,7 @@ interface BusinessStore {
    * needs it up front to create the org + profile in one shot. */
   startSignup: (name: string, email: string, password: string, businessName: string, referralCode?: string | null) => void;
   createLiveAccount: (businessType: BusinessType) => Promise<ActionOutcome>;
-  completeOnboarding: (type: BusinessType, displayName: string) => void;
+  completeOnboarding: (type: BusinessType, displayName: string, savedProfile?: BusinessProfile) => void;
   logout: () => Promise<void>;
 
   addCustomer: (input: NewCustomerInput) => Customer;
@@ -395,17 +395,17 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
     return { ok: true };
   },
 
-  completeOnboarding: (type, displayName) => {
+  completeOnboarding: (type, displayName, savedProfile) => {
     const session = readSession();
     const next: SessionShape = { ...session, authenticated: true, onboardingComplete: true, businessType: type, businessName: displayName };
     writeSession(next);
     set((state) => ({
       authenticated: true,
       onboardingComplete: true,
-      data: { ...state.data, profile: { ...state.data.profile, businessType: type, displayName } },
+      data: { ...state.data, profile: savedProfile || { ...state.data.profile, businessType: type, displayName } },
     }));
     const profile = get().data.profile;
-    get().enqueueSync("business.updateProfile", {
+    if (!savedProfile) get().enqueueSync("business.updateProfile", {
       patch: { displayName, phone: profile.phone, email: profile.email, address: profile.address, city: profile.city, state: profile.state },
     });
     get().persistCache();

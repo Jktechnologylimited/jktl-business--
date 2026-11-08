@@ -25,3 +25,7 @@ These are unaudited management reports. Live/test payment mode is not uniformly 
 ## Verification
 
 `node tests/investor-reports.test.mjs` runs isolated PostgreSQL (PGlite) tests covering payment deduplication, refunds/risk, annual normalization, latest-refunded-payment handling, current populations, currencies, frozen JSONB snapshots/digest checks, real PDF generation, CSV escaping and private download permissions. No automated test writes production customer or payment records.
+
+## Activation and acquisition extension — 8 November 2026
+
+The existing Insights screen now includes a Growth & Revenue Overview, independent first-observed activation milestones, recorded referral-source performance and current Custom receivables. These are optional report sections so saved historical snapshots remain readable. Migration 074 starts forward-only milestone observation; it is prepared locally and not applied during the deployment hold. See [the activation/revenue audit](GROWTH_ACTIVATION_REVENUE.md) for definitions, implemented changes, remaining work and rollout checks. Website MRR/ARR remains conservative and separate from collections, receivables and unsupported recurring-service estimates.

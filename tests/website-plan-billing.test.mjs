@@ -404,6 +404,7 @@ test("signed website webhook lifecycle: retries early attachment, confirms renew
         "@/lib/domains/service": { handleDomainEvent: async () => false },
         "@/lib/paystack": provider,
         "@/lib/db/billing": dbBilling,
+        "@/lib/invoicing/policy": load("../src/lib/invoicing/policy.ts", {}),
         "@/lib/db/invoices": {},
         "@/lib/ai/billing-fulfilment": {},
         "@/lib/invoice-finalize": {},

@@ -89,6 +89,30 @@ export type Portfolio = {
 };
 export type Section<T> =
   { available: true; data: T } | { available: false; reason: string };
+export type Activation = {
+  trackingSince: string;
+  registered: number;
+  selected: number;
+  published: number;
+  paid: number;
+};
+export type Acquisition = {
+  sources: {
+    source: string;
+    programme: string;
+    registered: number;
+    published: number;
+    paying: number;
+    gross: number;
+    retained: number;
+  }[];
+};
+export type Receivables = {
+  outstanding: number;
+  overdue: number;
+  invoices: number;
+  underReview: number;
+};
 export type InvestorReport = {
   version: 1;
   generatedAt: string;
@@ -99,6 +123,10 @@ export type InvestorReport = {
   activity: Section<Activity>;
   partners: Section<Partners>;
   portfolio: Section<Portfolio>;
+  // Optional to keep existing immutable report snapshots readable.
+  activation?: Section<Activation>;
+  acquisition?: Section<Acquisition>;
+  receivables?: Section<Receivables>;
   notes: string;
   id?: string;
   digest?: string;
@@ -228,6 +256,18 @@ export const DEFINITIONS = [
     "Current active, unexpired website subscriptions with matching verified payment evidence, excluding full refunds and uncleared risks. Actual annual payment amounts are normalized over 12 months; ARR is MRR × 12, not a forecast or all-company revenue.",
   ],
   [
+    "Activation milestones",
+    "First observed registration, template selection, publication and verified website-plan payment after tracking installation. Period counts are independent milestones, not a single conversion cohort. Existing accounts are not backdated; historical visitors are unavailable.",
+  ],
+  [
+    "Acquisition sources",
+    "Current eligible businesses attributed by the existing first-touch referral ledger. Registered/published are current account counts; paying businesses and receipts use retained verified payments in the selected period. No commission policy or rate is changed; source CAC is unavailable without cost evidence.",
+  ],
+  [
+    "Outstanding Custom invoices",
+    "Current issued OPEN NGN Custom invoices less recorded payments, excluding drafts, voids and settled invoices. Overdue uses the WAT due date. Payment-review balances are included and flagged; these are receivables, not collections or ARR. Tenant sales invoices are excluded.",
+  ],
+  [
     "Period and snapshot",
     "Payment and organization-creation charts use the selected WAT date range. Account stages, country, MRR, portfolio and outstanding commission balances are current snapshots, even for historical date filters. The previous period has equal calendar-day length.",
   ],
@@ -249,7 +289,7 @@ export const LIMITATIONS = [
   "Provider live/test mode is not uniformly stored across these ledgers. Reconcile live-mode provider and bank statements before external circulation.",
   "Receipt coverage excludes standalone legacy hosting, paused AI-receptionist schedules, offline payments not recorded with evidence, and services billed outside this database.",
   "Fees, tax, payroll, wholesale costs and complete operating expenses are not consolidated: gross margin, profit, burn and runway are unavailable.",
-  "Platform-wide unique users, DAU/MAU, guest-game traffic, retention, attribution, CAC and LTV are unavailable from the current sources.",
+  "Platform-wide unique users, DAU/MAU, guest-game traffic, retention, CAC and LTV are unavailable. Acquisition covers recorded first-touch affiliate/partner referrals only, not all marketing channels.",
   "Historical MRR and historical account-stage changes are not reconstructed. Generated reports preserve snapshots going forward.",
 ];
 export function csvCell(value: unknown) {
@@ -291,10 +331,15 @@ export function reportCsv(report: InvestorReport) {
             "available",
             "held",
             "paidOut",
+            "outstanding",
+            "overdue",
+            "underReview",
           ].includes(metric)
             ? "integer NGN kobo"
             : "count",
         ]);
+      else if (typeof value === "string")
+        rows.push([key, metric, value, "source metadata"]);
       else if (Array.isArray(value) && value.length) {
         rows.push([], [key, metric, "Breakdown"]);
         const columns = [

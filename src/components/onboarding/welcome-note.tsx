@@ -15,9 +15,7 @@ export function WelcomeNote({ businessName }: { businessName: string }) {
       </div>
       <p className="mt-3.5 text-sm leading-relaxed text-ink-muted">
         Welcome to JKTL Business{businessName ? `, ${businessName}` : ""} — I&apos;m genuinely glad you&apos;re here. We
-        built this so you could spend less time on paperwork and more time with your customers. Your dashboard,
-        bookings and public website are ready to go, and sample data is already in place so you can see how
-        everything works before you add your own.
+        built this so you could spend less time on paperwork and more time with your customers. Your dashboard is ready. Choose a template, replace its example content with your own details, then preview and publish your website when you are ready.
       </p>
       <p className="mt-3 text-sm leading-relaxed text-ink-muted">
         If anything is confusing or breaks, don&apos;t hesitate to reach out from the Help page — a real person reads

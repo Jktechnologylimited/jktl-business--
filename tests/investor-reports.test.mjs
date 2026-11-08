@@ -26,14 +26,15 @@ async function fixture() {
  CREATE TABLE domain_orders(reference text,organization_id text,currency text DEFAULT 'NGN',refunded_kobo bigint DEFAULT 0);
  CREATE TABLE domain_payments(reference text,provider_transaction text,amount_kobo bigint,paid_at timestamptz);
  CREATE TABLE email_orders(reference text,provider_transaction text,organization_id text,amount_kobo bigint,paid_at timestamptz);
- CREATE TABLE custom_invoices(id text,version int,status text,reference text,provider_transaction text,organization_id text,amount_kobo bigint,currency text,paid_at timestamptz);
+ CREATE TABLE custom_invoices(id text,version int,status text,reference text,provider_transaction text,organization_id text,amount_kobo bigint,currency text,paid_at timestamptz,paid_kobo bigint DEFAULT 0,due_on date,issued_at timestamptz,payment_review boolean DEFAULT false);
  CREATE TABLE custom_invoice_payments(invoice_id text,reference text,provider_transaction text,amount_kobo bigint,currency text,verified_at timestamptz,refunded_kobo bigint DEFAULT 0,state text);
  CREATE TABLE distribution_payment_risks(reference text);
  CREATE TABLE distribution_risk_state(reference text,state text);
  CREATE TABLE website_plan_subscriptions(organization_id text,plan_id text DEFAULT 'growth',interval text DEFAULT 'monthly',status text DEFAULT 'active',period_end timestamptz DEFAULT '2027-01-01');
  CREATE TABLE website_metric_events(organization_id text,event_type text,created_at timestamptz);
  CREATE TABLE tycoon_saves(user_id text,updated_at timestamptz);
- CREATE TABLE affiliates(programme text,status text,created_at timestamptz);
+ CREATE TABLE affiliates(id text PRIMARY KEY,name text,programme text,status text,created_at timestamptz);
+ CREATE TABLE affiliate_referrals(affiliate_id text,organization_id text UNIQUE);
  CREATE TABLE distribution_ledger(amount_kobo bigint,status text,currency text DEFAULT 'NGN');
  CREATE TABLE distribution_payouts(amount_kobo bigint,status text,currency text DEFAULT 'NGN',confirmed_at timestamptz);
  CREATE TABLE custom_projects(organization_id text,status text);
@@ -55,7 +56,7 @@ async function fixture() {
  INSERT INTO domain_orders(reference,organization_id,refunded_kobo) VALUES('domain','a',1000),('annual','a',0);
  INSERT INTO domain_payments VALUES('domain','tx4',10000,'2026-10-05'),('annual','tx1',120000,'2026-10-02');
  INSERT INTO distribution_payment_risks VALUES('domain');
- INSERT INTO custom_invoices VALUES('invoice',2,'PAID','invoice','custom-tx','b',50000,'NGN','2026-10-08');
+ INSERT INTO custom_invoices(id,version,status,reference,provider_transaction,organization_id,amount_kobo,currency,paid_at) VALUES('invoice',2,'PAID','invoice','custom-tx','b',50000,'NGN','2026-10-08');
  INSERT INTO custom_invoice_payments VALUES('invoice','installment','custom-tx',20000,'NGN','2026-10-08',0,'success');
  INSERT INTO website_metric_events VALUES('a','view','2026-10-02'),('a','cta','2026-10-02'),('demo','view','2026-10-02');
  INSERT INTO tycoon_saves VALUES('one','2026-10-15');
@@ -304,4 +305,50 @@ test("snapshot action checks export permission first and ignores client-supplied
   assert.equal(saved[0], "owner");
   assert.equal(saved[2], "Reconciled separately");
   assert.equal("gross" in saved[1], false);
+});
+
+test("acquisition uses first-touch referrals and deduplicated period payment evidence, not commission balances", async () => {
+  const f = await fixture();
+  try {
+    await f.q(
+      "INSERT INTO affiliates VALUES('source-a','Partner One','partner','active','2026-01-01'),('source-b','Creator Two','affiliate','active','2026-01-01')",
+    );
+    await f.q(
+      "INSERT INTO affiliate_referrals VALUES('source-a','a'),('source-a','prospect'),('source-b','b')",
+    );
+    const result = await f.source("acquisition");
+    const partner = result.sources.find((r) => r.source === "Partner One");
+    assert.deepEqual(partner, {
+      source: "Partner One",
+      programme: "partner",
+      registered: 1,
+      published: 1,
+      paying: 1,
+      gross: 130000,
+      retained: 120000,
+    });
+    const creator = result.sources.find((r) => r.source === "Creator Two");
+    assert.equal(creator.paying, 1);
+    assert.equal(creator.retained, 100000);
+    assert.equal(
+      creator.published,
+      0,
+      "managed Custom clients are separate from hosted template publication",
+    );
+    assert.equal(
+      JSON.stringify(result).includes("source-a"),
+      false,
+      "do not export internal account IDs",
+    );
+    const report = await f.service.loadInvestorReport(period);
+    assert.equal(report.acquisition.available, true);
+    assert.equal(report.receivables.available, true);
+    assert.equal(
+      report.activation.available,
+      false,
+      "no fabricated history before migration installation",
+    );
+  } finally {
+    await f.db.close();
+  }
 });

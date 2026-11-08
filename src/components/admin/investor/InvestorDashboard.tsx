@@ -1,4 +1,5 @@
 "use client";
+import { GrowthOverview } from "./GrowthOverview";
 import {
   Area,
   AreaChart,
@@ -93,6 +94,7 @@ export function InvestorDashboard({ report }: { report: InvestorReport }) {
     cashChange = r ? change(r.gross, r.previousGross) : null;
   return (
     <div className="space-y-6 text-ink">
+      <GrowthOverview report={report} />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Tile
           label="Registered businesses · current"

@@ -1,4 +1,5 @@
 "use client";
+import { ActivationChecklist } from "@/components/websites/activation-checklist";
 import { T } from "@/components/i18n/LanguageProvider";
 
 import { useEffect, useState } from "react";
@@ -65,6 +66,8 @@ export default function DashboardPage() {
         </h1>
         <p className="mt-0.5 text-sm text-ink-muted">{formatLongDate(now)}</p>
       </div>
+
+      <ActivationChecklist />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile

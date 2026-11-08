@@ -1,4 +1,5 @@
 "use client";
+import { updateBusinessProfileAction } from "@/lib/actions/business-actions";
 import { emailDestination } from "@/lib/product-intent";
 import { T } from "@/components/i18n/LanguageProvider";
 
@@ -32,6 +33,7 @@ function OnboardingForm() {
   const router = useRouter();
   const params = useSearchParams();
   const profile = useBusinessStore((s) => s.data.profile);
+  const mode = useBusinessStore((s) => s.mode);
   const pendingSignup = useBusinessStore((s) => s.pendingSignup);
   const addService = useBusinessStore((s) => s.addService);
   const createLiveAccount = useBusinessStore((s) => s.createLiveAccount);
@@ -71,8 +73,43 @@ function OnboardingForm() {
     setStep(1);
   }
 
-  function finish() {
-    completeOnboarding(businessType, displayName);
+  function nextStep() {
+    if (step === 0) return void continueFromBusinessType();
+    if (step === 1 && (!displayName.trim() || !phone.trim())) {
+      setAccountError(
+        "Enter your business name and contact phone number to continue.",
+      );
+      return;
+    }
+    setAccountError("");
+    setStep((s) => s + 1);
+  }
+
+  async function finish() {
+    if (creatingAccount) return;
+    setCreatingAccount(true);
+    setAccountError("");
+    const details = {
+      ...profile,
+      businessType,
+      displayName: displayName.trim(),
+      phone: phone.trim(),
+      city: city.trim(),
+      state: state.trim(),
+    };
+    try {
+      if (mode === "live") {
+        const result = await updateBusinessProfileAction(details);
+        if (!result.ok) throw new Error(result.error);
+        completeOnboarding(businessType, details.displayName, result.data);
+      } else completeOnboarding(businessType, details.displayName, details);
+    } catch {
+      setAccountError(
+        "Your business details could not be saved. Please check your connection and try again.",
+      );
+      setCreatingAccount(false);
+      return;
+    }
     const selected = pendingTemplate(params.get("template"));
     router.push(
       emailDestination(params) ||
@@ -93,6 +130,8 @@ function OnboardingForm() {
         {STEPS.map((label, i) => (
           <li
             key={label}
+            aria-label={label}
+            aria-current={i === step ? "step" : undefined}
             className={cn(
               "h-1.5 flex-1 rounded-full",
               i <= step ? "bg-primary" : "bg-surface-strong",
@@ -240,16 +279,21 @@ function OnboardingForm() {
             {displayName || "there"}
           </h1>
           <p className="mt-2 max-w-xs text-sm text-ink-muted">
-            {industry.productName}
-            <T>is ready with sample </T>
-            {industry.bookingLabelPlural.toLowerCase()}
-            <T>, customers and</T> {industry.catalogLabel.toLowerCase()}
-            <T>so you can see it in action. Add more anytime from the menu.</T>
+            <T>
+              Your account is ready. Next, choose a free template, add your logo
+              and contact details, preview your pages and publish on an
+              available JKTL address.
+            </T>
           </p>
           <WelcomeNote businessName={displayName} />
         </div>
       ) : null}
 
+      {step > 0 && accountError ? (
+        <p className="mt-4 text-sm text-danger" role="alert">
+          {accountError}
+        </p>
+      ) : null}
       {!(step === 2 && !addedService) ? (
         <div className="mt-8 flex gap-3">
           {step > 0 ? (
@@ -257,6 +301,7 @@ function OnboardingForm() {
               type="button"
               variant="outline"
               className="flex-1"
+              disabled={creatingAccount}
               onClick={() => setStep((s) => s - 1)}
             >
               <T>Back</T>
@@ -267,15 +312,24 @@ function OnboardingForm() {
               type="button"
               className="flex-1"
               disabled={creatingAccount}
-              onClick={() =>
-                step === 0 ? continueFromBusinessType() : setStep((s) => s + 1)
-              }
+              onClick={nextStep}
             >
               {step === 0 && creatingAccount ? "Creating account…" : "Continue"}
             </Button>
           ) : (
-            <Button type="button" className="flex-1" onClick={finish}>
-              <T>Go to dashboard</T>
+            <Button
+              type="button"
+              className="min-h-10 h-auto flex-[2] whitespace-normal py-2"
+              disabled={creatingAccount}
+              onClick={finish}
+            >
+              {creatingAccount
+                ? "Saving details…"
+                : emailDestination(params)
+                  ? "Continue to your selected product"
+                  : pendingTemplate(params.get("template"))
+                    ? "Customize my website"
+                    : "Continue to my website checklist"}
             </Button>
           )}
         </div>

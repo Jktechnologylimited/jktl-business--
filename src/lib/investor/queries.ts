@@ -53,7 +53,62 @@ const RECEIPT_TABLES = [
   "distribution_payment_risks",
   "distribution_risk_state",
 ];
+const activation = `WITH eligible AS(${ELIGIBLE}), events AS(
+ SELECT m.* FROM activation_milestones m JOIN eligible e USING(organization_id)
+ WHERE m.occurred_at>=$1 AND m.occurred_at<LEAST($2::timestamptz,$4::timestamptz)
+) SELECT jsonb_build_object(
+ 'trackingSince',(SELECT installed_at FROM activation_tracking WHERE id=true),
+ 'registered',count(*) FILTER(WHERE milestone='registered'),
+ 'selected',count(*) FILTER(WHERE milestone='template_selected'),
+ 'published',count(*) FILTER(WHERE milestone='website_published'),
+ 'paid',count(*) FILTER(WHERE milestone='website_paid')
+) data FROM events`;
+const acquisition = `${RECEIPTS_CTE}, eligible AS(${ELIGIBLE}), customer_receipts AS(
+ SELECT organization_id,sum(amount_kobo) gross,sum(retained) retained FROM receipts
+ WHERE paid_at>=$1 AND paid_at<LEAST($2::timestamptz,$4::timestamptz) GROUP BY organization_id
+), sources AS(
+ SELECT a.id,a.name source,a.programme,count(e.organization_id) registered,
+ count(e.organization_id) FILTER(WHERE e.stage IN('FREE_DOMAIN','CONNECT_DOMAIN','COMPLETE')) published,
+ count(e.organization_id) FILTER(WHERE r.retained>0) paying,
+ COALESCE(sum(r.gross),0) gross,COALESCE(sum(r.retained),0) retained
+ FROM affiliates a LEFT JOIN affiliate_referrals f ON f.affiliate_id=a.id
+ LEFT JOIN eligible e ON e.organization_id=f.organization_id
+ LEFT JOIN customer_receipts r ON r.organization_id=e.organization_id
+ WHERE a.created_at<$4 GROUP BY a.id,a.name,a.programme
+) SELECT jsonb_build_object('sources',COALESCE((SELECT jsonb_agg(to_jsonb(s)-'id' ORDER BY retained DESC,source,id) FROM sources s),'[]')) data`;
+const receivables = `WITH open_invoices AS(
+ SELECT GREATEST(0,i.amount_kobo-i.paid_kobo) balance,i.due_on,i.payment_review
+ FROM custom_invoices i JOIN lifecycle_current c USING(organization_id)
+ WHERE i.status='OPEN' AND i.currency='NGN' AND i.issued_at IS NOT NULL AND i.issued_at<$4
+) SELECT jsonb_build_object(
+ 'outstanding',COALESCE(sum(balance),0),'invoices',count(*) FILTER(WHERE balance>0),
+ 'overdue',COALESCE(sum(balance) FILTER(WHERE due_on<($4::timestamptz AT TIME ZONE 'Africa/Lagos')::date),0),
+ 'underReview',COALESCE(sum(balance) FILTER(WHERE payment_review),0)
+) data FROM open_invoices`;
 export const SOURCES = {
+  activation: {
+    sql: activation,
+    tables: [
+      "activation_tracking",
+      "activation_milestones",
+      "lifecycle_current",
+      "organizations",
+      "business_profiles",
+    ],
+  },
+  acquisition: {
+    sql: acquisition,
+    tables: [
+      ...RECEIPT_TABLES,
+      "affiliates",
+      "affiliate_referrals",
+      "business_profiles",
+    ],
+  },
+  receivables: {
+    sql: receivables,
+    tables: ["custom_invoices", "lifecycle_current"],
+  },
   accounts: {
     sql: accounts,
     tables: ["lifecycle_current", "organizations", "business_profiles"],

@@ -274,6 +274,42 @@ export async function investorPdf(report: InvestorReport) {
     line("Held policy commission: " + money(p.held));
     line("Confirmed policy payouts during period: " + money(p.paidOut));
   }
+  if (report.activation || report.acquisition || report.receivables) {
+    newPage("Activation and acquisition");
+    if (report.activation?.available) {
+      const m = report.activation.data;
+      line(
+        `First observed milestones since ${m.trackingSince}; selected period only.`,
+        10,
+        true,
+      );
+      line(
+        `Registered ${m.registered}; selected ${m.selected}; published ${m.published}; verified website payments ${m.paid}.`,
+      );
+      line(
+        "Independent milestone counts, not a conversion cohort. Existing accounts are not backdated; visitors unavailable.",
+      );
+    } else line("Milestone history unavailable.");
+    if (report.receivables?.available) {
+      const o = report.receivables.data;
+      line(
+        `Current issued Custom invoices: ${o.invoices}; outstanding ${money(o.outstanding)}; overdue ${money(o.overdue)}; under review ${money(o.underReview)}. Receivables are not ARR.`,
+        10,
+        true,
+      );
+    }
+    if (report.acquisition?.available) {
+      line("First-touch referral accounts", 13, true);
+      for (const row of report.acquisition.data.sources) {
+        line(
+          `${row.source} (${row.programme}): ${row.registered} current registrations; ${row.published} published; ${row.paying} paying in period; retained receipts ${money(row.retained)}.`,
+        );
+      }
+      line(
+        "Selected-period paying customers and receipts; current registration/publication counts. Acquisition costs and CAC unavailable.",
+      );
+    } else line("Referral sources unavailable.");
+  }
   newPage("Definitions, coverage and management notes");
   line("Source availability", 13, true);
   for (const key of [
