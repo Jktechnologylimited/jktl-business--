@@ -5,27 +5,28 @@ import { notFound } from "next/navigation";
 import { getPublicSiteBySubdomain } from "@/lib/db/public";
 import { isProspectOrganization } from "@/lib/db/prospects";
 import {
-  beautyPageMeta,
-  beautyPagePaths,
+  websitePageMeta,
+  getWebsiteTemplate,
+  websitePagePaths,
   parseWebsiteDocument,
 } from "@/lib/website-templates";
-export const getBeautySite = cache(async (subdomain: string) => {
-  const site = await getPublicSiteBySubdomain(subdomain.toLowerCase());
+function templateSite(
+  site: Awaited<ReturnType<typeof getPublicSiteBySubdomain>>,
+) {
   if (!site?.profile.published) notFound();
-  if (
-    site.profile.websiteDocument?.beauty?.version !== 2 &&
-    site.profile.websiteDocument?.design !== "legal"
-  )
-    notFound();
+  const template = getWebsiteTemplate(site.profile.websiteTemplateId);
+  if (!template || !site.profile.websiteDocument) notFound();
   let doc;
   try {
     doc = parseWebsiteDocument(site.profile.websiteDocument);
   } catch {
     notFound();
   }
-  if (!doc.beauty && doc.design !== "legal") notFound();
-  return { site, doc };
-});
+  return { site, doc, template };
+}
+export const getBeautySite = cache(async (subdomain: string) =>
+  templateSite(await getPublicSiteBySubdomain(subdomain.toLowerCase())),
+);
 export function publicWebsiteOrigin(profile: {
   customDomainVerified: boolean;
   customDomain: string;
@@ -56,10 +57,13 @@ export async function publicWebsiteBase(subdomain: string) {
 export async function beautyMetadata(
   subdomain: string,
   path: string,
+  loadedSite?: Awaited<ReturnType<typeof getPublicSiteBySubdomain>>,
 ): Promise<Metadata> {
-  const { site, doc } = await getBeautySite(subdomain);
-  if (!beautyPagePaths(doc).includes(path)) notFound();
-  const meta = beautyPageMeta(doc, path),
+  const { site, doc, template } = loadedSite
+    ? templateSite(loadedSite)
+    : await getBeautySite(subdomain);
+  if (!websitePagePaths(template, doc).includes(path)) notFound();
+  const meta = websitePageMeta(template, doc, path),
     url = publicWebsiteOrigin(site.profile) + "/" + path;
   const title = meta.title.includes(doc.brandName)
     ? meta.title
@@ -95,20 +99,39 @@ export function beautyStructuredData(
     address: string;
     city: string;
     state: string;
+    websiteTemplateId?: string | null;
   },
 ) {
-  const b = doc.beauty!,
+  const template = getWebsiteTemplate(profile.websiteTemplateId);
+  const b = doc.beauty,
     details = b?.contact || { phone: "", email: "", address: "" };
   return {
     "@context": "https://schema.org",
-    "@type": doc.design === "legal" ? "LegalService" : "HairSalon",
+    "@type":
+      doc.design === "legal"
+        ? "LegalService"
+        : doc.beauty
+          ? "HairSalon"
+          : doc.design === "dressmaker"
+            ? "ClothingStore"
+            : "Organization",
     name: doc.brandName,
-    "@id": origin + (doc.design === "legal" ? "/#legal-practice" : "/#salon"),
+    "@id":
+      origin +
+      (doc.design === "legal"
+        ? "/#legal-practice"
+        : doc.beauty
+          ? "/#salon"
+          : "/#business"),
     url: origin,
     mainEntityOfPage: origin + "/" + path,
-    description: beautyPageMeta(doc, path).description,
+    description: template
+      ? websitePageMeta(template, doc, path).description
+      : doc.seoDescription || doc.intro,
     image: new URL(doc.heroImage, origin).href,
-    ...(!(doc.design === "legal" ? doc.demoContent : b.demoContent) &&
+    ...(!(doc.design === "legal" || doc.design === "dressmaker"
+      ? doc.demoContent
+      : b?.demoContent) &&
     (details.address || profile.address)
       ? {
           address: {

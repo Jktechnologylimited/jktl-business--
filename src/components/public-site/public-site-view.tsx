@@ -4,7 +4,7 @@ import { usePublishedSiteMetrics } from "@/components/templates/PublishedSiteMet
 
 import { submitBeautyWebsiteRequestAction } from "@/lib/actions/public-website-request-actions";
 import { TemplateWebsite } from "@/components/templates/TemplateWebsite";
-import { getWebsiteTemplate, parseWebsiteDocument, beautyServiceSlug, type WebsiteDocument } from "@/lib/website-templates";
+import { getWebsiteTemplate, parseWebsiteDocument, templatePageKind, beautyServiceSlug, type WebsiteDocument } from "@/lib/website-templates";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -682,14 +682,14 @@ function LegacyPublicSiteView({
 
 function TemplatePublicSite(props: Parameters<typeof LegacyPublicSiteView>[0] & { template: NonNullable<ReturnType<typeof getWebsiteTemplate>>; content: WebsiteDocument }) {
   const router=useRouter();
-  const recordInteraction=usePublishedSiteMetrics(props.subdomain,props.template.id,props.mode === "live");
-  const [selectedService, setSelectedService] = useState<string | undefined>();
+  const recordInteraction=usePublishedSiteMetrics(props.subdomain,props.template.id,props.mode === "live",props.pagePath);
+  const [selectedService, setSelectedService] = useState<string | undefined>(()=>props.services.some(s=>s.id===props.initialServiceSlug)?props.initialServiceSlug:undefined);
   const [chatOpen, setChatOpen] = useState(false);
   const services = props.services.filter(s => s.active);
   const products = props.products.filter(p => p.active);
   const theme = /^#[0-9a-f]{6}$/i.test(props.profile.themeColor) ? props.profile.themeColor : props.content.accent;
   const contrast = textOnColor(theme);
-  const selectService = (id: string) => { setSelectedService(id); if(props.content.design === "legal"){router.push(`${props.siteBasePath||''}/contact#book`);return;} if(props.content.beauty){const service=services.find(s=>s.id===id);const index=props.content.offerings.findIndex(o=>o.title.trim().toLowerCase()===service?.name.trim().toLowerCase());router.push(`${props.siteBasePath||''}/book${index>=0?'?service='+encodeURIComponent(beautyServiceSlug(props.content.offerings[index],index)):''}`);return;} window.document.getElementById('book')?.scrollIntoView({behavior:'smooth'}); };
+  const selectService = (id: string) => { setSelectedService(id); if(props.content.design === "legal" || props.content.design === "dressmaker"){router.push(`${props.siteBasePath||''}/contact?service=${encodeURIComponent(id)}#book`);return;} if(props.content.beauty){const service=services.find(s=>s.id===id);const index=props.content.offerings.findIndex(o=>o.title.trim().toLowerCase()===service?.name.trim().toLowerCase());router.push(`${props.siteBasePath||''}/book${index>=0?'?service='+encodeURIComponent(beautyServiceSlug(props.content.offerings[index],index)):''}`);return;} if(templatePageKind(props.template)==='website'){router.push(`${props.siteBasePath||''}/services?service=${encodeURIComponent(id)}#book`);return;} window.document.getElementById('book')?.scrollIntoView({behavior:'smooth'}); };
   const businessSection = services.length || products.length ? <section className="jktl-light px-6 py-16 bg-paper" id="book"><div className="mx-auto max-w-4xl space-y-8">
     {services.length > 0 && <><h2 className="font-display text-3xl text-ink">Services &amp; appointments</h2><div className="grid gap-4 sm:grid-cols-2">{services.map(service => <button key={service.id} className="rounded-xl border border-border bg-surface p-5 text-left" onClick={() => selectService(service.id)}><strong className="text-ink">{service.name}</strong><p className="mt-2 text-sm text-ink-muted">{service.description}</p><p className="mt-3 text-sm text-ink">{formatKobo(service.priceKobo)} · {service.durationMin} min</p></button>)}</div><PublicBookingForm key={selectedService || 'booking'} subdomain={props.subdomain} services={services} themeColor={theme} textColor={contrast} mode={props.mode} initialServiceId={selectedService}/></>}
     {products.length > 0 && <><h2 className="font-display text-3xl text-ink">Products</h2><div className="grid gap-4 sm:grid-cols-2">{products.map(product => <article key={product.id} className="rounded-xl border border-border bg-surface p-5"><h3 className="font-semibold text-ink">{product.name}</h3><p className="mt-2 text-sm text-ink">{formatKobo(product.priceKobo)}</p></article>)}</div></>}

@@ -4,6 +4,7 @@ export function usePublishedSiteMetrics(
   subdomain: string,
   templateId: string,
   enabled: boolean,
+  pagePath = "",
 ) {
   const seen = useRef("");
   const send = useCallback(
@@ -38,7 +39,7 @@ export function usePublishedSiteMetrics(
     [enabled, templateId, subdomain],
   );
   useEffect(() => {
-    const key = `${subdomain}:${templateId}`;
+    const key = `${subdomain}:${templateId}:${pagePath.split(/[?#]/)[0]}`;
     if (enabled && seen.current !== key) {
       const view = () => {
         if (document.visibilityState === "visible" && seen.current !== key) {
@@ -50,6 +51,6 @@ export function usePublishedSiteMetrics(
       document.addEventListener("visibilitychange", view);
       return () => document.removeEventListener("visibilitychange", view);
     }
-  }, [subdomain, templateId, enabled, send]);
+  }, [subdomain, templateId, enabled, send, pagePath]);
   return send;
 }

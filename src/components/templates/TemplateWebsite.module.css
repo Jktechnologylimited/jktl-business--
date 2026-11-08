@@ -914,3 +914,27 @@
     max-width: calc(100% - 144px);
   }
 }
+
+.pageHero {
+  padding: 75px 6% 45px;
+  max-width: 1100px;
+  margin: auto;
+}
+.pageHero h1 {
+  font-size: clamp(2.6rem, 6vw, 5rem);
+  margin: 15px 0 20px;
+}
+.pageHero > p:last-child {
+  max-width: 720px;
+}
+.pageMore {
+  padding: 0 6% 40px;
+  text-decoration: underline;
+}
+.pageLinks {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  margin: 18px 0;
+}

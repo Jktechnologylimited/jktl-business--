@@ -8,6 +8,10 @@ import {
 } from "react";
 import {
   templateLoginPath,
+  templatePageKind,
+  websitePageHref,
+  websitePagePaths,
+  websitePageMeta,
   type WebsiteTemplate,
   type WebsiteDocument,
 } from "@/lib/website-templates";
@@ -37,7 +41,13 @@ function LegacyTemplateWebsite({
   bookingAvailable = false,
   reviews: existingReviews = [],
   onInteraction,
+  pagePath = "",
+  basePath = "",
+  onNavigate,
 }: {
+  pagePath?: string;
+  basePath?: string;
+  onNavigate?: (path: string) => void;
   template: WebsiteTemplate;
   document: WebsiteDocument;
   contact?: TemplateContact;
@@ -49,6 +59,24 @@ function LegacyTemplateWebsite({
   reviews?: { name: string; quote: string; rating?: number | null }[];
   onInteraction?: (kind: "cta" | "contact") => void;
 }) {
+  const multipage = templatePageKind(template) === "website";
+  const path = pagePath.split(/[?#]/)[0];
+  const hrefFor = (anchor: string) =>
+    !multipage
+      ? "#" + anchor
+      : websitePageHref(
+          basePath,
+          (
+            {
+              home: "",
+              offerings: "services",
+              "service-areas": "service-areas",
+              questions: "faqs",
+              book: "services#book",
+            } as Record<string, string>
+          )[anchor] ?? anchor,
+        );
+  const page = websitePageMeta(template, doc, path);
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -59,6 +87,33 @@ function LegacyTemplateWebsite({
       }
     });
   }, [template.id, template.sourceId, doc.heroImage]);
+  useEffect(() => {
+    if (!onNavigate) return;
+    const view = root.current?.ownerDocument.defaultView;
+    if (pagePath.includes("#"))
+      root.current?.querySelector("#book")?.scrollIntoView();
+    else view?.scrollTo({ top: 0 });
+  }, [pagePath, onNavigate]);
+  useEffect(() => {
+    if (!multipage || path) return;
+    const view = root.current?.ownerDocument.defaultView,
+      hash = view?.location.hash.slice(1);
+    const page = (
+      {
+        gallery: "gallery",
+        approach: "approach",
+        reviews: "reviews",
+        questions: "faqs",
+        "service-areas": "service-areas",
+        contact: "contact",
+        book: "services#book",
+      } as Record<string, string>
+    )[hash || ""];
+    if (page && websitePagePaths(template, doc).includes(page.split("#")[0])) {
+      if (onNavigate) onNavigate(page);
+      else view?.location.replace(websitePageHref(basePath, page));
+    }
+  }, [multipage, path, basePath, onNavigate, template, doc]);
   const colour = /^#[0-9a-f]{6}$/i.test(accent || "") ? accent! : doc.accent;
   const channel = (text: string) => text.trim();
   const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email || "")
@@ -200,7 +255,7 @@ function LegacyTemplateWebsite({
               </span>
               <h3>{item.title}</h3>
               <p>{item.description}</p>
-              <a href="#contact">
+              <a href={hrefFor("contact")}>
                 Find out more <span aria-hidden="true">↗</span>
               </a>
             </article>
@@ -230,7 +285,7 @@ function LegacyTemplateWebsite({
           <p className={styles.label}>Our approach</p>
           <h2>{doc.featureTitle}</h2>
           <p>{doc.featureText}</p>
-          <a href="#contact" className={styles.outline}>
+          <a href={hrefFor("contact")} className={styles.outline}>
             Start a conversation ↗
           </a>
         </div>
@@ -273,19 +328,47 @@ function LegacyTemplateWebsite({
       data-kind={template.kind || "website"}
       onClickCapture={(event) => {
         const link = (event.target as Element).closest("a");
-        if (!link || !onInteraction) return;
+        if (!link) return;
+        if (
+          multipage &&
+          onNavigate &&
+          event.button === 0 &&
+          !event.metaKey &&
+          !event.ctrlKey &&
+          !event.shiftKey &&
+          !event.altKey &&
+          !link.target
+        ) {
+          const candidate = link.getAttribute("href") || "";
+          const prefix = basePath.replace(/\/$/, "");
+          const to =
+            candidate === prefix || candidate === "/"
+              ? ""
+              : candidate.startsWith(prefix + "/")
+                ? candidate.slice(prefix.length + 1)
+                : null;
+          if (
+            to !== null &&
+            websitePagePaths(template, doc).includes(to.split(/[?#]/)[0])
+          ) {
+            event.preventDefault();
+            onNavigate(to);
+            setOpen(false);
+          }
+        }
+        if (!onInteraction) return;
         const href = link.getAttribute("href") || "";
         if (
           href.startsWith("mailto:") ||
           href.startsWith("tel:") ||
-          href === "#contact"
+          href === hrefFor("contact")
         )
           onInteraction("contact");
         else if (link.classList.contains(styles.primary)) onInteraction("cta");
       }}
     >
       <header className={styles.header}>
-        <a href="#home" className={styles.brand}>
+        <a href={hrefFor("home")} className={styles.brand}>
           {doc.logoUrl || contact.logoUrl ? (
             img(doc.logoUrl || contact.logoUrl!, "", styles.logo)
           ) : (
@@ -341,88 +424,140 @@ function LegacyTemplateWebsite({
           className={open ? styles.expanded : ""}
           onClick={() => setOpen(false)}
         >
-          <a href="#home">Home</a>
-          {sectionEnabled("about") && <a href="#about">About</a>}
-          {sectionEnabled("offerings") && <a href="#offerings">Services</a>}
-          {sectionEnabled("gallery") && <a href="#gallery">Gallery</a>}
-          {sectionEnabled("areas") && (
-            <a href="#service-areas">Service areas</a>
+          <a href={hrefFor("home")}>Home</a>
+          {sectionEnabled("about") && <a href={hrefFor("about")}>About</a>}
+          {sectionEnabled("offerings") && (
+            <a href={hrefFor("offerings")}>Services</a>
           )}
-          {sectionEnabled("reviews") && <a href="#reviews">Reviews</a>}
-          {bookingAvailable && <a href="#book">Book an appointment</a>}
-          <a href="#contact" className={styles.navContact}>
+          {sectionEnabled("gallery") && (
+            <a href={hrefFor("gallery")}>Gallery</a>
+          )}
+          {sectionEnabled("areas") && (
+            <a href={hrefFor("service-areas")}>Service areas</a>
+          )}
+          {sectionEnabled("reviews") && (
+            <a href={hrefFor("reviews")}>Reviews</a>
+          )}
+          {bookingAvailable && (
+            <a href={hrefFor("book")}>Book an appointment</a>
+          )}
+          <a href={hrefFor("contact")} className={styles.navContact}>
             Get in touch ↗
           </a>
         </nav>
       </header>
-      <section id="home" className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <p className={styles.label}>{doc.eyebrow}</p>
-          <h1>
-            {doc.headline ||
-              (preview ? "Your headline starts here" : doc.brandName)}
-          </h1>
-          <p className={styles.intro}>{doc.intro}</p>
-          <div className={styles.heroActions}>
-            <a
-              href={sectionEnabled("offerings") ? "#offerings" : "#contact"}
-              className={styles.primary}
-            >
-              {doc.ctaLabel} ↗
-            </a>
-            <a
-              href={sectionEnabled("about") ? "#about" : "#contact"}
-              className={styles.textLink}
-            >
-              {sectionEnabled("about") ? "Our story" : "Get in touch"}{" "}
-              <span aria-hidden="true">↓</span>
-            </a>
+      {(!multipage || !path) && (
+        <>
+          <section id="home" className={styles.hero}>
+            <div className={styles.heroCopy}>
+              <p className={styles.label}>{doc.eyebrow}</p>
+              <h1>
+                {doc.headline ||
+                  (preview ? "Your headline starts here" : doc.brandName)}
+              </h1>
+              <p className={styles.intro}>{doc.intro}</p>
+              <div className={styles.heroActions}>
+                <a
+                  href={hrefFor(
+                    sectionEnabled("offerings") ? "offerings" : "contact",
+                  )}
+                  className={styles.primary}
+                >
+                  {doc.ctaLabel} ↗
+                </a>
+                <a
+                  href={hrefFor(sectionEnabled("about") ? "about" : "contact")}
+                  className={styles.textLink}
+                >
+                  {sectionEnabled("about") ? "Our story" : "Get in touch"}{" "}
+                  <span aria-hidden="true">↓</span>
+                </a>
+              </div>
+            </div>
+            <div className={styles.heroImage}>
+              {img(doc.heroImage, `${template.name} inspiration`)}
+              <span className={styles.imageCaption}>
+                {doc.brandName}
+                <span>EST. YOUR NEXT CHAPTER</span>
+              </span>
+            </div>
+          </section>
+          <div className={styles.ticker}>
+            <span>{doc.brandName}</span>
+            <span aria-hidden="true">✦</span>
+            <span>{doc.eyebrow}</span>
+            <span aria-hidden="true">✦</span>
+            <a href={hrefFor("contact")}>Let’s connect ↗</a>
           </div>
-        </div>
-        <div className={styles.heroImage}>
-          {img(doc.heroImage, `${template.name} inspiration`)}
-          <span className={styles.imageCaption}>
-            {doc.brandName}
-            <span>EST. YOUR NEXT CHAPTER</span>
-          </span>
-        </div>
-      </section>
-      <div className={styles.ticker}>
-        <span>{doc.brandName}</span>
-        <span aria-hidden="true">✦</span>
-        <span>{doc.eyebrow}</span>
-        <span aria-hidden="true">✦</span>
-        <a href="#contact">Let’s connect ↗</a>
-      </div>
-      {template.sectionOrder.filter(sectionEnabled).map((key) => (
-        <div key={key}>{sections[key]}</div>
-      ))}
-      {businessSection}
-      <section id="contact" className={styles.contact}>
-        <p className={styles.label}>Get in touch</p>
-        <h2>{doc.contactTitle}</h2>
-        <p>{doc.contactText}</p>
-        <div className={styles.contactLinks}>
-          {email && (
-            <a className={styles.primary} href={`mailto:${channel(email)}`}>
-              Email us ↗
-            </a>
-          )}
-          {phone && (
-            <a className={styles.outline} href={`tel:${phone}`}>
-              Call {contact.phone}
-            </a>
-          )}
-          {!email && !phone && (
-            <p>
-              {preview
-                ? "Demonstration website. Add your contact details in the editor before publishing."
-                : "Contact details will be available here soon."}
-            </p>
-          )}
-        </div>
-        {location && <p className={styles.location}>{location}</p>}
-      </section>
+        </>
+      )}
+      {multipage && path && (
+        <section className={styles.pageHero}>
+          <p className={styles.label}>{doc.brandName}</p>
+          <h1>{page.heading}</h1>
+          <p>{page.description}</p>
+        </section>
+      )}
+      {template.sectionOrder
+        .filter(sectionEnabled)
+        .filter(
+          (key) =>
+            !multipage ||
+            (!path && ["about", "offerings"].includes(key)) ||
+            (
+              (
+                {
+                  about: ["about", "feature"],
+                  services: ["offerings"],
+                  gallery: ["gallery"],
+                  "service-areas": ["areas"],
+                  reviews: ["reviews"],
+                  approach: ["feature"],
+                  faqs: ["faq"],
+                } as Record<string, string[]>
+              )[path] || []
+            ).includes(key),
+        )
+        .map((key) => (
+          <div key={key}>
+            {sections[key]}
+            {multipage && !path && (
+              <p className={styles.pageMore}>
+                <a href={hrefFor(key === "offerings" ? "offerings" : key)}>
+                  Explore {key === "offerings" ? "our services" : "our story"} ↗
+                </a>
+              </p>
+            )}
+          </div>
+        ))}
+      {(!multipage || path === "services") && businessSection}
+      {(!multipage || path === "contact") && (
+        <section id="contact" className={styles.contact}>
+          <p className={styles.label}>Get in touch</p>
+          <h2>{doc.contactTitle}</h2>
+          <p>{doc.contactText}</p>
+          <div className={styles.contactLinks}>
+            {email && (
+              <a className={styles.primary} href={`mailto:${channel(email)}`}>
+                Email us ↗
+              </a>
+            )}
+            {phone && (
+              <a className={styles.outline} href={`tel:${phone}`}>
+                Call {contact.phone}
+              </a>
+            )}
+            {!email && !phone && (
+              <p>
+                {preview
+                  ? "Demonstration website. Add your contact details in the editor before publishing."
+                  : "Contact details will be available here soon."}
+              </p>
+            )}
+          </div>
+          {location && <p className={styles.location}>{location}</p>}
+        </section>
+      )}
       <div className={styles.socials}>
         {socialLinks.map((social) => (
           <a
@@ -470,6 +605,17 @@ function LegacyTemplateWebsite({
       </div>
       <footer className={styles.footer}>
         <strong>{doc.brandName}</strong>
+        {multipage && (
+          <nav className={styles.pageLinks} aria-label="More website pages">
+            {websitePagePaths(template, doc)
+              .filter(Boolean)
+              .map((p) => (
+                <a key={p} href={websitePageHref(basePath, p)}>
+                  {websitePageMeta(template, doc, p).heading}
+                </a>
+              ))}
+          </nav>
+        )}
         <p>
           © {new Date().getFullYear()} {doc.brandName}
         </p>
@@ -498,6 +644,8 @@ export function TemplateWebsite(
     ) => Promise<{ ok: boolean; error?: string }>;
   },
 ) {
+  if (templatePageKind(props.template) === "landing")
+    return <LegacyTemplateWebsite {...props} />;
   if (props.document.design === "dressmaker")
     return <DressmakerWebsite {...props} />;
   if (props.document.design === "legal") return <LegalWebsite {...props} />;

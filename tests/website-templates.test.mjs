@@ -193,6 +193,30 @@ test("actual full-site renderer renders every template and safely escapes edited
       assert.ok(html.includes('href="/services"'));
       continue;
     }
+    if (catalogue.templatePageKind(template) === "website") {
+      const paths = catalogue.websitePagePaths(template);
+      assert.ok(paths.length > 1, template.id);
+      assert.equal((html.match(/<h1/g) || []).length, 1, template.id);
+      for (const path of paths) {
+        const pageHtml = renderToStaticMarkup(
+          createElement(TemplateWebsite, {
+            template,
+            document: template.document,
+            pagePath: path,
+            preview: true,
+          }),
+        );
+        assert.equal(
+          (pageHtml.match(/<h1/g) || []).length,
+          1,
+          template.id + "/" + path,
+        );
+        assert.ok(pageHtml.length > 1200);
+        const heading=catalogue.websitePageMeta(template,template.document,path).heading;
+        if(heading)assert.ok(pageHtml.includes(heading.replaceAll("&","&amp;")),template.id+"/"+path+" heading");
+      }
+      continue;
+    }
     const sections = template.document.blank ? [] : template.sectionOrder;
     for (const id of [
       "home",
@@ -222,8 +246,16 @@ test("actual full-site renderer renders every template and safely escapes edited
   );
   assert.ok(!html.includes("<script>alert"));
   assert.ok(html.includes("&lt;script&gt;"));
-  assert.ok(html.includes("mailto:owner@example.com"));
-  assert.ok(html.includes("tel:+2347000000000"));
+  const contactHtml = renderToStaticMarkup(
+    createElement(TemplateWebsite, {
+      template,
+      document: doc,
+      pagePath: "contact",
+      contact: { email: "owner@example.com", phone: "+2347000000000" },
+    }),
+  );
+  assert.ok(contactHtml.includes("mailto:owner@example.com"));
+  assert.ok(contactHtml.includes("tel:+2347000000000"));
 });
 test("Main and Business publish the same catalogue and renderer", (t) => {
   const root = new URL("../../jktl-main/", import.meta.url);
@@ -235,8 +267,14 @@ test("Main and Business publish the same catalogue and renderer", (t) => {
       "../src/components/templates/TemplateWebsite.tsx",
       "components/templates/TemplateWebsite.tsx",
     ],
-    ["../src/components/templates/DressmakerWebsite.tsx", "components/templates/DressmakerWebsite.tsx"],
-    ["../src/components/templates/DressmakerWebsite.module.css", "components/templates/DressmakerWebsite.module.css"],
+    [
+      "../src/components/templates/DressmakerWebsite.tsx",
+      "components/templates/DressmakerWebsite.tsx",
+    ],
+    [
+      "../src/components/templates/DressmakerWebsite.module.css",
+      "components/templates/DressmakerWebsite.module.css",
+    ],
     [
       "../src/components/templates/TemplateWebsite.module.css",
       "components/templates/TemplateWebsite.module.css",
@@ -575,6 +613,7 @@ test("template-based public sites retain actual booking, product and chat compon
     },
   );
   const props = {
+    pagePath: "services",
     profile: {
       websiteTemplateId: "hair-salon",
       websiteDocument: (() => {
@@ -849,13 +888,22 @@ test("dressmaker starter round-trips editable content and never invents live con
   );
   assert.equal((html.match(/<h1/g) || []).length, 1);
   assert.match(html, /Made to be/);
-  assert.match(html, /Collection details/);
+  assert.match(html, /href="\/collection\/the-ivory-story"/);
   assert.doesNotMatch(html, /Stories from the fitting room/);
-  assert.match(html, /No enquiry is sent/);
+  const contact = renderToStaticMarkup(
+    createElement(DressmakerWebsite, {
+      template,
+      document: d,
+      preview: true,
+      pagePath: "contact",
+    }),
+  );
+  assert.match(contact, /No enquiry is sent/);
   assert.ok(!html.includes("wix.com"));
   const live = renderToStaticMarkup(
     createElement(DressmakerWebsite, {
       template,
+      pagePath: "gallery",
       document: {
         ...d,
         demoContent: false,
@@ -892,5 +940,39 @@ test("dressmaker starter round-trips editable content and never invents live con
   assert.equal(
     catalogue.parseWebsiteDocument(edited).offerings[0].title,
     "My bridal collection",
+  );
+});
+
+test("all website templates have real routes; landing pages remain single-page", () => {
+  for (const t of catalogue.websiteTemplates) {
+    const paths = catalogue.websitePagePaths(t);
+    assert.equal(new Set(paths).size, paths.length, t.id);
+    if (catalogue.templatePageKind(t) === "landing") {
+      assert.deepEqual(paths, [""], t.id);
+      continue;
+    }
+    assert.ok(paths.length >= 3, t.id);
+    const titles = paths.map(
+      (p) => catalogue.websitePageMeta(t, t.document, p).title,
+    );
+    assert.equal(
+      new Set(titles).size,
+      titles.length,
+      t.id + " metadata titles",
+    );
+    for (const p of paths) {
+      const m = catalogue.websitePageMeta(t, t.document, p);
+      assert.ok(m.title && m.description);
+      assert.ok(m.description.length <= 160);
+      assert.equal(
+        catalogue.websitePageHref("/sites/my-site", p),
+        "/sites/my-site" + (p ? "/" + p : ""),
+      );
+    }
+  }
+  assert.ok(
+    catalogue
+      .websitePagePaths(catalogue.getWebsiteTemplate("dressmaker-atelier"))
+      .includes("collection/the-ivory-story"),
   );
 });

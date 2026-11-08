@@ -1,4 +1,5 @@
 "use client";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useResponsivePreview } from "./useResponsivePreview";
 import { Monitor, Smartphone } from "lucide-react";
@@ -77,6 +78,12 @@ export function TemplatePreview({
     </div>
   );
 }
+function previewQuerySubscribe(notify: () => void) {
+  window.addEventListener("popstate", notify);
+  return () => window.removeEventListener("popstate", notify);
+}
+const previewQuerySnapshot = () => window.location.search;
+const previewServerQuery = () => "";
 export function RawTemplatePreview({
   id,
   pagePath = "",
@@ -86,14 +93,22 @@ export function RawTemplatePreview({
   pagePath?: string;
   initialService?: string;
 }) {
+  const search = useSyncExternalStore(
+    previewQuerySubscribe,
+    previewQuerySnapshot,
+    previewServerQuery,
+  );
+  const service =
+    initialService || new URLSearchParams(search).get("service") || "";
   const template = getWebsiteTemplate(id);
   return template ? (
     <TemplateWebsite
+      key={`${id}:${pagePath}:${service}`}
       template={template}
       document={template.document}
       preview
       pagePath={pagePath}
-      initialService={initialService}
+      initialService={service}
       basePath={`/template-canvas/${id}`}
     />
   ) : null;

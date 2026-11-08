@@ -3135,6 +3135,13 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     if (new Set(paths).size !== paths.length)
       throw Error("Please use unique practice and article titles.");
   }
+  if (result.design === "dressmaker") {
+    const slugs = (result.offerings as WebsiteOffering[]).map(
+      beautyServiceSlug,
+    );
+    if (new Set(slugs).size !== slugs.length)
+      throw Error("Please use unique collection names or URLs.");
+  }
   return result as WebsiteDocument;
 }
 
@@ -3254,4 +3261,115 @@ export function beautyPageMeta(doc: WebsiteDocument, path: string) {
       doc.seoDescription ||
       doc.intro,
   };
+}
+
+/** Every website has real routes; landing-page templates retain anchor navigation. */
+export function websitePagePaths(
+  template: WebsiteTemplate,
+  doc = template.document,
+): string[] {
+  if (templatePageKind(template) === "landing") return [""];
+  if (doc.design === "legal" || doc.beauty?.version === 2)
+    return beautyPagePaths(doc);
+  if (doc.design === "dressmaker")
+    return [
+      "",
+      "atelier",
+      "collection",
+      ...doc.offerings.map((o, i) => "collection/" + beautyServiceSlug(o, i)),
+      "our-process",
+      "gallery",
+      "faqs",
+      "contact",
+    ];
+  return [
+    "",
+    "about",
+    "services",
+    "contact",
+    ...template.sectionOrder
+      .filter((k) =>
+        ["gallery", "areas", "reviews", "feature", "faq"].includes(k),
+      )
+      .map(
+        (k) =>
+          (
+            ({
+              areas: "service-areas",
+              feature: "approach",
+              faq: "faqs",
+            }) as Record<string, string>
+          )[k] || k,
+      ),
+  ];
+}
+export function websitePageMeta(
+  template: WebsiteTemplate,
+  doc: WebsiteDocument,
+  path: string,
+) {
+  if (doc.design === "legal" || doc.beauty?.version === 2) {
+    const meta = beautyPageMeta(doc, path);
+    return {
+      ...meta,
+      description: meta.description.replace(/\s+/g, " ").slice(0, 160),
+      heading: doc.brandName,
+    };
+  }
+  const look =
+    doc.design === "dressmaker"
+      ? doc.offerings.find(
+          (o, i) => path === "collection/" + beautyServiceSlug(o, i),
+        )
+      : undefined;
+  const labels: Record<string, string> = {
+    about: "About us",
+    services: "Services",
+    gallery: "Gallery",
+    "service-areas": "Service areas",
+    reviews: "Customer reviews",
+    approach: "Our approach",
+    faqs: "Frequently asked questions",
+    contact: "Contact us",
+    atelier: "Our atelier",
+    collection: "The collection",
+    "our-process": "Our process",
+  };
+  const descriptions: Record<string, string> = {
+    about: doc.aboutText,
+    atelier: doc.aboutText,
+    services: doc.offerings
+      .map((o) => o.title + ": " + o.description)
+      .join(" "),
+    collection: doc.offerings.map((o) => o.title).join(" · "),
+    "our-process": doc.featureText,
+    approach: doc.featureText,
+    gallery: doc.gallery.map((p) => p.alt).join(". "),
+    faqs: doc.faqs[0]?.answer || doc.intro,
+    contact: doc.contactText,
+    "service-areas": doc.serviceAreas?.join(" · ") || doc.contactText,
+    reviews:
+      "Read genuine customer feedback about " +
+      doc.brandName +
+      " and get in touch to discuss your needs.",
+  };
+  const heading = look?.title || labels[path] || doc.headline || doc.brandName;
+  return {
+    heading,
+    title: path
+      ? `${heading} | ${doc.brandName}`.slice(0, 100)
+      : doc.seoTitle || `${doc.brandName} | ${template.name}`,
+    description: (
+      look?.description ||
+      (path ? descriptions[path] : doc.seoDescription) ||
+      doc.intro ||
+      `Learn more about ${doc.brandName || "this business"}, explore services and get in touch.`
+    )
+      .replace(/\s+/g, " ")
+      .slice(0, 160),
+  };
+}
+export function websitePageHref(base: string, path: string) {
+  const prefix = base.replace(/\/$/, "");
+  return path ? `${prefix}/${path}` : prefix || "/";
 }

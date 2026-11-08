@@ -1,6 +1,10 @@
 import { getPublicSiteBySubdomain } from "@/lib/db/public";
 import { isProspectOrganization } from "@/lib/db/prospects";
-import { beautyPagePaths, parseWebsiteDocument } from "@/lib/website-templates";
+import {
+  websitePagePaths,
+  getWebsiteTemplate,
+  parseWebsiteDocument,
+} from "@/lib/website-templates";
 import { publicWebsiteOrigin } from "@/lib/beauty/public-pages";
 export const dynamic = "force-dynamic";
 export async function GET(
@@ -15,9 +19,14 @@ export async function GET(
     (await isProspectOrganization(site.profile.organizationId))
   )
     return new Response("Not found", { status: 404 });
-  const paths = site.profile.websiteDocument
-    ? beautyPagePaths(parseWebsiteDocument(site.profile.websiteDocument))
-    : [""];
+  const template = getWebsiteTemplate(site.profile.websiteTemplateId);
+  const paths =
+    template && site.profile.websiteDocument
+      ? websitePagePaths(
+          template,
+          parseWebsiteDocument(site.profile.websiteDocument),
+        )
+      : [""];
   const origin = publicWebsiteOrigin(site.profile);
   const escape = (s: string) =>
     s.replace(

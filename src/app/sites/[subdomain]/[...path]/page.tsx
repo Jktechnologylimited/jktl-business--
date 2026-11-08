@@ -1,7 +1,7 @@
 import { publicSiteAssistant } from "@/lib/public-site-assistant";
 import { notFound } from "next/navigation";
 import { PublicSiteView } from "@/components/public-site/public-site-view";
-import { beautyPagePaths } from "@/lib/website-templates";
+import { websitePagePaths } from "@/lib/website-templates";
 import {
   getBeautySite,
   beautyMetadata,
@@ -27,8 +27,8 @@ export default async function Page({
 }) {
   const { subdomain, path: segments } = await params,
     path = segments.join("/");
-  const { site, doc } = await getBeautySite(subdomain);
-  if (!beautyPagePaths(doc).includes(path)) notFound();
+  const { site, doc, template } = await getBeautySite(subdomain);
+  if (!websitePagePaths(template, doc).includes(path)) notFound();
   const structured = beautyStructuredData(
     doc,
     publicWebsiteOrigin(site.profile),
