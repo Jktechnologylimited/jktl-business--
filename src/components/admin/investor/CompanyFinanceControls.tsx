@@ -1,10 +1,10 @@
+import { BuyerFeePolicyControls } from "./BuyerFeePolicyControls";
 import { randomUUID } from "node:crypto";
 import { query } from "@/lib/custom/service";
 import type { Period } from "@/lib/investor/model";
 import { ActionForm } from "@/components/distribution/action-form";
 import {
   saveGrowthCampaignAction,
-  saveWebsiteFeeDraftAction,
   recordCompanyCostsAction,
   reverseCompanyCostAction,
   saveCostCategoryAction,
@@ -24,24 +24,23 @@ export async function CompanyFinanceControls({ period }: { period: Period }) {
         migration 076.
       </p>
     );
-  const [categories, costs, attempts, payments, coverage, feeDraft] =
-    await Promise.all([
-      query("SELECT * FROM company_cost_categories ORDER BY name"),
-      query(
-        "SELECT c.*,EXISTS(SELECT 1 FROM company_cost_entries r WHERE r.reverses_id=c.id) reversed FROM company_cost_entries c ORDER BY created_at DESC LIMIT 30",
-      ),
-      query(
-        "SELECT reference,state,created_at FROM merchant_payment_attempts WHERE state IN('UNKNOWN','INITIALIZING','REVIEW') UNION ALL SELECT reference,'RECONCILIATION_REQUIRED' state,created_at FROM merchant_reconciliation_issues WHERE resolved_at IS NULL ORDER BY created_at LIMIT 30",
-      ),
-      query(
-        "SELECT reference,gross_fee_kobo,split_evidenced,applied_to_invoice FROM merchant_payments ORDER BY verified_at DESC LIMIT 30",
-      ),
-      query(
-        "SELECT * FROM company_finance_periods WHERE from_day=$1 AND to_day=$2",
-        [period.from, period.to],
-      ),
-      query("SELECT * FROM company_fee_policy_drafts WHERE source='WEBSITE'"),
-    ]);
+  const [categories, costs, attempts, payments, coverage] = await Promise.all([
+    query("SELECT * FROM company_cost_categories ORDER BY name"),
+    query(
+      "SELECT c.*,EXISTS(SELECT 1 FROM company_cost_entries r WHERE r.reverses_id=c.id) reversed FROM company_cost_entries c ORDER BY created_at DESC LIMIT 30",
+    ),
+    query(
+      "SELECT reference,state,created_at FROM merchant_payment_attempts WHERE state IN('UNKNOWN','INITIALIZING','REVIEW') UNION ALL SELECT reference,'RECONCILIATION_REQUIRED' state,created_at FROM merchant_reconciliation_issues WHERE resolved_at IS NULL ORDER BY created_at LIMIT 30",
+    ),
+    query(
+      "SELECT reference,gross_fee_kobo,split_evidenced,applied_to_invoice FROM merchant_payments ORDER BY verified_at DESC LIMIT 30",
+    ),
+    query(
+      "SELECT * FROM company_finance_periods WHERE from_day=$1 AND to_day=$2",
+      [period.from, period.to],
+    ),
+  ]);
+  const feeControls = await BuyerFeePolicyControls();
   const input =
     "mt-2 block w-full rounded-lg border border-border bg-paper p-3";
   return (
@@ -50,77 +49,7 @@ export async function CompanyFinanceControls({ period }: { period: Period }) {
         Company costs, payment reconciliation &amp; period coverage
       </summary>
       <div className="mt-5 space-y-8">
-        <details>
-          <summary className="cursor-pointer font-semibold">
-            Native website checkout fee proposal · inactive
-          </summary>
-          <p className="my-3 text-xs leading-6 text-ink-muted">
-            There is no approved native store-checkout policy. This optional
-            proposal is saved for review only. It cannot activate fees, affect
-            existing invoice pricing or change merchant settlement. Provider
-            terms and a separate approved implementation are required.
-          </p>
-          <ActionForm action={saveWebsiteFeeDraftAction}>
-            <label>
-              Proposed method
-              <select
-                name="fee_type"
-                className={input}
-                required
-                defaultValue={String(feeDraft[0]?.fee_type || "")}
-              >
-                <option value="" disabled>
-                  Choose a method
-                </option>
-                <option value="FIXED">Fixed NGN fee</option>
-                <option value="PERCENTAGE">Percentage</option>
-              </select>
-            </label>
-            <label>
-              Proposed amount (NGN or percentage)
-              <input
-                name="amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                className={input}
-                defaultValue={
-                  feeDraft[0] ? Number(feeDraft[0].fee_value) / 100 : ""
-                }
-                required
-              />
-            </label>
-            <label>
-              Proposed fee payer
-              <select
-                name="fee_bearer"
-                className={input}
-                required
-                defaultValue={String(feeDraft[0]?.fee_bearer || "")}
-              >
-                <option value="" disabled>
-                  Choose a payer
-                </option>
-                <option value="PAYER">Customer paying</option>
-                <option value="MERCHANT">Receiving merchant</option>
-              </select>
-            </label>
-            <label>
-              Proposal and provider evidence
-              <textarea
-                defaultValue={String(feeDraft[0]?.evidence || "")}
-                name="evidence"
-                minLength={10}
-                maxLength={1000}
-                className={input}
-                required
-              />
-            </label>
-            <button className="mt-3 rounded-lg bg-primary p-3 text-on-primary">
-              Save inactive proposal
-            </button>
-          </ActionForm>
-        </details>
+        {feeControls}
         <ActionForm action={saveGrowthCampaignAction}>
           <h3 className="font-semibold">Approve a UTM campaign</h3>
           <p className="my-2 text-xs text-ink-muted">

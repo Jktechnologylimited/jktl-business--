@@ -4,6 +4,7 @@ import { can } from "@/lib/admin-permissions";
 import { GrowthControls } from "@/components/admin/investor/GrowthControls";
 import { REPORT_RANGES } from "@/lib/investor/model";
 import { loadDashboardReport } from "@/lib/investor/dashboard-cache";
+import { MerchantPaymentExplorer } from "@/components/admin/investor/MerchantPaymentExplorer";
 import { CompanyFinanceControls } from "@/components/admin/investor/CompanyFinanceControls";
 import { InvestorDashboard } from "@/components/admin/investor/InvestorDashboard";
 import { ActionForm } from "@/components/distribution/action-form";
@@ -28,9 +29,28 @@ export default async function Page({
 }) {
   await guardAdminPage("view_company_finance");
   const admin = await getAdminSession();
+  const queryParams = await searchParams;
+  const paymentFilters = {
+    status:
+      typeof queryParams.paymentStatus === "string"
+        ? queryParams.paymentStatus
+        : undefined,
+    source:
+      typeof queryParams.paymentSource === "string"
+        ? queryParams.paymentSource
+        : undefined,
+    provider:
+      typeof queryParams.paymentProvider === "string"
+        ? queryParams.paymentProvider
+        : undefined,
+    business:
+      typeof queryParams.paymentBusiness === "string"
+        ? queryParams.paymentBusiness
+        : undefined,
+  };
   let period;
   try {
-    period = periodFromQuery(await searchParams);
+    period = periodFromQuery(queryParams);
   } catch {
     return (
       <section>
@@ -177,6 +197,7 @@ export default async function Page({
         </section>
       )}
       <InvestorDashboard report={report} />
+      <MerchantPaymentExplorer period={period} filters={paymentFilters} />
       {admin &&
         can(admin.role, "manage_company_finance", admin.permissions) && (
           <CompanyFinanceControls period={period} />

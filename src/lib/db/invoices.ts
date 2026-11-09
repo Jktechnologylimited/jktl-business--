@@ -14,6 +14,7 @@ function mapInvoice(row: Record<string, unknown>): Invoice {
     subtotalKobo: kobo(row.subtotal_kobo as string),
     discountKobo: kobo(row.discount_kobo as string),
     totalKobo: kobo(row.total_kobo as string),
+    onlineReceivedKobo: kobo((row.online_received_kobo as string) ?? 0),
     notes: row.notes as string,
     paidAt: row.paid_at ? isoDate(row.paid_at as string) : null,
     // Defensive fallbacks: rows created before migration 011 (or before
@@ -169,13 +170,12 @@ export async function updateInvoiceStatus(
 ): Promise<Invoice | null> {
   const sql = getSql();
   const paidAt = status === "paid" ? new Date().toISOString() : null;
-  // Explicitly stamps paid_via = 'manual' on this path (rather than leaving
-  // whatever was there before) so an invoice that was once paid online,
-  // reverted to pending, and marked paid again by hand here doesn't keep
-  // reporting itself as an online/platform-fee payment it no longer is.
+  // Manual completion is distinct from online settlement. Preserve fees and the
+  // reference already evidenced by partial online payments; the immutable ledger
+  // remains authoritative for each payment rather than this invoice projection.
   const rows =
     status === "paid"
-      ? await sql`UPDATE invoices SET status = ${status}, paid_at = ${paidAt}, paid_via = 'manual', platform_fee_kobo = 0, payment_reference = '' WHERE id = ${id} AND organization_id = ${orgId} AND status <> 'paid' RETURNING *`
+      ? await sql`UPDATE invoices SET status = ${status}, paid_at = ${paidAt}, paid_via = 'manual', platform_fee_kobo = CASE WHEN COALESCE((to_jsonb(invoices)->>'online_received_kobo')::bigint,0)>0 THEN platform_fee_kobo ELSE 0 END, payment_reference = CASE WHEN COALESCE((to_jsonb(invoices)->>'online_received_kobo')::bigint,0)>0 THEN payment_reference ELSE '' END WHERE id = ${id} AND organization_id = ${orgId} AND status <> 'paid' RETURNING *`
       : await sql`UPDATE invoices SET status = ${status} WHERE id = ${id} AND organization_id = ${orgId} RETURNING *`;
   return rows[0] ? mapInvoice(rows[0]) : null;
 }
@@ -222,6 +222,7 @@ export interface PublicInvoice {
   subtotalKobo: number;
   discountKobo: number;
   totalKobo: number;
+  onlineReceivedKobo?: number;
   notes: string;
   customerName: string;
   customerEmail: string;
@@ -264,7 +265,7 @@ export async function getPublicInvoice(
   const rows = await sql`
     SELECT
       i.id, i.organization_id, i.number, i.status, i.issue_date, i.due_date, i.paid_at,
-      i.subtotal_kobo, i.discount_kobo, i.total_kobo, i.notes,
+      i.subtotal_kobo, i.discount_kobo, i.total_kobo, i.notes, COALESCE((to_jsonb(i)->>'online_received_kobo')::bigint,0) online_received_kobo,
       bp.display_name AS business_name, bp.logo_url AS business_logo_url,
       bp.phone AS business_phone, bp.email AS business_email,
       bp.address AS business_address, bp.city AS business_city, bp.state AS business_state,
@@ -294,6 +295,7 @@ export async function getPublicInvoice(
     subtotalKobo: kobo((row.subtotal_kobo as string) ?? 0),
     discountKobo: kobo((row.discount_kobo as string) ?? 0),
     totalKobo: kobo(row.total_kobo as string),
+    onlineReceivedKobo: kobo((row.online_received_kobo as string) ?? 0),
     notes: (row.notes as string) ?? "",
     customerName: (row.customer_name as string) ?? "",
     customerEmail: (row.customer_email as string) ?? "",

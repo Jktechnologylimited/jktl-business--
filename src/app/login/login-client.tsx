@@ -54,6 +54,8 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
     }
     if (
       [
+        "invoices",
+        "payments",
         "distribution",
         "programs",
         "affiliate-invite",
@@ -111,6 +113,8 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
       const value = params.get("next");
       if (
         [
+          "invoices",
+          "payments",
           "distribution",
           "programs",
           "affiliate-invite",

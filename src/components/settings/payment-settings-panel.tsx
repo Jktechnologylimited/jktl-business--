@@ -45,15 +45,17 @@ export function PaymentSettingsPanel({ mode }: { mode: "demo" | "live" }) {
 
   useEffect(() => {
     if (mode !== "live") return;
-    Promise.all([listBanksAction(), getPaymentSettingsAction()]).then(([banksResult, settingsResult]) => {
-      if (banksResult.ok) setBanks(banksResult.data);
-      if (settingsResult.ok) {
-        setSettings(settingsResult.data);
-        setBankCode(settingsResult.data.bankCode);
-        setAccountNumber(settingsResult.data.accountNumber);
-      }
-      setLoading(false);
-    });
+    Promise.all([listBanksAction(), getPaymentSettingsAction()]).then(
+      ([banksResult, settingsResult]) => {
+        if (banksResult.ok) setBanks(banksResult.data);
+        if (settingsResult.ok) {
+          setSettings(settingsResult.data);
+          setBankCode(settingsResult.data.bankCode);
+          setAccountNumber(settingsResult.data.accountNumber);
+        }
+        setLoading(false);
+      },
+    );
   }, [mode]);
 
   async function verify() {
@@ -81,7 +83,11 @@ export function PaymentSettingsPanel({ mode }: { mode: "demo" | "live" }) {
       return;
     }
     setSaving(true);
-    const result = await savePaymentSettingsAction({ bankCode, bankName: bank.name, accountNumber: accountNumber.trim() });
+    const result = await savePaymentSettingsAction({
+      bankCode,
+      bankName: bank.name,
+      accountNumber: accountNumber.trim(),
+    });
     setSaving(false);
     if (!result.ok) {
       setError(result.error);
@@ -94,22 +100,30 @@ export function PaymentSettingsPanel({ mode }: { mode: "demo" | "live" }) {
 
   if (mode !== "live") {
     return (
-      <section className="rounded-2xl border border-border p-4">
-        <h2 className="font-display text-sm font-semibold text-ink">Payments</h2>
+      <section id="payments" className="rounded-2xl border border-border p-4">
+        <h2 className="font-display text-sm font-semibold text-ink">
+          Payments
+        </h2>
         <p className="mt-1 text-xs text-ink-muted">
-          Enter your bank account here to turn on invoice payment links — a customer taps the link, pays online, and it lands straight in
-          your account. Available on a real account (not this demo).
+          Enter your bank account here to turn on invoice payment links — a
+          customer taps the link, pays online, and it lands straight in your
+          account. Available on a real account (not this demo).
         </p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-border p-4">
+    <section
+      id="payments"
+      className="scroll-mt-24 rounded-2xl border border-border p-4"
+    >
       <h2 className="font-display text-sm font-semibold text-ink">Payments</h2>
       <p className="mt-1 text-xs text-ink-muted">
-        The account your invoice payment links pay into. A ₦50 processing fee is added to what the customer pays — you always receive the
-        full invoice amount.
+        Invoice payment links use your verified receiving account. Buyers review
+        the merchant amount and applicable JKTL platform fee separately before
+        paying. Your invoice principal stays unchanged; bank settlement follows
+        Paystack’s schedule.
       </p>
 
       {loading ? (
@@ -120,13 +134,21 @@ export function PaymentSettingsPanel({ mode }: { mode: "demo" | "live" }) {
             <div className="flex items-center gap-2 rounded-xl bg-primary-soft px-3 py-2.5 text-sm text-primary-strong">
               <CheckCircle2 className="size-4 shrink-0" />
               <span>
-                Payments go to <strong>{settings.accountName}</strong> · {settings.bankName} · {settings.accountNumber}
+                Payments go to <strong>{settings.accountName}</strong> ·{" "}
+                {settings.bankName} · {settings.accountNumber}
               </span>
             </div>
           ) : null}
 
           <Field label="Bank" htmlFor="pay-bank">
-            <Select id="pay-bank" value={bankCode} onChange={(e) => { setBankCode(e.target.value); setResolvedName(""); }}>
+            <Select
+              id="pay-bank"
+              value={bankCode}
+              onChange={(e) => {
+                setBankCode(e.target.value);
+                setResolvedName("");
+              }}
+            >
               <option value="">Select your bank</option>
               {banks.map((b) => (
                 <option key={b.code} value={b.code}>
@@ -142,7 +164,10 @@ export function PaymentSettingsPanel({ mode }: { mode: "demo" | "live" }) {
               inputMode="numeric"
               maxLength={10}
               value={accountNumber}
-              onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, "")); setResolvedName(""); }}
+              onChange={(e) => {
+                setAccountNumber(e.target.value.replace(/\D/g, ""));
+                setResolvedName("");
+              }}
               placeholder="0123456789"
             />
           </Field>
@@ -156,16 +181,30 @@ export function PaymentSettingsPanel({ mode }: { mode: "demo" | "live" }) {
           {error ? <p className="text-xs text-danger">{error}</p> : null}
 
           <div className="flex gap-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={verify} disabled={verifying || saving}>
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={verify}
+              disabled={verifying || saving}
+            >
               {verifying ? <Loader2 className="size-4 animate-spin" /> : null}
               Verify account
             </Button>
-            <Button type="button" className="flex-1" onClick={save} disabled={!resolvedName || saving}>
+            <Button
+              type="button"
+              className="flex-1"
+              onClick={save}
+              disabled={!resolvedName || saving}
+            >
               {saving ? <Loader2 className="size-4 animate-spin" /> : null}
               Save
             </Button>
           </div>
-          <p className="text-xs text-ink-muted">Verify the account name matches before saving — this is exactly where your customers&apos; payments will go.</p>
+          <p className="text-xs text-ink-muted">
+            Verify the account name matches before saving — this is exactly
+            where your customers&apos; payments will go.
+          </p>
         </div>
       )}
     </section>

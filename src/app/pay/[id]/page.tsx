@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { getPublicInvoice } from "@/lib/db/invoices";
 import { formatKobo, formatShortDate } from "@/lib/format";
-import { INVOICE_PLATFORM_FEE_KOBO } from "@/lib/paystack";
+import {
+  invoiceCheckoutContext,
+  publicQuote,
+} from "@/lib/merchant-fees/service";
+import { invoicePaymentHistory } from "@/lib/merchant-fees/history";
+import { outstanding, type InvoiceQuote } from "@/lib/merchant-fees/model";
 import { JktlMark } from "@/components/app/logo";
 import { PayButton } from "./pay-button";
 import { PrintButton } from "./print-button";
@@ -23,16 +28,26 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
  * details, the line items, the payment status with its date and reference, and
  * a print stylesheet — a PDF the customer can file without any extra step.
  */
-export default async function PayInvoicePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PayInvoicePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
-  const invoice = await getPublicInvoice(id);
+  const invoice = /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)
+    ? await getPublicInvoice(id)
+    : null;
 
   if (!invoice) {
     return (
       <Shell>
         <div className="rounded-2xl border border-border bg-paper p-6">
-          <h1 className="font-display text-lg font-bold text-ink">This payment link isn&apos;t valid</h1>
-          <p className="mt-1 text-sm text-ink-muted">Double-check the link, or ask the business to resend it.</p>
+          <h1 className="font-display text-lg font-bold text-ink">
+            This payment link isn&apos;t valid
+          </h1>
+          <p className="mt-1 text-sm text-ink-muted">
+            Double-check the link, or ask the business to resend it.
+          </p>
         </div>
       </Shell>
     );
@@ -40,8 +55,20 @@ export default async function PayInvoicePage({ params }: { params: Promise<{ id:
 
   const paid = invoice.status === "paid";
   const overdue = !paid && isOverdue(invoice.dueDate);
-  const amountKobo = invoice.totalKobo + INVOICE_PLATFORM_FEE_KOBO;
-  const businessLocation = [invoice.businessAddress, invoice.businessCity, invoice.businessState].filter(Boolean).join(", ");
+  let checkout: InvoiceQuote | null = null;
+  if (invoice.payoutReady && !paid && invoice.status !== "draft")
+    try {
+      checkout = publicQuote((await invoiceCheckoutContext(id)).quote);
+    } catch {}
+  const history = await invoicePaymentHistory(invoice.organizationId, id);
+  const balance = outstanding(invoice);
+  const businessLocation = [
+    invoice.businessAddress,
+    invoice.businessCity,
+    invoice.businessState,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <Shell>
@@ -51,13 +78,23 @@ export default async function PayInvoicePage({ params }: { params: Promise<{ id:
           <div className="flex items-start gap-3">
             {invoice.businessLogoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- external/blob URL, not a static asset
-              <img src={invoice.businessLogoUrl} alt="" className="size-12 rounded-xl object-cover" />
+              <img
+                src={invoice.businessLogoUrl}
+                alt=""
+                className="size-12 rounded-xl object-cover"
+              />
             ) : null}
             <div>
-              <div className="font-display text-lg font-bold tracking-tight text-ink">{invoice.businessName}</div>
-              {businessLocation ? <div className="text-xs text-ink-muted">{businessLocation}</div> : null}
+              <div className="font-display text-lg font-bold tracking-tight text-ink">
+                {invoice.businessName}
+              </div>
+              {businessLocation ? (
+                <div className="text-xs text-ink-muted">{businessLocation}</div>
+              ) : null}
               <div className="text-xs text-ink-muted">
-                {[invoice.businessPhone, invoice.businessEmail].filter(Boolean).join(" · ")}
+                {[invoice.businessPhone, invoice.businessEmail]
+                  .filter(Boolean)
+                  .join(" · ")}
               </div>
             </div>
           </div>
@@ -74,20 +111,40 @@ export default async function PayInvoicePage({ params }: { params: Promise<{ id:
         {/* The dates and the person being billed. */}
         <div className="grid gap-4 border-b border-border px-6 py-5 sm:grid-cols-3">
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">Billed to</div>
-            <div className="mt-1 text-sm text-ink">{invoice.customerName || "Customer"}</div>
-            {invoice.customerEmail ? <div className="text-xs text-ink-muted">{invoice.customerEmail}</div> : null}
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+              Billed to
+            </div>
+            <div className="mt-1 text-sm text-ink">
+              {invoice.customerName || "Customer"}
+            </div>
+            {invoice.customerEmail ? (
+              <div className="text-xs text-ink-muted">
+                {invoice.customerEmail}
+              </div>
+            ) : null}
           </div>
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">Issued</div>
-            <div className="mt-1 text-sm text-ink">{formatShortDate(invoice.issueDate)}</div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+              Issued
+            </div>
+            <div className="mt-1 text-sm text-ink">
+              {formatShortDate(invoice.issueDate)}
+            </div>
           </div>
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
               {paid ? "Paid on" : "Due"}
             </div>
-            <div className={paid ? "mt-1 text-sm text-ink" : `mt-1 text-sm ${overdue ? "font-semibold text-danger" : "text-ink"}`}>
-              {paid && invoice.paidAt ? formatShortDate(invoice.paidAt) : formatShortDate(invoice.dueDate)}
+            <div
+              className={
+                paid
+                  ? "mt-1 text-sm text-ink"
+                  : `mt-1 text-sm ${overdue ? "font-semibold text-danger" : "text-ink"}`
+              }
+            >
+              {paid && invoice.paidAt
+                ? formatShortDate(invoice.paidAt)
+                : formatShortDate(invoice.dueDate)}
             </div>
           </div>
         </div>
@@ -107,9 +164,15 @@ export default async function PayInvoicePage({ params }: { params: Promise<{ id:
               {invoice.items.map((item, index) => (
                 <tr key={index}>
                   <td className="py-2.5 text-ink">{item.description}</td>
-                  <td className="py-2.5 text-right text-ink-muted">{item.quantity}</td>
-                  <td className="py-2.5 text-right text-ink-muted">{formatKobo(item.unitPriceKobo)}</td>
-                  <td className="py-2.5 text-right font-medium text-ink">{formatKobo(item.totalKobo)}</td>
+                  <td className="py-2.5 text-right text-ink-muted">
+                    {item.quantity}
+                  </td>
+                  <td className="py-2.5 text-right text-ink-muted">
+                    {formatKobo(item.unitPriceKobo)}
+                  </td>
+                  <td className="py-2.5 text-right font-medium text-ink">
+                    {formatKobo(item.totalKobo)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -117,14 +180,31 @@ export default async function PayInvoicePage({ params }: { params: Promise<{ id:
 
           <div className="mt-4 flex flex-col items-end gap-1 text-sm">
             <Row label="Subtotal" value={formatKobo(invoice.subtotalKobo)} />
-            {invoice.discountKobo > 0 ? <Row label="Discount" value={`− ${formatKobo(invoice.discountKobo)}`} /> : null}
-            {invoice.payoutReady && !paid ? (
-              <Row label="Payment processing fee" value={formatKobo(INVOICE_PLATFORM_FEE_KOBO)} />
+            {invoice.discountKobo > 0 ? (
+              <Row
+                label="Discount"
+                value={`− ${formatKobo(invoice.discountKobo)}`}
+              />
             ) : null}
-            <div className="mt-1 flex w-64 justify-between border-t border-border pt-2">
-              <span className="font-display text-base font-bold text-ink">{paid ? "Amount paid" : "Total due"}</span>
+            <Row
+              label="Invoice principal"
+              value={formatKobo(invoice.totalKobo)}
+            />
+            {(invoice.onlineReceivedKobo || 0) > 0 && (
+              <Row
+                label="Online principal received"
+                value={formatKobo(invoice.onlineReceivedKobo!)}
+              />
+            )}
+            {!paid && (
+              <Row label="Outstanding principal" value={formatKobo(balance)} />
+            )}
+            <div className="mt-1 flex w-full max-w-80 justify-between gap-3 border-t border-border pt-2">
               <span className="font-display text-base font-bold text-ink">
-                {formatKobo(paid ? invoice.totalKobo : invoice.payoutReady ? amountKobo : invoice.totalKobo)}
+                {paid ? "Invoice settled" : "Invoice balance"}
+              </span>
+              <span className="font-display text-base font-bold text-ink">
+                {formatKobo(paid ? invoice.totalKobo : balance)}
               </span>
             </div>
           </div>
@@ -132,8 +212,12 @@ export default async function PayInvoicePage({ params }: { params: Promise<{ id:
 
         {invoice.notes ? (
           <div className="border-t border-border px-6 py-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">Notes</div>
-            <p className="mt-1 whitespace-pre-line text-sm text-ink-muted">{invoice.notes}</p>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+              Notes
+            </div>
+            <p className="mt-1 whitespace-pre-line text-sm text-ink-muted">
+              {invoice.notes}
+            </p>
           </div>
         ) : null}
 
@@ -141,15 +225,25 @@ export default async function PayInvoicePage({ params }: { params: Promise<{ id:
         <div className="border-t border-border px-6 py-5 print:hidden">
           {paid ? (
             <div className="rounded-xl border border-primary/30 bg-primary-soft px-4 py-3">
-              <div className="text-sm font-semibold text-primary-strong">Paid — thank you</div>
+              <div className="text-sm font-semibold text-primary-strong">
+                Paid — thank you
+              </div>
               <p className="mt-0.5 text-xs text-ink-muted">
                 {invoice.businessName} has been notified
-                {invoice.paidAt ? ` and this was settled on ${formatShortDate(invoice.paidAt)}` : ""}. Keep this page as your receipt.
+                {invoice.paidAt
+                  ? ` and the payment was verified on ${formatShortDate(invoice.paidAt)}`
+                  : ""}
+                . Keep this page as your receipt.
               </p>
               <div className="mt-3">
                 <PrintButton />
               </div>
             </div>
+          ) : invoice.status === "draft" ? (
+            <p className="text-sm text-ink-muted">
+              This invoice has not been issued. Ask the business to share it
+              when ready.
+            </p>
           ) : invoice.payoutReady ? (
             <>
               {overdue ? (
@@ -157,34 +251,88 @@ export default async function PayInvoicePage({ params }: { params: Promise<{ id:
                   This invoice was due on {formatShortDate(invoice.dueDate)}.
                 </p>
               ) : null}
-              <PayButton invoiceId={invoice.id} />
+              {checkout ? (
+                <PayButton invoiceId={invoice.id} initialQuote={checkout} />
+              ) : (
+                <p role="alert" className="text-sm text-danger">
+                  Checkout could not be confirmed. Contact the business before
+                  starting a payment.
+                </p>
+              )}
               <p className="mt-2 text-center text-[11px] text-ink-faint">
-                Secure card payment, processed by Paystack. {invoice.businessName} is notified the moment it clears.
+                Secure card payment, processed by Paystack.{" "}
+                {invoice.businessName} is notified the moment it clears.
               </p>
             </>
           ) : (
             <p className="text-xs text-ink-muted">
-              Online payment isn&apos;t set up for this business yet — please pay them directly using the details below.
+              Online payment isn&apos;t set up for this business yet — please
+              pay them directly using the details below.
             </p>
           )}
         </div>
 
         {!paid && invoice.bankName ? (
           <div className="border-t border-border bg-surface px-6 py-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">Or pay by bank transfer</div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+              Or pay by bank transfer
+            </div>
             <div className="mt-1 text-sm text-ink">
-              {invoice.accountName} · {invoice.bankName} · {invoice.accountNumber}
+              {invoice.accountName} · {invoice.bankName} ·{" "}
+              {invoice.accountNumber}
             </div>
             <div className="mt-0.5 text-xs text-ink-muted">
-              Use invoice #{invoice.number} as the reference so it can be matched to your account.
+              Use invoice #{invoice.number} as the reference so it can be
+              matched to your account.
             </div>
           </div>
         ) : null}
       </article>
 
+      {history.length > 0 && (
+        <section className="mt-5 rounded-2xl border border-border bg-paper p-5">
+          <h2 className="font-display text-lg font-semibold">
+            Verified payment receipts
+          </h2>
+          <ul className="mt-4 space-y-4">
+            {history.map((p) => (
+              <li
+                key={p.reference}
+                className="border-t border-border pt-3 text-sm"
+              >
+                <p>
+                  {formatShortDate(p.paidAt)} · Merchant payment{" "}
+                  {formatKobo(p.principalKobo)}
+                </p>
+                <p className="text-xs text-ink-muted">
+                  JKTL platform fee: {formatKobo(p.feeKobo)} · Buyer total:{" "}
+                  {formatKobo(p.buyerTotalKobo)}
+                </p>
+                {p.refundKobo > 0 && (
+                  <p className="text-xs">
+                    Provider-confirmed refund: {formatKobo(p.refundKobo)}
+                  </p>
+                )}
+                {!p.applied && (
+                  <p className="text-xs text-danger">
+                    The payment needs reconciliation before it is applied to
+                    this invoice.
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-ink-muted">
+            Payment verification does not confirm a bank settlement. Keep your
+            provider reference for support.
+          </p>
+        </section>
+      )}
       <div className="mt-4 flex items-center justify-center gap-2 print:hidden">
         <JktlMark className="size-5" />
-        <span className="text-[11px] text-ink-faint">Invoicing by JKTL Business · payments secured by Paystack</span>
+        <span className="text-[11px] text-ink-faint">
+          Invoicing by JKTL Business · payments secured by Paystack
+        </span>
       </div>
     </Shell>
   );
@@ -206,7 +354,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex w-64 justify-between text-ink-muted">
+    <div className="flex w-full max-w-80 justify-between gap-3 text-ink-muted">
       <span>{label}</span>
       <span>{value}</span>
     </div>
@@ -220,5 +368,11 @@ function StatusBadge({ paid, overdue }: { paid: boolean; overdue: boolean }) {
     : overdue
       ? "bg-danger-soft text-danger"
       : "bg-accent-soft text-accent-strong";
-  return <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${classes}`}>{label}</span>;
+  return (
+    <span
+      className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${classes}`}
+    >
+      {label}
+    </span>
+  );
 }

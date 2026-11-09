@@ -39,6 +39,7 @@ export default async function PaymentCallbackPage({
         <>
           <h1 className="font-display text-xl font-bold text-ink">Payment received</h1>
           <p className="text-sm text-ink-muted">Thank you — your payment has gone through.</p>
+          <Link href={`/pay/${id}`} className="text-sm font-semibold text-primary underline">View receipt and remaining balance</Link>
         </>
       ) : status === "failed" ? (
         <>

@@ -10,6 +10,8 @@ export function selectedDomain(params: Params) {
     : "";
 }
 export function emailIntent(params: Params) {
+  if (["invoices", "payments"].includes(params.get("next") || ""))
+    return "?next=" + params.get("next");
   if (params.get("next") === "plans") return "?next=plans";
   if (params.get("next") === "domains") {
     const domain = selectedDomain(params);
@@ -59,6 +61,8 @@ export function emailIntent(params: Params) {
   );
 }
 export function emailDestination(params: Params) {
+  if (params.get("next") === "invoices") return "/business/invoices";
+  if (params.get("next") === "payments") return "/business/settings#payments";
   if (params.get("next") === "plans") return "/business/plans";
   if (params.get("next") === "domains") {
     const domain = selectedDomain(params);

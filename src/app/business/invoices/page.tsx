@@ -107,6 +107,7 @@ export default function InvoicesPage() {
           </Button>
         }
       />
+      {mode === "live" && <Link href="/business/payments" className="text-sm text-primary underline">View online payments and settlement status →</Link>}
 
       {mode === "live" && !bank.ready && (
         <section

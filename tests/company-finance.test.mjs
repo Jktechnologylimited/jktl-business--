@@ -15,6 +15,7 @@ async function fixture() {
  INSERT INTO organizations VALUES('${org}','business'),('${other}','other');INSERT INTO invoices VALUES('${invoice}','${org}',100000,'pending',NULL,NULL,NULL,0);`);
   await db.exec(readFileSync("migrations/076_company_finance.sql", "utf8"));
   await db.exec(readFileSync("migrations/076_company_finance.sql", "utf8"));
+  await db.exec(readFileSync("migrations/077_buyer_paid_fees.sql", "utf8"));
   const notices = [];
   const svc = load("src/lib/company-finance/payments.ts", {
     "server-only": {},
@@ -34,6 +35,7 @@ async function fixture() {
               organizationId: r.organization_id,
               totalKobo: Number(r.total_kobo),
               status: r.status,
+              onlineReceivedKobo:Number(r.online_received_kobo||0),
             }
           : null;
       },
@@ -487,7 +489,10 @@ test("timed-out invoice setup stays uncertain and reuses one server reference; c
       outcome = "timeout";
     let verified;
     const policy = await import("../src/lib/invoicing/policy.ts");
+    const fees=load("src/lib/merchant-fees/service.ts",{'server-only':{},'node:crypto':await import('node:crypto'),'@/lib/custom/service':{query:f.q},'@/lib/db/invoices':{getPublicInvoice:async()=>{const row=(await f.q('SELECT * FROM invoices WHERE id=$1',[invoice]))[0];return {id:invoice,organizationId:org,totalKobo:Number(row.total_kobo),status:row.status,onlineReceivedKobo:Number(row.online_received_kobo),payoutReady:true,number:'INV-TEST',customerEmail:'payer@example.test'}}},'@/lib/db/payments':{getPaymentSettings:async()=>({bankCode:'058',accountNumber:'0000000000',accountName:'Example Merchant',subaccountCode:'ACCT_fixture'})},'@/lib/invoicing/policy':policy,'./model':load('src/lib/merchant-fees/model.ts',{'@/lib/invoicing/policy':policy})});
+    const token=(await fees.invoiceCheckoutContext(invoice)).quote.token;
     const actions = load("src/lib/actions/invoice-payment-actions.ts", {
+      '@/lib/merchant-fees/service': fees,
       "next/headers": { headers: async () => new Headers() },
       "@/lib/security/auth-rate-limit": { authRateLimit: async () => {} },
       "@/lib/custom/service": { query: f.q },
@@ -526,20 +531,20 @@ test("timed-out invoice setup stays uncertain and reuses one server reference; c
         verifyTransaction: async () => verified,
       },
     });
-    const first = await actions.initiateInvoicePaymentAction(invoice);
+    const first = await actions.initiateInvoicePaymentAction(invoice,100000,token);
     assert.equal(first.ok, false);
     assert.match(first.error, /do not start another payment/);
     const saved = (await f.q("SELECT * FROM merchant_payment_attempts"))[0];
     assert.equal(saved.state, "UNKNOWN");
     outcome = "ready";
-    const uncertain = await actions.initiateInvoicePaymentAction(invoice);
+    const uncertain = await actions.initiateInvoicePaymentAction(invoice,100000,token);
     assert.equal(uncertain.ok, false);
     assert.equal(initializes, 1);
     await f.q(
       "UPDATE merchant_payment_attempts SET state='READY',authorization_url='https://checkout.paystack.com/synthetic' WHERE reference=$1",
       [saved.reference],
     );
-    const reused = await actions.initiateInvoicePaymentAction(invoice);
+    const reused = await actions.initiateInvoicePaymentAction(invoice,100000,token);
     assert.equal(reused.ok, true);
     assert.equal(initializes, 1);
     verified = { ...f.payment(saved.reference), status: "pending" };

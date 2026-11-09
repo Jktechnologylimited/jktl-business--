@@ -245,6 +245,8 @@ export interface Invoice {
   subtotalKobo: Kobo;
   discountKobo: Kobo;
   totalKobo: Kobo;
+  /** Verified online principal received; excludes buyer surcharges. */
+  onlineReceivedKobo?: Kobo;
   notes: string;
   paidAt: string | null;
   /** "online" once paid through the public payment link (Paystack split
@@ -252,8 +254,7 @@ export interface Invoice {
    * default for every invoice until it's actually paid one way or the
    * other. */
   paidVia: "manual" | "online";
-  /** JKTL's ₦50 cut, only ever non-zero on an "online" paid invoice — the
-   * payer's surcharge, not deducted from the business's own total above. */
+  /** Cumulative recorded buyer platform fees; separate from merchant invoice principal. */
   platformFeeKobo: Kobo;
   /** Paystack's transaction reference, only set once paid online. */
   paymentReference: string;

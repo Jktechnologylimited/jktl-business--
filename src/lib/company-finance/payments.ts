@@ -5,6 +5,7 @@ import { getInvoice } from "@/lib/db/invoices";
 import { INVOICE_PLATFORM_FEE_KOBO } from "@/lib/paystack";
 import { finalizeInvoicePaid } from "@/lib/invoice-finalize";
 import { verifiedMerchantPayment } from "./model";
+import type { FrozenInvoiceQuote } from "@/lib/merchant-fees/model";
 export async function merchantLedgerInstalled() {
   return Boolean(
     (await query("SELECT to_regclass('public.merchant_payments') present"))[0]
@@ -14,17 +15,27 @@ export async function merchantLedgerInstalled() {
 export async function reserveMerchantCheckout(
   invoice: { id: string; organizationId: string; totalKobo: number },
   subaccount: string,
+  quote?: FrozenInvoiceQuote,
 ) {
   const ref = "jktl_inv_" + randomUUID().replaceAll("-", "");
   const created = await query(
-    `INSERT INTO merchant_payment_attempts(reference,organization_id,invoice_id,principal_kobo,fee_kobo,subaccount_code) SELECT $1,$2,$3,$4,$5,$6 WHERE EXISTS(SELECT 1 FROM invoices WHERE id=$3 AND organization_id=$2 AND status IN('pending','overdue') AND total_kobo=$4) ON CONFLICT DO NOTHING RETURNING *`,
+    `INSERT INTO merchant_payment_attempts(reference,organization_id,invoice_id,principal_kobo,fee_kobo,subaccount_code,invoice_total_kobo,balance_before_kobo,fee_policy_id,fee_snapshot) SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb WHERE EXISTS(SELECT 1 FROM invoices WHERE id=$3 AND organization_id=$2 AND status IN('pending','overdue') AND total_kobo=$7 AND total_kobo-online_received_kobo=$8 AND $4<=total_kobo-online_received_kobo) ON CONFLICT DO NOTHING RETURNING *`,
     [
       ref,
       invoice.organizationId,
       invoice.id,
-      invoice.totalKobo,
-      INVOICE_PLATFORM_FEE_KOBO,
+      quote?.principalKobo ?? invoice.totalKobo,
+      quote?.feeKobo ?? INVOICE_PLATFORM_FEE_KOBO,
       subaccount,
+      quote?.invoiceTotalKobo ?? invoice.totalKobo,
+      quote?.balanceKobo ?? invoice.totalKobo,
+      quote?.policyId ?? null,
+      JSON.stringify(
+        quote?.snapshot ?? {
+          version: "legacy-fixed-v1",
+          feeKobo: INVOICE_PLATFORM_FEE_KOBO,
+        },
+      ),
     ],
   );
   if (created[0]) return { created: true, row: created[0] };
@@ -53,6 +64,7 @@ export async function recordVerifiedMerchantPayment(
       [String(data.reference || ""), org, id],
     )
   )[0];
+  if(String(data.reference||'').startsWith('jktl_inv_')&&!attempt)throw Error('Verify the original server checkout quote for this payment.');
   const p = verifiedMerchantPayment(
     data,
     attempt
@@ -66,9 +78,9 @@ export async function recordVerifiedMerchantPayment(
   );
   const rows = await query(
     `WITH locked AS(SELECT * FROM invoices WHERE id=$1 AND organization_id=$2 AND (status<>'draft' OR $10::boolean) FOR UPDATE),payment AS(
- INSERT INTO merchant_payments(reference,provider_transaction,organization_id,invoice_id,source,currency,mode,principal_kobo,charged_kobo,gross_fee_kobo,processor_kobo,split_evidenced,applied_to_invoice,paid_at)
- SELECT $4,$5,$2,$1,'INVOICE','NGN',$6,$3,$7,$8,$9,$10,(status IN('pending','overdue') AND total_kobo=$3) OR (status='paid' AND payment_reference=$4 AND paid_via='online'),$11 FROM locked ON CONFLICT DO NOTHING RETURNING *
- ),changed AS(UPDATE invoices i SET status='paid',paid_at=p.paid_at,paid_via='online',payment_reference=p.reference,platform_fee_kobo=p.gross_fee_kobo FROM payment p WHERE i.id=p.invoice_id AND i.organization_id=p.organization_id AND i.status IN('pending','overdue') AND i.total_kobo=p.principal_kobo RETURNING i.id),attempt AS(UPDATE merchant_payment_attempts SET state='SUCCESS',updated_at=now() WHERE reference=$4 AND EXISTS(SELECT 1 FROM payment) RETURNING reference)
+ INSERT INTO merchant_payments(reference,provider_transaction,organization_id,invoice_id,source,currency,mode,principal_kobo,charged_kobo,gross_fee_kobo,processor_kobo,split_evidenced,applied_to_invoice,paid_at,fee_policy_id,fee_snapshot)
+ SELECT $4,$5,$2,$1,'INVOICE','NGN',$6,$3,$7,$8,$9,$10,(status IN('pending','overdue') AND total_kobo=$12 AND online_received_kobo=$13 AND online_received_kobo+$3<=total_kobo) OR (status='paid' AND payment_reference=$4 AND paid_via='online'),$11,$14,$15::jsonb FROM locked ON CONFLICT DO NOTHING RETURNING *
+ ),changed AS(UPDATE invoices i SET online_received_kobo=i.online_received_kobo+p.principal_kobo,status=CASE WHEN i.online_received_kobo+p.principal_kobo=i.total_kobo THEN 'paid' ELSE i.status END,paid_at=CASE WHEN i.online_received_kobo+p.principal_kobo=i.total_kobo THEN p.paid_at ELSE i.paid_at END,paid_via='online',payment_reference=p.reference,platform_fee_kobo=i.platform_fee_kobo+p.gross_fee_kobo FROM payment p WHERE i.id=p.invoice_id AND i.organization_id=p.organization_id AND p.applied_to_invoice AND i.status IN('pending','overdue') AND i.total_kobo=$12 AND i.online_received_kobo=$13 RETURNING i.id),attempt AS(UPDATE merchant_payment_attempts SET state='SUCCESS',updated_at=now() WHERE reference=$4 AND EXISTS(SELECT 1 FROM payment) RETURNING reference)
  SELECT p.*,EXISTS(SELECT 1 FROM changed) changed FROM payment p`,
     [
       id,
@@ -82,6 +94,19 @@ export async function recordVerifiedMerchantPayment(
       p.processor,
       Boolean(attempt),
       p.paidAt,
+      Number(
+        attempt?.invoice_total_kobo ??
+          attempt?.principal_kobo ??
+          invoice.totalKobo,
+      ),
+      attempt
+        ? Number(attempt.invoice_total_kobo ?? attempt.principal_kobo) -
+          Number(attempt.balance_before_kobo ?? attempt.principal_kobo)
+        : 0,
+      attempt?.fee_policy_id ?? null,
+      JSON.stringify(
+        attempt?.fee_snapshot ?? { version: "legacy-fixed-v1", feeKobo: p.fee },
+      ),
     ],
   );
   if (!rows.length) {
@@ -120,6 +145,13 @@ export async function recordVerifiedMerchantPayment(
       await finalizeInvoicePaid(org, updated, {
         reference: p.reference,
         method: "Paystack",
+        paymentAmountKobo: p.principal,
+        platformFeeKobo: p.fee,
+        remainingKobo: Math.max(
+          0,
+          updated.totalKobo - (updated.onlineReceivedKobo || 0),
+        ),
+        paidAt: p.paidAt,
       });
   }
   return { applied: Boolean(rows[0].applied_to_invoice) };

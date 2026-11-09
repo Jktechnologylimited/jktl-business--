@@ -18,7 +18,7 @@ const loader = file(
 );
 const actions = file(
   "actions.js",
-  `const save=async form=>{window.lastFinanceSubmission=Object.fromEntries(form.entries())};export const recordCompanyCostsAction=save,reverseCompanyCostAction=save,saveCostCategoryAction=save,attestFinancePeriodAction=save,reconcileMerchantPaymentAction=save,reconcileMerchantFeeAction=save,saveGrowthCampaignAction=save,saveWebsiteFeeDraftAction=save;`,
+  `const save=async form=>{window.lastFinanceSubmission=Object.fromEntries(form.entries())};export const recordCompanyCostsAction=save,reverseCompanyCostAction=save,saveCostCategoryAction=save,attestFinancePeriodAction=save,reconcileMerchantPaymentAction=save,reconcileMerchantFeeAction=save,saveGrowthCampaignAction=save,saveWebsiteFeeDraftAction=save,saveBuyerFeePolicyAction=save,activateBuyerFeePolicyAction=save,rollbackBuyerFeePolicyAction=save;`,
 );
 const queries = file(
   "query.js",
@@ -168,6 +168,8 @@ require("next/dist/compiled/webpack/webpack").webpack(
       modules: [path.join(root, "node_modules")],
       alias: {
         "@/lib/actions/company-finance-actions": actions,
+        "@/lib/actions/merchant-fee-actions": actions,
+        "@/lib/merchant-fees/service": file("fee-service.js", "export const activationGate=()=>null;"),
         "@/lib/custom/service": queries,
         "next/navigation": nav,
         "node:crypto": crypto,

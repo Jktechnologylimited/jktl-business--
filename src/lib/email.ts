@@ -320,9 +320,9 @@ export async function sendInvoiceEmail(params: {
       ${
         payUrl
           ? `<p style="margin:22px 0 6px">
-        <a href="${escapeHtml(payUrl)}" style="background:#112055;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">Pay ${formatKobo(totalKobo)} now</a>
+        <a href="${escapeHtml(payUrl)}" style="background:#112055;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">Review invoice and payment options</a>
       </p>
-      <p style="margin:0;font-size:12px;color:#7b838d">Card payment, secured by Paystack. ${escapeHtml(businessName)} is notified the moment it clears.</p>`
+      <p style="margin:0;font-size:12px;color:#7b838d">Review checkout charges before confirming. Supported card payments are processed by Paystack; ${escapeHtml(businessName)} is notified after verification.</p>`
           : ""
       }
 
@@ -392,6 +392,8 @@ export async function sendPaymentReceiptEmail(params: {
   totalKobo: number;
   paidAt: string;
   reference: string;
+  platformFeeKobo?: number;
+  remainingKobo?: number;
 }): Promise<EmailResult> {
   const {
     to,
@@ -402,6 +404,8 @@ export async function sendPaymentReceiptEmail(params: {
     paidAt,
     reference,
   } = params;
+  const extra = params.platformFeeKobo === undefined ? '' : `Merchant payment: ${formatKobo(totalKobo)} · JKTL platform fee: ${formatKobo(params.platformFeeKobo)} · Buyer total: ${formatKobo(totalKobo + params.platformFeeKobo)}.`;
+  const balance = (params.remainingKobo || 0)>0 ? `Outstanding invoice principal: ${formatKobo(params.remainingKobo!)}. This is a partial payment.` : 'The invoice is settled.';
   const html = wrapper(`
     <p style="margin:0 0 12px;font-size:15px"><strong>Payment received — thank you.</strong></p>
     <p>Hi ${escapeHtml(customerName || "there")},</p>
@@ -410,9 +414,10 @@ export async function sendPaymentReceiptEmail(params: {
       <span style="font-size:22px;font-weight:700">${formatKobo(totalKobo)}</span><br/>
       <span style="font-size:13px;color:#3b4451">Paid ${formatShortDate(paidAt)}${reference ? ` · Reference ${escapeHtml(reference)}` : ""}</span>
     </p>
-    <p style="font-size:13px;color:#5b6470">Keep this email as your receipt. ${escapeHtml(businessName)} has been notified that the invoice is settled.</p>
+    <p style="font-size:13px;color:#5b6470">Keep this email as your receipt. ${escapeHtml(businessName)} has been notified. ${escapeHtml(balance)}</p>
+    ${extra ? `<p>${escapeHtml(extra)}</p>` : ""}
   `);
-  const text = `Payment received — thank you.\n\n${formatKobo(totalKobo)} for invoice #${invoiceNumber} to ${businessName}, paid ${formatShortDate(paidAt)}${reference ? ` (reference ${reference})` : ""}. Keep this as your receipt.`;
+  const text = `Payment received — thank you.\n\n${formatKobo(totalKobo)} for invoice #${invoiceNumber} to ${businessName}, paid ${formatShortDate(paidAt)}${reference ? ` (reference ${reference})` : ""}. Keep this as your receipt. ${balance} ${extra}`;
   return send(
     to,
     `Receipt — ${formatKobo(totalKobo)} paid to ${businessName}`,
@@ -1115,7 +1120,9 @@ export async function sendBusinessInvoicePaidEmail(p: {
   reference: string;
   invoiceId: string;
   online: boolean;
+  remainingKobo?: number;
 }) {
+  const remaining = (p.remainingKobo||0)>0 ? `Outstanding invoice principal: ${formatKobo(p.remainingKobo!)}.` : "";
   const settlement = p.online
     ? "The payment was routed to your configured Paystack subaccount. Bank settlement follows Paystack’s settlement schedule; this email does not confirm a bank credit."
     : "This invoice was marked paid manually. No automatic bank transfer was initiated.";
@@ -1123,8 +1130,8 @@ export async function sendBusinessInvoicePaidEmail(p: {
   return send(
     p.to,
     `Payment received for ${p.businessName} · ${p.invoiceNumber}`,
-    `<p><strong>${escapeHtml(p.customerName)}</strong> paid ${formatKobo(p.totalKobo)} for invoice <strong>${escapeHtml(p.invoiceNumber)}</strong>.</p><p>${escapeHtml(settlement)}</p>${p.reference ? `<p>Reference: ${escapeHtml(p.reference)}</p>` : ""}${mailAction(url, "View invoice")}`,
-    `${p.customerName} · ${formatKobo(p.totalKobo)} · Invoice ${p.invoiceNumber}\n${settlement}\nReference: ${p.reference}\nView invoice: ${url}`,
+    `<p><strong>${escapeHtml(p.customerName)}</strong> paid ${formatKobo(p.totalKobo)} for invoice <strong>${escapeHtml(p.invoiceNumber)}</strong>.</p><p>${escapeHtml(settlement)}</p><p>${escapeHtml(remaining)}</p>${p.reference ? `<p>Reference: ${escapeHtml(p.reference)}</p>` : ""}${mailAction(url, "View invoice")}`,
+    `${p.customerName} · ${formatKobo(p.totalKobo)} · Invoice ${p.invoiceNumber}\n${settlement}\n${remaining}\nReference: ${p.reference}\nView invoice: ${url}`,
     { category: "payment" },
     `invoice-paid-${p.invoiceId}-${p.reference || "manual"}`,
     p.businessName,

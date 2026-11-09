@@ -207,6 +207,7 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
 
+        {(invoice.onlineReceivedKobo||0)>0&&<div className="mt-4 rounded-xl border border-border p-4 text-sm"><p>Verified online principal received: {formatKobo(invoice.onlineReceivedKobo!)}</p><p className="mt-2">Outstanding principal: {formatKobo(invoice.status==='paid'?0:Math.max(0,invoice.totalKobo-invoice.onlineReceivedKobo!))}</p><p className="mt-2 text-xs text-ink-muted">Buyer platform fees remain separate from your invoice value.</p><Link href="/business/payments" className="mt-3 inline-block text-primary underline">Payment history and settlement status →</Link></div>}
         {invoice.notes ? (
           <p className="mt-4 text-sm text-ink-muted">{invoice.notes}</p>
         ) : null}

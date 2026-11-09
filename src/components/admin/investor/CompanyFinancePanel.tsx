@@ -68,9 +68,10 @@ export function CompanyFinancePanel({ report }: { report: InvestorReport }) {
       </h2>
       <p className="text-sm leading-6 text-ink-muted">
         Customer payment volume belongs to the receiving businesses. Only
-        evidenced platform fees enter JKTL’s company revenue. Existing invoice
-        surcharge: {money(INVOICE_PLATFORM_FEE_KOBO)}; prices and settlement
-        splits are unchanged.
+        evidenced platform fees enter JKTL’s company revenue. Legacy fixed
+        invoice surcharge: {money(INVOICE_PLATFORM_FEE_KOBO)}; reviewed policy
+        versions and exemptions apply to future checkouts only. Each payment
+        retains its original quote.
       </p>
       {inventory && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

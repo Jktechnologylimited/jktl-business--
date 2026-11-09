@@ -343,7 +343,12 @@ test("actual invoice, receipt and owner notice provider payloads identify the bu
       ).ok,
       true,
     );
-    assert.equal(sent.length, 3);
+    assert.equal((await email.sendPaymentReceiptEmail({...p,totalKobo:2000000,platformFeeKobo:10000,remainingKobo:5500000,paidAt:'2026-11-08T12:00:00Z',reference:'partial-fixture'})).ok,true);
+    assert.match(sent[3].html,/Buyer total: NGN 20100/);
+    assert.match(sent[3].text,/Outstanding invoice principal: NGN 55000/);
+    assert.match(sent[3].text,/partial payment/);
+    assert.doesNotMatch(sent[3].html,/The invoice is settled/);
+    assert.equal(sent.length, 4);
     for (const p of sent) {
       assert.equal(
         p.from,
@@ -435,6 +440,7 @@ test("payment finalization awaits owner notice, customer receipt and PWA alerts"
   const invoice = {
     id: "fixture",
     number: "INV-1",
+    status: "paid",
     customerId: customer,
     totalKobo: 100000,
     paidVia: "online",

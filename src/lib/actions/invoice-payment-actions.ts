@@ -7,14 +7,12 @@ import {
   reserveMerchantCheckout,
   recordVerifiedMerchantPayment,
 } from "@/lib/company-finance/payments";
-import { payoutReady } from "@/lib/invoicing/policy";
-import { getPublicInvoice } from "@/lib/db/invoices";
-import { getPaymentSettings } from "@/lib/db/payments";
 import {
-  initializeInvoicePayment,
-  verifyTransaction,
-  INVOICE_PLATFORM_FEE_KOBO,
-} from "@/lib/paystack";
+  invoiceCheckoutContext,
+  publicQuote,
+} from "@/lib/merchant-fees/service";
+import type { InvoiceQuote } from "@/lib/merchant-fees/model";
+import { initializeInvoicePayment, verifyTransaction } from "@/lib/paystack";
 import type { ActionResult } from "./types";
 
 function appOrigin(): string {
@@ -35,6 +33,8 @@ function appOrigin(): string {
  */
 export async function initiateInvoicePaymentAction(
   invoiceId: string,
+  requestedKobo?: number,
+  quoteToken?: string,
 ): Promise<ActionResult<{ authorizationUrl: string }>> {
   let reservedReference = "";
   try {
@@ -47,35 +47,25 @@ export async function initiateInvoicePaymentAction(
       20,
       3600,
     );
-    const invoice = await getPublicInvoice(invoiceId);
-    if (!invoice) return { ok: false, error: "Invoice not found." };
-    if (invoice.status === "draft")
-      return { ok: false, error: "This invoice has not been issued yet." };
-    if (invoice.status === "paid")
-      return { ok: false, error: "This invoice has already been paid." };
-    if (!invoice.payoutReady)
+    const { invoice, settings, quote } = await invoiceCheckoutContext(
+      invoiceId,
+      requestedKobo,
+    );
+    if (!quoteToken || quoteToken !== quote.token)
       return {
         ok: false,
-        error: "This business hasn't set up online payments yet.",
+        error:
+          "Checkout charges or the balance changed. Review the current breakdown before confirming payment.",
       };
-
-    const settings = await getPaymentSettings(invoice.organizationId);
-    if (!payoutReady(settings))
-      return {
-        ok: false,
-        error: "Online payments are not set up for this business.",
-      };
-    if (!Number.isSafeInteger(invoice.totalKobo) || invoice.totalKobo <= 0)
-      return { ok: false, error: "This invoice does not require a payment." };
-    const amountKobo = invoice.totalKobo + INVOICE_PLATFORM_FEE_KOBO;
-
     const reserved = await reserveMerchantCheckout(
       invoice,
       settings.subaccountCode,
+      quote,
     );
     if (!reserved.created) {
       if (
-        Number(reserved.row.principal_kobo) !== invoice.totalKobo ||
+        Number(reserved.row.principal_kobo) !== quote.principalKobo ||
+        Number(reserved.row.fee_kobo) !== quote.feeKobo ||
         reserved.row.subaccount_code !== settings.subaccountCode
       )
         return {
@@ -105,14 +95,15 @@ export async function initiateInvoicePaymentAction(
       email:
         invoice.customerEmail ||
         `invoice-${invoice.number.toLowerCase()}@jktl.com.ng`,
-      amountKobo,
+      amountKobo: quote.buyerTotalKobo,
       subaccountCode: settings.subaccountCode,
-      transactionChargeKobo: INVOICE_PLATFORM_FEE_KOBO,
+      transactionChargeKobo: quote.feeKobo,
       callbackUrl: `${appOrigin()}/pay/${invoiceId}/callback`,
       metadata: {
         type: "invoice_payment",
         organizationId: invoice.organizationId,
         invoiceId,
+        feePolicyVersion: quote.policyVersion,
       },
     });
 
@@ -137,7 +128,37 @@ export async function initiateInvoicePaymentAction(
       ok: false,
       error: reservedReference
         ? "Payment setup needs confirmation. Please do not start another payment; contact support."
-        : "Could not start this payment. Check the invoice or contact support.",
+        : "Could not start this payment. Review the invoice balance and checkout charges, or contact support.",
+    };
+  }
+}
+
+/** Read-only authoritative price preview; never initializes a provider transaction. */
+export async function invoiceCheckoutQuoteAction(
+  invoiceId: string,
+  requestedKobo?: number,
+): Promise<ActionResult<InvoiceQuote>> {
+  try {
+    if (!/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(invoiceId))
+      return { ok: false, error: "Invoice not found." };
+    const h = await headers();
+    await authRateLimit(
+      (h.get("x-forwarded-for") || "unknown").split(",")[0] + ":" + invoiceId,
+      "invoice-quote",
+      120,
+      3600,
+    );
+    return {
+      ok: true,
+      data: publicQuote(
+        (await invoiceCheckoutContext(invoiceId, requestedKobo)).quote,
+      ),
+    };
+  } catch {
+    return {
+      ok: false,
+      error:
+        "The checkout amount could not be confirmed. Contact the business or support before paying.",
     };
   }
 }

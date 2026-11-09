@@ -71,6 +71,7 @@ const salon: IndustryConfig = {
       { href: "/business/inventory", label: "Inventory", description: "Stock levels and movements", group: "Catalogue & stock" },
       { href: "/business/expenses", label: "Expenses", description: "Rent, power, team and supplies", group: "Money" },
       { href: "/business/invoices", label: "Invoices", description: "Bills and outstanding payments", group: "Money" },
+      { href: "/business/payments", label: "Payments", description: "Your online payment activity and settlement status", group: "Money" },
       { href: "/business/reports", label: "Reports", description: "Sales, bookings and stock", group: "Money" },
       { href: "/business/analytics", label: "Analytics", description: "Trends, ageing, profit and health", group: "Money" },
       { href: "/business/website", label: "Website", description: "Your public site and online booking", group: "Grow your business" },
