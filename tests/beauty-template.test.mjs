@@ -67,7 +67,7 @@ const { TemplateWebsite } = load(
 );
 const draft = () => catalogue.templateDraft("hair-salon", "Studio Example");
 test("one versioned salon entry gains ten real pages; saved v1 salons keep their old document and renderer", () => {
-  assert.equal(catalogue.websiteTemplates.length, 219);
+  assert.equal(catalogue.websiteTemplates.length, 220);
   const doc = draft();
   assert.equal(doc.beauty.version, 2);
   assert.deepEqual(catalogue.parseWebsiteDocument(doc), doc);

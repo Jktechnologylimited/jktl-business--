@@ -2047,3 +2047,11 @@
 .site[data-template-id="vivante-studio"] .heroCopy :is(.eyebrow,p) { font-family:var(--font-body,Arial),sans-serif; }
 @media(max-width:700px){.site[data-template-id="vivante-studio"] .heroPhoto { flex:none;width:100%; }.site[data-template-id="vivante-studio"] .heroPhoto img { position:relative; }.site[data-template-id="vivante-studio"] .heroCopy { flex:none;width:100%; }}
 .site[data-template-id="vivante-studio"] .brand { max-width:none;flex-basis:100%; }
+.lumiHero{position:relative;display:grid;grid-template-columns:1fr .45fr 1fr;min-height:720px;background:#e9dcd0;isolation:isolate;}
+.lumiHero>div:not(.lumiPanel){min-width:0;height:720px;}
+.lumiHero>div:nth-child(2){height:420px;align-self:center;z-index:1;transform:translateX(-15%);width:155%;}
+.lumiHero .lumiPanel{position:absolute;z-index:2;background:var(--occasion-paper);color:var(--occasion-ink);width:320px;padding:45px 38px;text-align:center;left:50%;top:50%;transform:translate(-50%,-50%);}
+.lumiPanel h1{font:italic 64px/.95 Georgia,serif;letter-spacing:-.06em;margin:25px 0;}
+.site[data-template-id="lumi-atelier"] .brand{font-style:italic;}
+.site[data-template-id="lumi-atelier"] .footer{background-image:none!important;background-color:#e9dcd0;color:var(--occasion-ink);}
+@media(max-width:700px){.lumiHero{min-height:760px;grid-template-columns:1fr 1fr;}.lumiHero>div:not(.lumiPanel){height:500px;}.lumiHero>div:nth-child(2){display:none;}.lumiHero .lumiPanel{top:auto;bottom:30px;transform:translateX(-50%);width:calc(100% - 50px);padding:30px;}.lumiPanel h1{font-size:58px;}}

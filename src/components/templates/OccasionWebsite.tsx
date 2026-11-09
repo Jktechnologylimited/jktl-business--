@@ -579,7 +579,14 @@ export function OccasionWebsite({
       <main id="occasion-content">
         {!path ? (
           <>
-            {tress ? (
+            {template.sourceId === "lumi-atelier" ? (
+              <section className={styles.lumiHero}>
+                <div>{image("/template-photos/beauty/interior.jpg", "A welcoming salon interior", true)}</div>
+                <div>{image(beauty.aboutImage, "Personal hair styling inspiration", true)}</div>
+                <div>{image(doc.heroImage, "Smiling African woman with natural textured hair", true)}</div>
+                <div className={styles.lumiPanel}><p className={styles.eyebrow}>{doc.eyebrow}</p><h1>{doc.headline}</h1>{button("services", "Explore services")}</div>
+              </section>
+            ) : tress ? (
               <section className={styles.tressHero}>
                 {image(
                   doc.heroImage,

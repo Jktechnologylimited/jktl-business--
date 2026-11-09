@@ -4658,6 +4658,170 @@ websiteTemplates.push({
   }
 } as WebsiteTemplate);
 
+websiteTemplates.push({
+  "id": "lumi-atelier",
+  "name": "Hair Salon — Lumi Atelier",
+  "category": "Beauty & Wellness",
+  "layout": "editorial",
+  "kind": "website",
+  "sourceId": "lumi-atelier",
+  "edition": "Editorial",
+  "sectionOrder": [
+    "about",
+    "offerings",
+    "gallery",
+    "reviews",
+    "feature",
+    "faq",
+    "areas"
+  ],
+  "document": {
+    "version": 1,
+    "brandName": "Lumi Atelier",
+    "eyebrow": "A fresh perspective on your hair",
+    "headline": "Crafting\nunique styles.",
+    "intro": "A considered cut, a personal colour and a finish that belongs to you. Start with your own ideas and explore your next hair story.",
+    "ctaLabel": "Find your perfect match",
+    "accent": "#655849",
+    "paper": "#faf9f6",
+    "ink": "#292725",
+    "heroImage": "/template-photos/african/tress-smile.jpg",
+    "aboutTitle": "Your hair. Your point of view.",
+    "aboutText": "Your hair tells its own story. We make space to understand what you love, what you want to change and how your hair fits into everyday life.\n\nFrom a conversation about texture to a thoughtful fitting plan, the process is personal. We’ll discuss the available options, maintenance and next steps before anything is agreed.",
+    "offeringsTitle": "A personal approach to style",
+    "offerings": [
+      {
+        "title": "Personal haircuts",
+        "slug": "personal-haircuts",
+        "description": "A personal cut conversation shaped around your hair, everyday routine and the finish you love.",
+        "image": "/template-photos/african/fiora-profile.jpg",
+        "price": "Personal quote after consultation",
+        "duration": "Timing agreed at consultation",
+        "benefits": [
+          "A personal consultation",
+          "A clear quote and agreed plan",
+          "Care advice for your own hair"
+        ],
+        "preparation": "Share your hair history, routine and inspiration before your visit."
+      },
+      {
+        "title": "Colour conversations",
+        "slug": "colour-conversations",
+        "description": "Explore a shade that feels like you. Ask your stylist about available colour options, suitability and maintenance.",
+        "image": "/template-photos/african/fiora-hero.jpg",
+        "price": "Personal quote after consultation",
+        "duration": "Timing agreed at consultation",
+        "benefits": [
+          "A personal consultation",
+          "A clear quote and agreed plan",
+          "Care advice for your own hair"
+        ],
+        "preparation": "Share your hair history, routine and inspiration before your visit."
+      },
+      {
+        "title": "Blowouts & finishing",
+        "slug": "blowouts-finishing",
+        "description": "Talk about your natural texture, styling preferences and a considered finish for your next occasion.",
+        "image": "/template-photos/african/fiora-copper.jpg",
+        "price": "Enquire for current options",
+        "duration": "Visit length confirmed on enquiry",
+        "benefits": [
+          "A personal consultation",
+          "A clear quote and agreed plan",
+          "Care advice for your own hair"
+        ],
+        "preparation": "Share your hair history, routine and inspiration before your visit."
+      }
+    ],
+    "galleryTitle": "A glimpse of your next chapter",
+    "gallery": [
+      {
+        "src": "/template-photos/african/fiora-copper.jpg",
+        "alt": "African woman with long copper-coloured hair in a studio portrait",
+        "category": "Warm tones"
+      },
+      {
+        "src": "/template-photos/african/fiora-profile.jpg",
+        "alt": "African woman with long straight dark hair and a considered natural finish",
+        "category": "Quiet definition"
+      },
+      {
+        "src": "/template-photos/african/fiora-editorial.jpg",
+        "alt": "African woman with long hair in an editorial studio portrait",
+        "category": "Personal expression"
+      },
+      {
+        "src": "/template-photos/african/fiora-smile.jpg",
+        "alt": "Smiling African woman with long dark hair against a light background",
+        "category": "Everyday ease"
+      },
+      {
+        "src": "/template-photos/african/fiora-hero.jpg",
+        "alt": "Close-up portrait showing an African woman’s sleek dark hair",
+        "category": "Your own finish"
+      }
+    ],
+    "featureTitle": "Considered colour. Personal texture.",
+    "featureText": "Explore the possibilities together. Your shade, texture and fitting plan are confirmed with your stylist.",
+    "featureItems": [
+      "Share your inspiration, your routine and the finish you have in mind.",
+      "Explore colour, texture and fitting options with your stylist.",
+      "Agree a personal plan, with clear maintenance and care advice."
+    ],
+    "faqTitle": "Before your new chapter",
+    "faqs": [
+      {
+        "question": "How do I choose a fitting method?",
+        "answer": "Begin with a consultation. Your stylist will discuss your hair, preferences and routine before explaining the available methods, suitability and maintenance."
+      },
+      {
+        "question": "Can I ask about a particular colour or texture?",
+        "answer": "Yes. Share your inspiration when you enquire. Available options, a personal match and any colour work are confirmed with your stylist before a fitting is booked."
+      },
+      {
+        "question": "How do I look after my extensions?",
+        "answer": "Ask your stylist for care instructions for your chosen hair and fitting method. Your maintenance needs and return appointments are discussed as part of your personal plan."
+      }
+    ],
+    "contactTitle": "Ready for your next chapter?",
+    "contactText": "Tell us about the hair you’re dreaming of. Share your ideas, preferred date and the questions you would like to explore.",
+    "logoUrl": "",
+    "serviceAreas": [
+      "Studio visits by appointment"
+    ],
+    "socials": [],
+    "reviews": [],
+    "seoTitle": "Lumi Atelier | Personal Haircuts, Colour & Styling",
+    "seoDescription": "Discover personal haircuts, colour consultations and styling at Lumi Atelier. Explore the studio, browse hair inspiration and request your next visit.",
+    "beauty": {
+      "version": 2,
+      "design": "tress",
+      "demoContent": true,
+      "aboutImage": "/template-photos/african/fiora-editorial.jpg",
+      "philosophy": [
+        "A personal conversation before every plan",
+        "Your texture, your colour, your routine",
+        "A considered finish and clear care guidance"
+      ],
+      "stylists": [],
+      "hours": [
+        {
+          "day": "Studio & fitting visits",
+          "hours": "By appointment · ask for current availability"
+        }
+      ],
+      "contact": {
+        "phone": "",
+        "email": "",
+        "address": "",
+        "whatsapp": "",
+        "mapUrl": ""
+      },
+      "pages": [{"path": "", "title": "Personal haircuts & styling | Lumi Atelier", "description": "Explore personal haircuts & styling at Lumi Atelier. Discover a personal approach to haircuts, colour and styling, and start a conversation with the studio."}, {"path": "about", "title": "Our studio & approach | Lumi Atelier", "description": "Explore our studio & approach at Lumi Atelier. Discover a personal approach to haircuts, colour and styling, and start a conversation with the studio."}, {"path": "services", "title": "Haircuts colour & finishing | Lumi Atelier", "description": "Explore haircuts colour & finishing at Lumi Atelier. Discover a personal approach to haircuts, colour and styling, and start a conversation with the studio."}, {"path": "gallery", "title": "Hair inspiration gallery | Lumi Atelier", "description": "Explore hair inspiration gallery at Lumi Atelier. Discover a personal approach to haircuts, colour and styling, and start a conversation with the studio."}, {"path": "book", "title": "Request your salon visit | Lumi Atelier", "description": "Explore request your salon visit at Lumi Atelier. Discover a personal approach to haircuts, colour and styling, and start a conversation with the studio."}, {"path": "contact", "title": "Contact the studio | Lumi Atelier", "description": "Explore contact the studio at Lumi Atelier. Discover a personal approach to haircuts, colour and styling, and start a conversation with the studio."}]
+    }
+  }
+} as WebsiteTemplate);
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>

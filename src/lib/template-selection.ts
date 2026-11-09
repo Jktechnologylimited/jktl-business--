@@ -35,6 +35,7 @@ export function templateBusinessType(id: string): BusinessType {
     "nail-culture": "salon",
     "fiora-locks": "salon",
     "fleuri-locks": "salon",
+    "lumi-atelier": "salon",
     "vivante-studio": "salon",
     "nielle-beauty": "general",
     "eclat-tress": "salon",

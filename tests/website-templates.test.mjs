@@ -125,9 +125,9 @@ const { CosmeticsWebsite } = loadTs(
 );
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 219);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 217);
-  assert.equal(new Set(all.map((t) => t.id)).size, 219);
+  assert.equal(all.length, 220);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 218);
+  assert.equal(new Set(all.map((t) => t.id)).size, 220);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
