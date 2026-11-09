@@ -2006,3 +2006,44 @@
     margin: 55px 0 35px !important;
   }
 }
+
+/* Fleuri: airy blue paper, restrained burgundy and a split editorial hero. */
+.site[data-template-id="fleuri-locks"] .tressHero { background:var(--occasion-paper);color:var(--occasion-ink);min-height:680px;display:grid;grid-template-columns:1.1fr 1fr;gap:30px;padding:65px 6%;align-items:start; }
+.site[data-template-id="fleuri-locks"] .tressHero:after { display:none; }
+.site[data-template-id="fleuri-locks"] .tressHero > img { position:relative;grid-row:2;grid-column:1;z-index:0;height:420px;object-position:center 25%; }
+.site[data-template-id="fleuri-locks"] .tressHero > div:first-of-type { grid-column:1/-1;grid-row:1;max-width:900px; }
+.site[data-template-id="fleuri-locks"] .tressHero h1 { font-style:normal;font-size:clamp(48px,6vw,88px);letter-spacing:-.05em; }
+.site[data-template-id="fleuri-locks"] .tressHero > div:last-of-type { grid-column:2;grid-row:2;padding:30px 10%;max-width:450px; }
+.site[data-template-id="fleuri-locks"] .offerings { background:var(--occasion-paper); }
+.site[data-template-id="fleuri-locks"] .about { background:var(--occasion-accent);color:var(--occasion-paper); }
+.site[data-template-id="fleuri-locks"] .footer { background-image:none!important;background-color:var(--occasion-paper);color:var(--occasion-ink); }
+/* Vivante: oversized typography, citrus panels and playful portrait crops. */
+.site[data-template-id="vivante-studio"] { --nail-pop:#e6f59a; }
+.site[data-template-id="vivante-studio"] .header { flex-wrap:wrap; }
+.site[data-template-id="vivante-studio"] .brand { font:500 clamp(30px,6vw,92px)/1 var(--font-body,Arial),sans-serif;letter-spacing:-.07em;text-transform:uppercase;width:100%; }
+.site[data-template-id="vivante-studio"] .hero { min-height:650px;background:#e6f59a;grid-template-columns:.8fr 1.2fr; }
+.site[data-template-id="vivante-studio"] .heroPhoto { left:40%; }
+.site[data-template-id="vivante-studio"] .heroCopy { grid-column:1;position:relative;inset:auto;width:auto;max-width:none;padding:45px 10%;background:#e6f59a;color:var(--occasion-ink); }
+.site[data-template-id="vivante-studio"] .heroCopy h1 { font:500 clamp(40px,4.6vw,74px)/1.04 var(--font-body,Arial),sans-serif;text-transform:uppercase;letter-spacing:-.06em; }
+.site[data-template-id="vivante-studio"] .serviceGrid { grid-template-columns:1fr; }
+.site[data-template-id="vivante-studio"] .serviceCard { display:grid;grid-template-columns:1fr 1fr;gap:30px;border-top:1px solid #74450f44;padding:25px 0; }
+.site[data-template-id="vivante-studio"] .servicePhoto { height:180px;aspect-ratio:auto; }
+.site[data-template-id="vivante-studio"] .about { background:#e6f59a; }
+.site[data-template-id="vivante-studio"] .reviews { border-radius:50% 50% 0 0 / 10% 10% 0 0;background:var(--occasion-accent);color:var(--occasion-paper);padding-top:100px; }
+@media(max-width:700px){
+.site[data-template-id="fleuri-locks"] .tressHero { grid-template-columns:1fr;min-height:0;padding:40px 6%;gap:25px; }
+.site[data-template-id="fleuri-locks"] .tressHero > div:last-of-type { grid-column:1;grid-row:3;padding:0; }
+.site[data-template-id="fleuri-locks"] .tressHero > img { height:380px; }
+.site[data-template-id="vivante-studio"] .brand { font-size:clamp(32px,10vw,55px); }
+.site[data-template-id="vivante-studio"] .hero { display:flex;flex-direction:column;height:auto;min-height:0; }
+.site[data-template-id="vivante-studio"] .heroPhoto { position:relative;left:auto;height:440px;order:2; }
+.site[data-template-id="vivante-studio"] .heroCopy { padding:35px 6%;gap:25px; }
+.site[data-template-id="vivante-studio"] .heroCopy h1 { font-size:46px; }
+.site[data-template-id="vivante-studio"] .serviceCard { grid-template-columns:1fr;gap:18px; }
+}
+.site[data-template-id="vivante-studio"] .header { background:var(--occasion-paper);color:var(--occasion-ink); }
+.site[data-template-id="vivante-studio"] .heroPhoto { position:relative;left:auto;grid-column:2;grid-row:1; }
+.site[data-template-id="vivante-studio"] .heroCopy { grid-row:1;grid-column:1; }
+.site[data-template-id="vivante-studio"] .heroCopy :is(.eyebrow,p) { font-family:var(--font-body,Arial),sans-serif; }
+@media(max-width:700px){.site[data-template-id="vivante-studio"] .heroPhoto { flex:none;width:100%; }.site[data-template-id="vivante-studio"] .heroPhoto img { position:relative; }.site[data-template-id="vivante-studio"] .heroCopy { flex:none;width:100%; }}
+.site[data-template-id="vivante-studio"] .brand { max-width:none;flex-basis:100%; }

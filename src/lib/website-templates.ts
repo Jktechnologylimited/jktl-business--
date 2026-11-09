@@ -4096,6 +4096,568 @@ websiteTemplates.push({
   document: tressDocument,
 });
 
+
+websiteTemplates.push({
+  "id": "fleuri-locks",
+  "name": "Hair Salon — Fleuri Locks",
+  "category": "Beauty & Wellness",
+  "layout": "editorial",
+  "kind": "website",
+  "sourceId": "fleuri-locks",
+  "edition": "Editorial",
+  "sectionOrder": [
+    "about",
+    "offerings",
+    "gallery",
+    "reviews",
+    "feature",
+    "faq",
+    "areas"
+  ],
+  "document": {
+    "version": 1,
+    "brandName": "Fleuri Locks",
+    "eyebrow": "Personal length. Considered texture.",
+    "headline": "The art of subtle\ntransformation.",
+    "intro": "A thoughtful approach to colour, cut and texture. Explore a personal finish with a studio that starts by listening.",
+    "ctaLabel": "Find your perfect match",
+    "accent": "#590c2b",
+    "paper": "#edf3fc",
+    "ink": "#322630",
+    "heroImage": "/template-photos/african/fiora-smile.jpg",
+    "aboutTitle": "Beauty in simplicity.",
+    "aboutText": "Your hair tells its own story. We make space to understand what you love, what you want to change and how your hair fits into everyday life.\n\nFrom a conversation about texture to a thoughtful fitting plan, the process is personal. We’ll discuss the available options, maintenance and next steps before anything is agreed.",
+    "offeringsTitle": "Find your perfect match",
+    "offerings": [
+      {
+        "title": "Signature haircut",
+        "slug": "signature-haircut",
+        "description": "A personal cut conversation shaped around your hair, everyday routine and the finish you love.",
+        "image": "/template-photos/african/fiora-profile.jpg",
+        "price": "Personal quote after consultation",
+        "duration": "Timing agreed at consultation",
+        "benefits": [
+          "Personal hair consultation",
+          "A conversation about blending and placement",
+          "An agreed maintenance plan"
+        ],
+        "preparation": "Tell your stylist about your current hair, existing extensions and any sensitivities before your visit."
+      },
+      {
+        "title": "Considered colour",
+        "slug": "considered-colour",
+        "description": "Explore a shade that feels like you. Ask your stylist about available colour options, suitability and maintenance.",
+        "image": "/template-photos/african/fiora-hero.jpg",
+        "price": "Personal quote after consultation",
+        "duration": "Timing agreed at consultation",
+        "benefits": [
+          "A discussion about the available fitting methods",
+          "Colour and texture planning",
+          "Clear aftercare and appointment advice"
+        ],
+        "preparation": "Share your inspiration and hair history so your stylist can discuss appropriate options with you."
+      },
+      {
+        "title": "Texture & finish",
+        "slug": "texture-finish",
+        "description": "Talk about your natural texture, styling preferences and a considered finish for your next occasion.",
+        "image": "/template-photos/african/fiora-copper.jpg",
+        "price": "Enquire for current options",
+        "duration": "Visit length confirmed on enquiry",
+        "benefits": [
+          "An occasion-led styling conversation",
+          "A personal discussion about your finish",
+          "Guidance on everyday handling"
+        ],
+        "preparation": "Let us know whether you already have a set, and tell us about the occasion you are styling for."
+      }
+    ],
+    "galleryTitle": "A glimpse of your next chapter",
+    "gallery": [
+      {
+        "src": "/template-photos/african/fiora-copper.jpg",
+        "alt": "African woman with long copper-coloured hair in a studio portrait",
+        "category": "Warm tones"
+      },
+      {
+        "src": "/template-photos/african/fiora-profile.jpg",
+        "alt": "African woman with long straight dark hair and a considered natural finish",
+        "category": "Quiet definition"
+      },
+      {
+        "src": "/template-photos/african/fiora-editorial.jpg",
+        "alt": "African woman with long hair in an editorial studio portrait",
+        "category": "Personal expression"
+      },
+      {
+        "src": "/template-photos/african/fiora-smile.jpg",
+        "alt": "Smiling African woman with long dark hair against a light background",
+        "category": "Everyday ease"
+      },
+      {
+        "src": "/template-photos/african/fiora-hero.jpg",
+        "alt": "Close-up portrait showing an African woman’s sleek dark hair",
+        "category": "Your own finish"
+      }
+    ],
+    "featureTitle": "Considered colour. Personal texture.",
+    "featureText": "Explore the possibilities together. Your shade, texture and fitting plan are confirmed with your stylist.",
+    "featureItems": [
+      "Share your inspiration, your routine and the finish you have in mind.",
+      "Explore colour, texture and fitting options with your stylist.",
+      "Agree a personal plan, with clear maintenance and care advice."
+    ],
+    "faqTitle": "Before your new chapter",
+    "faqs": [
+      {
+        "question": "How do I choose a fitting method?",
+        "answer": "Begin with a consultation. Your stylist will discuss your hair, preferences and routine before explaining the available methods, suitability and maintenance."
+      },
+      {
+        "question": "Can I ask about a particular colour or texture?",
+        "answer": "Yes. Share your inspiration when you enquire. Available options, a personal match and any colour work are confirmed with your stylist before a fitting is booked."
+      },
+      {
+        "question": "How do I look after my extensions?",
+        "answer": "Ask your stylist for care instructions for your chosen hair and fitting method. Your maintenance needs and return appointments are discussed as part of your personal plan."
+      }
+    ],
+    "contactTitle": "Ready for your next chapter?",
+    "contactText": "Tell us about the hair you’re dreaming of. Share your ideas, preferred date and the questions you would like to explore.",
+    "logoUrl": "",
+    "serviceAreas": [
+      "Studio visits by appointment"
+    ],
+    "socials": [],
+    "reviews": [],
+    "seoTitle": "Hair Salon — Fleuri Locks | Personal beauty & inspiration",
+    "seoDescription": "A thoughtful approach to colour, cut and texture. Explore a personal finish with a studio that starts by listening. Explore services and contact Fleuri Locks.",
+    "beauty": {
+      "version": 2,
+      "design": "tress",
+      "demoContent": true,
+      "aboutImage": "/template-photos/african/fiora-editorial.jpg",
+      "philosophy": [
+        "A personal conversation before every plan",
+        "Your texture, your colour, your routine",
+        "A considered finish and clear care guidance"
+      ],
+      "stylists": [],
+      "hours": [
+        {
+          "day": "Studio & fitting visits",
+          "hours": "By appointment · ask for current availability"
+        }
+      ],
+      "contact": {
+        "phone": "",
+        "email": "",
+        "address": "",
+        "whatsapp": "",
+        "mapUrl": ""
+      },
+      "pages": [
+        {
+          "path": "",
+          "title": "Personal beauty | Fleuri Locks",
+          "description": "A thoughtful approach to colour, cut and texture. Explore a personal finish with a studio that starts by listening. Start a conversation with Fleuri Locks."
+        },
+        {
+          "path": "about",
+          "title": "Beauty in simplicity. | Fleuri Locks",
+          "description": "A thoughtful approach to colour, cut and texture. Explore a personal finish with a studio that starts by listening. Start a conversation with Fleuri Locks."
+        },
+        {
+          "path": "services",
+          "title": "Find your perfect match | Fleuri Locks",
+          "description": "A thoughtful approach to colour, cut and texture. Explore a personal finish with a studio that starts by listening. Start a conversation with Fleuri Locks."
+        },
+        {
+          "path": "gallery",
+          "title": "A glimpse of your next chapter | Fleuri Locks",
+          "description": "A thoughtful approach to colour, cut and texture. Explore a personal finish with a studio that starts by listening. Start a conversation with Fleuri Locks."
+        },
+        {
+          "path": "book",
+          "title": "Request a studio visit | Fleuri Locks",
+          "description": "A thoughtful approach to colour, cut and texture. Explore a personal finish with a studio that starts by listening. Start a conversation with Fleuri Locks."
+        },
+        {
+          "path": "contact",
+          "title": "Contact the studio | Fleuri Locks",
+          "description": "A thoughtful approach to colour, cut and texture. Explore a personal finish with a studio that starts by listening. Start a conversation with Fleuri Locks."
+        }
+      ]
+    }
+  }
+} as WebsiteTemplate);
+websiteTemplates.push({
+  "id": "nielle-beauty",
+  "name": "Cosmetics Boutique — Nielle Beauty",
+  "category": "Beauty & Wellness",
+  "layout": "catalogue",
+  "kind": "website",
+  "sourceId": "nielle-beauty",
+  "edition": "Editorial",
+  "sectionOrder": [
+    "about",
+    "offerings",
+    "gallery",
+    "reviews",
+    "feature",
+    "faq",
+    "areas"
+  ],
+  "document": {
+    "version": 1,
+    "brandName": "Nielle Beauty",
+    "eyebrow": "Beauty, in your own expression",
+    "headline": "A little colour.\nA lot of you.",
+    "intro": "Explore everyday skin essentials, expressive colour and a finish that feels your own. Discover the edit and ask us about the details.",
+    "ctaLabel": "Explore the collection",
+    "accent": "#3f6554",
+    "paper": "#fafbf8",
+    "ink": "#263b32",
+    "heroImage": "/template-photos/african/glam-colour.jpg",
+    "aboutTitle": "Your own beauty comes first.",
+    "aboutText": "We believe the most interesting beauty routine is your own. A familiar favourite, a new colour, a finish that feels right today.\n\nOur boutique is a place to explore, ask questions and make considered choices. Start with your preferences and discover the details of the products that catch your eye.",
+    "offeringsTitle": "Discover your everyday edit",
+    "offerings": [
+      {
+        "title": "The daily skin edit",
+        "slug": "daily-skin-edit",
+        "category": "Skin",
+        "description": "Explore an everyday skincare selection and ask about the current products, ingredients and directions before choosing what belongs in your routine.",
+        "image": "/template-photos/african/glam-skin.jpg",
+        "price": "Enquire for current products and pricing",
+        "benefits": [
+          "Discover the available skincare edit",
+          "Ask for ingredient and use information",
+          "Confirm the products that suit your preferences"
+        ],
+        "preparation": "Check each product’s directions and ingredients. Ask the boutique about any sensitivities before buying."
+      },
+      {
+        "title": "The soft-finish edit",
+        "slug": "soft-finish-edit",
+        "category": "Complexion",
+        "description": "A starting point for exploring a personal complexion finish. Ask about the current shades, textures and products available from the boutique.",
+        "image": "/template-photos/african/glam-powder.jpg",
+        "price": "Ask about shades and current pricing",
+        "benefits": [
+          "Explore the available complexion products",
+          "Discuss your preferred shade and finish",
+          "Confirm the details before purchasing"
+        ],
+        "preparation": "Tell the boutique about the shade and finish you are looking for. Photograph colours can vary from the actual product."
+      },
+      {
+        "title": "The colour-story lipstick",
+        "slug": "colour-story-lipstick",
+        "category": "Colour",
+        "description": "Find a colour that feels like your own expression. Discover the available lipstick edit and enquire about shades, finishes and product details.",
+        "image": "/template-photos/african/glam-lip.jpg",
+        "price": "Enquire for available shades and prices",
+        "benefits": [
+          "Explore the current lipstick edit",
+          "Ask about colour and finish options",
+          "Confirm availability with the boutique"
+        ],
+        "preparation": "Ask about shade availability and ingredient information before agreeing an order."
+      },
+      {
+        "title": "The expressive eye edit",
+        "slug": "expressive-eye-edit",
+        "category": "Colour",
+        "description": "A little definition or a new colour story. Explore the eye-makeup selection and ask the boutique about the palettes and shades currently available.",
+        "image": "/template-photos/african/glam-eyes.jpg",
+        "price": "Enquire for current selection and pricing",
+        "benefits": [
+          "Discover the eye-makeup collection",
+          "Explore the available colour stories",
+          "Ask for product directions and details"
+        ],
+        "preparation": "Check the product instructions and intended use. Your boutique can confirm the current selection and details."
+      },
+      {
+        "title": "The personal routine edit",
+        "slug": "personal-routine-edit",
+        "category": "Skin",
+        "description": "Begin with a conversation about your everyday favourites. Ask the boutique about the products and routines you want to explore, with details confirmed before purchase.",
+        "image": "/template-photos/african/glam-tubes.jpg",
+        "price": "Personal product enquiry",
+        "benefits": [
+          "Share your preferences and questions",
+          "Discover available product information",
+          "Agree the details with the boutique"
+        ],
+        "preparation": "Let the boutique know which products you already use and what information you would like to understand."
+      },
+      {
+        "title": "The everyday colour set",
+        "slug": "everyday-colour-set",
+        "category": "Complexion",
+        "description": "Explore a considered selection of colour essentials. Ask about the individual products, shades and any available combinations from the boutique.",
+        "image": "/template-photos/african/glam-set.jpg",
+        "price": "Ask for current product and set pricing",
+        "benefits": [
+          "Explore current colour essentials",
+          "Ask what is included in any set",
+          "Confirm shades and availability before ordering"
+        ],
+        "preparation": "Sample imagery is inspiration. The boutique confirms the exact items, quantities and price before an order is agreed."
+      }
+    ],
+    "galleryTitle": "Curated for expression",
+    "gallery": [
+      {
+        "src": "/template-photos/african/glam-complexion.jpg",
+        "alt": "African woman with a considered complexion finish and elegant makeup",
+        "category": "Complexion"
+      },
+      {
+        "src": "/template-photos/african/glam-colour.jpg",
+        "alt": "African woman expressing her style with colourful eye makeup and lipstick",
+        "category": "Colour"
+      },
+      {
+        "src": "/template-photos/african/glam-portrait.jpg",
+        "alt": "African woman with natural Afro hair and a soft beauty look",
+        "category": "Skin"
+      }
+    ],
+    "featureTitle": "A considered edit, a personal finish.",
+    "featureText": "A considered conversation about the products you choose and the way you make them your own.",
+    "featureItems": [
+      "Your expression — Explore colour and finish around your own preferences.",
+      "The details matter — Ask about ingredients, directions and the current selection.",
+      "A personal edit — Confirm products, shades and availability with the boutique."
+    ],
+    "faqTitle": "A few things to know",
+    "faqs": [
+      {
+        "question": "How do I enquire about a product?",
+        "answer": "Choose a product from the collection and send an enquiry. The boutique will confirm the current selection, available shades, exact products and price with you."
+      },
+      {
+        "question": "Can I ask about shades and ingredients?",
+        "answer": "Yes. Ask for the current shade options, full ingredient information and product instructions before purchasing. Studio and screen lighting can affect how colours appear."
+      },
+      {
+        "question": "How are delivery and returns arranged?",
+        "answer": "Ask the boutique to confirm delivery areas, charges, timing and the applicable returns terms before agreeing an order. Sending an enquiry does not create an order or take payment."
+      }
+    ],
+    "contactTitle": "Let’s find your own expression.",
+    "contactText": "Ask about a product, a shade or something you would like to understand. The boutique will help you explore the details.",
+    "logoUrl": "",
+    "serviceAreas": [
+      "Ask the boutique about collection and delivery arrangements"
+    ],
+    "socials": [],
+    "reviews": [],
+    "seoTitle": "Cosmetics Boutique — Nielle Beauty | Personal beauty & inspiration",
+    "seoDescription": "Explore everyday skin essentials, expressive colour and a finish that feels your own. Discover the edit and ask us about the details. Explore services and contact Nielle Beauty.",
+    "design": "cosmetics",
+    "demoContent": true,
+    "aboutImage": "/template-photos/african/glam-complexion.jpg"
+  }
+} as WebsiteTemplate);
+websiteTemplates.push({
+  "id": "vivante-studio",
+  "name": "Beauty Studio — Vivante Hue",
+  "category": "Beauty & Wellness",
+  "layout": "editorial",
+  "kind": "website",
+  "sourceId": "vivante-studio",
+  "edition": "Editorial",
+  "sectionOrder": [
+    "about",
+    "offerings",
+    "gallery",
+    "reviews",
+    "feature",
+    "faq",
+    "areas"
+  ],
+  "document": {
+    "version": 1,
+    "brandName": "Vivante Hue",
+    "eyebrow": "Your beauty, in full colour",
+    "headline": "Your true colours,\nmagnified.",
+    "intro": "A little colour, a fresh perspective and a personal approach to beauty. Bring your own ideas; we’ll explore the possibilities together.",
+    "ctaLabel": "Explore our services",
+    "accent": "#74450f",
+    "paper": "#f1f0ea",
+    "ink": "#50340f",
+    "heroImage": "/template-photos/african/glam-portrait.jpg",
+    "aboutTitle": "The studio of self-expression.",
+    "aboutText": "Your own style deserves a little space. We listen to your ideas, talk about your routine and explore a finish that makes you feel at home in yourself.\n\nAsk about our available services, timing and a personal quote before your visit is confirmed.",
+    "offeringsTitle": "Explore our artistry",
+    "offerings": [
+      {
+        "title": "Nail artistry",
+        "slug": "nail-artistry",
+        "description": "Explore nail shape, finish and your own colour story with a personal studio conversation.",
+        "image": "/template-photos/african/nail-pink.jpg",
+        "price": "Personal quote on enquiry",
+        "duration": "Confirmed at consultation",
+        "benefits": [
+          "Personal consultation",
+          "A clear plan and quote",
+          "Care advice for your chosen service"
+        ],
+        "preparation": "Share your ideas, routine and any sensitivities before your visit."
+      },
+      {
+        "title": "Personal hair styling",
+        "slug": "hair-styling",
+        "description": "Discuss the occasion, your texture and a styling direction that belongs to you.",
+        "image": "/template-photos/african/nail-detail.jpg",
+        "price": "Personal quote on enquiry",
+        "duration": "Confirmed at consultation",
+        "benefits": [
+          "Personal consultation",
+          "A clear plan and quote",
+          "Care advice for your chosen service"
+        ],
+        "preparation": "Share your ideas, routine and any sensitivities before your visit."
+      },
+      {
+        "title": "Colour consultation",
+        "slug": "colour-consultation",
+        "description": "Bring your inspiration and explore a personal palette, available services and your next step.",
+        "image": "/template-photos/african/nail-portrait.jpg",
+        "price": "Personal quote on enquiry",
+        "duration": "Confirmed at consultation",
+        "benefits": [
+          "Personal consultation",
+          "A clear plan and quote",
+          "Care advice for your chosen service"
+        ],
+        "preparation": "Share your ideas, routine and any sensitivities before your visit."
+      }
+    ],
+    "galleryTitle": "The canvas collection",
+    "gallery": [
+      {
+        "src": "/template-photos/african/glam-portrait.jpg",
+        "alt": "African woman with natural textured hair in a beauty portrait",
+        "category": "Personal expression"
+      },
+      {
+        "src": "/template-photos/african/nail-pink.jpg",
+        "alt": "Dark-skinned hand with softly coloured pink nail art",
+        "category": "Colour stories"
+      },
+      {
+        "src": "/template-photos/african/nail-detail.jpg",
+        "alt": "African model’s hand showing a polished metallic manicure",
+        "category": "A little shine"
+      },
+      {
+        "src": "/template-photos/african/nail-portrait.jpg",
+        "alt": "African woman in a white headscarf showing her expressive manicure",
+        "category": "Personal expression"
+      },
+      {
+        "src": "/template-photos/african/nail-care.jpg",
+        "alt": "A nail artist carefully shaping a dark-skinned client’s nails",
+        "category": "The craft"
+      }
+    ],
+    "featureTitle": "Ready for your next expression?",
+    "featureText": "Bring an idea. Find your finish. Make it your own.",
+    "featureItems": [
+      "Show us what caught your eye.",
+      "Agree your shape, finish and design with your artist.",
+      "Leave with personal care guidance for your new set."
+    ],
+    "faqTitle": "Before you take a seat",
+    "faqs": [
+      {
+        "question": "Can I bring my own inspiration?",
+        "answer": "Absolutely. Share a few ideas when you enquire so your artist can discuss the design, appointment time and quote with you."
+      },
+      {
+        "question": "Do I need to remove my current set?",
+        "answer": "Tell us what is currently on your nails. The studio will advise on removal or preparation and confirm any additional time or cost before you book."
+      },
+      {
+        "question": "Is my appointment confirmed when I send a request?",
+        "answer": "Sending a request starts a conversation. The studio confirms availability, your chosen service and any booking arrangements separately."
+      }
+    ],
+    "contactTitle": "Your next set starts here.",
+    "contactText": "Tell us what you’re dreaming of. Share your preferred date and service, and the studio will get back to you with the details.",
+    "logoUrl": "",
+    "serviceAreas": [
+      "Studio visits by appointment"
+    ],
+    "socials": [],
+    "reviews": [],
+    "seoTitle": "Beauty Studio — Vivante Hue | Personal beauty & inspiration",
+    "seoDescription": "A little colour, a fresh perspective and a personal approach to beauty. Bring your own ideas; we’ll explore the possibilities together. Explore services and contact Vivante Hue.",
+    "beauty": {
+      "version": 2,
+      "design": "nail",
+      "demoContent": true,
+      "aboutImage": "/template-photos/african/glam-complexion.jpg",
+      "philosophy": [
+        "Thoughtful prep, expressive finish",
+        "Your ideas, made personal",
+        "A little everyday art"
+      ],
+      "stylists": [],
+      "hours": [
+        {
+          "day": "Studio visits",
+          "hours": "By appointment · ask for current opening hours"
+        }
+      ],
+      "contact": {
+        "phone": "",
+        "email": "",
+        "address": "",
+        "whatsapp": "",
+        "mapUrl": ""
+      },
+      "pages": [
+        {
+          "path": "",
+          "title": "Personal beauty | Vivante Hue",
+          "description": "A little colour, a fresh perspective and a personal approach to beauty. Bring your own ideas; we’ll explore the possibilities together. Start a conversation with Vivante Hue."
+        },
+        {
+          "path": "about",
+          "title": "The studio of self-expression. | Vivante Hue",
+          "description": "A little colour, a fresh perspective and a personal approach to beauty. Bring your own ideas; we’ll explore the possibilities together. Start a conversation with Vivante Hue."
+        },
+        {
+          "path": "services",
+          "title": "Explore our artistry | Vivante Hue",
+          "description": "A little colour, a fresh perspective and a personal approach to beauty. Bring your own ideas; we’ll explore the possibilities together. Start a conversation with Vivante Hue."
+        },
+        {
+          "path": "gallery",
+          "title": "The canvas collection | Vivante Hue",
+          "description": "A little colour, a fresh perspective and a personal approach to beauty. Bring your own ideas; we’ll explore the possibilities together. Start a conversation with Vivante Hue."
+        },
+        {
+          "path": "book",
+          "title": "Request a studio visit | Vivante Hue",
+          "description": "A little colour, a fresh perspective and a personal approach to beauty. Bring your own ideas; we’ll explore the possibilities together. Start a conversation with Vivante Hue."
+        },
+        {
+          "path": "contact",
+          "title": "Contact the studio | Vivante Hue",
+          "description": "A little colour, a fresh perspective and a personal approach to beauty. Bring your own ideas; we’ll explore the possibilities together. Start a conversation with Vivante Hue."
+        }
+      ]
+    }
+  }
+} as WebsiteTemplate);
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>

@@ -340,6 +340,7 @@ export function CosmeticsWebsite({
     <div
       ref={root}
       className={styles.site}
+      data-template-id={template.sourceId || template.id}
       data-layout="catalogue"
       data-cosmetics-template
       style={

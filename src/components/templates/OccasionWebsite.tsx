@@ -504,6 +504,7 @@ export function OccasionWebsite({
       ref={root}
       className={`${styles.site} ${tress ? styles.tress : extensions ? styles.extensions : nail ? styles.nail : styles.bridal}`}
       data-layout={template.layout}
+      data-template-id={template.sourceId || template.id}
       data-occasion-template={
         tress ? "tress" : extensions ? "extensions" : nail ? "nail" : "bridal"
       }
