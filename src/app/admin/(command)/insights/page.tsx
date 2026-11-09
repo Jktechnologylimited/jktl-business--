@@ -2,11 +2,13 @@ import { guardAdminPage } from "@/lib/admin-page-guard";
 import { getAdminSession } from "@/lib/admin-session";
 import { can } from "@/lib/admin-permissions";
 import { GrowthControls } from "@/components/admin/investor/GrowthControls";
+import { REPORT_RANGES } from "@/lib/investor/model";
+import { loadDashboardReport } from "@/lib/investor/dashboard-cache";
+import { CompanyFinanceControls } from "@/components/admin/investor/CompanyFinanceControls";
 import { InvestorDashboard } from "@/components/admin/investor/InvestorDashboard";
 import { ActionForm } from "@/components/distribution/action-form";
 import { generateInvestorReportAction } from "@/lib/actions/investor-report-actions";
 import {
-  loadInvestorReport,
   listInvestorReports,
   periodFromQuery,
   reportsInstalled,
@@ -24,7 +26,7 @@ export default async function Page({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await guardAdminPage("view_insights");
+  await guardAdminPage("view_company_finance");
   const admin = await getAdminSession();
   let period;
   try {
@@ -45,7 +47,7 @@ export default async function Page({
   }
   let report;
   try {
-    report = await loadInvestorReport(period);
+    report = await loadDashboardReport(period.from, period.to);
   } catch {
     return (
       <section>
@@ -78,7 +80,8 @@ export default async function Page({
         <p className="max-w-3xl text-sm leading-relaxed text-ink-muted">
           Registered traction, verified payment evidence and product adoption.
           Charts use recorded data; the definitions explain what is covered.
-          Reports are private and unaudited.
+          Reports are private and unaudited. Dashboard aggregates may be cached
+          for up to 60 seconds; saved reports are read fresh.
         </p>
         <p className="mt-3 text-xs text-ink-muted">
           Current snapshot:{" "}
@@ -89,6 +92,24 @@ export default async function Page({
           {period.previousFrom}–{period.previousTo}.
         </p>
       </header>
+      <form
+        method="get"
+        className="flex flex-wrap items-end gap-3 rounded-xl border border-border p-4"
+      >
+        <label>
+          Reporting period
+          <select name="range" className={input} defaultValue="custom">
+            {REPORT_RANGES.map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="rounded-lg bg-primary p-3 text-on-primary">
+          Use period
+        </button>
+      </form>
       <form
         method="get"
         className="grid gap-4 rounded-2xl border border-border bg-paper p-5 sm:grid-cols-[1fr_1fr_auto]"
@@ -156,6 +177,10 @@ export default async function Page({
         </section>
       )}
       <InvestorDashboard report={report} />
+      {admin &&
+        can(admin.role, "manage_company_finance", admin.permissions) && (
+          <CompanyFinanceControls period={period} />
+        )}
       {admin && can(admin.role, "manage_team", admin.permissions) && (
         <GrowthControls operational />
       )}

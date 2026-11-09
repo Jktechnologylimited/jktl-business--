@@ -240,7 +240,7 @@ test("Growth staff use existing identity, least privilege, approved publishing, 
     const nav = permissions.navFor(session.role, session.permissions);
     assert.deepEqual(
       nav.map((n) => n.href),
-      ["/admin/growth"],
+      ["/admin/knowledge", "/admin/growth"],
     );
     for (const cap of [
       "record_payouts",

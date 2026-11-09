@@ -1,3 +1,5 @@
+/** Existing payer surcharge; changing policy requires a separate approved release. */
+export const INVOICE_PLATFORM_FEE_KOBO = 5000;
 /** A bank has been resolved and attached to the provider's settlement account. */
 export function payoutReady(s: {
   bankCode: string;

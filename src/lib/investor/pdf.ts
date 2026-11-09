@@ -6,6 +6,7 @@ import {
   DEFINITIONS,
   LIMITATIONS,
   monthlySeries,
+  profitabilityResult,
   type InvestorReport,
 } from "./model";
 export async function investorPdf(report: InvestorReport) {
@@ -273,6 +274,10 @@ export async function investorPdf(report: InvestorReport) {
     line("Available/reserved policy commission: " + money(p.available));
     line("Held policy commission: " + money(p.held));
     line("Confirmed policy payouts during period: " + money(p.paidOut));
+    if (p.paidLedger !== undefined)
+      line("Paid policy commission balance: " + money(p.paidLedger));
+    if (p.reversed !== undefined)
+      line("Reversed policy commission: " + money(p.reversed));
   }
   if (report.activation || report.acquisition || report.receivables) {
     newPage("Activation and acquisition");
@@ -365,6 +370,76 @@ export async function investorPdf(report: InvestorReport) {
       line(
         `Unallocated spend ${money(report.acquisitionCosts.data.unallocatedSpend)}. Attribution and cost coverage may be incomplete.`,
       );
+    }
+  }
+  if (
+    report.merchantTransactions ||
+    report.profitability ||
+    report.extendedFunnel
+  ) {
+    newPage("Merchant payments, company costs and activation");
+    if (report.merchantTransactions?.available) {
+      const t = report.merchantTransactions.data;
+      line(
+        `Merchant GPV ${money(t.gpv)}; payer total ${money(t.payerTotal)}; successful transactions ${t.successful}.`,
+        11,
+        true,
+      );
+      line(
+        `JKTL gross fees ${money(t.grossFees)}; recognised fee evidence ${money(t.earnedFees)}; held ${money(t.heldFees)}; reversals ${money(t.adjustments)}.`,
+      );
+      line(
+        `Known processing costs ${money(t.processorCosts)}; missing cost records ${t.missingProcessorCosts}; contribution ${t.contribution === null ? "unavailable" : money(t.contribution)}.`,
+      );
+      line(
+        `Refunded payments ${t.refundTransactions}; payer refunds ${money(t.payerRefunds)}; disputed payments ${t.disputedTransactions}; uncertain/pending checkouts ${t.pendingAttempts}; confirmed failed attempts ${t.failedAttempts}.`,
+      );
+      line(
+        "Merchant GPV belongs to businesses and is excluded from company revenue and ARR. Settlement is not inferred.",
+      );
+    }
+    if (report.profitability?.available) {
+      const p = report.profitability.data,
+        r = profitabilityResult(p);
+      line("Company results: recorded-receipts basis, unaudited", 13, true);
+      line(
+        `Covered receipts and fees ${money(r.revenue)}; direct costs ${money(p.directCosts)}; operating expenses ${money(p.operatingExpenses)}; recorded taxes ${money(p.taxes)}.`,
+      );
+      line(
+        `Gross result ${r.gross === null ? "unavailable" : money(r.gross)}; operating result ${r.operating === null ? "unavailable" : money(r.operating)}; net result ${r.net === null ? "unavailable" : money(r.net)}.`,
+      );
+      line(
+        "Incomplete period coverage yields unavailable profit rather than treating missing costs as zero.",
+      );
+    }
+    if (report.extendedFunnel?.available) {
+      line("Forward-observed activation stages", 13, true);
+      for (const s of report.extendedFunnel.data.stages)
+        line(`${s.stage}: ${s.people} observed account/browser identifiers.`);
+      line("Independent stage counts; consent/retention coverage applies.");
+    }
+    if (report.retention?.available) {
+      const r = report.retention.data;
+      line(
+        `Retention snapshot coverage: ${r.sufficient ? "comparable" : "insufficient"}; baseline ${r.baselineDay || "unavailable"}; end ${r.endDay || "unavailable"}.`,
+      );
+      if (r.sufficient && r.startingMrr > 0)
+        line(
+          `Net revenue retention ${Math.round((r.retainedMrr / r.startingMrr) * 10000) / 100}%; observed customer churn ${r.churnedCustomers}/${r.startingCustomers}.`,
+        );
+    }
+    if (report.subscriptionLifecycle?.available) {
+      const s = report.subscriptionLifecycle.data;
+      line(
+        `Website subscription period evidence: ${s.new} first payments, ${s.renewed} renewals, ${s.upgraded} higher-rate plan changes, ${s.downgraded} lower-rate plan changes; observed renewal failures ${s.failedRenewals}.`,
+      );
+    }
+    if (report.campaigns?.available) {
+      line("Approved retained campaign attribution", 13, true);
+      for (const c of report.campaigns.data.campaigns)
+        line(
+          `${c.name}: ${c.registered} registrations; ${c.published} published; ${c.paying} paying; receipts ${money(c.receipts)}; transaction fees ${money(c.transactionFees)}.`,
+        );
     }
   }
   newPage("Definitions, coverage and management notes");

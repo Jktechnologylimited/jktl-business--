@@ -1,4 +1,6 @@
 import "server-only";
+import { INVOICE_PLATFORM_FEE_KOBO } from "@/lib/invoicing/policy";
+export { INVOICE_PLATFORM_FEE_KOBO };
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const BASE_URL = "https://api.paystack.co";
@@ -303,11 +305,6 @@ export async function chargeAuthorization(params: {
 // details a business enters once, and src/app/pay/[id] for the public
 // checkout page this all supports.
 
-/** Flat fee, in kobo, added on top of every invoice paid through the
- * online link — the payer bears it, so the business always receives the
- * full invoice amount. ₦50. */
-export const INVOICE_PLATFORM_FEE_KOBO = 5000;
-
 export interface PaystackBank {
   code: string;
   name: string;
@@ -397,6 +394,7 @@ export async function updateSubaccountBank(
  * whole point of the surcharge is that the business receives the full
  * invoice amount. */
 export async function initializeInvoicePayment(params: {
+  reference?: string;
   email: string;
   amountKobo: number;
   subaccountCode: string;
@@ -411,6 +409,7 @@ export async function initializeInvoicePayment(params: {
   }>("/transaction/initialize", {
     method: "POST",
     body: JSON.stringify({
+      reference: params.reference,
       email: params.email,
       amount: params.amountKobo,
       currency: "NGN",

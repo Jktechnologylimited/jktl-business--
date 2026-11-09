@@ -1,4 +1,5 @@
 "use client";
+import { GrowthIntent } from "@/components/onboarding/GrowthIntent";
 import { TemplateGallery } from "@/components/templates/TemplateGallery";
 import { updateBusinessProfileAction } from "@/lib/actions/business-actions";
 import { emailDestination } from "@/lib/product-intent";
@@ -130,6 +131,7 @@ function OnboardingForm() {
         step === 1 ? "w-full max-w-6xl" : "max-w-md",
       )}
     >
+      {selectedTemplate && <GrowthIntent event="template_selected" />}
       <div className="flex items-center gap-2">
         <JktlMark className="size-8" />
         <span className="font-display text-sm font-semibold text-ink">

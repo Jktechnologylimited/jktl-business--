@@ -21,7 +21,13 @@ export function load(file, deps = {}) {
         },
       },
     ).outputText,
-  )((n) => (n in deps ? deps[n] : require(n)), m, m.exports);
+   )((n) => {
+    if(n in deps)return deps[n];
+    // Pure SQL modules only: never auto-resolve server adapters into live bindings.
+    if(n==='./receipt-sql'||n==='@/lib/investor/receipt-sql')return load('src/lib/investor/receipt-sql.ts');
+    if(n==='@/lib/company-finance/queries')return load('src/lib/company-finance/queries.ts');
+    return require(n);
+  }, m, m.exports);
   return m.exports;
 }
 export async function fixture() {

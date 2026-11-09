@@ -1,4 +1,5 @@
 "use client";
+import { GrowthIntent } from "@/components/onboarding/GrowthIntent";
 import { authSearchParams, type AuthQuery } from "@/lib/auth-page";
 import { ThemeControl } from "@/components/settings/theme-control";
 import { ReferralConsent } from "@/components/distribution/referral-consent";
@@ -63,6 +64,7 @@ function SignupForm({ searchParams }: { searchParams: AuthQuery }) {
   }
   return (
     <div className={styles.page}>
+      <GrowthIntent event="registration_started" />
       <header className={styles.topbar} style={{ flexWrap: "wrap", gap: 16 }}>
         <a href="https://jktl.com.ng" className={styles.brand}>
           <Image src="/jktl-logo.png" alt="" width={38} height={38} priority />

@@ -1,3 +1,4 @@
+import * as invoicePolicy from "../src/lib/invoicing/policy.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -6,6 +7,7 @@ import { PGlite } from "@electric-sql/pglite";
 import * as pricing from "../src/lib/website-pricing.ts";
 import * as billing from "../src/lib/billing.ts";
 function load(file, deps) {
+  deps = { "@/lib/invoicing/policy": invoicePolicy, ...deps };
   const code = ts.transpileModule(
     readFileSync(new URL(file, import.meta.url), "utf8"),
     {
@@ -398,6 +400,7 @@ test("signed website webhook lifecycle: retries early attachment, confirms renew
         "next/server": next,
         "@/lib/db/client": { getSql: () => sql },
         "@/lib/db/organizations": { getInfrastructure: async () => null },
+        "@/lib/company-finance/payments": {handleMerchantPaymentEvent:async()=>false},
         "@/lib/website-billing-webhooks": webhooks,
         "@/lib/business-email/service": { handleEmailEvent: async () => false },
         "@/lib/custom/service": { handleCustomEvent: async () => false },

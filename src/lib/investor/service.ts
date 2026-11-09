@@ -6,6 +6,7 @@ import {
   assertSafeNumbers,
   canonicalJson,
   reportPeriod,
+  presetPeriod,
   type InvestorReport,
   type Period,
 } from "./model";
@@ -153,6 +154,8 @@ export async function readInvestorReport(id: string) {
 export function periodFromQuery(
   query: Record<string, string | string[] | undefined>,
 ) {
+  if (typeof query.range === "string" && query.range !== "custom")
+    return presetPeriod(query.range);
   return reportPeriod(
     typeof query.from === "string" ? query.from : undefined,
     typeof query.to === "string" ? query.to : undefined,

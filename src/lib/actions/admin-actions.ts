@@ -42,7 +42,7 @@ import {
   type AdminTeamMember,
 } from "@/lib/db/admin-auth";
 import type { AdminUser } from "@/lib/db/admin-auth";
-import type { AdminRole } from "@/lib/admin-permissions";
+import { adminLandingPath, type AdminRole } from "@/lib/admin-permissions";
 import { firstYearValueKobo } from "@/lib/affiliate-commission";
 import {
   sendPartnerApprovedEmail,
@@ -65,14 +65,7 @@ function appOrigin(): string {
   return `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || "jktl.com.ng"}`;
 }
 
-/**
- * Signs an admin in and tells the caller **where to go next**.
- *
- * It used to return nothing, and the login page pushed everyone to `/admin` —
- * which requires "view businesses". An affiliate manager or analyst therefore
- * landed on a page their role cannot open. `/admin/insights` is the one page all
- * three roles share, so it is the safe landing for everyone.
- */
+/** Signs a team member in and selects a page permitted by their effective role. */
 export async function adminLoginAction(
   email: string,
   password: string,
@@ -92,14 +85,7 @@ export async function adminLoginAction(
     return {
       ok: true,
       data: {
-        path:
-          admin.role === "growth_gaming_lead"
-            ? "/admin/growth"
-            : admin.role === "support"
-              ? "/admin/support"
-              : admin.role === "editor" || admin.role === "writer"
-                ? "/admin/content"
-                : "/admin/insights",
+        path: adminLandingPath(admin.role, admin.permissions),
       },
     };
   } catch (err) {

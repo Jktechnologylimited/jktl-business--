@@ -5,6 +5,7 @@ import { reportPeriod } from "@/lib/investor/model";
 import { saveInvestorReport } from "@/lib/investor/service";
 export async function generateInvestorReportAction(form: FormData) {
   const actor = await requireAdminCapability("export_insights");
+  await requireAdminCapability("view_company_finance");
   const period = reportPeriod(
     String(form.get("from") || ""),
     String(form.get("to") || ""),

@@ -1,4 +1,5 @@
 "use client";
+import { configureFinanceAnalystAction } from "@/lib/actions/company-finance-actions";
 import {RecordDetailsEditor} from "./record-details-editor";
 
 import { ActionForm } from "@/components/distribution/action-form";
@@ -188,6 +189,7 @@ export function TeamManager({ team }: { team: AdminTeamMember[] }) {
                 </Button>
               </div>
               <RecordDetailsEditor kind="team" id={member.id} />
+              {member.role === "analyst" && <ActionForm action={configureFinanceAnalystAction}><input type="hidden" name="id" value={member.id}/><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" defaultChecked={can(member.role,"view_company_finance",member.permissions)}/> Allow sensitive company-wide finance reports (read only)</label><button className="mt-2 text-primary underline">Save finance access</button></ActionForm>}
               {["writer", "editor"].includes(member.role) && (
                 <EditorialPermissions member={member} />
               )}

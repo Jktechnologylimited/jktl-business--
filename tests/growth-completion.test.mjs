@@ -314,6 +314,7 @@ test("public analytics rejects foreign origins and unsafe paths, writes no priva
   const next = await import("next/server.js");
   let writes = [];
   const route = load("src/app/api/growth/visit/route.ts", {
+    "@/lib/growth/funnel": { recordConsentedFunnel: async () => {} },
     "next/server": next,
     "@/lib/custom/service": {
       query: async (s, p = []) => {

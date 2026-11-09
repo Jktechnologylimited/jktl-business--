@@ -15,7 +15,7 @@ export default async function Page({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await guardAdminPage("view_insights");
+  await guardAdminPage("view_company_finance");
   const report = await readInvestorReport((await params).id);
   if (!report) notFound();
   const actor = await getAdminSession(),

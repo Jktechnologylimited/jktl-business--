@@ -1,3 +1,4 @@
+import * as invoicePolicy from "../src/lib/invoicing/policy.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -9,6 +10,7 @@ import * as model from "../src/lib/domains/model.ts";
 import { can } from "../src/lib/admin-permissions.ts";
 const require = createRequire(import.meta.url);
 function load(file, deps) {
+  deps = { "@/lib/invoicing/policy": invoicePolicy, ...deps };
   const code = ts.transpileModule(
     readFileSync(new URL(file, import.meta.url), "utf8"),
     {
@@ -865,7 +867,8 @@ test("availability, checkout, webhook retries, admin tasks and website connectio
           },
           "@/lib/custom/service": { handleCustomEvent: async () => false },
           "@/lib/domains/service": service,
-          "@/lib/website-billing-webhooks": {
+          "@/lib/company-finance/payments": {handleMerchantPaymentEvent:async()=>false},
+        "@/lib/website-billing-webhooks": {
             handleWebsiteBillingEvent: async () => {
               legacy++;
               return false;

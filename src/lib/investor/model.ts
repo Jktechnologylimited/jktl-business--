@@ -74,6 +74,8 @@ export type Partners = {
   available: number;
   held: number;
   paidOut: number;
+  reversed?: number;
+  paidLedger?: number;
 };
 export type Portfolio = {
   customProjects: number;
@@ -124,6 +126,62 @@ export type InvestorReport = {
   partners: Section<Partners>;
   portfolio: Section<Portfolio>;
   // Optional to keep existing immutable report snapshots readable.
+  executiveInventory?: Section<{
+    registered: number;
+    newRegistrations: number;
+    websitesCreated: number;
+    websitesPublished: number;
+    freeWebsiteAccounts: number;
+    paidCustomers: number;
+    paidServices: number;
+    recurringSnapshot: string | null;
+  }>;
+  retention?: Section<{
+    baselineDay: string | null;
+    endDay: string | null;
+    sufficient: boolean;
+    startingMrr: number;
+    retainedMrr: number;
+    startingCustomers: number;
+    churnedCustomers: number;
+    lostMrr: number;
+  }>;
+  channelFinancials?: Section<{
+    recurringSnapshot: string | null;
+    sources: { name: string; programme: string; mrr: number; fees: number }[];
+  }>;
+  extendedFunnel?: Section<{
+    cohort: { stage: string; n: number; reached: number }[];
+    cohortBrowsers: number;
+    stages: { stage: string; n: number; people: number; events: number }[];
+    activeBusinesses: number;
+    trackingSince: string;
+  }>;
+  subscriptionLifecycle?: Section<{
+    new: number;
+    renewed: number;
+    upgraded: number;
+    downgraded: number;
+    currentCancelled: number;
+    currentExpired: number;
+    failedRenewals: number;
+    observedCancellations: number;
+    plans: { plan_id: string; receipts: number; payments: number }[];
+  }>;
+  campaigns?: Section<{
+    campaigns: {
+      id: string;
+      name: string;
+      browsers: number;
+      registered: number;
+      published: number;
+      paying: number;
+      receipts: number;
+      transactionFees: number;
+    }[];
+  }>;
+  merchantTransactions?: Section<MerchantTransactions>;
+  profitability?: Section<ProfitabilityData>;
   collections?: Section<{
     gross: number;
     transactions: number;
@@ -275,6 +333,19 @@ export function assertSafeNumbers(value: unknown) {
 }
 export const DEFINITIONS = [
   [
+    "Merchant GPV and fees",
+    "Merchant GPV is successful live NGN invoice principal, excluding JKTL's surcharge. Payer total includes both. Merchant money never becomes JKTL revenue. Fees require original split evidence or a controlled evidenced confirmation; disputed, refunded or mismatched payments are held until allocation is reconciled. Processing charges are evidenced amounts, not estimated percentages. Settlement is not inferred from payment success.",
+  ],
+  [
+    "Company management profitability",
+    "Recorded retained company receipts plus eligible merchant fees, less recorded direct costs, operating expenses and taxes. Results use the existing recorded-receipts basis rather than full accrual recognition. Profit is unavailable without current owner-confirmed period coverage and known processing/risk evidence. Acquisition spend, paid policy commissions and recorded wholesale costs are reused; tenant expenses are excluded. Corrections append reversals, never rewrite historical amounts.",
+  ],
+  [
+    "Expanded activation",
+    "Eleven forward-recorded stages combine consented browser intent and verified account changes. Independent period counts are not one conversion cohort. The retained consenting-gallery cohort requires preceding stage signals; skipped steps or missing signals are coverage gaps, not proof of abandonment. No pre-installation path history or unknown UTM source is invented.",
+  ],
+
+  [
     "Verified covered recurring revenue",
     "Website plans, paid licensed Business Email matched to current orders, accepted active recurring Custom services with settled current invoices, and explicitly reconciled legacy hosting payments. Annual values normalize over their actual periods. Ambiguous overlap and missing payment evidence are excluded and disclosed. This is covered run-rate, not all-company recognized revenue.",
   ],
@@ -343,7 +414,7 @@ export const LIMITATIONS = [
   "Unaudited management information, not audited financial statements or a valuation.",
   "Provider live/test mode is not uniformly stored across these ledgers. Reconcile live-mode provider and bank statements before external circulation.",
   "Receipt coverage excludes standalone legacy hosting, paused AI-receptionist schedules, offline payments not recorded with evidence, and services billed outside this database.",
-  "Fees, tax, payroll, wholesale costs and complete operating expenses are not consolidated: gross margin, profit, burn and runway are unavailable.",
+  "Company financial results require owner-confirmed period coverage and actual cost evidence. They use recorded receipts, not full accrual accounting. Unallocated per-customer/plan contribution, burn and runway remain unavailable.",
   "Platform-wide unique users, DAU/MAU, guest-game traffic, retention and LTV are unavailable. Conversion covers consenting browsers only. CAC uses evidenced, attributed costs and first retained payments in the selected period; cost coverage may be incomplete.",
   "Historical MRR before installation is not reconstructed. Consecutive daily evidence snapshots measure observed service run-rate movements going forward, not cancellation intent or recognized accounting revenue.",
 ];
@@ -386,6 +457,27 @@ export function reportCsv(report: InvestorReport) {
             "available",
             "held",
             "paidOut",
+            "reversed",
+            "paidLedger",
+            "gpv",
+            "payerTotal",
+            "grossFees",
+            "earnedFees",
+            "heldFees",
+            "adjustments",
+            "processorCosts",
+            "contribution",
+            "previousGpv",
+            "previousFees",
+            "payerRefunds",
+            "recordedCompanyReceipts",
+            "merchantFeeRevenue",
+            "directCosts",
+            "operatingExpenses",
+            "taxes",
+            "startingMrr",
+            "retainedMrr",
+            "lostMrr",
             "legacyGross",
             "spend",
             "cac",
@@ -401,6 +493,15 @@ export function reportCsv(report: InvestorReport) {
             ? "integer NGN kobo"
             : "count",
         ]);
+      else if (typeof value === "boolean")
+        rows.push([
+          key,
+          metric,
+          value ? "true" : "false",
+          "evidence completeness",
+        ]);
+      else if (value === null)
+        rows.push([key, metric, "Unavailable", "missing evidence"]);
       else if (typeof value === "string")
         rows.push([key, metric, value, "source metadata"]);
       else if (Array.isArray(value) && value.length) {
@@ -419,6 +520,11 @@ export function reportCsv(report: InvestorReport) {
               "net",
               "spend",
               "cac",
+              "gpv",
+              "fees",
+              "cost",
+              "receipts",
+              "transactionFees",
             ].includes(column)
               ? column + " (NGN kobo)"
               : column,
@@ -430,9 +536,135 @@ export function reportCsv(report: InvestorReport) {
       }
     }
   }
+  if (report.profitability?.available) {
+    const p = profitabilityResult(report.profitability.data);
+    rows.push(
+      [],
+      [
+        "Company management results",
+        "Recorded-receipts basis; coverage required",
+      ],
+    );
+    for (const [key, value] of Object.entries(p))
+      rows.push([
+        "profitability",
+        key,
+        value === null
+          ? "Unavailable — incomplete coverage or denominator"
+          : value,
+        key.endsWith("Margin") ? "percent" : "integer NGN kobo",
+      ]);
+  }
   rows.push([], ["Management notes", report.notes], [], ["Definitions"]);
   for (const entry of DEFINITIONS) rows.push(entry);
   rows.push([], ["Limitations"]);
   for (const text of LIMITATIONS) rows.push([text]);
   return "\uFEFF" + rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
 }
+
+export const REPORT_RANGES = [
+  ["today", "Today"],
+  ["yesterday", "Yesterday"],
+  ["7days", "Last 7 days"],
+  ["30days", "Last 30 days"],
+  ["month", "This month"],
+  ["last-month", "Last month"],
+  ["year", "This year"],
+  ["custom", "Custom date range"],
+] as const;
+export function presetPeriod(range: string, now = new Date()): Period {
+  const today = watDay(now),
+    d = new Date(today + "T00:00:00Z"),
+    day = (x: Date) => x.toISOString().slice(0, 10);
+  let from = today,
+    to = today;
+  if (range === "yesterday") {
+    d.setUTCDate(d.getUTCDate() - 1);
+    from = to = day(d);
+  } else if (range === "7days" || range === "30days") {
+    d.setUTCDate(d.getUTCDate() - (range === "7days" ? 6 : 29));
+    from = day(d);
+  } else if (range === "month") {
+    from = today.slice(0, 8) + "01";
+  } else if (range === "last-month") {
+    d.setUTCDate(0);
+    to = day(d);
+    d.setUTCDate(1);
+    from = day(d);
+  } else if (range === "year") {
+    from = today.slice(0, 4) + "-01-01";
+  } else if (range !== "today")
+    throw Error("Choose a supported reporting period.");
+  return reportPeriod(from, to, now);
+}
+export type ProfitabilityData = {
+  recordedCompanyReceipts: number;
+  merchantFeeRevenue: number;
+  directCosts: number;
+  operatingExpenses: number;
+  taxes: number;
+  revenueComplete: boolean;
+  directComplete: boolean;
+  opexComplete: boolean;
+  taxComplete: boolean;
+  streams: { product: string; receipts: number }[];
+  costCategories: {
+    category_id: string;
+    classification: string;
+    cost: number;
+  }[];
+};
+export function profitabilityResult(p: ProfitabilityData) {
+  const revenue = p.recordedCompanyReceipts + p.merchantFeeRevenue,
+    gross =
+      p.revenueComplete && p.directComplete ? revenue - p.directCosts : null,
+    operating =
+      gross !== null && p.opexComplete ? gross - p.operatingExpenses : null,
+    net = operating !== null && p.taxComplete ? operating - p.taxes : null;
+  return {
+    revenue,
+    gross,
+    operating,
+    net,
+    grossMargin:
+      gross !== null && revenue > 0
+        ? Math.round((gross / revenue) * 10000) / 100
+        : null,
+    operatingMargin:
+      operating !== null && revenue > 0
+        ? Math.round((operating / revenue) * 10000) / 100
+        : null,
+    netMargin:
+      net !== null && revenue > 0
+        ? Math.round((net / revenue) * 10000) / 100
+        : null,
+  };
+}
+export type MerchantTransactions = {
+  gpv: number;
+  payerTotal: number;
+  successful: number;
+  grossFees: number;
+  adjustments: number;
+  earnedFees: number;
+  heldFees: number;
+  reviewCount: number;
+  processorCosts: number;
+  missingProcessorCosts: number;
+  contribution: number | null;
+  previousGpv: number;
+  previousFees: number;
+  refundTransactions: number;
+  payerRefunds: number;
+  disputedTransactions: number;
+  pendingAttempts: number;
+  failedAttempts: number;
+  excludedMode: number;
+  series: { day: string; gpv: number; fees: number }[];
+  bySource: {
+    source: string;
+    transactions: number;
+    gpv: number;
+    fees: number;
+  }[];
+};

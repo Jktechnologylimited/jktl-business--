@@ -17,6 +17,7 @@ export async function GET(
       { status: 401 },
     );
   if (
+    !can(actor.role, "view_company_finance", actor.permissions) ||
     !can(actor.role, "view_insights", actor.permissions) ||
     !can(actor.role, "export_insights", actor.permissions)
   )

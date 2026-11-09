@@ -26,8 +26,10 @@ export default async function PaymentCallbackPage({
 
   let status: "success" | "pending" | "failed" = "pending";
   if (reference) {
-    const result = await verifyInvoicePaymentAction(reference);
-    if (result.ok) status = result.data.status === "success" ? "success" : "failed";
+    const result = await verifyInvoicePaymentAction(reference, id);
+    if (result.ok)
+      status = result.data.status === "success" ? "success"
+        : result.data.status === "failed" ? "failed" : "pending";
   }
 
   return (
@@ -41,7 +43,7 @@ export default async function PaymentCallbackPage({
       ) : status === "failed" ? (
         <>
           <h1 className="font-display text-xl font-bold text-ink">Payment didn&apos;t go through</h1>
-          <p className="text-sm text-ink-muted">Nothing was charged. You can go back and try again.</p>
+          <p className="text-sm text-ink-muted">The provider reported a failed payment. If your bank shows a charge, contact support before attempting another payment.</p>
           <Link href={`/pay/${id}`} className="text-sm font-medium text-primary">
             Try again
           </Link>
@@ -49,7 +51,7 @@ export default async function PaymentCallbackPage({
       ) : (
         <>
           <h1 className="font-display text-xl font-bold text-ink">Confirming your payment…</h1>
-          <p className="text-sm text-ink-muted">This can take a moment. You can close this page — you&apos;ll get a confirmation once it&apos;s done.</p>
+          <p className="text-sm text-ink-muted">This can take a moment. Check your payment reference with the business or support if confirmation is delayed. Avoid starting a duplicate payment.</p>
         </>
       )}
     </div>

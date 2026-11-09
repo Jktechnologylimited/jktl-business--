@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 
 import {
   ADMIN_NAV,
+  adminLandingPath,
   ROLE_DESCRIPTION,
   ROLE_LABEL,
   can,
@@ -102,12 +103,12 @@ test("navigation is filtered by capability, and never empty", () => {
     "Emails",
     "Distribution",
     "Partners",
-    "Insights",
     "Affiliates",
   ]);
 
   const analystNav = navFor("analyst").map((i) => i.label);
-  assert.deepEqual(analystNav, ["Knowledge base", "Insights"]);
+  assert.deepEqual(analystNav, ["Knowledge base"]);
+  assert.ok(navFor("analyst", {view_company_finance: true}).some(i => i.label === "Insights"));
 
   // Every role can reach at least one page, or signing in would be a dead end.
   for (const role of ["owner", "affiliate_manager", "analyst"]) {
@@ -164,4 +165,12 @@ test("credential actions are owner-level, not affiliate-manager level", () => {
     assert.equal(can("affiliate_manager", capability), false);
     assert.equal(can("analyst", capability), false);
   }
+});
+
+test("restricted company finance access never creates a sign-in redirect loop",()=>{
+ assert.equal(adminLandingPath('owner'),'/admin/insights');
+ assert.equal(adminLandingPath('analyst'),'/admin/knowledge');
+ assert.equal(adminLandingPath('analyst',{view_company_finance:true}),'/admin/insights');
+ assert.equal(adminLandingPath('affiliate_manager'),'/admin/affiliates');
+ assert.equal(adminLandingPath('support'),'/admin/support');
 });

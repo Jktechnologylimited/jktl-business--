@@ -66,9 +66,12 @@ export async function POST(req: NextRequest) {
       return r;
     }
     const pathname = publicGrowthPath(body.path);
+    const intent = ["registration_started", "template_selected"].includes(
+      body.event,
+    );
     if (
       body.consent !== true ||
-      !pathname ||
+      (!pathname && !intent) ||
       req.headers.get("sec-gpc") === "1" ||
       req.headers.get("dnt") === "1"
     )
@@ -92,13 +95,17 @@ export async function POST(req: NextRequest) {
       existing?.id ||
       (await query("INSERT INTO growth_visits DEFAULT VALUES RETURNING id"))[0]
         .id;
-    await query(
-      "INSERT INTO growth_visit_pages(visit_id,path) VALUES($1,$2) ON CONFLICT DO NOTHING",
-      [id, pathname],
-    );
+    if (pathname)
+      await query(
+        "INSERT INTO growth_visit_pages(visit_id,path) VALUES($1,$2) ON CONFLICT DO NOTHING",
+        [id, pathname],
+      );
     await query("UPDATE growth_visits SET last_seen_at=now() WHERE id=$1", [
       id,
     ]);
+    await import("@/lib/growth/funnel").then((m) =>
+      m.recordConsentedFunnel(String(id), pathname, body.event, body.utm),
+    );
     const r = reply({ ok: true });
     if (!existing)
       r.cookies.set(VISIT_COOKIE, String(id), {

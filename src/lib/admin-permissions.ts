@@ -66,6 +66,8 @@ export type AdminCapability =
   | "record_payouts"
   | "run_lead_engine"
   | "import_leads"
+  | "manage_company_finance"
+  | "view_company_finance"
   | "view_insights"
   | "view_knowledge"
   | "export_insights"
@@ -123,6 +125,9 @@ export function can(
   overrides: Record<string, boolean> = {},
 ): boolean {
   if (role === "owner") return true;
+  if (capability === "view_company_finance")
+    return role === "analyst" && overrides.view_company_finance === true;
+  if (capability === "manage_company_finance") return false;
   if (capability === "view_knowledge") return role in MATRIX;
   if (
     role === "editor" &&
@@ -177,16 +182,25 @@ export const ROLE_DESCRIPTION: Record<AdminRole, string> = {
     "Everything: businesses, broadcasts, the lead engine, money and team accounts.",
   affiliate_manager:
     "The partner programme: approve or decline applications, record payouts, and see the reports.",
-  analyst: "Read-only. Can see the insight reports and change nothing.",
+  analyst:
+    "Read-only. An Owner must explicitly grant access to sensitive company financial reports. Cannot change financial or customer records.",
 };
 
-/**
- * Where to send somebody after sign-in.
- *
- * Every role lands on insights, and that is not laziness: it is the one page all
- * three can see, so there is no redirect loop and no 403 greeting. A role exists
- * that cannot see it? Then this is the line to change.
- */
+/** Choose a permitted landing page; company reports require explicit access. */
+export function adminLandingPath(
+  role: AdminRole,
+  permissions: Record<string, boolean> = {},
+) {
+  if (can(role, "view_company_finance", permissions)) return "/admin/insights";
+  if (can(role, "growth_workspace", permissions)) return "/admin/growth";
+  if (can(role, "manage_support", permissions)) return "/admin/support";
+  if (can(role, "manage_content", permissions)) return "/admin/content";
+  if (can(role, "manage_affiliates", permissions)) return "/admin/affiliates";
+  return can(role, "view_knowledge", permissions)
+    ? "/admin/knowledge"
+    : "/admin/login";
+}
+/** Owner's default; use adminLandingPath for authenticated role routing. */
 export const LANDING_PATH = "/admin/insights";
 
 export interface AdminNavItem {
@@ -204,8 +218,16 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
-  {href:"/admin/knowledge",label:"Knowledge base",capability:"view_knowledge"},
-  {href:"/admin/chatbot",label:"AI Chatbot",capability:"manage_chatbots"},
+  {
+    href: "/admin/knowledge",
+    label: "Knowledge base",
+    capability: "view_knowledge",
+  },
+  {
+    href: "/admin/chatbot",
+    label: "AI Chatbot",
+    capability: "manage_chatbots",
+  },
   {
     href: "/admin/emails",
     label: "Emails",
@@ -261,7 +283,11 @@ export const ADMIN_NAV: AdminNavItem[] = [
     label: "Editorial",
     capability: "manage_content",
   },
-  { href: "/admin/insights", label: "Insights", capability: "view_insights" },
+  {
+    href: "/admin/insights",
+    label: "Insights",
+    capability: "view_company_finance",
+  },
   {
     href: "/admin/affiliates",
     label: "Affiliates",

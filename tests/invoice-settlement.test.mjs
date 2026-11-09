@@ -195,7 +195,7 @@ test("provider requests use settlement_bank and split payment into only the save
     };
   };
   try {
-    const p = load("src/lib/paystack.ts", { "server-only": {} });
+    const p = load("src/lib/paystack.ts", { "server-only": {}, "@/lib/invoicing/policy": policy });
     await p.createSubaccount({
       businessName: "Fixture Business",
       bankCode: "058",

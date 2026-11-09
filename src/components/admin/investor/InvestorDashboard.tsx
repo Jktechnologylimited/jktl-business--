@@ -1,4 +1,6 @@
 "use client";
+import { ActivationIntelligence } from "./ActivationIntelligence";
+import { CompanyFinancePanel } from "./CompanyFinancePanel";
 import { RevenueIntelligence } from "./RevenueIntelligence";
 import { GrowthOverview } from "./GrowthOverview";
 import {
@@ -97,6 +99,8 @@ export function InvestorDashboard({ report }: { report: InvestorReport }) {
     <div className="space-y-6 text-ink">
       <GrowthOverview report={report} />
       <RevenueIntelligence report={report} />
+      <CompanyFinancePanel report={report} />
+      <ActivationIntelligence report={report} />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Tile
           label="Registered businesses · current"
@@ -419,6 +423,8 @@ export function InvestorDashboard({ report }: { report: InvestorReport }) {
                 Held for review: {money(p.held)}
                 <br />
                 Confirmed policy payouts in period: {money(p.paidOut)}
+                {p.paidLedger !== undefined && <> · Paid policy commission balance: {money(p.paidLedger)}</>}
+                {p.reversed !== undefined && <> · Reversed policy commission: {money(p.reversed)}</>}
               </p>
               <p className="mt-2 text-xs text-ink-muted">
                 Legacy commission balances and payouts are not combined with the

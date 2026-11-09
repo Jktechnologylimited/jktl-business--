@@ -1,3 +1,4 @@
+import { handleMerchantPaymentEvent } from "@/lib/company-finance/payments";
 import { flushProgramNotices } from "@/lib/distribution/notifications";
 import {
   recordDistributionRisk,
@@ -102,6 +103,15 @@ export async function POST(request: NextRequest) {
     Array.isArray(data)
   )
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  try {
+    if (await handleMerchantPaymentEvent(event, data))
+      return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json(
+      { error: "Merchant payment evidence needs reconciliation; retry required." },
+      { status: 503 },
+    );
+  }
   try {
     await recordDistributionRisk(event, data);
   } catch {

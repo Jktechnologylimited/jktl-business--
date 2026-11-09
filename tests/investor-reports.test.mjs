@@ -226,6 +226,8 @@ test("private downloads reject unauthorized callers before any snapshot access",
   assert.equal((await call()).status, 403);
   assert.equal(reads, 0);
   actor = { role: "analyst" };
+  assert.equal((await call()).status,403);
+  actor = { role: "analyst",permissions:{view_company_finance:true} };
   assert.equal((await call("html")).status, 400);
   assert.equal((await call()).status, 404);
   assert.equal(reads, 1);
@@ -273,7 +275,7 @@ test("snapshot action checks export permission first and ignores client-supplied
     },
     "@/lib/admin-session": {
       requireAdminCapability: async (cap) => {
-        assert.equal(cap, "export_insights");
+        assert.ok(["export_insights","view_company_finance"].includes(cap));
         if (deny) throw Error("Denied");
         return { id: "owner" };
       },

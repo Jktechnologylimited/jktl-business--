@@ -14,6 +14,7 @@ import { websiteNextStep } from "@/lib/websites/activation";
 import type { WebsiteCard } from "@/lib/websites/model";
 export function ActivationChecklist() {
   const mode = useBusinessStore((s) => s.mode);
+  const invoices = useBusinessStore((s) => s.data.invoices.length);
   const [sites, setSites] = useState<WebsiteCard[] | null>(null);
   const [error, setError] = useState(false);
   const [message, setMessage] = useState("");
@@ -68,6 +69,28 @@ export function ActivationChecklist() {
             description:
               "Open your published contact page and verify the phone, email and enquiry links.",
             href: next.site?.url || "/business/website",
+          },
+          {
+            title: "Configure invoice payments",
+            description:
+              "Add and verify your receiving bank details before issuing a payment-enabled invoice.",
+            href: "/business/settings",
+          },
+          ...(invoices === 0
+            ? [
+                {
+                  title: "Create your first invoice",
+                  description:
+                    "Invoice a genuine customer after your receiving bank account is set up.",
+                  href: "/business/invoices",
+                },
+              ]
+            : []),
+          {
+            title: "Organise customer follow-up",
+            description:
+              "Use your existing customer records to follow up on permitted enquiries.",
+            href: "/business/customers",
           },
           {
             title: "Connect a custom domain when ready",
