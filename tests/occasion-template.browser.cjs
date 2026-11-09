@@ -9,7 +9,9 @@ const { chromium } = require("playwright");
     process.env.OCCASION_TEST_ORIGINS ||
     "http://localhost:3224,http://localhost:3225"
   ).split(",");
-  const ids = ["bridal-aura", "nail-culture"];
+  const ids = (
+    process.env.OCCASION_TEST_IDS || "bridal-aura,nail-culture"
+  ).split(",");
   const out = "/tmp/jktl-occasion-browser";
   fs.mkdirSync(out, { recursive: true });
   const browser = await chromium.launch({
@@ -160,11 +162,10 @@ const { chromium } = require("playwright");
           for (const section of ["about", "gallery", "contact"]) {
             assert.equal((await p.goto(base + "/" + section)).status(), 200);
             assert.equal(await p.locator("h1").count(), 1);
-            await p
-              .locator("img")
-              .evaluateAll((imgs) =>
-                imgs.forEach((i) => (i.loading = "eager")),
-              );
+            // Trigger native lazy loading without changing SSR attributes.
+            for (const photo of await p.locator("img").all()) {
+              if (await photo.isVisible()) await photo.scrollIntoViewIfNeeded();
+            }
             await p.waitForFunction(() =>
               Array.from(document.images).every(
                 (i) => i.complete && i.naturalWidth,
@@ -202,7 +203,10 @@ const { chromium } = require("playwright");
               assert.match(html, /noindex/);
               titles.add(html.match(/<title>([^<]+)<\/title>/)?.[1]);
             }
-            assert.equal(titles.size, 9);
+            assert.equal(
+              titles.size,
+              catalog.websitePagePaths(template).length,
+            );
             assert.equal(
               (await p.request.get(base + "/retired-page")).status(),
               404,

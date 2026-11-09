@@ -93,11 +93,26 @@ const { OccasionWebsite } = loadTs(
     },
   },
 );
+const { CosmeticsWebsite } = loadTs(
+  "../src/components/templates/CosmeticsWebsite.tsx",
+  {
+    react: require("react"),
+    "react/jsx-runtime": require("react/jsx-runtime"),
+    "framer-motion": require("framer-motion"),
+    "lucide-react": require("lucide-react"),
+    "@/lib/website-templates": catalogue,
+    "./BeautyWebsite": { BeautyRequestForm },
+    "./CosmeticsWebsite.module.css": {
+      __esModule: true,
+      default: new Proxy({}, { get: (_, k) => String(k) }),
+    },
+  },
+);
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 212);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 210);
-  assert.equal(new Set(all.map((t) => t.id)).size, 212);
+  assert.equal(all.length, 214);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 212);
+  assert.equal(new Set(all.map((t) => t.id)).size, 214);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -188,6 +203,7 @@ test("actual full-site renderer renders every template and safely escapes edited
       "./DressmakerWebsite": { DressmakerWebsite },
       "./JewelleryWebsite": { JewelleryWebsite },
       "./OccasionWebsite": { OccasionWebsite },
+      "./CosmeticsWebsite": { CosmeticsWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -221,7 +237,9 @@ test("actual full-site renderer renders every template and safely escapes edited
     if (template.document.beauty) {
       assert.ok(
         html.includes(
-          ["bridal", "nail"].includes(template.document.beauty.design)
+          ["bridal", "nail", "extensions"].includes(
+            template.document.beauty.design,
+          )
             ? 'id="occasion-content"'
             : 'id="salon-content"',
         ),
@@ -609,6 +627,7 @@ test("template-based public sites retain actual booking, product and chat compon
       "./DressmakerWebsite": { DressmakerWebsite },
       "./JewelleryWebsite": { JewelleryWebsite },
       "./OccasionWebsite": { OccasionWebsite },
+      "./CosmeticsWebsite": { CosmeticsWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),

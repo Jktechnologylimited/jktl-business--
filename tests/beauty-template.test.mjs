@@ -60,12 +60,13 @@ const { TemplateWebsite } = load(
     "./DressmakerWebsite": { DressmakerWebsite: () => null },
     "./JewelleryWebsite": { JewelleryWebsite: () => null },
     "./OccasionWebsite": { OccasionWebsite: () => null },
+    "./CosmeticsWebsite": { CosmeticsWebsite: () => null },
     "./TemplateWebsite.module.css": css,
   },
 );
 const draft = () => catalogue.templateDraft("hair-salon", "Studio Example");
 test("one versioned salon entry gains ten real pages; saved v1 salons keep their old document and renderer", () => {
-  assert.equal(catalogue.websiteTemplates.length, 212);
+  assert.equal(catalogue.websiteTemplates.length, 214);
   const doc = draft();
   assert.equal(doc.beauty.version, 2);
   assert.deepEqual(catalogue.parseWebsiteDocument(doc), doc);
@@ -244,7 +245,7 @@ test("public contact requests resolve tenant server-side, persist before success
   assert.equal(g.writes.length, 1);
 });
 test("bridal and nail site requests resolve their own tenant and save unconfirmed service enquiries", async () => {
-  for (const id of ["bridal-aura", "nail-culture"]) {
+  for (const id of ["bridal-aura", "nail-culture", "fiora-locks"]) {
     const f = requestFixture(),
       doc = catalogue.templateDraft(id);
     f.site().profile.websiteTemplateId = id;
@@ -264,6 +265,39 @@ test("bridal and nail site requests resolve their own tenant and save unconfirme
     assert.match(f.writes[0].input.notes, /not confirmed/);
     assert.equal(f.sent[0].to, "owner@example.test");
   }
+});
+test("cosmetics enquiries use the published business inbox without creating appointments or orders", async () => {
+  const f = requestFixture(),
+    doc = catalogue.templateDraft("velora-cosmetics");
+  f.site().profile.websiteTemplateId = "velora-cosmetics";
+  f.site().profile.websiteDocument = doc;
+  const result = await f.actions.submitBeautyWebsiteRequestAction("studio", {
+    ...f.input,
+    message:
+      "Please confirm the availability of " + doc.offerings[0].title + ".",
+    organizationId: "forged-other-business",
+  });
+  assert.equal(result.ok, true);
+  assert.equal(f.writes.length, 1);
+  assert.equal(f.writes[0].org, "org-a");
+  assert.match(f.writes[0].input.notes, /daily skin edit/);
+  assert.equal(f.sent[0].to, "owner@example.test");
+  assert.equal(f.bookings.length, 0);
+  assert.equal(
+    (
+      await f.actions.submitBeautyWebsiteRequestAction("studio", {
+        ...f.input,
+        kind: "appointment",
+      })
+    ).ok,
+    false,
+  );
+  assert.equal(f.writes.length, 1);
+  f.site().profile.published = false;
+  assert.equal(
+    (await f.actions.submitBeautyWebsiteRequestAction("studio", f.input)).ok,
+    false,
+  );
 });
 test("invalid, bot, unpublished and wrong-template requests cannot write customer data", async () => {
   for (const change of [

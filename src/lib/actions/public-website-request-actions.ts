@@ -73,8 +73,9 @@ export async function submitBeautyWebsiteRequestAction(
       return { ok: false, error: "This website is not accepting requests." };
     const doc = parseWebsiteDocument(site.profile.websiteDocument);
     if (
-      (!doc.beauty && doc.design !== "legal") ||
-      (doc.design === "legal" && input.kind !== "contact")
+      (!doc.beauty && doc.design !== "legal" && doc.design !== "cosmetics") ||
+      ((doc.design === "legal" || doc.design === "cosmetics") &&
+        input.kind !== "contact")
     )
       return { ok: false, error: "This website is not accepting requests." };
     const organizationId = site.profile.organizationId;

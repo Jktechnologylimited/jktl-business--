@@ -1361,10 +1361,12 @@ export function BeautyRequestForm({
   document: doc,
   initialService = "",
   onRequest,
+  initialMessage = "",
 }: {
   kind: "appointment" | "contact";
   document: WebsiteDocument;
   initialService?: string;
+  initialMessage?: string;
   onRequest?: (
     input: BeautyRequest,
   ) => Promise<{ ok: boolean; error?: string }>;
@@ -1381,8 +1383,8 @@ export function BeautyRequestForm({
           We have your request.
         </h2>
         <p>
-          Your message has been saved. The salon team will be in touch.
-          Appointment availability is confirmed separately.
+          Your message has been saved. The team will be in touch.
+          {kind === "appointment" && "Appointment availability is confirmed separately."}
         </p>
       </div>
     );
@@ -1496,6 +1498,7 @@ export function BeautyRequestForm({
           : "Anything you would like us to know?"}
         <textarea
           name="message"
+          defaultValue={initialMessage}
           required={kind === "contact"}
           maxLength={2000}
           rows={4}

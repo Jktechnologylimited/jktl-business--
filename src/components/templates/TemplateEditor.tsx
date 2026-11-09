@@ -257,7 +257,8 @@ export function TemplateEditor({
               {text("intro", "Introduction", true)}
               {text("ctaLabel", "Main button label", false, 60)}
               {text("heroImage", "Hero image HTTPS URL", false, 2000)}
-              {content.design === "jewellery" &&
+              {(content.design === "jewellery" ||
+                content.design === "cosmetics") &&
                 text(
                   "aboutImage",
                   "Story and campaign photograph",
@@ -279,7 +280,8 @@ export function TemplateEditor({
                 </>
               )}
               {(content.design === "dressmaker" ||
-                content.design === "jewellery") && (
+                content.design === "jewellery" ||
+                content.design === "cosmetics") && (
                 <label className="flex gap-3 text-sm">
                   <input
                     type="checkbox"
@@ -384,9 +386,11 @@ export function TemplateEditor({
                     />
                   </label>
                   {(content.design === "dressmaker" ||
-                    content.design === "jewellery") && (
+                    content.design === "jewellery" ||
+                    content.design === "cosmetics") && (
                     <>
-                      {content.design === "jewellery" && (
+                      {(content.design === "jewellery" ||
+                        content.design === "cosmetics") && (
                         <label className="block text-sm">
                           Product category
                           <input
@@ -440,10 +444,13 @@ export function TemplateEditor({
                       </label>
                     </>
                   )}
-                  {content.design === "legal" && (
+                  {(content.design === "legal" ||
+                    content.design === "cosmetics") && (
                     <>
                       <label className="block text-sm">
-                        Approach points — one per line
+                        {content.design === "cosmetics"
+                          ? "Product highlights — one per line"
+                          : "Approach points — one per line"}
                         <textarea
                           className={field}
                           rows={3}
@@ -573,9 +580,13 @@ export function TemplateEditor({
                       }
                     />
                   </label>
-                  {content.design === "legal" && (
+                  {(content.design === "legal" ||
+                    content.design === "cosmetics" ||
+                    content.beauty?.design === "extensions") && (
                     <label className="block text-sm">
-                      Attorney role
+                      {content.design === "legal"
+                        ? "Attorney role"
+                        : "Collection or gallery category"}
                       <input
                         className={field}
                         value={item.category || ""}

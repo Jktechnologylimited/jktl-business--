@@ -1276,3 +1276,470 @@
     animation: none !important;
   }
 }
+
+/* Fiora's oversized wordmark, photographic collage and quiet service index. */
+.extensions {
+  font-family: Georgia, "Times New Roman", serif;
+}
+.masthead {
+  display: block;
+  padding: 20px 2% 5px;
+  font:
+    400 clamp(50px, 13.6vw, 210px)/0.86 Georgia,
+    serif;
+  letter-spacing: -0.075em;
+  text-transform: uppercase;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.masthead img {
+  height: 130px;
+  object-fit: contain;
+}
+.extensions .header {
+  padding: 13px 2%;
+  border: 0;
+  min-height: 55px;
+}
+.extensions .header > .brand {
+  display: none;
+}
+.extensions .desktopNav {
+  gap: 20px;
+}
+.extensions .desktopNav a,
+.extensions .signIn {
+  font-family: Georgia, serif;
+  font-size: 12px;
+}
+.extensions .headerBook {
+  border: 1px solid #18191640;
+  border-radius: 50px;
+  padding: 6px 22px;
+  white-space: nowrap;
+}
+.extensionsHero {
+  display: grid;
+  grid-template-columns: 44% minmax(0, 1fr);
+  grid-template-rows: 1fr 210px;
+  gap: 10px;
+  padding: 0 2%;
+  height: 590px;
+}
+.extensionPortrait {
+  grid-row: 1/3;
+  min-height: 0;
+  overflow: hidden;
+}
+.extensionPortrait img {
+  filter: grayscale(1);
+  object-position: 50% 25%;
+}
+.extensionHeroCopy {
+  padding: 20px 8%;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  justify-content: start;
+  min-width: 0;
+}
+.extensionHeroCopy h1 {
+  font:
+    400 clamp(30px, 3.4vw, 57px)/1.02 Georgia,
+    serif;
+  letter-spacing: -0.045em;
+  margin: 18px 0 24px;
+  white-space: pre-line;
+}
+.extensionHeroCopy > p:not(.eyebrow) {
+  font-size: 12px;
+  max-width: 350px;
+  line-height: 1.7;
+}
+.extensionHeroCopy .button {
+  margin-top: auto;
+}
+.extensionCollage {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  min-height: 0;
+}
+.extensionCollage > div {
+  min-height: 0;
+  overflow: hidden;
+}
+.extensionCollage a {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.extensionCollage img {
+  object-position: 50% 30%;
+}
+.extensionCollage > div:nth-child(2) img {
+  filter: grayscale(1);
+}
+.extensions .offerings {
+  padding: 110px 6% 50px;
+}
+.extensions .sectionIntro {
+  display: block;
+  text-align: center;
+  max-width: 650px;
+  margin: 0 auto 60px;
+}
+.extensions .sectionIntro h2 {
+  font:
+    400 clamp(30px, 3.2vw, 50px)/1.1 Georgia,
+    serif;
+  letter-spacing: -0.04em;
+}
+.extensions .sectionIntro .eyebrow {
+  font-size: 9px;
+  font-style: italic;
+  letter-spacing: 0.08em;
+}
+.extensions .sectionIntro > p {
+  max-width: 480px;
+  margin: 18px auto 0;
+  font-style: italic;
+  font-size: 13px;
+}
+.extensionServices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6%;
+  align-items: stretch;
+}
+.extensionServices > div:first-child {
+  padding-block: 15px;
+}
+.extensionServices article {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  justify-content: space-between;
+  border-top: 1px solid #18191625;
+  padding: 23px 0;
+}
+.extensionServices article:last-child {
+  border-bottom: 1px solid #18191625;
+}
+.extensionServices article > div {
+  max-width: 370px;
+}
+.extensionServices h3 {
+  font-size: 21px;
+  letter-spacing: -0.025em;
+}
+.extensionServices p {
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 10px;
+  opacity: 0.7;
+}
+.extensionServices .headerBook {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.extensionServicePhoto {
+  min-height: 520px;
+  position: relative;
+}
+.extensionServicePhoto img {
+  position: absolute;
+  inset: 0;
+  filter: grayscale(1);
+  object-position: 50% 20%;
+}
+.extensions .offerings > .button {
+  justify-content: center;
+  border: 1px solid #18191640;
+  border-radius: 50px;
+  width: fit-content;
+  min-width: 180px;
+  margin: 35px auto 0;
+  padding: 8px 22px;
+}
+.extensions .gallery {
+  padding: 90px 6% 60px;
+}
+.extensions .gallery .sectionIntro {
+  margin-bottom: 55px;
+}
+.extensions .gallery .textLink {
+  margin: 18px auto 0;
+}
+.extensions .galleryGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 45px 25px;
+  align-items: start;
+}
+.extensions .galleryGrid figure:nth-child(3n + 1) {
+  margin-top: 65px;
+}
+.extensions .galleryGrid figure:nth-child(2) {
+  grid-row: span 2;
+}
+.extensions .galleryGrid figure:nth-child(2) img {
+  aspect-ratio: 3/5;
+}
+.extensions .galleryGrid figure img {
+  aspect-ratio: 4/5;
+}
+.extensions .galleryGrid figure:nth-child(3n) img {
+  filter: grayscale(1);
+}
+.extensions .galleryGrid figcaption {
+  font-size: 11px;
+}
+.extensions .reviews {
+  border: 0;
+  padding: 90px 8%;
+}
+.extensions .reviews h2 {
+  font:
+    34px/1.1 Georgia,
+    serif;
+  letter-spacing: -0.04em;
+}
+.extensions .reviewEmpty {
+  font-size: 12px;
+}
+.extensions .about {
+  padding: 60px 8% 100px;
+}
+.extensions .aboutPhoto img {
+  filter: grayscale(1);
+}
+.extensions .aboutCopy h2,
+.extensions .faq h2 {
+  font-family: Georgia, serif;
+  letter-spacing: -0.03em;
+}
+.extensions .process {
+  padding-top: 50px;
+}
+.extensions .process p {
+  font-family: Georgia, serif;
+}
+.extensions .callout {
+  background: var(--occasion-paper);
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  justify-content: center;
+  min-height: 330px;
+  gap: 25px;
+}
+.extensions .callout h2 {
+  font:
+    34px/1.15 Georgia,
+    serif;
+  letter-spacing: -0.04em;
+  margin-top: 10px;
+}
+.extensions .callout .button {
+  border: 1px solid #18191650;
+  border-radius: 50px;
+  padding: 9px 25px;
+}
+.extensions .footer {
+  border-top: 1px solid #18191630;
+  padding-top: 35px;
+}
+.extensions .footerBrand {
+  font:
+    30px/1 Georgia,
+    serif;
+  text-transform: uppercase;
+  letter-spacing: -0.05em;
+}
+.extensions .footerTop h2 {
+  font-family: Georgia, serif;
+}
+.extensions .pageIntro h1 {
+  font-family: Georgia, serif;
+  letter-spacing: -0.04em;
+}
+.extensions .serviceDetail h2 {
+  font-family: Georgia, serif;
+}
+.extensions .serviceDetail .button {
+  border: 1px solid #18191650;
+  border-radius: 50px;
+  padding: 10px 23px;
+}
+@media (max-width: 900px) {
+  .extensionsHero {
+    height: 530px;
+    grid-template-rows: 1fr 170px;
+  }
+  .extensionHeroCopy {
+    padding-inline: 6%;
+  }
+  .extensionHeroCopy h1 {
+    font-size: 35px;
+  }
+  .extensionHeroCopy > .eyebrow {
+    font-size: 8px;
+  }
+  .extensionServices article {
+    gap: 15px;
+  }
+  .extensionServices h3 {
+    font-size: 18px;
+  }
+  .extensionServices .headerBook {
+    padding-inline: 14px;
+  }
+  .extensionServicePhoto {
+    min-height: 500px;
+  }
+  .extensions .galleryGrid {
+    gap: 30px 16px;
+  }
+}
+@media (max-width: 700px) {
+  .masthead {
+    padding: 18px 4% 10px;
+    font-size: 13.2vw;
+    line-height: 0.95;
+  }
+  .masthead img {
+    height: 80px;
+  }
+  .extensions .header {
+    padding: 7px 4%;
+    min-height: 55px;
+  }
+  .extensions .headerActions {
+    margin-left: auto;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .extensions .signIn span {
+    display: inline;
+  }
+  .extensions .mobileNav {
+    font-family: Georgia, serif;
+  }
+  .extensionsHero {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 450px 150px;
+    height: auto;
+    gap: 8px;
+    padding: 0 4%;
+  }
+  .extensionHeroCopy {
+    grid-row: 1;
+    padding: 25px 2% 28px;
+    display: block;
+  }
+  .extensionHeroCopy h1 {
+    font-size: 42px;
+    max-width: 330px;
+    margin-top: 17px;
+  }
+  .extensionHeroCopy .button {
+    margin-top: 20px;
+  }
+  .extensionPortrait {
+    grid-row: 2;
+    grid-column: 1;
+  }
+  .extensionCollage {
+    grid-row: 3;
+    gap: 8px;
+  }
+  .extensions .offerings {
+    padding: 65px 6% 35px;
+  }
+  .extensions .sectionIntro {
+    margin-bottom: 30px;
+  }
+  .extensions .sectionIntro h2 {
+    font-size: 34px;
+  }
+  .extensionServices {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .extensionServices article {
+    padding-block: 20px;
+  }
+  .extensionServices h3 {
+    font-size: 20px;
+  }
+  .extensionServices article > div {
+    max-width: 280px;
+  }
+  .extensionServices .headerBook {
+    padding-inline: 16px;
+  }
+  .extensionServicePhoto {
+    min-height: 0;
+    height: 430px;
+  }
+  .extensions .gallery {
+    padding: 50px 6%;
+  }
+  .extensions .galleryGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 25px 15px;
+  }
+  .extensions .galleryGrid figure:nth-child(3n + 1) {
+    margin-top: 30px;
+  }
+  .extensions .galleryGrid figure:nth-child(2) {
+    grid-row: auto;
+  }
+  .extensions .galleryGrid figure:nth-child(2) img {
+    aspect-ratio: 4/5;
+  }
+  .extensions .galleryGrid figure:last-child {
+    grid-column: 1/-1;
+    max-width: 70%;
+    justify-self: center;
+  }
+  .extensions .reviews {
+    padding: 50px 6%;
+  }
+  .extensions .about {
+    padding: 35px 6% 60px;
+  }
+  .extensions .aboutCopy h2 {
+    font-size: 34px;
+  }
+  .extensions .process {
+    padding-top: 30px;
+  }
+  .extensions .callout {
+    min-height: 290px;
+    padding: 45px 6%;
+    gap: 5px;
+  }
+  .extensions .callout h2 {
+    font-size: 31px;
+  }
+  .extensions .footer {
+    margin-inline: 6%;
+    padding-inline: 0;
+  }
+  .extensions .footerBrand {
+    font-size: 30px;
+  }
+  .extensions .pageIntro {
+    padding-top: 35px;
+  }
+  .extensions .pageIntro h1 {
+    font-size: 39px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .extensions * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

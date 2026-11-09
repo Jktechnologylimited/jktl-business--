@@ -490,5 +490,125 @@
     "source": "https://www.pexels.com/photo/woman-in-white-headscarf-with-painted-nails-19720503/",
     "license": "https://www.pexels.com/license/",
     "providerSearch": "black woman nails"
+  },
+  {
+    "id": 36288139,
+    "description": "Close-up portrait of a confident woman with straight, long hair and natural makeup.",
+    "name": "fiora-hero",
+    "asset": "https://images.pexels.com/photos/36288139/pexels-photo-36288139.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/portrait-of-a-confident-woman-with-long-hair-36288139/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 36288157,
+    "description": "Close-up portrait of a confident woman with sleek long hair, wearing elegant jewelry.",
+    "name": "fiora-profile",
+    "asset": "https://images.pexels.com/photos/36288157/pexels-photo-36288157.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/portrait-of-confident-woman-with-long-hair-36288157/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 40163928,
+    "description": "Elegant portrait of a woman in black attire with striking copper hair.",
+    "name": "fiora-copper",
+    "asset": "https://images.pexels.com/photos/40163928/pexels-photo-40163928.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/stylish-portrait-of-woman-with-copper-hair-40163928/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 36200018,
+    "description": "Graceful portrait of a smiling woman with long hair and red top on white background.",
+    "name": "fiora-smile",
+    "asset": "https://images.pexels.com/photos/36200018/pexels-photo-36200018.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/portrait-of-a-woman-with-long-hair-in-red-36200018/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 12510838,
+    "description": "Portrait of a stylish woman in a studio setting, showcasing fashion and beauty.",
+    "name": "fiora-editorial",
+    "asset": "https://images.pexels.com/photos/12510838/pexels-photo-12510838.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/a-portrait-of-a-woman-12510838/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 6809675,
+    "description": "Close-up portrait of woman with dreadlocks, hoop earrings, and striking makeup on a light background.",
+    "name": "glam-hero",
+    "asset": "https://images.pexels.com/photos/6809675/pexels-photo-6809675.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/woman-with-makeup-on-white-background-6809675/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 2011414,
+    "description": "Close-up portrait of a beautiful black woman with striking makeup and elegant jewelry.",
+    "name": "glam-complexion",
+    "asset": "https://images.pexels.com/photos/2011414/pexels-photo-2011414.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/woman-wearing-silver-chandelier-earrings-2011414/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 1852947,
+    "description": "Close-up portrait of a beautiful woman with afro hairstyle and nose piercing, emphasizing natural beauty and style.",
+    "name": "glam-portrait",
+    "asset": "https://images.pexels.com/photos/1852947/pexels-photo-1852947.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/woman-with-nose-piercing-1852947/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 1977292,
+    "description": "Elegant portrait of a woman with afro hair, vibrant eyeshadow, and red lips.",
+    "name": "glam-colour",
+    "asset": "https://images.pexels.com/photos/1977292/pexels-photo-1977292.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/woman-closing-her-eyes-1977292/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 4735904,
+    "description": "Luxurious skincare products elegantly arranged on a marble surface, showcasing beauty essentials.",
+    "name": "glam-skin",
+    "asset": "https://images.pexels.com/photos/4735904/pexels-photo-4735904.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/assorted-cosmetics-on-white-surface-4735904/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 4938498,
+    "description": "Flat lay of a textured highlighter compact and lipstick on a white surface, perfect for beauty and cosmetic themes.",
+    "name": "glam-powder",
+    "asset": "https://images.pexels.com/photos/4938498/pexels-photo-4938498.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/highlighter-on-white-table-4938498/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 30408335,
+    "description": "Two elegant lipsticks displayed on a seashell with a minimalist, earthy backdrop.",
+    "name": "glam-lip",
+    "asset": "https://images.pexels.com/photos/30408335/pexels-photo-30408335.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/elegant-lipsticks-on-seashell-display-30408335/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 1327689,
+    "description": "Close-up of colorful eyeshadow palette with brush, ideal for fashion and beauty themes.",
+    "name": "glam-eyes",
+    "asset": "https://images.pexels.com/photos/1327689/pexels-photo-1327689.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/makeup-palette-1327689/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 12969358,
+    "description": "Beauty composition featuring cosmetic tubes and a makeup brush on a textured background.",
+    "name": "glam-tubes",
+    "asset": "https://images.pexels.com/photos/12969358/pexels-photo-12969358.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/tubes-of-cosmetics-to-makeup-and-a-makeup-brush-12969358/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 2533266,
+    "description": "Stylish pink lipstick and blush makeup set on a white background, perfect for beauty and cosmetics branding.",
+    "name": "glam-set",
+    "asset": "https://images.pexels.com/photos/2533266/pexels-photo-2533266.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/close-up-photo-of-pink-lipstick-and-blush-on-2533266/",
+    "license": "https://www.pexels.com/license/"
   }
 ]

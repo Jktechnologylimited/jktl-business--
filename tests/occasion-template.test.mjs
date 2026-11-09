@@ -44,7 +44,7 @@ const { OccasionWebsite } = load(
   "../src/components/templates/OccasionWebsite.tsx",
   { ...common, "./BeautyWebsite": beauty, "./OccasionWebsite.module.css": css },
 );
-const ids = ["bridal-aura", "nail-culture"];
+const ids = ["bridal-aura", "nail-culture", "fiora-locks"];
 test("both original multi-page starters round-trip the existing CMS schema and retain safe selection paths", () => {
   for (const id of ids) {
     const template = catalog.getWebsiteTemplate(id),
@@ -68,7 +68,7 @@ test("both original multi-page starters round-trip the existing CMS schema and r
       "/business/website/template?template=" + id,
     );
     const paths = catalog.websitePagePaths(template, doc);
-    assert.equal(paths.length, 9);
+    assert.equal(paths.length, id === "fiora-locks" ? 10 : 9);
     for (const path of paths) {
       const html = renderToStaticMarkup(
         createElement(OccasionWebsite, {
@@ -262,7 +262,11 @@ test("published bridal/nail pages use the registered template, customer canonica
     );
     assert.equal(
       schema["@type"],
-      id === "nail-culture" ? "NailSalon" : "BeautySalon",
+      id === "fiora-locks"
+        ? "HairSalon"
+        : id === "nail-culture"
+          ? "NailSalon"
+          : "BeautySalon",
     );
     assert.equal(schema.aggregateRating, undefined);
     const { GET } = load("../src/app/sites/[subdomain]/sitemap.xml/route.ts", {
@@ -274,7 +278,10 @@ test("published bridal/nail pages use the registered template, customer canonica
       { params: Promise.resolve({ subdomain: "studio" }) },
     );
     assert.equal(response.status, 200);
-    assert.equal(((await response.text()).match(/<loc>/g) || []).length, 9);
+    assert.equal(
+      ((await response.text()).match(/<loc>/g) || []).length,
+      id === "fiora-locks" ? 10 : 9,
+    );
     await assert.rejects(
       () => helper.beautyMetadata("studio", "not-a-page"),
       /404/,

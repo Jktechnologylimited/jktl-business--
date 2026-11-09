@@ -116,11 +116,13 @@ export function beautyStructuredData(
             ? "BeautySalon"
             : doc.beauty
               ? "HairSalon"
-              : doc.design === "jewellery"
-                ? "JewelryStore"
-                : doc.design === "dressmaker"
-                  ? "ClothingStore"
-                  : "Organization",
+              : doc.design === "cosmetics"
+                ? "Store"
+                : doc.design === "jewellery"
+                  ? "JewelryStore"
+                  : doc.design === "dressmaker"
+                    ? "ClothingStore"
+                    : "Organization",
     name: doc.brandName,
     "@id":
       origin +
@@ -137,7 +139,8 @@ export function beautyStructuredData(
     image: new URL(doc.heroImage, origin).href,
     ...(!(doc.design === "legal" ||
     doc.design === "dressmaker" ||
-    doc.design === "jewellery"
+    doc.design === "jewellery" ||
+    doc.design === "cosmetics"
       ? doc.demoContent
       : b?.demoContent) &&
     (details.address || profile.address)

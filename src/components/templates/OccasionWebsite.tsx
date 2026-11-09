@@ -54,6 +54,7 @@ export function OccasionWebsite({
 }) {
   const beauty = doc.beauty!;
   const nail = beauty.design === "nail";
+  const extensions = beauty.design === "extensions";
   const [menu, setMenu] = useState(false),
     [selected, setSelected] = useState(0);
   const root = useRef<HTMLDivElement>(null),
@@ -171,12 +172,16 @@ export function OccasionWebsite({
       <div className={styles.aboutPhoto}>
         {image(
           beauty.aboutImage,
-          `${doc.brandName} — a personal approach to ${nail ? "nail care" : "bridal beauty"}`,
+          `${doc.brandName} — a personal approach to ${extensions ? "hair extensions" : nail ? "nail care" : "bridal beauty"}`,
         )}
       </div>
       <div className={styles.aboutCopy}>
         <p className={styles.eyebrow}>
-          {nail ? "The studio" : "Your own kind of beautiful"}
+          {extensions
+            ? "Your own hair story"
+            : nail
+              ? "The studio"
+              : "Your own kind of beautiful"}
         </p>
         <h2>{doc.aboutTitle}</h2>
         <p className={styles.paragraph}>{doc.aboutText}</p>
@@ -205,34 +210,68 @@ export function OccasionWebsite({
         </div>
         <p>{doc.featureText}</p>
       </div>
-      <div className={styles.serviceGrid}>
-        {doc.offerings.map((o, i) => (
-          <motion.article
-            key={beautyServiceSlug(o, i)}
-            initial={false}
-            whileHover={reduced ? undefined : { y: -4 }}
-            className={styles.serviceCard}
-          >
-            {link(
-              "services/" + beautyServiceSlug(o, i),
-              <>
-                <div className={styles.servicePhoto}>
-                  {image(o.image || doc.heroImage, o.title)}
+      {extensions ? (
+        <div className={styles.extensionServices}>
+          <div>
+            {doc.offerings.map((o, i) => (
+              <motion.article
+                key={beautyServiceSlug(o, i)}
+                initial={false}
+                whileHover={reduced ? undefined : { x: 4 }}
+              >
+                <div>
+                  {link(
+                    "services/" + beautyServiceSlug(o, i),
+                    <h3>{o.title}</h3>,
+                    undefined,
+                    `Explore ${o.title}`,
+                  )}
+                  <p>{o.description}</p>
+                  {full && <p className={styles.small}>{o.price}</p>}
                 </div>
-                <div className={styles.serviceName}>
-                  <span>{String(i + 1).padStart(2, "0")}</span>
-                  <h3>{o.title}</h3>
-                  <ArrowUpRight size={18} aria-hidden="true" />
-                </div>
-              </>,
-              undefined,
-              `Explore ${o.title}`,
-            )}
-            <p>{o.description}</p>
-            {full && <p className={styles.small}>{o.price}</p>}
-          </motion.article>
-        ))}
-      </div>
+                {link(
+                  "book?service=" + beautyServiceSlug(o, i),
+                  "Enquire",
+                  styles.headerBook,
+                  `Enquire about ${o.title}`,
+                )}
+              </motion.article>
+            ))}
+          </div>
+          <div className={styles.extensionServicePhoto}>
+            {image(beauty.aboutImage, "Personal hair-extension inspiration")}
+          </div>
+        </div>
+      ) : (
+        <div className={styles.serviceGrid}>
+          {doc.offerings.map((o, i) => (
+            <motion.article
+              key={beautyServiceSlug(o, i)}
+              initial={false}
+              whileHover={reduced ? undefined : { y: -4 }}
+              className={styles.serviceCard}
+            >
+              {link(
+                "services/" + beautyServiceSlug(o, i),
+                <>
+                  <div className={styles.servicePhoto}>
+                    {image(o.image || doc.heroImage, o.title)}
+                  </div>
+                  <div className={styles.serviceName}>
+                    <span>{String(i + 1).padStart(2, "0")}</span>
+                    <h3>{o.title}</h3>
+                    <ArrowUpRight size={18} aria-hidden="true" />
+                  </div>
+                </>,
+                undefined,
+                `Explore ${o.title}`,
+              )}
+              <p>{o.description}</p>
+              {full && <p className={styles.small}>{o.price}</p>}
+            </motion.article>
+          ))}
+        </div>
+      )}
       {!full && button("services", "Explore all services")}
     </section>
   );
@@ -254,7 +293,7 @@ export function OccasionWebsite({
             styles.textLink,
           )}
       </div>
-      {nail ? (
+      {nail || extensions ? (
         <div className={styles.galleryGrid}>
           {(full ? doc.gallery : doc.gallery.slice(0, 3)).map((p, i) => (
             <motion.figure
@@ -304,7 +343,13 @@ export function OccasionWebsite({
   );
   const reviewSection = (
     <section className={styles.reviews}>
-      <h2>{nail ? "Word on the street" : "Words of love"}</h2>
+      <h2>
+        {extensions
+          ? "Your hair. Your story."
+          : nail
+            ? "Word on the street"
+            : "Words of love"}
+      </h2>
       <div>
         {reviews.length ? (
           reviews.slice(0, 6).map((r, i) => (
@@ -411,9 +456,11 @@ export function OccasionWebsite({
   return (
     <div
       ref={root}
-      className={`${styles.site} ${nail ? styles.nail : styles.bridal}`}
+      className={`${styles.site} ${extensions ? styles.extensions : nail ? styles.nail : styles.bridal}`}
       data-layout={template.layout}
-      data-occasion-template={nail ? "nail" : "bridal"}
+      data-occasion-template={
+        extensions ? "extensions" : nail ? "nail" : "bridal"
+      }
       style={
         {
           "--occasion-paper": doc.paper,
@@ -425,6 +472,12 @@ export function OccasionWebsite({
       <a className={styles.skip} href="#occasion-content">
         Skip to content
       </a>
+      {extensions &&
+        link(
+          "",
+          doc.logoUrl ? image(doc.logoUrl, doc.brandName) : doc.brandName,
+          styles.masthead,
+        )}
       <header className={styles.header}>
         {link(
           "",
@@ -479,29 +532,63 @@ export function OccasionWebsite({
       <main id="occasion-content">
         {!path ? (
           <>
-            <section className={styles.hero}>
-              <div className={styles.heroPhoto}>
-                {image(
-                  doc.heroImage,
-                  `${doc.brandName} — ${nail ? "expressive nail art on an African woman" : "African bridal beauty inspiration"}`,
-                  true,
-                )}
-              </div>
-              <div className={styles.heroCopy}>
-                <p className={styles.eyebrow}>{doc.eyebrow}</p>
-                <h1>{doc.headline}</h1>
-                <div>
+            {extensions ? (
+              <section className={styles.extensionsHero}>
+                <div className={styles.extensionPortrait}>
+                  {image(
+                    doc.heroImage,
+                    "African woman with sleek dark hair — studio inspiration",
+                    true,
+                  )}
+                </div>
+                <div className={styles.extensionHeroCopy}>
+                  <p className={styles.eyebrow}>{doc.eyebrow}</p>
+                  <h1>{doc.headline}</h1>
                   <p>{doc.intro}</p>
                   {button("services", doc.ctaLabel)}
                 </div>
-              </div>
-              {!nail && (
-                <span className={styles.heroNote}>
-                  A personal beginning. A beautiful memory.
-                </span>
-              )}
-            </section>
-            {nail ? (
+                <div className={styles.extensionCollage}>
+                  {doc.gallery.slice(0, 3).map((g, i) => (
+                    <motion.div
+                      key={i}
+                      initial={false}
+                      whileHover={reduced ? undefined : { y: -3 }}
+                    >
+                      {link(
+                        "gallery",
+                        image(g.src, g.alt),
+                        undefined,
+                        `Explore hair inspiration ${i + 1}`,
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </section>
+            ) : (
+              <section className={styles.hero}>
+                <div className={styles.heroPhoto}>
+                  {image(
+                    doc.heroImage,
+                    `${doc.brandName} — ${nail ? "expressive nail art on an African woman" : "African bridal beauty inspiration"}`,
+                    true,
+                  )}
+                </div>
+                <div className={styles.heroCopy}>
+                  <p className={styles.eyebrow}>{doc.eyebrow}</p>
+                  <h1>{doc.headline}</h1>
+                  <div>
+                    <p>{doc.intro}</p>
+                    {button("services", doc.ctaLabel)}
+                  </div>
+                </div>
+                {!nail && (
+                  <span className={styles.heroNote}>
+                    A personal beginning. A beautiful memory.
+                  </span>
+                )}
+              </section>
+            )}
+            {nail || extensions ? (
               <>
                 {offerings()}
                 {gallery()}

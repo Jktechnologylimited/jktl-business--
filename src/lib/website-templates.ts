@@ -13,7 +13,8 @@ export type TemplateLayout =
   | "minimal"
   | "studio";
 export type BeautyContent = {
-  design?: "atelier" | "luxe" | "barber" | "spa" | "bridal" | "nail";
+  design?:
+    "atelier" | "luxe" | "barber" | "spa" | "bridal" | "nail" | "extensions";
   version: 2;
   demoContent: boolean;
   aboutImage: string;
@@ -41,7 +42,7 @@ export type WebsiteOffering = {
   preparation?: string;
 };
 export type WebsiteDocument = {
-  design?: "legal" | "dressmaker" | "jewellery";
+  design?: "legal" | "dressmaker" | "jewellery" | "cosmetics";
   legalVariant?: "family";
   aboutImage?: string;
   demoContent?: boolean;
@@ -3316,6 +3317,414 @@ websiteTemplates.push({
   document: nailDocument,
 });
 
+const fioraDocument: WebsiteDocument = {
+  ...JSON.parse(JSON.stringify(bridalDocument)),
+  brandName: "Fiora Locks",
+  eyebrow: "Personal length. Considered texture.",
+  headline: "The length you’ve\nlonged for.",
+  intro:
+    "A personal approach to extensions, beautiful blending and the finish that feels like you. Begin with a conversation about your hair.",
+  ctaLabel: "Find your perfect match",
+  accent: "#65594b",
+  paper: "#ffffff",
+  ink: "#181916",
+  heroImage: occasionPhoto("fiora-hero"),
+  seoTitle: "Fiora Locks | Hair Extensions & Personal Styling",
+  seoDescription:
+    "Discover a personal approach to hair extensions at Fiora Locks. Explore fitting options, browse hair inspiration and request your studio consultation.",
+  aboutTitle: "More than length. A little more you.",
+  aboutText:
+    "Your hair tells its own story. We make space to understand what you love, what you want to change and how your hair fits into everyday life.\n\nFrom a conversation about texture to a thoughtful fitting plan, the process is personal. We’ll discuss the available options, maintenance and next steps before anything is agreed.",
+  offeringsTitle: "Find your perfect match",
+  offerings: [
+    {
+      title: "Tape-in extensions",
+      slug: "tape-in-extensions",
+      description:
+        "Explore a fitting option for a personal length and finish. Your stylist will discuss suitability, blending and maintenance before recommending a plan.",
+      image: occasionPhoto("fiora-profile"),
+      price: "Personal quote after consultation",
+      duration: "Timing agreed at consultation",
+      benefits: [
+        "Personal hair consultation",
+        "A conversation about blending and placement",
+        "An agreed maintenance plan",
+      ],
+      preparation:
+        "Tell your stylist about your current hair, existing extensions and any sensitivities before your visit.",
+    },
+    {
+      title: "Weft fitting",
+      slug: "weft-fitting",
+      description:
+        "A considered approach to fuller-looking length, with the method and placement discussed around your own hair. Find out what a fitting and ongoing care would involve.",
+      image: occasionPhoto("fiora-hero"),
+      price: "Personal quote after consultation",
+      duration: "Timing agreed at consultation",
+      benefits: [
+        "A discussion about the available fitting methods",
+        "Colour and texture planning",
+        "Clear aftercare and appointment advice",
+      ],
+      preparation:
+        "Share your inspiration and hair history so your stylist can discuss appropriate options with you.",
+    },
+    {
+      title: "Clip-in styling",
+      slug: "clip-in-styling",
+      description:
+        "Discover an occasional change of length or volume with a personal styling conversation. Explore placement, blending and a finish suited to your occasion.",
+      image: occasionPhoto("fiora-copper"),
+      price: "Enquire for current options",
+      duration: "Visit length confirmed on enquiry",
+      benefits: [
+        "An occasion-led styling conversation",
+        "A personal discussion about your finish",
+        "Guidance on everyday handling",
+      ],
+      preparation:
+        "Let us know whether you already have a set, and tell us about the occasion you are styling for.",
+    },
+    {
+      title: "Your hair consultation",
+      slug: "hair-consultation",
+      description:
+        "Start with a little clarity. Talk through length, texture, colour, your routine and the options you want to understand before choosing your next step.",
+      image: occasionPhoto("fiora-smile"),
+      price: "Ask the studio about consultation arrangements",
+      duration: "By appointment",
+      benefits: [
+        "Time to share your ideas",
+        "A realistic conversation about your options",
+        "A clear next step and personal quote",
+      ],
+      preparation:
+        "Bring your questions and a few inspiration photographs. No fitting or purchase is confirmed by sending an enquiry.",
+    },
+  ],
+  galleryTitle: "A glimpse of your next chapter",
+  gallery: [
+    {
+      src: occasionPhoto("fiora-copper"),
+      alt: "African woman with long copper-coloured hair in a studio portrait",
+      category: "Warm tones",
+    },
+    {
+      src: occasionPhoto("fiora-profile"),
+      alt: "African woman with long straight dark hair and a considered natural finish",
+      category: "Quiet definition",
+    },
+    {
+      src: occasionPhoto("fiora-editorial"),
+      alt: "African woman with long hair in an editorial studio portrait",
+      category: "Personal expression",
+    },
+    {
+      src: occasionPhoto("fiora-smile"),
+      alt: "Smiling African woman with long dark hair against a light background",
+      category: "Everyday ease",
+    },
+    {
+      src: occasionPhoto("fiora-hero"),
+      alt: "Close-up portrait showing an African woman’s sleek dark hair",
+      category: "Your own finish",
+    },
+  ],
+  featureTitle: "Considered colour. Personal texture.",
+  featureText:
+    "Explore the possibilities together. Your shade, texture and fitting plan are confirmed with your stylist.",
+  featureItems: [
+    "Share your inspiration, your routine and the finish you have in mind.",
+    "Explore colour, texture and fitting options with your stylist.",
+    "Agree a personal plan, with clear maintenance and care advice.",
+  ],
+  faqTitle: "Before your new chapter",
+  faqs: [
+    {
+      question: "How do I choose a fitting method?",
+      answer:
+        "Begin with a consultation. Your stylist will discuss your hair, preferences and routine before explaining the available methods, suitability and maintenance.",
+    },
+    {
+      question: "Can I ask about a particular colour or texture?",
+      answer:
+        "Yes. Share your inspiration when you enquire. Available options, a personal match and any colour work are confirmed with your stylist before a fitting is booked.",
+    },
+    {
+      question: "How do I look after my extensions?",
+      answer:
+        "Ask your stylist for care instructions for your chosen hair and fitting method. Your maintenance needs and return appointments are discussed as part of your personal plan.",
+    },
+  ],
+  contactTitle: "Ready for your next chapter?",
+  contactText:
+    "Tell us about the hair you’re dreaming of. Share your ideas, preferred date and the questions you would like to explore.",
+  beauty: {
+    ...JSON.parse(JSON.stringify(bridalDocument.beauty)),
+    design: "extensions",
+    aboutImage: occasionPhoto("fiora-profile"),
+    philosophy: [
+      "A personal conversation before every plan",
+      "Your texture, your colour, your routine",
+      "A considered finish and clear care guidance",
+    ],
+    hours: [
+      {
+        day: "Studio & fitting visits",
+        hours: "By appointment · ask for current availability",
+      },
+    ],
+    pages: [
+      {
+        path: "",
+        title: "Fiora Locks | Hair Extensions & Personal Styling",
+        description:
+          "Discover a personal approach to hair extensions at Fiora Locks. Explore fitting options, browse hair inspiration and request your studio consultation.",
+      },
+      {
+        path: "about",
+        title: "Our Hair Studio & Personal Approach | Fiora Locks",
+        description:
+          "Explore the thoughtful approach at Fiora Locks: personal hair consultations, considered fitting choices and a finish shaped around your texture and routine.",
+      },
+      {
+        path: "services",
+        title: "Extension Fitting & Hair Consultations | Fiora Locks",
+        description:
+          "Explore tape-in extensions, weft fitting, clip-in styling and hair consultations at Fiora Locks. Discuss suitability and a personal quote with the studio.",
+      },
+      {
+        path: "gallery",
+        title: "Hair & Extension Inspiration Gallery | Fiora Locks",
+        description:
+          "Browse the Fiora Locks inspiration gallery for personal colour, texture and styling ideas, then speak to the studio about the finish you have in mind.",
+      },
+      {
+        path: "book",
+        title: "Request a Hair Consultation | Fiora Locks",
+        description:
+          "Share your hair inspiration, preferred service and visit date with Fiora Locks. The studio will confirm availability, suitability and arrangements with you.",
+      },
+      {
+        path: "contact",
+        title: "Contact the Hair Studio | Fiora Locks",
+        description:
+          "Start a conversation with Fiora Locks about extension fitting, personal styling or your next hair consultation. Send your questions directly to the studio.",
+      },
+    ],
+  },
+};
+websiteTemplates.push({
+  id: "fiora-locks",
+  name: "Hair Extensions — Fiora Locks",
+  category: "Beauty & Wellness",
+  layout: "editorial",
+  kind: "website",
+  sourceId: "fiora-locks",
+  edition: "Editorial",
+  sectionOrder: [
+    "offerings",
+    "gallery",
+    "reviews",
+    "about",
+    "feature",
+    "faq",
+    "areas",
+  ],
+  document: fioraDocument,
+});
+
+const cosmeticsDocument: WebsiteDocument = {
+  ...JSON.parse(JSON.stringify(jewelleryDocument)),
+  design: "cosmetics",
+  demoContent: true,
+  brandName: "Velora Beauty",
+  eyebrow: "Beauty, in your own expression",
+  headline: "Define your\nradiance.",
+  intro:
+    "Discover a considered edit of everyday beauty. Explore colour, find your finish and make a little room for self-expression.",
+  ctaLabel: "Explore the collection",
+  accent: "#173e42",
+  paper: "#f6f7f5",
+  ink: "#173437",
+  heroImage: occasionPhoto("glam-hero"),
+  aboutImage: occasionPhoto("glam-complexion"),
+  seoTitle: "Velora Beauty | Cosmetics, Colour & Everyday Beauty",
+  seoDescription:
+    "Explore the Velora Beauty cosmetics edit, from everyday skin essentials to personal colour. Browse collections, discover product details and ask the boutique.",
+  aboutTitle: "Beauty, with a point of view.",
+  aboutText:
+    "We believe the most interesting beauty routine is your own. A familiar favourite, a new colour, a finish that feels right today.\n\nOur boutique is a place to explore, ask questions and make considered choices. Start with your preferences and discover the details of the products that catch your eye.",
+  offeringsTitle: "Discover your everyday edit",
+  offerings: [
+    {
+      title: "The daily skin edit",
+      slug: "daily-skin-edit",
+      category: "Skin",
+      description:
+        "Explore an everyday skincare selection and ask about the current products, ingredients and directions before choosing what belongs in your routine.",
+      image: occasionPhoto("glam-skin"),
+      price: "Enquire for current products and pricing",
+      benefits: [
+        "Discover the available skincare edit",
+        "Ask for ingredient and use information",
+        "Confirm the products that suit your preferences",
+      ],
+      preparation:
+        "Check each product’s directions and ingredients. Ask the boutique about any sensitivities before buying.",
+    },
+    {
+      title: "The soft-finish edit",
+      slug: "soft-finish-edit",
+      category: "Complexion",
+      description:
+        "A starting point for exploring a personal complexion finish. Ask about the current shades, textures and products available from the boutique.",
+      image: occasionPhoto("glam-powder"),
+      price: "Ask about shades and current pricing",
+      benefits: [
+        "Explore the available complexion products",
+        "Discuss your preferred shade and finish",
+        "Confirm the details before purchasing",
+      ],
+      preparation:
+        "Tell the boutique about the shade and finish you are looking for. Photograph colours can vary from the actual product.",
+    },
+    {
+      title: "The colour-story lipstick",
+      slug: "colour-story-lipstick",
+      category: "Colour",
+      description:
+        "Find a colour that feels like your own expression. Discover the available lipstick edit and enquire about shades, finishes and product details.",
+      image: occasionPhoto("glam-lip"),
+      price: "Enquire for available shades and prices",
+      benefits: [
+        "Explore the current lipstick edit",
+        "Ask about colour and finish options",
+        "Confirm availability with the boutique",
+      ],
+      preparation:
+        "Ask about shade availability and ingredient information before agreeing an order.",
+    },
+    {
+      title: "The expressive eye edit",
+      slug: "expressive-eye-edit",
+      category: "Colour",
+      description:
+        "A little definition or a new colour story. Explore the eye-makeup selection and ask the boutique about the palettes and shades currently available.",
+      image: occasionPhoto("glam-eyes"),
+      price: "Enquire for current selection and pricing",
+      benefits: [
+        "Discover the eye-makeup collection",
+        "Explore the available colour stories",
+        "Ask for product directions and details",
+      ],
+      preparation:
+        "Check the product instructions and intended use. Your boutique can confirm the current selection and details.",
+    },
+    {
+      title: "The personal routine edit",
+      slug: "personal-routine-edit",
+      category: "Skin",
+      description:
+        "Begin with a conversation about your everyday favourites. Ask the boutique about the products and routines you want to explore, with details confirmed before purchase.",
+      image: occasionPhoto("glam-tubes"),
+      price: "Personal product enquiry",
+      benefits: [
+        "Share your preferences and questions",
+        "Discover available product information",
+        "Agree the details with the boutique",
+      ],
+      preparation:
+        "Let the boutique know which products you already use and what information you would like to understand.",
+    },
+    {
+      title: "The everyday colour set",
+      slug: "everyday-colour-set",
+      category: "Complexion",
+      description:
+        "Explore a considered selection of colour essentials. Ask about the individual products, shades and any available combinations from the boutique.",
+      image: occasionPhoto("glam-set"),
+      price: "Ask for current product and set pricing",
+      benefits: [
+        "Explore current colour essentials",
+        "Ask what is included in any set",
+        "Confirm shades and availability before ordering",
+      ],
+      preparation:
+        "Sample imagery is inspiration. The boutique confirms the exact items, quantities and price before an order is agreed.",
+    },
+  ],
+  galleryTitle: "Curated for expression",
+  gallery: [
+    {
+      src: occasionPhoto("glam-complexion"),
+      alt: "African woman with a considered complexion finish and elegant makeup",
+      category: "Complexion",
+    },
+    {
+      src: occasionPhoto("glam-colour"),
+      alt: "African woman expressing her style with colourful eye makeup and lipstick",
+      category: "Colour",
+    },
+    {
+      src: occasionPhoto("glam-portrait"),
+      alt: "African woman with natural Afro hair and a soft beauty look",
+      category: "Skin",
+    },
+  ],
+  featureTitle: "Beauty, with intention.",
+  featureText:
+    "A considered conversation about the products you choose and the way you make them your own.",
+  featureItems: [
+    "Your expression — Explore colour and finish around your own preferences.",
+    "The details matter — Ask about ingredients, directions and the current selection.",
+    "A personal edit — Confirm products, shades and availability with the boutique.",
+  ],
+  faqTitle: "A few things to know",
+  faqs: [
+    {
+      question: "How do I enquire about a product?",
+      answer:
+        "Choose a product from the collection and send an enquiry. The boutique will confirm the current selection, available shades, exact products and price with you.",
+    },
+    {
+      question: "Can I ask about shades and ingredients?",
+      answer:
+        "Yes. Ask for the current shade options, full ingredient information and product instructions before purchasing. Studio and screen lighting can affect how colours appear.",
+    },
+    {
+      question: "How are delivery and returns arranged?",
+      answer:
+        "Ask the boutique to confirm delivery areas, charges, timing and the applicable returns terms before agreeing an order. Sending an enquiry does not create an order or take payment.",
+    },
+  ],
+  contactTitle: "Let’s find your own expression.",
+  contactText:
+    "Ask about a product, a shade or something you would like to understand. The boutique will help you explore the details.",
+  serviceAreas: ["Ask the boutique about collection and delivery arrangements"],
+  socials: [],
+  reviews: [],
+};
+websiteTemplates.push({
+  id: "velora-cosmetics",
+  name: "Cosmetics Boutique — Velora Beauty",
+  category: "Beauty & Wellness",
+  layout: "catalogue",
+  kind: "website",
+  sourceId: "velora-cosmetics",
+  edition: "Beauty",
+  sectionOrder: [
+    "offerings",
+    "gallery",
+    "feature",
+    "reviews",
+    "about",
+    "faq",
+    "areas",
+  ],
+  document: cosmeticsDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -3345,7 +3754,8 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
     document.brandName = brandName.trim().slice(0, 120);
     if (
       document.beauty?.design === "bridal" ||
-      document.beauty?.design === "nail"
+      document.beauty?.design === "nail" ||
+      document.beauty?.design === "extensions"
     ) {
       document.beauty.pages = document.beauty.pages.map((page) => ({
         ...page,
@@ -3360,6 +3770,11 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
         ?.replaceAll(template.document.brandName, document.brandName)
         .slice(0, 320);
     }
+    if (document.design === "cosmetics") {
+      document.seoDescription = document.seoDescription
+        ?.replaceAll(template.document.brandName, document.brandName)
+        .slice(0, 320);
+    }
     if (document.design === "legal" && document.legalVariant !== "family")
       document.headline = document.brandName
         .toUpperCase()
@@ -3367,18 +3782,20 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
     document.seoTitle = (
       document.design === "legal"
         ? `Considered counsel | ${document.brandName}`
-        : document.beauty?.design === "bridal"
-          ? `Bridal makeup & hairstyling | ${document.brandName}`
-          : document.beauty?.design === "nail"
-            ? `Nail art & manicure care | ${document.brandName}`
-            : document.beauty?.design === "barber"
-              ? `Precision cuts & beard care | ${document.brandName}`
-              : document.beauty?.design === "atelier" ||
-                  document.beauty?.design === "spa"
-                ? `Personal beauty rituals | ${document.brandName}`
-                : document.beauty
-                  ? `Hair, with a personal touch | ${document.brandName}`
-                  : `${document.brandName} | ${template.name}`
+        : document.design === "cosmetics"
+          ? `Cosmetics & everyday beauty | ${document.brandName}`
+          : document.beauty?.design === "bridal"
+            ? `Bridal makeup & hairstyling | ${document.brandName}`
+            : document.beauty?.design === "nail"
+              ? `Nail art & manicure care | ${document.brandName}`
+              : document.beauty?.design === "barber"
+                ? `Precision cuts & beard care | ${document.brandName}`
+                : document.beauty?.design === "atelier" ||
+                    document.beauty?.design === "spa"
+                  ? `Personal beauty rituals | ${document.brandName}`
+                  : document.beauty
+                    ? `Hair, with a personal touch | ${document.brandName}`
+                    : `${document.brandName} | ${template.name}`
     ).slice(0, 100);
   }
   return document;
@@ -3430,7 +3847,11 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     throw new Error("Unsupported website content version.");
   const result: Record<string, unknown> = { version: 1 };
   if (source.design !== undefined) {
-    if (!["legal", "dressmaker", "jewellery"].includes(String(source.design)))
+    if (
+      !["legal", "dressmaker", "jewellery", "cosmetics"].includes(
+        String(source.design),
+      )
+    )
       throw Error("Unsupported website design.");
     result.design = source.design;
     if (source.legalVariant !== undefined) {
@@ -3643,7 +4064,8 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
       b.design === "barber" ||
       b.design === "spa" ||
       b.design === "bridal" ||
-      b.design === "nail"
+      b.design === "nail" ||
+      b.design === "extensions"
         ? { design: b.design }
         : {}),
       demoContent: b.demoContent,
@@ -3702,14 +4124,18 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     if (new Set(paths).size !== paths.length)
       throw Error("Please use unique practice and article titles.");
   }
-  if (result.design === "dressmaker" || result.design === "jewellery") {
+  if (
+    result.design === "dressmaker" ||
+    result.design === "jewellery" ||
+    result.design === "cosmetics"
+  ) {
     const slugs = (result.offerings as WebsiteOffering[]).map(
       beautyServiceSlug,
     );
     if (new Set(slugs).size !== slugs.length)
       throw Error("Please use unique collection names or URLs.");
   }
-  if (result.design === "jewellery") {
+  if (result.design === "jewellery" || result.design === "cosmetics") {
     const categories = jewelleryCategories(result as WebsiteDocument);
     if (new Set(categories.map((c) => c.slug)).size !== categories.length)
       throw Error("Please use unique product category URLs.");
@@ -3823,7 +4249,9 @@ export function beautyPageMeta(doc: WebsiteDocument, path: string) {
       (note
         ? `${note.question} | ${doc.brandName}`.slice(0, 100)
         : service
-          ? doc.beauty?.design === "bridal" || doc.beauty?.design === "nail"
+          ? doc.beauty?.design === "bridal" ||
+            doc.beauty?.design === "nail" ||
+            doc.beauty?.design === "extensions"
             ? `${service.title} | ${doc.brandName}`.slice(0, 100)
             : service.title
           : doc.seoTitle || doc.brandName),
@@ -3859,12 +4287,16 @@ export function websitePagePaths(
   if (templatePageKind(template) === "landing") return [""];
   if (doc.design === "legal" || doc.beauty?.version === 2)
     return beautyPagePaths(doc);
-  if (doc.design === "jewellery")
+  if (doc.design === "jewellery" || doc.design === "cosmetics")
     return [
       "",
       "shop",
       ...jewelleryCategories(doc).map((c) => "shop/" + c.slug),
-      ...doc.offerings.map((o, i) => "pieces/" + beautyServiceSlug(o, i)),
+      ...doc.offerings.map(
+        (o, i) =>
+          (doc.design === "cosmetics" ? "products/" : "pieces/") +
+          beautyServiceSlug(o, i),
+      ),
       "about",
       "editorial",
       "care",
@@ -3916,16 +4348,22 @@ export function websitePageMeta(
     };
   }
   const look =
-    doc.design === "dressmaker" || doc.design === "jewellery"
+    doc.design === "dressmaker" ||
+    doc.design === "jewellery" ||
+    doc.design === "cosmetics"
       ? doc.offerings.find(
           (o, i) =>
             path ===
-            (doc.design === "jewellery" ? "pieces/" : "collection/") +
+            (doc.design === "cosmetics"
+              ? "products/"
+              : doc.design === "jewellery"
+                ? "pieces/"
+                : "collection/") +
               beautyServiceSlug(o, i),
         )
       : undefined;
   const category =
-    doc.design === "jewellery"
+    doc.design === "jewellery" || doc.design === "cosmetics"
       ? jewelleryCategories(doc).find((c) => path === "shop/" + c.slug)
       : undefined;
   const labels: Record<string, string> = {
