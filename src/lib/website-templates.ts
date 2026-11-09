@@ -14,7 +14,15 @@ export type TemplateLayout =
   | "studio";
 export type BeautyContent = {
   design?:
-    "atelier" | "luxe" | "barber" | "spa" | "bridal" | "nail" | "extensions";
+    | "atelier"
+    | "luxe"
+    | "barber"
+    | "spa"
+    | "bridal"
+    | "nail"
+    | "extensions"
+    | "tress"
+    | "tattoo";
   version: 2;
   demoContent: boolean;
   aboutImage: string;
@@ -29,6 +37,20 @@ export type BeautyContent = {
     mapUrl: string;
   };
   pages: { path: string; title: string; description: string }[];
+  guestSpots?: {
+    city: string;
+    studio: string;
+    dates: string;
+    description: string;
+    image: string;
+  }[];
+  comparison?: {
+    leftImage: string;
+    rightImage: string;
+    leftLabel: string;
+    rightLabel: string;
+    caption: string;
+  };
 };
 export type WebsiteOffering = {
   title: string;
@@ -3725,6 +3747,355 @@ websiteTemplates.push({
   document: cosmeticsDocument,
 });
 
+const ellieDocument: WebsiteDocument = {
+  ...JSON.parse(JSON.stringify(bridalDocument)),
+  brandName: "Ellie Ink",
+  serviceAreas: [
+    "Studio visits by appointment",
+    "Guest locations confirmed on enquiry",
+  ],
+  eyebrow: "Contemporary tattoos. Personal stories.",
+  headline: "Art that feels\nlike you.",
+  intro:
+    "Thoughtful tattoos for individual stories, every complexion and your own sense of self. Start with a conversation, and let’s explore your idea together.",
+  ctaLabel: "Explore the possibilities",
+  accent: "#702c3f",
+  paper: "#fbf8f0",
+  ink: "#48202b",
+  heroImage: occasionPhoto("ink-portrait"),
+  seoTitle: "Ellie Ink | Contemporary Tattoo Art & Consultations",
+  seoDescription:
+    "Explore personal tattoo art at Ellie Ink. Discover design consultations, browse inspiration, read aftercare guidance and enquire about studio or guest visits.",
+  aboutTitle: "Your story. Our starting point.",
+  aboutText:
+    "Some ideas arrive fully formed. Others begin with a feeling, a memory or a tiny detail. We make room for both.\n\nOur approach starts with listening: your inspiration, your placement and what the piece means to you. We’ll talk through the creative direction and visit arrangements before a booking is confirmed.",
+  offeringsTitle: "Made personal, from the first line.",
+  offerings: [
+    {
+      title: "Custom tattoo design",
+      slug: "custom-tattoo-design",
+      description:
+        "Bring your own story to a personal design conversation. Explore the scale, placement and creative direction of an original piece with your artist.",
+      image: occasionPhoto("ink-lagos"),
+      price: "Personal quote after consultation",
+      duration: "Timing agreed with your artist",
+      benefits: [
+        "Time to share your story",
+        "A discussion of scale and placement",
+        "A clear creative next step",
+      ],
+      preparation:
+        "Share your inspiration and any questions about the appointment. Your artist will confirm suitability and arrangements before booking.",
+    },
+    {
+      title: "Fine-line ideas",
+      slug: "fine-line-ideas",
+      description:
+        "Explore a quieter expression of personal art: small details, thoughtful linework and a design that belongs to you. Discuss the possibilities before deciding on a piece.",
+      image: occasionPhoto("ink-detail"),
+      price: "Ask for a personal quote",
+      duration: "By appointment",
+      benefits: [
+        "A personal design discussion",
+        "Placement and size planning",
+        "Written care advice from your artist",
+      ],
+      preparation:
+        "Tell your artist about your idea, preferred placement and any relevant concerns before the visit.",
+    },
+    {
+      title: "Your first consultation",
+      slug: "tattoo-consultation",
+      description:
+        "New to tattoos, or considering a new direction? Ask your questions, discuss your inspiration and understand the creative process before making a decision.",
+      image: occasionPhoto("ink-expression"),
+      price: "Enquire for consultation arrangements",
+      duration: "Visit length confirmed on enquiry",
+      benefits: [
+        "Space for your questions",
+        "A conversation about your ideas",
+        "Clear next steps without pressure",
+      ],
+      preparation:
+        "Bring your questions and inspiration. An enquiry does not confirm a tattoo appointment.",
+    },
+  ],
+  galleryTitle: "A little self-expression.",
+  gallery: [
+    {
+      src: occasionPhoto("ink-detail"),
+      alt: "Tattoo detail on a man at a beach in Lagos",
+      category: "Personal stories",
+    },
+    {
+      src: occasionPhoto("ink-expression"),
+      alt: "African woman with tattoos and textured hair in natural light",
+      category: "Individual expression",
+    },
+    {
+      src: occasionPhoto("ink-lagos"),
+      alt: "Tattoo artist working with a client in a Lagos studio",
+      category: "The creative process",
+    },
+    {
+      src: occasionPhoto("ink-accra"),
+      alt: "Profile of a tattooed African man in Accra",
+      category: "Considered placement",
+    },
+    {
+      src: occasionPhoto("ink-braids"),
+      alt: "African woman with braids and tattoos in an outdoor portrait",
+      category: "Your own perspective",
+    },
+  ],
+  featureTitle: "From a little idea to a personal piece.",
+  featureText:
+    "A thoughtful process, shaped around your story. Design, suitability, pricing and availability are confirmed with your artist.",
+  featureItems: [
+    "Share the story and inspiration behind your idea.",
+    "Discuss your design, placement and visit with your artist.",
+    "Leave with personal care instructions and a way to ask follow-up questions.",
+  ],
+  faqTitle: "A little care, a clear next step.",
+  faqs: [
+    {
+      question: "Where do I find my aftercare instructions?",
+      answer:
+        "Follow the written instructions your artist gives you for your own tattoo. Contact the studio if anything is unclear, rather than following unrelated advice online.",
+    },
+    {
+      question: "Can I contact the artist after my visit?",
+      answer:
+        "Yes. Use the contact page to ask the studio about your own appointment or care instructions. Include your visit date so the team can find the right details.",
+    },
+    {
+      question: "What if I have a medical concern?",
+      answer:
+        "This website does not provide medical advice. Seek advice from a qualified healthcare professional about medical concerns; urgent concerns need prompt local medical attention.",
+    },
+  ],
+  contactTitle: "Let’s make something personal.",
+  contactText:
+    "Tell us about your idea, preferred placement and the visit you have in mind. The artist will confirm the next steps with you.",
+  beauty: {
+    ...JSON.parse(JSON.stringify(bridalDocument.beauty)),
+    design: "tattoo",
+    aboutImage: occasionPhoto("ink-expression"),
+    philosophy: [
+      "Your own story, always",
+      "Space to ask questions",
+      "A clear plan before every appointment",
+    ],
+    stylists: [],
+    hours: [
+      {
+        day: "Studio & guest visits",
+        hours: "By arrangement · enquire for current availability",
+      },
+    ],
+    guestSpots: [
+      {
+        city: "Lagos",
+        studio: "City studio visits",
+        dates: "Dates and venue confirmed on enquiry",
+        description:
+          "An editable example of a guest-visit card. Ask about a possible Lagos appointment; the artist must confirm the venue, availability and arrangements before you make travel plans.",
+        image: occasionPhoto("ink-lagos"),
+      },
+      {
+        city: "Abuja",
+        studio: "Guest artist enquiries",
+        dates: "By arrangement · no visit announced",
+        description:
+          "Interested in a future guest visit? Share your city and design idea with the artist. This sample card does not announce a confirmed residency or appointment.",
+        image: occasionPhoto("ink-accra"),
+      },
+      {
+        city: "Port Harcourt",
+        studio: "Creative guest sessions",
+        dates: "Enquire about future visits",
+        description:
+          "A place to publish genuine guest-visit details when they are confirmed. For now, ask the artist about possible arrangements and wait for confirmation before booking travel.",
+        image: occasionPhoto("ink-braids"),
+      },
+    ],
+    pages: [
+      {
+        path: "",
+        title: "Ellie Ink | Contemporary Tattoo Art & Consultations",
+        description:
+          "Explore personal tattoo art at Ellie Ink. Discover design consultations, browse inspiration, read aftercare guidance and enquire about studio or guest visits.",
+      },
+      {
+        path: "about",
+        title: "A Personal Approach to Tattoo Art | Ellie Ink",
+        description:
+          "Get to know Ellie Ink’s thoughtful approach to contemporary tattoo design, personal stories and clear conversations before every creative appointment.",
+      },
+      {
+        path: "services",
+        title: "Tattoo Designs & Creative Consultations | Ellie Ink",
+        description:
+          "Explore custom tattoo design, fine-line ideas and first consultations at Ellie Ink. Discuss your inspiration and request a personal quote from the artist.",
+      },
+      {
+        path: "gallery",
+        title: "Tattoo Art & Personal Expression Gallery | Ellie Ink",
+        description:
+          "Browse Ellie Ink’s visual inspiration for personal tattoo art, placement and self-expression, then start a conversation about a piece that feels like you.",
+      },
+      {
+        path: "book",
+        title: "Request a Tattoo Consultation | Ellie Ink",
+        description:
+          "Share your design idea, preferred placement and visit date with Ellie Ink. Your artist will confirm suitability, availability and arrangements with you.",
+      },
+      {
+        path: "contact",
+        title: "Contact Your Tattoo Artist | Ellie Ink",
+        description:
+          "Ask Ellie Ink about a design consultation, studio appointment or guest visit. Send your questions and inspiration directly to the artist through the contact form.",
+      },
+      {
+        path: "aftercare",
+        title: "Tattoo Aftercare & Follow-up Questions | Ellie Ink",
+        description:
+          "Find out how to follow your artist’s personal aftercare instructions, ask Ellie Ink a follow-up question and get appropriate help for medical concerns.",
+      },
+      {
+        path: "guest-spots",
+        title: "Guest Visits & Studio Enquiries | Ellie Ink",
+        description:
+          "Explore guest-visit enquiries at Ellie Ink. Check arrangements with the artist, ask about a location and confirm venue and dates before planning a visit.",
+      },
+    ],
+  },
+};
+websiteTemplates.push({
+  id: "ellie-ink",
+  name: "Tattoo Artist — Ellie Ink",
+  category: "Beauty & Wellness",
+  layout: "editorial",
+  kind: "website",
+  sourceId: "ellie-ink",
+  edition: "Editorial",
+  sectionOrder: [
+    "offerings",
+    "about",
+    "gallery",
+    "reviews",
+    "feature",
+    "faq",
+    "areas",
+  ],
+  document: ellieDocument,
+});
+
+const tressDocument: WebsiteDocument = {
+  ...JSON.parse(JSON.stringify(fioraDocument)),
+  brandName: "Éclat Tress",
+  serviceAreas: [
+    "Studio consultations by appointment",
+    "Ask about your local fitting options",
+  ],
+  eyebrow: "Beautiful texture. Your own expression.",
+  headline: "Unveil your\nultimate hair.",
+  intro:
+    "A personal approach to length, texture and a finish that feels entirely yours. Explore the possibilities with a thoughtful studio consultation.",
+  ctaLabel: "Find your hair story",
+  accent: "#172b4a",
+  paper: "#ffffff",
+  ink: "#14233b",
+  heroImage: occasionPhoto("tress-hero"),
+  seoTitle: "Éclat Tress | Personal Hair Extensions & Styling",
+  seoDescription:
+    "Discover considered hair extensions and personal styling at Éclat Tress. Explore fitting options, compare hair inspiration and request a studio consultation.",
+  aboutTitle: "The art of feeling like yourself.",
+  aboutText:
+    "Great hair starts with understanding the person wearing it. Your everyday routine, the texture you love and the finish you imagine all have a place in the conversation.\n\nWe’ll explore fitting options, personal blending and care together, with a clear plan and quote before your next step.",
+  offeringsTitle: "Designed around your hair.",
+  offerings: fioraDocument.offerings.map((o, i) => ({
+    ...o,
+    image: occasionPhoto(
+      ["tress-curls", "fiora-profile", "tress-hero", "tress-smile"][i],
+    ),
+  })),
+  galleryTitle: "So many ways to be you.",
+  gallery: [
+    {
+      src: occasionPhoto("tress-curls"),
+      alt: "African woman with defined dark curls in natural light",
+      category: "Soft definition",
+    },
+    {
+      src: occasionPhoto("fiora-profile"),
+      alt: "African woman with long sleek dark hair in profile",
+      category: "Quiet length",
+    },
+    {
+      src: occasionPhoto("tress-hero"),
+      alt: "African woman with voluminous natural curls and a pink blouse",
+      category: "Full expression",
+    },
+    {
+      src: occasionPhoto("fiora-copper"),
+      alt: "African woman with copper-toned hair in a studio portrait",
+      category: "A warmer chapter",
+    },
+    {
+      src: occasionPhoto("tress-smile"),
+      alt: "Smiling African woman with natural textured hair outdoors",
+      category: "Everyday joy",
+    },
+  ],
+  featureTitle: "Personal from the very beginning.",
+  featureText:
+    "Thoughtful fitting, considered texture and a plan built around you. Every appointment starts with an honest conversation about your options.",
+  contactTitle: "Your next chapter starts here.",
+  beauty: {
+    ...JSON.parse(JSON.stringify(fioraDocument.beauty)),
+    design: "tress",
+    aboutImage: occasionPhoto("fiora-profile"),
+    comparison: {
+      leftImage: occasionPhoto("fiora-profile"),
+      rightImage: occasionPhoto("tress-curls"),
+      leftLabel: "Sleek inspiration",
+      rightLabel: "Texture inspiration",
+      caption:
+        "Slide to explore two different hair inspirations. These stock photographs show different people and styles, not before-and-after results. Ask the studio about options for your own hair.",
+    },
+    pages: fioraDocument.beauty!.pages.map((p) => ({
+      ...p,
+      title: p.title.replaceAll("Fiora Locks", "Éclat Tress"),
+      description: p.description.replaceAll("Fiora Locks", "Éclat Tress"),
+    })),
+  },
+};
+tressDocument.beauty!.pages[0] = {
+  path: "",
+  title: tressDocument.seoTitle!,
+  description: tressDocument.seoDescription!,
+};
+websiteTemplates.push({
+  id: "eclat-tress",
+  name: "Luxury Hair Studio — Éclat Tress",
+  category: "Beauty & Wellness",
+  layout: "editorial",
+  kind: "website",
+  sourceId: "eclat-tress",
+  edition: "Editorial",
+  sectionOrder: [
+    "about",
+    "offerings",
+    "gallery",
+    "reviews",
+    "feature",
+    "faq",
+    "areas",
+  ],
+  document: tressDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -3755,7 +4126,9 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
     if (
       document.beauty?.design === "bridal" ||
       document.beauty?.design === "nail" ||
-      document.beauty?.design === "extensions"
+      document.beauty?.design === "extensions" ||
+      document.beauty?.design === "tress" ||
+      document.beauty?.design === "tattoo"
     ) {
       document.beauty.pages = document.beauty.pages.map((page) => ({
         ...page,
@@ -3784,18 +4157,20 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
         ? `Considered counsel | ${document.brandName}`
         : document.design === "cosmetics"
           ? `Cosmetics & everyday beauty | ${document.brandName}`
-          : document.beauty?.design === "bridal"
-            ? `Bridal makeup & hairstyling | ${document.brandName}`
-            : document.beauty?.design === "nail"
-              ? `Nail art & manicure care | ${document.brandName}`
-              : document.beauty?.design === "barber"
-                ? `Precision cuts & beard care | ${document.brandName}`
-                : document.beauty?.design === "atelier" ||
-                    document.beauty?.design === "spa"
-                  ? `Personal beauty rituals | ${document.brandName}`
-                  : document.beauty
-                    ? `Hair, with a personal touch | ${document.brandName}`
-                    : `${document.brandName} | ${template.name}`
+          : document.beauty?.design === "tattoo"
+            ? `Personal tattoo art | ${document.brandName}`
+            : document.beauty?.design === "bridal"
+              ? `Bridal makeup & hairstyling | ${document.brandName}`
+              : document.beauty?.design === "nail"
+                ? `Nail art & manicure care | ${document.brandName}`
+                : document.beauty?.design === "barber"
+                  ? `Precision cuts & beard care | ${document.brandName}`
+                  : document.beauty?.design === "atelier" ||
+                      document.beauty?.design === "spa"
+                    ? `Personal beauty rituals | ${document.brandName}`
+                    : document.beauty
+                      ? `Hair, with a personal touch | ${document.brandName}`
+                      : `${document.brandName} | ${template.name}`
     ).slice(0, 100);
   }
   return document;
@@ -4065,7 +4440,9 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
       b.design === "spa" ||
       b.design === "bridal" ||
       b.design === "nail" ||
-      b.design === "extensions"
+      b.design === "extensions" ||
+      b.design === "tress" ||
+      b.design === "tattoo"
         ? { design: b.design }
         : {}),
       demoContent: b.demoContent,
@@ -4088,10 +4465,10 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
         mapUrl,
         address: optionalText(contact, "address", 500),
       },
-      pages: values("pages", 24).map((v) => {
+      pages: values("pages", 40).map((v) => {
         const path = optionalText(v, "path", 120);
         if (
-          !/^(?:about|services(?:\/[a-z0-9-]+)?|notes\/[a-z0-9-]+|gallery|book|contact)?$/.test(
+          !/^(?:about|services(?:\/[a-z0-9-]+)?|notes\/[a-z0-9-]+|gallery|book|contact|aftercare|guest-spots(?:\/[a-z0-9-]+)?)?$/.test(
             path,
           )
         )
@@ -4103,6 +4480,31 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
         };
       }),
     };
+    if (b.guestSpots !== undefined) {
+      const guests = values("guestSpots", 12).map((g) => ({
+        city: text(g, "city", 120),
+        studio: text(g, "studio", 120),
+        dates: text(g, "dates", 160),
+        description: text(g, "description", 800),
+        image: image(text(g, "image", 2000)),
+      }));
+      if (new Set(guests.map(beautyGuestSlug)).size !== guests.length)
+        throw Error("Please use unique guest studio locations.");
+      (result.beauty as BeautyContent).guestSpots = guests;
+    }
+    if (b.comparison !== undefined) {
+      const c = b.comparison;
+      if (!c || typeof c !== "object" || Array.isArray(c))
+        throw Error("Please check comparison photographs.");
+      const comparison = c as Record<string, unknown>;
+      (result.beauty as BeautyContent).comparison = {
+        leftImage: image(text(comparison, "leftImage", 2000)),
+        rightImage: image(text(comparison, "rightImage", 2000)),
+        leftLabel: text(comparison, "leftLabel", 80),
+        rightLabel: text(comparison, "rightLabel", 80),
+        caption: text(comparison, "caption", 500),
+      };
+    }
     const slugs = (result.offerings as WebsiteOffering[]).map((o, i) =>
       beautyServiceSlug(o, i),
     );
@@ -4161,6 +4563,15 @@ export function beautyNotePath(question: string, index: number) {
     "notes/" + beautyServiceSlug({ title: question, description: "" }, index)
   );
 }
+export function beautyGuestSlug(
+  guest: { city: string; studio: string },
+  index: number,
+) {
+  return beautyServiceSlug(
+    { title: guest.city + " " + guest.studio, description: "" },
+    index,
+  );
+}
 export function beautyPagePaths(doc: WebsiteDocument) {
   if (doc.design === "legal")
     return [
@@ -4190,6 +4601,15 @@ export function beautyPagePaths(doc: WebsiteDocument) {
         "contact",
         ...(doc.beauty.design === "spa"
           ? doc.faqs.map((f, i) => beautyNotePath(f.question, i))
+          : []),
+        ...(doc.beauty.design === "tattoo"
+          ? [
+              "aftercare",
+              "guest-spots",
+              ...(doc.beauty.guestSpots || []).map(
+                (g, i) => "guest-spots/" + beautyGuestSlug(g, i),
+              ),
+            ]
           : []),
       ]
     : [""];
@@ -4238,6 +4658,12 @@ export function beautyPageMeta(doc: WebsiteDocument, path: string) {
   const service = doc.offerings.find(
     (o, i) => path === "services/" + beautyServiceSlug(o, i),
   );
+  const guest =
+    doc.beauty?.design === "tattoo"
+      ? doc.beauty.guestSpots?.find(
+          (g, i) => path === "guest-spots/" + beautyGuestSlug(g, i),
+        )
+      : undefined;
   const note =
     doc.beauty?.design === "spa"
       ? doc.faqs.find((f, i) => beautyNotePath(f.question, i) === path)
@@ -4246,18 +4672,24 @@ export function beautyPageMeta(doc: WebsiteDocument, path: string) {
     title:
       (path === "" ? doc.seoTitle : undefined) ||
       custom?.title ||
+      (guest
+        ? `${guest.studio} · ${guest.city} | ${doc.brandName}`.slice(0, 100)
+        : undefined) ||
       (note
         ? `${note.question} | ${doc.brandName}`.slice(0, 100)
         : service
           ? doc.beauty?.design === "bridal" ||
             doc.beauty?.design === "nail" ||
-            doc.beauty?.design === "extensions"
+            doc.beauty?.design === "extensions" ||
+            doc.beauty?.design === "tress" ||
+            doc.beauty?.design === "tattoo"
             ? `${service.title} | ${doc.brandName}`.slice(0, 100)
             : service.title
           : doc.seoTitle || doc.brandName),
     description:
       (path === "" ? doc.seoDescription : undefined) ||
       custom?.description ||
+      guest?.description ||
       service?.description ||
       (note ? note.answer.slice(0, 155) : undefined) ||
       doc.seoDescription ||

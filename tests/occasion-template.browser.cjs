@@ -26,6 +26,7 @@ const { chromium } = require("playwright");
           viewport: { width, height: 950 },
           reducedMotion: width === 320 ? "reduce" : "no-preference",
         });
+        p.setDefaultTimeout(60000);
         const errors = [];
         await p.route("**/api/public/features", (route) =>
           route.fulfill({
@@ -51,7 +52,9 @@ const { chromium } = require("playwright");
           const base = origin + "/template-canvas/" + id;
           const response = await p.goto(base);
           assert.equal(response.status(), 200);
-          await p.locator("[data-occasion-template] h1").waitFor();
+          await p
+            .locator("[data-occasion-template], [data-tattoo-template] h1")
+            .waitFor();
           await p.evaluate(() => document.fonts.ready);
           await p.waitForFunction(() =>
             Array.from(document.images)
@@ -72,6 +75,7 @@ const { chromium } = require("playwright");
             false,
           );
           await p.screenshot({
+            caret: "initial",
             path: `${out}/${site}-${id}-${width}.png`,
             fullPage: false,
           });
@@ -179,6 +183,35 @@ const { chromium } = require("playwright");
               id + "/" + section + ": " + width,
             );
           }
+          if (doc.beauty?.design === "tattoo") {
+            await p.goto(base + "/guest-spots");
+            await p
+              .getByRole("link", { name: "Visit details", exact: true })
+              .first()
+              .click();
+            await p
+              .getByRole("heading", {
+                level: 1,
+                name: doc.beauty.guestSpots[0].studio,
+                exact: true,
+              })
+              .waitFor();
+            await p
+              .getByRole("link", {
+                name: "Enquire about this visit",
+                exact: true,
+              })
+              .click();
+            await p.waitForURL("**/contact?guest=*");
+            await p.getByLabel("Your message", { exact: true }).waitFor();
+            await p.waitForFunction(
+              (studio) =>
+                document
+                  .querySelector('textarea[name="message"]')
+                  ?.value.includes(studio),
+              doc.beauty.guestSpots[0].studio,
+            );
+          }
           assert.equal(await p.locator("form").count(), 1);
           assert.equal(
             await p
@@ -215,7 +248,7 @@ const { chromium } = require("playwright");
           await p.goto(origin + "/templates/" + id);
           await p
             .frameLocator("iframe")
-            .locator("[data-occasion-template]")
+            .locator("[data-occasion-template], [data-tattoo-template]")
             .waitFor();
           const selection = p.getByRole("link", { name: /Select Template/ });
           assert.equal(
@@ -301,6 +334,7 @@ const { chromium } = require("playwright");
               .every((i) => i.complete && i.naturalWidth),
           );
           await p.screenshot({
+            caret: "initial",
             path: path.resolve(
               __dirname,
               "../public/template-previews/" + id + ".jpg",

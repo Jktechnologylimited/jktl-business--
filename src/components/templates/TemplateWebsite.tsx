@@ -21,6 +21,7 @@ import { DressmakerWebsite } from "./DressmakerWebsite";
 import { LegalWebsite } from "./LegalWebsite";
 import { BeautyWebsite, type BeautyRequest } from "./BeautyWebsite";
 import { OccasionWebsite } from "./OccasionWebsite";
+import { TattooWebsite } from "./TattooWebsite";
 import { CosmeticsWebsite } from "./CosmeticsWebsite";
 export type TemplateContact = {
   email?: string;
@@ -659,9 +660,12 @@ export function TemplateWebsite(
   if (
     props.document.beauty?.design === "bridal" ||
     props.document.beauty?.design === "nail" ||
-    props.document.beauty?.design === "extensions"
+    props.document.beauty?.design === "extensions" ||
+    props.document.beauty?.design === "tress"
   )
     return <OccasionWebsite {...props} />;
+  if (props.document.beauty?.design === "tattoo")
+    return <TattooWebsite {...props} />;
   if (props.document.beauty?.version === 2) return <BeautyWebsite {...props} />;
   return <LegacyTemplateWebsite {...props} />;
 }

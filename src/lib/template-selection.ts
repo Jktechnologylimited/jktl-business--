@@ -34,6 +34,8 @@ export function templateBusinessType(id: string): BusinessType {
     "bridal-aura": "salon",
     "nail-culture": "salon",
     "fiora-locks": "salon",
+    "eclat-tress": "salon",
+    "ellie-ink": "salon",
     "velora-cosmetics": "general",
     "med-spa": "aesthetics",
     restaurant: "restaurant",

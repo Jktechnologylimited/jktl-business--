@@ -30,6 +30,7 @@ export function BeautyFields({
       {max > 500 || label.toLowerCase().includes("description") ? (
         <textarea
           className={input}
+          aria-label={label}
           value={content}
           maxLength={max}
           rows={3}
@@ -38,6 +39,7 @@ export function BeautyFields({
       ) : (
         <input
           className={input}
+          aria-label={label}
           type={type}
           value={content}
           maxLength={max}
@@ -55,7 +57,11 @@ export function BeautyFields({
     });
   return (
     <section className="space-y-6 rounded-xl border border-border p-4">
-      <h3 className="text-lg font-semibold">Salon pages & details</h3>
+      <h3 className="text-lg font-semibold">
+        {b.design === "tattoo"
+          ? "Artist pages & details"
+          : "Salon pages & details"}
+      </h3>
       <p className="text-sm text-ink-muted">
         Business name, logo, main copy, colours, gallery and social links use
         the existing website fields. Changes stay in your draft until you save.
@@ -278,6 +284,139 @@ export function BeautyFields({
           becomes a readable care-note page. Keep titles unique; changing a
           title changes its page address.
         </p>
+      )}
+      {b.design === "tattoo" && (
+        <div className="space-y-4">
+          <h4 className="font-semibold">Guest visits</h4>
+          <p className="text-xs text-ink-muted">
+            Publish only confirmed venues and dates. Each card has its own
+            detail page and enquiry link. Changing a city or studio changes its
+            page address.
+          </p>
+          {(b.guestSpots || []).map((guest, i) => (
+            <fieldset
+              key={i}
+              className="space-y-3 rounded-lg border border-border p-3"
+            >
+              <legend className="text-sm font-semibold">
+                Guest visit {i + 1}
+              </legend>
+              {(
+                ["city", "studio", "dates", "description", "image"] as const
+              ).map((key) =>
+                text(
+                  {
+                    city: "City",
+                    studio: "Studio or venue",
+                    dates: "Confirmed dates or availability",
+                    description: "Guest visit description",
+                    image: "Guest visit photograph",
+                  }[key],
+                  guest[key],
+                  (v) =>
+                    update({
+                      guestSpots: (b.guestSpots || []).map((g, n) =>
+                        n === i ? { ...g, [key]: v } : g,
+                      ),
+                    }),
+                  key === "image"
+                    ? 2000
+                    : key === "description"
+                      ? 800
+                      : key === "dates"
+                        ? 160
+                        : 120,
+                ),
+              )}
+              <button
+                type="button"
+                className="text-sm underline"
+                onClick={() =>
+                  update({
+                    guestSpots: (b.guestSpots || []).filter((_, n) => n !== i),
+                  })
+                }
+              >
+                Remove guest visit {i + 1}
+              </button>
+            </fieldset>
+          ))}
+          <button
+            type="button"
+            className="rounded border border-border p-3 text-sm"
+            disabled={(b.guestSpots || []).length >= 12}
+            onClick={() =>
+              update({
+                guestSpots: [
+                  ...(b.guestSpots || []),
+                  {
+                    city: "New city",
+                    studio: `Guest visit ${(b.guestSpots || []).length + 1}`,
+                    dates: "Dates to be confirmed",
+                    description:
+                      "Add confirmed guest-visit arrangements before publishing.",
+                    image: b.aboutImage,
+                  },
+                ],
+              })
+            }
+          >
+            Add guest visit
+          </button>
+        </div>
+      )}
+      {b.design === "tress" && (
+        <div className="space-y-4">
+          <h4 className="font-semibold">Image comparison</h4>
+          <p className="text-xs text-ink-muted">
+            Use your own photographs and accurate labels. Stock images are
+            inspiration, not proof of a result. Use genuine matched client
+            photographs with permission for before-and-after comparisons.
+          </p>
+          <label className="flex items-center gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={!!b.comparison}
+              onChange={(e) =>
+                update({
+                  comparison: e.target.checked
+                    ? {
+                        leftImage: b.aboutImage,
+                        rightImage: value.heroImage,
+                        leftLabel: "First photograph",
+                        rightLabel: "Second photograph",
+                        caption: "Describe what these photographs show.",
+                      }
+                    : undefined,
+                })
+              }
+            />
+            Show image comparison
+          </label>
+          {b.comparison &&
+            (
+              [
+                "leftImage",
+                "rightImage",
+                "leftLabel",
+                "rightLabel",
+                "caption",
+              ] as const
+            ).map((key) =>
+              text(
+                {
+                  leftImage: "First photograph URL",
+                  rightImage: "Second photograph URL",
+                  leftLabel: "First photograph label",
+                  rightLabel: "Second photograph label",
+                  caption: "Comparison description",
+                }[key],
+                b.comparison![key],
+                (v) => update({ comparison: { ...b.comparison!, [key]: v } }),
+                key.endsWith("Image") ? 2000 : key === "caption" ? 500 : 80,
+              ),
+            )}
+        </div>
       )}
       <h4 className="font-semibold">Search appearance for each page</h4>
       {beautyPagePaths(value).map((path) => {

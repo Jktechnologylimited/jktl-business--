@@ -1743,3 +1743,266 @@
     transition: none !important;
   }
 }
+.tress .header {
+  min-height: 100px;
+}
+.tress .brand {
+  font-style: italic;
+  font-size: 35px;
+}
+.tress :is(h1, h2, h3) {
+  font-family: Georgia, serif;
+}
+.tressHero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 8%;
+  min-height: 740px;
+  padding: 85px 6%;
+  color: #fff;
+  background: #101e35;
+}
+.tressHero > img {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  object-position: 65% 33%;
+}
+.tressHero:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, #09172ec9, #09172e05 65%),
+    linear-gradient(0deg, #09172ebd, transparent 80%);
+}
+.tressHero > div:first-of-type {
+  max-width: 690px;
+}
+.tressHero h1 {
+  font-size: clamp(60px, 7.5vw, 120px);
+  font-style: italic;
+  letter-spacing: -0.06em;
+  line-height: 1.03;
+  margin-top: 22px;
+}
+.tressHero > div:last-of-type {
+  max-width: 270px;
+}
+.tressHero .button {
+  margin-top: 20px;
+}
+.tress .aboutPhoto {
+  display: grid;
+  grid-template-columns: 1fr 0.7fr;
+  gap: 14px;
+  align-items: center;
+  overflow: visible;
+}
+.tress .aboutPhoto img:first-child {
+  height: 85%;
+}
+.tress .aboutPhoto img:last-child {
+  height: 65%;
+  align-self: end;
+}
+.tress .extensionServices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9%;
+  margin-top: 45px;
+}
+.tress .extensionServices > div:first-child {
+  order: 2;
+}
+.tress .extensionServices article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 0;
+  border-bottom: 1px solid #17223a30;
+}
+.tress .extensionServices article > div {
+  display: grid;
+  grid-template-columns: 75px 1fr;
+  gap: 10px 20px;
+  align-items: center;
+}
+.tress .extensionServices article img {
+  width: 75px;
+  height: 100px;
+  grid-row: 1/4;
+}
+.tress .extensionServices h3 {
+  font-size: 25px;
+}
+.tress .extensionServices p {
+  font-size: 12px;
+}
+.tress .extensionServicePhoto {
+  min-height: 660px;
+}
+.comparison {
+  padding: 85px 7%;
+  display: grid;
+  grid-template-columns: 0.7fr 1fr;
+  align-items: center;
+  gap: 12%;
+  background: #f2f1ef;
+}
+.comparison h2 {
+  font:
+    italic 44px/1.1 Georgia,
+    serif;
+  margin: 22px 0;
+}
+.comparison label {
+  display: block;
+  margin-top: 28px;
+}
+.comparison input {
+  width: 100%;
+  margin-top: 16px;
+  accent-color: var(--occasion-accent);
+  min-height: 44px;
+  cursor: ew-resize;
+}
+.comparison figure {
+  height: 560px;
+  position: relative;
+  isolation: isolate;
+}
+.comparison figure > img {
+  position: absolute;
+  inset: 0;
+}
+.comparisonOverlay {
+  position: absolute;
+  inset: 0;
+}
+.comparisonLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #fff;
+  transform: translateX(-1px);
+  pointer-events: none;
+}
+.comparisonLine:after {
+  content: "↔";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
+  border: 1px solid #fff;
+  border-radius: 50%;
+  padding: 10px;
+  color: #fff;
+  background: #101e35;
+}
+.comparison figcaption {
+  position: absolute;
+  bottom: 18px;
+  inset-inline: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  color: #fff;
+  font-size: 11px;
+}
+.comparison figcaption span {
+  background: #101e35e8;
+  padding: 7px 12px;
+}
+.tress .footer {
+  background-color: #101e35;
+  background-size: cover;
+  background-position: 50% 30%;
+  color: #fff;
+}
+.footerWordmark {
+  font:
+    italic clamp(65px, 17vw, 280px)/1 Georgia,
+    serif;
+  letter-spacing: -0.06em;
+  text-align: center;
+  margin: 90px 0 60px !important;
+}
+@media (max-width: 700px) {
+  .tress .brand {
+    font-size: 27px;
+  }
+  .tress .header {
+    min-height: 78px;
+  }
+  .tressHero {
+    min-height: 760px;
+    padding: 45px 6%;
+    flex-direction: column;
+    align-items: start;
+    justify-content: space-between;
+    gap: 160px;
+  }
+  .tressHero h1 {
+    font-size: clamp(54px, 14vw, 86px);
+  }
+  .tressHero > img {
+    object-position: 55% 40%;
+  }
+  .tressHero > div:last-of-type {
+    max-width: 250px;
+  }
+  .tress .extensionServices {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .tress .extensionServices > div:first-child {
+    order: 0;
+  }
+  .tress .extensionServicePhoto {
+    min-height: 0;
+    height: 430px;
+  }
+  .tress .extensionServices article > div {
+    grid-template-columns: 52px 1fr;
+    gap: 8px 12px;
+  }
+  .tress .extensionServices article img {
+    width: 52px;
+    height: 82px;
+  }
+  .tress .extensionServices article {
+    gap: 10px;
+  }
+  .tress .extensionServices h3 {
+    font-size: 22px;
+  }
+  .comparison {
+    padding: 55px 6%;
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .comparison h2 {
+    font-size: 34px;
+  }
+  .comparison figure {
+    height: 430px;
+  }
+  .comparison figcaption {
+    font-size: 9px;
+    inset-inline: 8px;
+    gap: 8px;
+  }
+  .comparison figcaption span {
+    padding: 6px 8px;
+  }
+  .footerWordmark {
+    margin: 55px 0 35px !important;
+  }
+}

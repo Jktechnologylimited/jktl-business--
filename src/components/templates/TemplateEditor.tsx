@@ -582,7 +582,9 @@ export function TemplateEditor({
                   </label>
                   {(content.design === "legal" ||
                     content.design === "cosmetics" ||
-                    content.beauty?.design === "extensions") && (
+                    content.beauty?.design === "extensions" ||
+                    content.beauty?.design === "tress" ||
+                    content.beauty?.design === "tattoo") && (
                     <label className="block text-sm">
                       {content.design === "legal"
                         ? "Attorney role"

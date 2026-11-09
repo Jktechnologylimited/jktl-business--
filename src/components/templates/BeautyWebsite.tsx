@@ -1498,6 +1498,11 @@ export function BeautyRequestForm({
           : "Anything you would like us to know?"}
         <textarea
           name="message"
+          aria-label={
+            kind === "contact"
+              ? "Your message"
+              : "Anything you would like us to know?"
+          }
           defaultValue={initialMessage}
           required={kind === "contact"}
           maxLength={2000}

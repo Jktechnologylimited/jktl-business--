@@ -610,5 +610,77 @@
     "asset": "https://images.pexels.com/photos/2533266/pexels-photo-2533266.jpeg?auto=compress&cs=tinysrgb&w=1600",
     "source": "https://www.pexels.com/photo/close-up-photo-of-pink-lipstick-and-blush-on-2533266/",
     "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 1958738,
+    "description": "A striking portrait of a tattooed woman in a red outfit with braided hair, showcasing her vibrant makeup and earrings.",
+    "name": "ink-portrait",
+    "asset": "https://images.pexels.com/photos/1958738/pexels-photo-1958738.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/woman-with-braided-hair-leaning-on-wall-1958738/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 20993282,
+    "description": "A skillful tattoo artist creating ink art on a client's arm in a Lagos tattoo shop.",
+    "name": "ink-lagos",
+    "asset": "https://images.pexels.com/photos/20993282/pexels-photo-20993282.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/man-making-a-tattoo-at-tattoo-shop-20993282/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 20993446,
+    "description": "Back view of a young man with tattoos holding a bandana at a beach in Lagos, Nigeria.",
+    "name": "ink-detail",
+    "asset": "https://images.pexels.com/photos/20993446/pexels-photo-20993446.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/back-view-of-a-man-with-a-tattoo-20993446/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 11679342,
+    "description": "African man with tattoos in profile view, seated thoughtfully in Accra, Ghana.",
+    "name": "ink-accra",
+    "asset": "https://images.pexels.com/photos/11679342/pexels-photo-11679342.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/a-tattooed-man-wearing-black-tank-top-11679342/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 32171352,
+    "description": "Stylish portrait of a tattooed woman embracing nature with serenity and confidence.",
+    "name": "ink-expression",
+    "asset": "https://images.pexels.com/photos/32171352/pexels-photo-32171352.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/confident-tattooed-woman-in-nature-setting-32171352/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 11191234,
+    "description": "Confident woman with long dreadlocks, sunglasses, and tattoos posing outdoors.",
+    "name": "ink-braids",
+    "asset": "https://images.pexels.com/photos/11191234/pexels-photo-11191234.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/woman-with-dreadlocks-11191234/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 31987393,
+    "description": "Close-up portrait of a stylish woman with natural curls and a pink outfit, embracing elegance.",
+    "name": "tress-hero",
+    "asset": "https://images.pexels.com/photos/31987393/pexels-photo-31987393.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/elegant-portrait-of-woman-with-curly-hair-31987393/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 11215202,
+    "description": "Portrait of a cheerful woman with afro hair smiling outdoors against palm trees.",
+    "name": "tress-smile",
+    "asset": "https://images.pexels.com/photos/11215202/pexels-photo-11215202.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/portrait-of-a-afro-haired-woman-smiling-11215202/",
+    "license": "https://www.pexels.com/license/"
+  },
+  {
+    "id": 33141463,
+    "description": "Portrait of a woman in a yellow sweater standing on a road with a blurred background.",
+    "name": "tress-curls",
+    "asset": "https://images.pexels.com/photos/33141463/pexels-photo-33141463.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "source": "https://www.pexels.com/photo/young-woman-in-yellow-sweater-outdoors-33141463/",
+    "license": "https://www.pexels.com/license/"
   }
 ]

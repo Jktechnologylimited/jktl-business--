@@ -55,6 +55,9 @@ export function OccasionWebsite({
   const beauty = doc.beauty!;
   const nail = beauty.design === "nail";
   const extensions = beauty.design === "extensions";
+  const tress = beauty.design === "tress";
+  const hair = extensions || tress;
+  const [comparisonPosition, setComparisonPosition] = useState(50);
   const [menu, setMenu] = useState(false),
     [selected, setSelected] = useState(0);
   const root = useRef<HTMLDivElement>(null),
@@ -172,12 +175,15 @@ export function OccasionWebsite({
       <div className={styles.aboutPhoto}>
         {image(
           beauty.aboutImage,
-          `${doc.brandName} — a personal approach to ${extensions ? "hair extensions" : nail ? "nail care" : "bridal beauty"}`,
+          `${doc.brandName} — a personal approach to ${hair ? "hair extensions" : nail ? "nail care" : "bridal beauty"}`,
         )}
+        {tress &&
+          doc.gallery[0] &&
+          image(doc.gallery[0].src, doc.gallery[0].alt)}
       </div>
       <div className={styles.aboutCopy}>
         <p className={styles.eyebrow}>
-          {extensions
+          {hair
             ? "Your own hair story"
             : nail
               ? "The studio"
@@ -210,7 +216,7 @@ export function OccasionWebsite({
         </div>
         <p>{doc.featureText}</p>
       </div>
-      {extensions ? (
+      {hair ? (
         <div className={styles.extensionServices}>
           <div>
             {doc.offerings.map((o, i) => (
@@ -220,6 +226,7 @@ export function OccasionWebsite({
                 whileHover={reduced ? undefined : { x: 4 }}
               >
                 <div>
+                  {tress && image(o.image || doc.heroImage, o.title)}
                   {link(
                     "services/" + beautyServiceSlug(o, i),
                     <h3>{o.title}</h3>,
@@ -293,7 +300,7 @@ export function OccasionWebsite({
             styles.textLink,
           )}
       </div>
-      {nail || extensions ? (
+      {nail || hair ? (
         <div className={styles.galleryGrid}>
           {(full ? doc.gallery : doc.gallery.slice(0, 3)).map((p, i) => (
             <motion.figure
@@ -344,7 +351,7 @@ export function OccasionWebsite({
   const reviewSection = (
     <section className={styles.reviews}>
       <h2>
-        {extensions
+        {hair
           ? "Your hair. Your story."
           : nail
             ? "Word on the street"
@@ -386,6 +393,45 @@ export function OccasionWebsite({
           </div>
         ))}
       </div>
+    </section>
+  );
+  const comparison = tress && beauty.comparison && (
+    <section className={styles.comparison}>
+      <div>
+        <p className={styles.eyebrow}>Explore the possibilities</p>
+        <h2>
+          {beauty.comparison.leftLabel} / {beauty.comparison.rightLabel}
+        </h2>
+        <p>{beauty.comparison.caption}</p>
+        <label htmlFor="tress-comparison">Slide to compare photographs</label>
+        <input
+          id="tress-comparison"
+          type="range"
+          min="0"
+          max="100"
+          value={comparisonPosition}
+          aria-valuetext={`${comparisonPosition}% of ${beauty.comparison.rightLabel}`}
+          onChange={(e) => setComparisonPosition(Number(e.target.value))}
+        />
+      </div>
+      <figure>
+        {image(beauty.comparison.leftImage, beauty.comparison.leftLabel)}
+        <div
+          className={styles.comparisonOverlay}
+          style={{ clipPath: `inset(0 ${100 - comparisonPosition}% 0 0)` }}
+        >
+          {image(beauty.comparison.rightImage, beauty.comparison.rightLabel)}
+        </div>
+        <span
+          className={styles.comparisonLine}
+          style={{ left: `${comparisonPosition}%` }}
+          aria-hidden="true"
+        />
+        <figcaption>
+          <span>{beauty.comparison.rightLabel}</span>
+          <span>{beauty.comparison.leftLabel}</span>
+        </figcaption>
+      </figure>
     </section>
   );
   const questions = (
@@ -456,10 +502,10 @@ export function OccasionWebsite({
   return (
     <div
       ref={root}
-      className={`${styles.site} ${extensions ? styles.extensions : nail ? styles.nail : styles.bridal}`}
+      className={`${styles.site} ${tress ? styles.tress : extensions ? styles.extensions : nail ? styles.nail : styles.bridal}`}
       data-layout={template.layout}
       data-occasion-template={
-        extensions ? "extensions" : nail ? "nail" : "bridal"
+        tress ? "tress" : extensions ? "extensions" : nail ? "nail" : "bridal"
       }
       style={
         {
@@ -532,7 +578,23 @@ export function OccasionWebsite({
       <main id="occasion-content">
         {!path ? (
           <>
-            {extensions ? (
+            {tress ? (
+              <section className={styles.tressHero}>
+                {image(
+                  doc.heroImage,
+                  "African woman with sculpted natural curls — hair inspiration",
+                  true,
+                )}
+                <div>
+                  <p className={styles.eyebrow}>{doc.eyebrow}</p>
+                  <h1>{doc.headline}</h1>
+                </div>
+                <div>
+                  <p>{doc.intro}</p>
+                  {button("book", doc.ctaLabel)}
+                </div>
+              </section>
+            ) : extensions ? (
               <section className={styles.extensionsHero}>
                 <div className={styles.extensionPortrait}>
                   {image(
@@ -588,7 +650,15 @@ export function OccasionWebsite({
                 )}
               </section>
             )}
-            {nail || extensions ? (
+            {tress ? (
+              <>
+                {about()}
+                {offerings()}
+                {comparison}
+                {gallery()}
+                {reviewSection}
+              </>
+            ) : nail || extensions ? (
               <>
                 {offerings()}
                 {gallery()}
@@ -684,7 +754,12 @@ export function OccasionWebsite({
                 </div>
               </section>
             )}
-            {path === "gallery" && gallery(true)}
+            {path === "gallery" && (
+              <>
+                {gallery(true)}
+                {comparison}
+              </>
+            )}
             {(path === "book" || path === "contact") && (
               <section className={styles.contactLayout}>
                 {details}
@@ -715,7 +790,16 @@ export function OccasionWebsite({
         )}
         {businessSection}
       </main>
-      <footer className={styles.footer}>
+      <footer
+        className={styles.footer}
+        style={
+          tress
+            ? {
+                backgroundImage: `linear-gradient(90deg,rgba(10,22,44,.93),rgba(10,22,44,.8)),url("${doc.heroImage}")`,
+              }
+            : undefined
+        }
+      >
         <div className={styles.footerTop}>
           <div className={styles.footerBrand}>
             {doc.logoUrl ? image(doc.logoUrl, doc.brandName) : doc.brandName}
@@ -798,6 +882,7 @@ export function OccasionWebsite({
             )}
           </div>
         </div>
+        {tress && <p className={styles.footerWordmark}>{doc.brandName}</p>}
         <div className={styles.footerBottom}>
           <p>
             © {new Date().getFullYear()} {doc.brandName}

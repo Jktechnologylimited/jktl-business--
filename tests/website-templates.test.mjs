@@ -93,6 +93,21 @@ const { OccasionWebsite } = loadTs(
     },
   },
 );
+const { TattooWebsite } = loadTs(
+  "../src/components/templates/TattooWebsite.tsx",
+  {
+    react: require("react"),
+    "react/jsx-runtime": require("react/jsx-runtime"),
+    "framer-motion": require("framer-motion"),
+    "lucide-react": require("lucide-react"),
+    "@/lib/website-templates": catalogue,
+    "./BeautyWebsite": { BeautyRequestForm },
+    "./TattooWebsite.module.css": {
+      __esModule: true,
+      default: new Proxy({}, { get: (_, k) => String(k) }),
+    },
+  },
+);
 const { CosmeticsWebsite } = loadTs(
   "../src/components/templates/CosmeticsWebsite.tsx",
   {
@@ -110,9 +125,9 @@ const { CosmeticsWebsite } = loadTs(
 );
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 214);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 212);
-  assert.equal(new Set(all.map((t) => t.id)).size, 214);
+  assert.equal(all.length, 216);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 214);
+  assert.equal(new Set(all.map((t) => t.id)).size, 216);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -203,6 +218,7 @@ test("actual full-site renderer renders every template and safely escapes edited
       "./DressmakerWebsite": { DressmakerWebsite },
       "./JewelleryWebsite": { JewelleryWebsite },
       "./OccasionWebsite": { OccasionWebsite },
+      "./TattooWebsite": { TattooWebsite },
       "./CosmeticsWebsite": { CosmeticsWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
@@ -237,11 +253,13 @@ test("actual full-site renderer renders every template and safely escapes edited
     if (template.document.beauty) {
       assert.ok(
         html.includes(
-          ["bridal", "nail", "extensions"].includes(
+          ["bridal", "nail", "extensions", "tress"].includes(
             template.document.beauty.design,
           )
             ? 'id="occasion-content"'
-            : 'id="salon-content"',
+            : template.document.beauty.design === "tattoo"
+              ? 'id="tattoo-content"'
+              : 'id="salon-content"',
         ),
       );
       assert.ok(html.includes('href="/about"'));
@@ -627,6 +645,7 @@ test("template-based public sites retain actual booking, product and chat compon
       "./DressmakerWebsite": { DressmakerWebsite },
       "./JewelleryWebsite": { JewelleryWebsite },
       "./OccasionWebsite": { OccasionWebsite },
+      "./TattooWebsite": { TattooWebsite },
       "./CosmeticsWebsite": { CosmeticsWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
