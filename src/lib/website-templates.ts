@@ -13,7 +13,7 @@ export type TemplateLayout =
   | "minimal"
   | "studio";
 export type BeautyContent = {
-  design?: "atelier" | "luxe" | "barber" | "spa";
+  design?: "atelier" | "luxe" | "barber" | "spa" | "bridal" | "nail";
   version: 2;
   demoContent: boolean;
   aboutImage: string;
@@ -2908,6 +2908,414 @@ websiteTemplates.push({
   document: jewelleryDocument,
 });
 
+// Original November 9 starters. Reference screenshots guide the composition;
+// editable text and licensed photographs remain part of the shared catalogue.
+const occasionPhoto = (name: string) => `/template-photos/african/${name}.jpg`;
+const bridalDocument: WebsiteDocument = {
+  ...JSON.parse(
+    JSON.stringify(
+      websiteTemplates.find((t) => t.id === "hair-salon")!.document,
+    ),
+  ),
+  brandName: "Aura Bridal",
+  eyebrow: "Bridal beauty, thoughtfully yours",
+  headline: "Your radiant\nbeginning awaits.",
+  intro:
+    "A calm moment. A look that feels like you. Considered bridal makeup and hairstyling for your most personal celebration.",
+  ctaLabel: "Discover your bridal look",
+  accent: "#756553",
+  paper: "#fcfaf6",
+  ink: "#302e29",
+  heroImage: occasionPhoto("atelier-bride"),
+  seoTitle: "Aura Bridal | Bridal Makeup & Hairstyling",
+  seoDescription:
+    "Explore Aura Bridal’s personal approach to wedding makeup and hairstyling. Discover bridal services, browse the gallery and request a consultation.",
+  aboutTitle: "Beauty that feels like you.",
+  aboutText:
+    "Your wedding morning should feel unhurried. We make room to listen, understand your inspiration and create a look that lets you feel completely yourself.\n\nFrom a first conversation to your final touch-up, we bring a considered approach to skin, texture and finishing. Every detail begins with you.",
+  offeringsTitle: "The Aura Bridal experience",
+  offerings: [
+    {
+      title: "Bespoke bridal makeup",
+      slug: "bridal-makeup",
+      description:
+        "A personal makeup look shaped around your skin, your style and the way you want to feel. Explore colour, coverage and finishing at a consultation.",
+      image: occasionPhoto("atelier-veil"),
+      price: "Personal quote after consultation",
+      duration: "Timing agreed with your artist",
+      benefits: [
+        "Personal beauty consultation",
+        "A considered skin-preparation plan",
+        "Makeup tailored to your celebration",
+      ],
+      preparation:
+        "Share your wedding date, location, inspiration and any skin sensitivities when you enquire.",
+    },
+    {
+      title: "Considered bridal hairstyling",
+      slug: "bridal-hairstyling",
+      description:
+        "From natural texture to a carefully sculpted silhouette, discover hairstyling that works with your dress, veil and personal expression.",
+      image: occasionPhoto("atelier-mirror"),
+      price: "Personal quote after consultation",
+      duration: "Timing agreed with your stylist",
+      benefits: [
+        "A conversation about your hair and accessories",
+        "Personal styling direction",
+        "A finish considered for your celebration",
+      ],
+      preparation:
+        "Tell us about your hair, chosen accessories and any styles you would like to explore.",
+    },
+    {
+      title: "Your bridal circle",
+      slug: "bridal-circle",
+      description:
+        "A thoughtful beauty plan for the people celebrating beside you. Discuss your group, the morning’s schedule and a shared direction with room for everyone’s individuality.",
+      image: occasionPhoto("wedding"),
+      price: "Group quote on enquiry",
+      duration: "Schedule confirmed for your group",
+      benefits: [
+        "A shared beauty consultation",
+        "An agreed getting-ready schedule",
+        "Individual finishing touches",
+      ],
+      preparation:
+        "Include the number of guests, getting-ready location and ceremony time in your enquiry.",
+    },
+  ],
+  galleryTitle: "A glimpse of bridal bliss",
+  gallery: [
+    {
+      src: occasionPhoto("atelier-veil"),
+      alt: "Smiling African bride in a white dress and delicate veil",
+      category: "The joyful moment",
+    },
+    {
+      src: occasionPhoto("atelier-mirror"),
+      alt: "Black bride admiring her reflection in a mirror",
+      category: "The quiet preparation",
+    },
+    {
+      src: occasionPhoto("atelier-bride"),
+      alt: "African bride seated in an elegant wedding dress",
+      category: "The personal finish",
+    },
+    {
+      src: occasionPhoto("wedding"),
+      alt: "Nigerian bride wearing richly detailed traditional wedding attire",
+      category: "Your own expression",
+    },
+  ],
+  featureTitle: "A little care, at every step.",
+  featureText:
+    "A thoughtful beauty experience, from your first idea to the day itself.",
+  featureItems: [
+    "Share your inspiration and the details of your celebration.",
+    "Explore a personal look and agree your beauty plan.",
+    "Enjoy the moment, with every finishing detail considered.",
+  ],
+  faqTitle: "Before your bridal appointment",
+  faqs: [
+    {
+      question: "How do I begin?",
+      answer:
+        "Send a consultation request with your date, location and the services you are considering. Your artist will respond with availability and next steps before a booking is agreed.",
+    },
+    {
+      question: "Can I arrange a trial?",
+      answer:
+        "Ask about a trial when you enquire. The studio will confirm what is available, what is included and any separate cost before you commit.",
+    },
+    {
+      question: "Do you travel to wedding locations?",
+      answer:
+        "Share your getting-ready location and schedule. Your artist will confirm the service area, travel arrangements and any additional charges with you.",
+    },
+  ],
+  contactTitle: "Let’s begin your story.",
+  contactText:
+    "Tell us about your celebration. Share your ideas, your wedding date and the little details that matter to you.",
+  serviceAreas: [
+    "Your city · By appointment",
+    "Wedding-location visits by arrangement",
+  ],
+  socials: [],
+  reviews: [],
+  beauty: {
+    version: 2,
+    design: "bridal",
+    demoContent: true,
+    aboutImage: occasionPhoto("atelier-veil"),
+    philosophy: [
+      "Your own kind of beautiful",
+      "A calm, personal experience",
+      "Every complexion, thoughtfully considered",
+    ],
+    stylists: [],
+    hours: [
+      {
+        day: "Consultations & wedding dates",
+        hours: "By appointment · availability confirmed personally",
+      },
+    ],
+    contact: { phone: "", email: "", address: "", whatsapp: "", mapUrl: "" },
+    pages: [
+      {
+        path: "",
+        title: "Aura Bridal | Bridal Makeup & Hairstyling",
+        description:
+          "Explore Aura Bridal’s personal approach to wedding makeup and hairstyling. Discover bridal services, browse the gallery and request a consultation.",
+      },
+      {
+        path: "about",
+        title: "Our Bridal Beauty Approach | Aura Bridal",
+        description:
+          "Meet the thoughtful approach behind Aura Bridal: personal beauty consultations, considered finishing and a calm experience shaped around your wedding.",
+      },
+      {
+        path: "services",
+        title: "Bridal Makeup & Hair Services | Aura Bridal",
+        description:
+          "Discover personal bridal makeup, hairstyling and beauty for your bridal circle. Explore what each service includes before requesting your consultation.",
+      },
+      {
+        path: "gallery",
+        title: "The Bridal Beauty Gallery | Aura Bridal",
+        description:
+          "Explore a gallery of bridal beauty inspiration, from joyful white-wedding moments to traditional Nigerian celebrations and considered personal finishing.",
+      },
+      {
+        path: "book",
+        title: "Request a Bridal Consultation | Aura Bridal",
+        description:
+          "Share your wedding date, beauty inspiration and preferred bridal services with Aura Bridal. Your artist will confirm availability and next steps personally.",
+      },
+      {
+        path: "contact",
+        title: "Contact the Bridal Studio | Aura Bridal",
+        description:
+          "Start a conversation with Aura Bridal about your wedding makeup and hair. Share your celebration details, location and questions with the bridal studio.",
+      },
+    ],
+  },
+};
+websiteTemplates.push({
+  id: "bridal-aura",
+  name: "Bridal Beauty — Aura",
+  category: "Beauty & Wellness",
+  layout: "portrait",
+  kind: "website",
+  sourceId: "bridal-aura",
+  edition: "Editorial",
+  sectionOrder: [
+    "about",
+    "offerings",
+    "gallery",
+    "reviews",
+    "feature",
+    "faq",
+    "areas",
+  ],
+  document: bridalDocument,
+});
+
+const nailDocument: WebsiteDocument = {
+  ...JSON.parse(JSON.stringify(bridalDocument)),
+  brandName: "Claw Culture",
+  eyebrow: "Independent nail art & considered care",
+  headline: "Where art\nmeets edge.",
+  intro:
+    "For the expressive, the experimental, the unapologetically you. Personal nail art, thoughtful prep and a little everyday rebellion.",
+  ctaLabel: "Find your next set",
+  accent: "#ed7750",
+  paper: "#eeeae4",
+  ink: "#211d18",
+  heroImage: occasionPhoto("nail-muse"),
+  seoTitle: "Claw Culture | Nail Art & Manicure Studio",
+  seoDescription:
+    "Discover expressive nail art and considered manicure care at Claw Culture. Explore our signature services, browse the gallery and request an appointment.",
+  aboutTitle: "Small canvas. Big personality.",
+  aboutText:
+    "We see nails as a place to play. A flash of colour, an unexpected detail, a tiny artwork that goes everywhere you do.\n\nOur studio pairs expressive design with a thoughtful approach to preparation and care. Bring your inspiration. We’ll help you find your own finish.",
+  offeringsTitle: "Our signature craft",
+  offerings: [
+    {
+      title: "Chrome & effects",
+      slug: "chrome-effects",
+      description:
+        "Explore reflective finishes, soft shimmer and a little unexpected shine. Choose a direction with your artist and build a set that feels like you.",
+      image: occasionPhoto("nail-detail"),
+      price: "Quote confirmed before your appointment",
+      duration: "Length of visit confirmed on enquiry",
+      benefits: [
+        "Personal finish consultation",
+        "Shape and colour considered together",
+        "A finish agreed before work begins",
+      ],
+      preparation:
+        "Tell us about your current nails, any existing product and your inspiration when you enquire.",
+    },
+    {
+      title: "Hand-painted art",
+      slug: "hand-painted-art",
+      description:
+        "Tiny details with a point of view. From a single accent to a full set of personal artwork, discuss your ideas and agree the design with your artist.",
+      image: occasionPhoto("nail-pink"),
+      price: "Personal quote for your chosen design",
+      duration: "Timing depends on your design",
+      benefits: [
+        "An inspiration-led design conversation",
+        "Artwork tailored to your chosen shape",
+        "A clear quote before your visit",
+      ],
+      preparation:
+        "Share inspiration images and let us know whether you are planning a new set or a refresh.",
+    },
+    {
+      title: "Manicure & care",
+      slug: "manicure-care",
+      description:
+        "A considered reset for hands and nails. Discuss your preferences, choose your shape and leave with a finish you can make your own.",
+      image: occasionPhoto("nail-care"),
+      price: "Enquire for current services and prices",
+      duration: "Appointment length confirmed personally",
+      benefits: [
+        "A conversation about your nail care",
+        "Thoughtful shaping and preparation",
+        "Personal aftercare guidance",
+      ],
+      preparation:
+        "Mention any sensitivities, nail concerns or existing product so your artist can advise you.",
+    },
+  ],
+  galleryTitle: "The canvas collection",
+  gallery: [
+    {
+      src: occasionPhoto("nail-pink"),
+      alt: "Dark-skinned hand with softly coloured pink nail art",
+      category: "Colour stories",
+    },
+    {
+      src: occasionPhoto("nail-detail"),
+      alt: "African model’s hand showing a polished metallic manicure",
+      category: "A little shine",
+    },
+    {
+      src: occasionPhoto("nail-portrait"),
+      alt: "African woman in a white headscarf showing her expressive manicure",
+      category: "Personal expression",
+    },
+    {
+      src: occasionPhoto("nail-care"),
+      alt: "A nail artist carefully shaping a dark-skinned client’s nails",
+      category: "The craft",
+    },
+  ],
+  featureTitle: "Ready for your next expression?",
+  featureText: "Bring an idea. Find your finish. Make it your own.",
+  featureItems: [
+    "Show us what caught your eye.",
+    "Agree your shape, finish and design with your artist.",
+    "Leave with personal care guidance for your new set.",
+  ],
+  faqTitle: "Before you take a seat",
+  faqs: [
+    {
+      question: "Can I bring my own inspiration?",
+      answer:
+        "Absolutely. Share a few ideas when you enquire so your artist can discuss the design, appointment time and quote with you.",
+    },
+    {
+      question: "Do I need to remove my current set?",
+      answer:
+        "Tell us what is currently on your nails. The studio will advise on removal or preparation and confirm any additional time or cost before you book.",
+    },
+    {
+      question: "Is my appointment confirmed when I send a request?",
+      answer:
+        "Sending a request starts a conversation. The studio confirms availability, your chosen service and any booking arrangements separately.",
+    },
+  ],
+  contactTitle: "Your next set starts here.",
+  contactText:
+    "Tell us what you’re dreaming of. Share your preferred date and service, and the studio will get back to you with the details.",
+  serviceAreas: ["Your city · Studio appointments"],
+  beauty: {
+    ...JSON.parse(JSON.stringify(bridalDocument.beauty)),
+    design: "nail",
+    aboutImage: occasionPhoto("nail-artist"),
+    philosophy: [
+      "Thoughtful prep, expressive finish",
+      "Your ideas, made personal",
+      "A little everyday art",
+    ],
+    hours: [
+      {
+        day: "Studio visits",
+        hours: "By appointment · ask for current opening hours",
+      },
+    ],
+    pages: [
+      {
+        path: "",
+        title: "Claw Culture | Nail Art & Manicure Studio",
+        description:
+          "Discover expressive nail art and considered manicure care at Claw Culture. Explore our signature services, browse the gallery and request an appointment.",
+      },
+      {
+        path: "about",
+        title: "Our Nail Studio & Approach | Claw Culture",
+        description:
+          "Get to know Claw Culture’s approach to nail art: thoughtful preparation, personal design conversations and expressive finishes shaped around your ideas.",
+      },
+      {
+        path: "services",
+        title: "Nail Art & Manicure Services | Claw Culture",
+        description:
+          "Explore chrome effects, personal hand-painted nail art and manicure care at Claw Culture. Discuss your inspiration, design and quote before your visit.",
+      },
+      {
+        path: "gallery",
+        title: "The Nail Art Gallery | Claw Culture",
+        description:
+          "Find inspiration in Claw Culture’s nail art gallery, with personal colour stories, reflective finishes and a closer look at the craft behind every set.",
+      },
+      {
+        path: "book",
+        title: "Request a Nail Appointment | Claw Culture",
+        description:
+          "Ready for your next set? Share your preferred nail service, date and inspiration with Claw Culture. The studio will confirm your appointment separately.",
+      },
+      {
+        path: "contact",
+        title: "Contact the Nail Studio | Claw Culture",
+        description:
+          "Talk to Claw Culture about your next manicure or nail-art idea. Find studio contact details, opening arrangements and send your questions to the team.",
+      },
+    ],
+  },
+};
+websiteTemplates.push({
+  id: "nail-culture",
+  name: "Nail Studio — Claw Culture",
+  category: "Beauty & Wellness",
+  layout: "studio",
+  kind: "website",
+  sourceId: "nail-culture",
+  edition: "Expressive",
+  sectionOrder: [
+    "offerings",
+    "gallery",
+    "reviews",
+    "about",
+    "feature",
+    "faq",
+    "areas",
+  ],
+  document: nailDocument,
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -2935,6 +3343,23 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
   ) as WebsiteDocument;
   if (brandName?.trim()) {
     document.brandName = brandName.trim().slice(0, 120);
+    if (
+      document.beauty?.design === "bridal" ||
+      document.beauty?.design === "nail"
+    ) {
+      document.beauty.pages = document.beauty.pages.map((page) => ({
+        ...page,
+        title: page.title
+          .replaceAll(template.document.brandName, document.brandName)
+          .slice(0, 100),
+        description: page.description
+          .replaceAll(template.document.brandName, document.brandName)
+          .slice(0, 320),
+      }));
+      document.seoDescription = document.seoDescription
+        ?.replaceAll(template.document.brandName, document.brandName)
+        .slice(0, 320);
+    }
     if (document.design === "legal" && document.legalVariant !== "family")
       document.headline = document.brandName
         .toUpperCase()
@@ -2942,14 +3367,18 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
     document.seoTitle = (
       document.design === "legal"
         ? `Considered counsel | ${document.brandName}`
-        : document.beauty?.design === "barber"
-          ? `Precision cuts & beard care | ${document.brandName}`
-          : document.beauty?.design === "atelier" ||
-              document.beauty?.design === "spa"
-            ? `Personal beauty rituals | ${document.brandName}`
-            : document.beauty
-              ? `Hair, with a personal touch | ${document.brandName}`
-              : `${document.brandName} | ${template.name}`
+        : document.beauty?.design === "bridal"
+          ? `Bridal makeup & hairstyling | ${document.brandName}`
+          : document.beauty?.design === "nail"
+            ? `Nail art & manicure care | ${document.brandName}`
+            : document.beauty?.design === "barber"
+              ? `Precision cuts & beard care | ${document.brandName}`
+              : document.beauty?.design === "atelier" ||
+                  document.beauty?.design === "spa"
+                ? `Personal beauty rituals | ${document.brandName}`
+                : document.beauty
+                  ? `Hair, with a personal touch | ${document.brandName}`
+                  : `${document.brandName} | ${template.name}`
     ).slice(0, 100);
   }
   return document;
@@ -3212,7 +3641,9 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
       ...(b.design === "atelier" ||
       b.design === "luxe" ||
       b.design === "barber" ||
-      b.design === "spa"
+      b.design === "spa" ||
+      b.design === "bridal" ||
+      b.design === "nail"
         ? { design: b.design }
         : {}),
       demoContent: b.demoContent,
@@ -3392,7 +3823,9 @@ export function beautyPageMeta(doc: WebsiteDocument, path: string) {
       (note
         ? `${note.question} | ${doc.brandName}`.slice(0, 100)
         : service
-          ? service.title
+          ? doc.beauty?.design === "bridal" || doc.beauty?.design === "nail"
+            ? `${service.title} | ${doc.brandName}`.slice(0, 100)
+            : service.title
           : doc.seoTitle || doc.brandName),
     description:
       (path === "" ? doc.seoDescription : undefined) ||

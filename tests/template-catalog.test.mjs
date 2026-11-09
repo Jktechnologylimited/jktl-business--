@@ -19,6 +19,7 @@ function load() {
     },
     "lucide-react": require("lucide-react"),
     "@/lib/website-templates": catalog,
+    "@/lib/store": { useBusinessStore: (select) => select({ mode: "live" }) },
     "@/components/i18n/LanguageProvider": {
       T: ({ children }) => children,
       useLanguage: () => ({ t: (value) => value }),
@@ -94,7 +95,7 @@ function load() {
   return module.exports.TemplateGallery;
 }
 const Gallery = load();
-test("public catalog uses existing preview routes and sign-in only for editing; customer catalog keeps the direct editor path", () => {
+test("public catalog uses preview/sign-in routes and Business starts a new site with the selected template", () => {
   for (const insideBusiness of [false, true]) {
     const html = renderToStaticMarkup(
       createElement(Gallery, { insideBusiness }),
@@ -104,7 +105,7 @@ test("public catalog uses existing preview routes and sign-in only for editing; 
     assert.ok(
       html.includes(
         insideBusiness
-          ? "/business/website/template?template=law-firm"
+          ? "/business/website/new?template=law-firm"
           : "https://business.jktl.com.ng/login?template=law-firm",
       ),
     );
@@ -113,7 +114,7 @@ test("public catalog uses existing preview routes and sign-in only for editing; 
       html.indexOf("Law Firm</") < html.indexOf("Church &amp; Ministry</"),
     );
     assert.match(html, /aria-label="Template information"/);
-    assert.match(html, /208/);
+    assert.ok(html.includes(String(catalog.websiteTemplates.length)));
     assert.match(html, /target="_blank" rel="noopener noreferrer"/);
   }
 });
@@ -126,7 +127,12 @@ test("blank filter shows both existing blank starting points and the matched Mai
   assert.match(html, /\/templates\/blank-landing/);
   const main = new URL("../../jktl-main/", import.meta.url);
   if (!existsSync(main)) return t.skip("Optional paired checkout");
-  for (const file of ["TemplateGallery.tsx", "TemplateGallery.module.css"])
+  // Business intentionally has account-aware new-site actions; the public
+  // gallery shares styling and filter controls rather than its signed-in links.
+  for (const file of [
+    "TemplateFilterSelect.tsx",
+    "TemplateFilterSelect.module.css",
+  ])
     assert.equal(
       readFileSync(
         new URL("../src/components/templates/" + file, import.meta.url),

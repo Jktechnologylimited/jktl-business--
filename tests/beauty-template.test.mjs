@@ -55,12 +55,17 @@ const { TemplateWebsite } = load(
     "@/lib/website-templates": catalogue,
     "./BeautyWebsite": { BeautyWebsite },
     "./LegalWebsite": { LegalWebsite },
+    // These regressions exercise the legacy salon and legal paths. The new
+    // studio renderers have separate full-render/browser coverage.
+    "./DressmakerWebsite": { DressmakerWebsite: () => null },
+    "./JewelleryWebsite": { JewelleryWebsite: () => null },
+    "./OccasionWebsite": { OccasionWebsite: () => null },
     "./TemplateWebsite.module.css": css,
   },
 );
 const draft = () => catalogue.templateDraft("hair-salon", "Studio Example");
 test("one versioned salon entry gains ten real pages; saved v1 salons keep their old document and renderer", () => {
-  assert.equal(catalogue.websiteTemplates.length, 208);
+  assert.equal(catalogue.websiteTemplates.length, 212);
   const doc = draft();
   assert.equal(doc.beauty.version, 2);
   assert.deepEqual(catalogue.parseWebsiteDocument(doc), doc);
@@ -238,6 +243,28 @@ test("public contact requests resolve tenant server-side, persist before success
   );
   assert.equal(g.writes.length, 1);
 });
+test("bridal and nail site requests resolve their own tenant and save unconfirmed service enquiries", async () => {
+  for (const id of ["bridal-aura", "nail-culture"]) {
+    const f = requestFixture(),
+      doc = catalogue.templateDraft(id);
+    f.site().profile.websiteTemplateId = id;
+    f.site().profile.websiteDocument = doc;
+    const date = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const result = await f.actions.submitBeautyWebsiteRequestAction("studio", {
+      ...f.input,
+      kind: "appointment",
+      service: catalogue.beautyServiceSlug(doc.offerings[0], 0),
+      date,
+      time: "11:00",
+    });
+    assert.equal(result.ok, true);
+    assert.equal(f.bookings.length, 0);
+    assert.equal(f.writes[0].org, "org-a");
+    assert.ok(f.writes[0].input.notes.includes(doc.offerings[0].title));
+    assert.match(f.writes[0].input.notes, /not confirmed/);
+    assert.equal(f.sent[0].to, "owner@example.test");
+  }
+});
 test("invalid, bot, unpublished and wrong-template requests cannot write customer data", async () => {
   for (const change of [
     { email: "bad" },
@@ -327,6 +354,7 @@ test("page metadata uses the verified customer host and structured data never in
     site = {
       profile: {
         published: true,
+        websiteTemplateId: "hair-salon",
         organizationId: "org-a",
         websiteDocument: doc,
         subdomain: "studio",
@@ -367,6 +395,7 @@ test("page metadata uses the verified customer host and structured data never in
   assert.equal(json.aggregateRating, undefined);
   assert.equal(json.address, undefined);
   site.profile.websiteDocument = catalogue.templateDraft("law-firm-counsel");
+  site.profile.websiteTemplateId = "law-firm-counsel";
   const legalMeta = await helper.beautyMetadata(
     "studio",
     "practice-areas/business-law",
@@ -384,6 +413,7 @@ test("page metadata uses the verified customer host and structured data never in
   assert.equal(legalJson["@type"], "LegalService");
   assert.equal(legalJson.address, undefined);
   site.profile.websiteDocument = doc;
+  site.profile.websiteTemplateId = "hair-salon";
 
   await assert.rejects(
     () => helper.beautyMetadata("studio", "not-real"),
@@ -397,6 +427,7 @@ test("published sitemap contains only the real salon paths and excludes unpublis
   let site = {
     profile: {
       published: true,
+      websiteTemplateId: "hair-salon",
       websiteDocument: doc,
       organizationId: "org-a",
       customDomainVerified: false,
@@ -499,19 +530,26 @@ test("legal enquiries reuse tenant-scoped persistence and cannot enter paid appo
   assert.equal(g.bookings.length, 0);
 });
 
-
 test("family-law variant remains editable, preserves existing law sites and renders each linked page", () => {
   const template = catalogue.getWebsiteTemplate("family-law");
   const doc = catalogue.templateDraft("family-law", "Client Family Firm");
   assert.equal(doc.brandName, "Client Family Firm");
   assert.equal(doc.legalVariant, "family");
   assert.deepEqual(catalogue.parseWebsiteDocument(doc), doc);
-  assert.equal(catalogue.templateDraft("law-firm-counsel").legalVariant, undefined);
+  assert.equal(
+    catalogue.templateDraft("law-firm-counsel").legalVariant,
+    undefined,
+  );
   for (const path of catalogue.beautyPagePaths(doc)) {
-    const html = renderToStaticMarkup(createElement(LegalWebsite, {
-      template, document: doc, pagePath: path, preview: true,
-      basePath: "/template-canvas/family-law",
-    }));
+    const html = renderToStaticMarkup(
+      createElement(LegalWebsite, {
+        template,
+        document: doc,
+        pagePath: path,
+        preview: true,
+        basePath: "/template-canvas/family-law",
+      }),
+    );
     assert.equal((html.match(/<h1[ >]/g) || []).length, 1, path);
     assert.match(html, /data-legal-variant="family"/);
     assert.match(html, /login\?template=family-law/);

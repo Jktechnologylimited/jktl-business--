@@ -1356,7 +1356,7 @@ export function BeautyWebsite({
     </div>
   );
 }
-function BeautyRequestForm({
+export function BeautyRequestForm({
   kind,
   document: doc,
   initialService = "",

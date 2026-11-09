@@ -20,6 +20,7 @@ import { JewelleryWebsite } from "./JewelleryWebsite";
 import { DressmakerWebsite } from "./DressmakerWebsite";
 import { LegalWebsite } from "./LegalWebsite";
 import { BeautyWebsite, type BeautyRequest } from "./BeautyWebsite";
+import { OccasionWebsite } from "./OccasionWebsite";
 export type TemplateContact = {
   email?: string;
   phone?: string;
@@ -652,6 +653,11 @@ export function TemplateWebsite(
   if (props.document.design === "dressmaker")
     return <DressmakerWebsite {...props} />;
   if (props.document.design === "legal") return <LegalWebsite {...props} />;
+  if (
+    props.document.beauty?.design === "bridal" ||
+    props.document.beauty?.design === "nail"
+  )
+    return <OccasionWebsite {...props} />;
   if (props.document.beauty?.version === 2) return <BeautyWebsite {...props} />;
   return <LegacyTemplateWebsite {...props} />;
 }

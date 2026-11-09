@@ -110,13 +110,17 @@ export function beautyStructuredData(
     "@type":
       doc.design === "legal"
         ? "LegalService"
-        : doc.beauty
-          ? "HairSalon"
-          : doc.design === "jewellery"
-            ? "JewelryStore"
-            : doc.design === "dressmaker"
-              ? "ClothingStore"
-              : "Organization",
+        : b?.design === "nail"
+          ? "NailSalon"
+          : b?.design === "bridal"
+            ? "BeautySalon"
+            : doc.beauty
+              ? "HairSalon"
+              : doc.design === "jewellery"
+                ? "JewelryStore"
+                : doc.design === "dressmaker"
+                  ? "ClothingStore"
+                  : "Organization",
     name: doc.brandName,
     "@id":
       origin +

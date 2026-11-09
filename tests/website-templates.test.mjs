@@ -27,7 +27,7 @@ function loadTs(path, dependencies) {
   }, exports);
   return exports;
 }
-const { BeautyWebsite } = loadTs(
+const { BeautyWebsite, BeautyRequestForm } = loadTs(
   "../src/components/templates/BeautyWebsite.tsx",
   {
     react: require("react"),
@@ -78,11 +78,26 @@ const { JewelleryWebsite } = loadTs(
     },
   },
 );
+const { OccasionWebsite } = loadTs(
+  "../src/components/templates/OccasionWebsite.tsx",
+  {
+    react: require("react"),
+    "react/jsx-runtime": require("react/jsx-runtime"),
+    "framer-motion": require("framer-motion"),
+    "lucide-react": require("lucide-react"),
+    "@/lib/website-templates": catalogue,
+    "./BeautyWebsite": { BeautyRequestForm },
+    "./OccasionWebsite.module.css": {
+      __esModule: true,
+      default: new Proxy({}, { get: (_, k) => String(k) }),
+    },
+  },
+);
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 210);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 208);
-  assert.equal(new Set(all.map((t) => t.id)).size, 210);
+  assert.equal(all.length, 212);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 210);
+  assert.equal(new Set(all.map((t) => t.id)).size, 212);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -172,6 +187,7 @@ test("actual full-site renderer renders every template and safely escapes edited
       "./LegalWebsite": { LegalWebsite },
       "./DressmakerWebsite": { DressmakerWebsite },
       "./JewelleryWebsite": { JewelleryWebsite },
+      "./OccasionWebsite": { OccasionWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -203,7 +219,13 @@ test("actual full-site renderer renders every template and safely escapes edited
       continue;
     }
     if (template.document.beauty) {
-      assert.ok(html.includes('id="salon-content"'));
+      assert.ok(
+        html.includes(
+          ["bridal", "nail"].includes(template.document.beauty.design)
+            ? 'id="occasion-content"'
+            : 'id="salon-content"',
+        ),
+      );
       assert.ok(html.includes('href="/about"'));
       assert.ok(html.includes('href="/services"'));
       continue;
@@ -286,6 +308,14 @@ test("Main and Business publish the same catalogue and renderer", (t) => {
     return t.skip("Optional paired-checkout consistency check.");
   for (const [a, b] of [
     ["../src/lib/website-templates.ts", "lib/website-templates.ts"],
+    [
+      "../src/components/templates/OccasionWebsite.tsx",
+      "components/templates/OccasionWebsite.tsx",
+    ],
+    [
+      "../src/components/templates/OccasionWebsite.module.css",
+      "components/templates/OccasionWebsite.module.css",
+    ],
     [
       "../src/components/templates/JewelleryWebsite.tsx",
       "components/templates/JewelleryWebsite.tsx",
@@ -556,6 +586,8 @@ test("template selection survives auth steps while rejecting unknown ids and ext
     assert.equal(selection.pendingTemplate(), "school");
     assert.equal(selection.templateBusinessType("law-firm"), "general");
     assert.equal(selection.templateBusinessType("hair-salon"), "salon");
+    assert.equal(selection.templateBusinessType("bridal-aura"), "salon");
+    assert.equal(selection.templateBusinessType("nail-culture"), "salon");
     selection.clearPendingTemplate();
     assert.equal(selection.pendingTemplate(), "");
   } finally {
@@ -576,6 +608,7 @@ test("template-based public sites retain actual booking, product and chat compon
       "./LegalWebsite": { LegalWebsite },
       "./DressmakerWebsite": { DressmakerWebsite },
       "./JewelleryWebsite": { JewelleryWebsite },
+      "./OccasionWebsite": { OccasionWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
