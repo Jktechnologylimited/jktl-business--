@@ -1,6 +1,6 @@
 /**
- * Every Google Font this app loads, in one place, so nothing gets imported
- * twice. `next/font/google` self-hosts each one at build time (no runtime
+ * Every font this app loads, in one place, so nothing gets imported
+ * twice. `next/font/google` self-hosts Google fonts at build time (no runtime
  * request to Google) and exposes it as a CSS custom property via
  * `variable` — it works the same whether imported into a server or a
  * client component, since the actual font-loading happens at build time,
@@ -9,7 +9,10 @@
  * The dashboard uses Plus Jakarta Sans throughout its interface, matching
  * the Main site. Customer websites retain seven independent font pairings,
  * including the classic Cormorant Garamond / Plus Jakarta Sans pairing.
+ * Fraunces is bundled locally to avoid Turbopack's Google font URL resolver
+ * failure on Vercel, while retaining the existing typeface and CSS variable.
  */
+import localFont from "next/font/local";
 import {
   Cormorant_Garamond,
   Plus_Jakarta_Sans,
@@ -18,7 +21,6 @@ import {
   Quicksand,
   Playfair_Display,
   Poppins,
-  Fraunces,
   Work_Sans,
   Bebas_Neue,
   Manrope,
@@ -36,7 +38,14 @@ export const quicksand = Quicksand({ subsets: ["latin"], variable: "--font-quick
 export const playfairDisplay = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-playfair-display", display: "swap" });
 export const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-poppins", display: "swap" });
 
-export const fraunces = Fraunces({ subsets: ["latin"], weight: ["500", "600"], variable: "--font-fraunces", display: "swap" });
+export const fraunces = localFont({
+  src: "./fonts/fraunces-variable.ttf",
+  weight: "500 600",
+  style: "normal",
+  variable: "--font-fraunces",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
+});
 export const workSans = Work_Sans({ subsets: ["latin"], variable: "--font-work-sans", display: "swap" });
 
 export const bebasNeue = Bebas_Neue({ subsets: ["latin"], weight: "400", variable: "--font-bebas-neue", display: "swap" });
