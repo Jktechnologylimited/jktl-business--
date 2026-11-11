@@ -1,4 +1,5 @@
 "use client";
+import { GameIcon } from "@/components/games/GameIcon";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Gamepad2, X } from "lucide-react";
@@ -81,7 +82,7 @@ export function GameSwitcher({
               target="_top"
               aria-current={game.id === current ? "page" : undefined}
             >
-              <span aria-hidden="true">{game.icon}</span>
+              <span aria-hidden="true"><GameIcon name={game.icon} size={18} /></span>
               <div>
                 <b>{game.name}</b>
                 <small>{game.description}</small>

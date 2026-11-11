@@ -543,7 +543,7 @@ export function InvestorDashboard({ report }: { report: InvestorReport }) {
             ] as const
           ).map((key) => (
             <li key={key}>
-              {report[key].available ? "✓ Available" : "• Unavailable"} · {key}
+              {report[key].available ? "Available" : "• Unavailable"} · {key}
             </li>
           ))}
         </ul>

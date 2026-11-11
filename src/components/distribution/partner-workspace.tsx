@@ -729,7 +729,7 @@ export function PartnerWorkspace({
                       ["PURCHASE_DOMAINS", "Purchase domains"],
                     ].map(([scope, label]) => (
                       <li key={scope}>
-                        {scopes.includes(scope) ? "✓ Granted" : "○ Not granted"}{" "}
+                        {scopes.includes(scope) ? "Granted" : "Not granted"}{" "}
                         · {label}
                       </li>
                     ))}

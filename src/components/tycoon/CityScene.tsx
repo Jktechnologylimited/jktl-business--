@@ -1,4 +1,6 @@
 "use client";
+import { Sun, Moon } from "lucide-react";
+
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useState } from "react";
@@ -89,7 +91,7 @@ export function CityScene({
                     Run & earn points ↗
                   </Link>
                   <button onClick={() => setNight(!night)} aria-pressed={night}>
-                    {night ? "☀ Day" : "☾ Night"}
+                    {night ? <><Sun size={16} aria-hidden="true" /> Day</> : <><Moon size={16} aria-hidden="true" /> Night</>}
                   </button>
                   <button
                     onClick={() => setPaused(!paused)}

@@ -1,4 +1,5 @@
 "use client";
+import { GameIcon } from "@/components/games/GameIcon";
 import { useCallback, useEffect, useState } from "react";
 import { memoryDeck } from "@/lib/arcade-model";
 import {
@@ -149,12 +150,12 @@ export function MarketMatch() {
                 {open ? (
                   <>
                     <span className={styles.emoji} aria-hidden="true">
-                      {item.icon}
+                      <GameIcon name={item.icon} size={42} />
                     </span>
                     <small>{item.name}</small>
                   </>
                 ) : (
-                  <span aria-hidden="true">✦</span>
+                  <span aria-hidden="true"><GameIcon name="sparkles" size={24} /></span>
                 )}
               </button>
             );
@@ -188,7 +189,7 @@ export function MarketMatch() {
           label="Play another market"
         >
           <p className={styles.celebrate} aria-hidden="true">
-            🧺 ✨
+            <GameIcon name="basket" size={48} /> <GameIcon name="sparkles" size={24} />
           </p>
         </GameOverlay>
       )}

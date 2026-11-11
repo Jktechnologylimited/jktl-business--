@@ -1,4 +1,6 @@
 "use client";
+import { Gamepad2, Sparkles } from "lucide-react";
+
 import { SupportDock } from "@/components/support/support-dock";
 import { ThemeControl } from "@/components/settings/theme-control";
 import {FeatureBadge} from "@/components/features/FeatureBadge";
@@ -105,7 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-2 px-5 pb-4">
           <ThemeControl align="start" /><LanguageSwitcher />
         </div>
-        <Link href="/business/plans" className="mx-4 mb-4 rounded-full bg-[#c9a84c] px-5 py-3 text-center text-sm font-semibold text-[#060e2a] shadow-md">Upgrade ✦</Link>
+        <Link href="/business/plans" className="mx-4 mb-4 rounded-full bg-[#c9a84c] px-5 py-3 text-center text-sm font-semibold text-[#060e2a] shadow-md">Upgrade <Sparkles size={18} aria-hidden="true" style={{display:"inline-block",verticalAlign:"middle"}} /></Link>
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-4">
           {industry.nav.primary
             .filter((item) => item.icon !== "more")
@@ -152,7 +154,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link href="/business/custom" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">JKTL Custom <FeatureBadge slug="custom"/></Link>
         <Link href="/business/renewals" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">Renewals</Link>
         <Link href="/business/domains" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">Domains <FeatureBadge slug="domains"/></Link>
-        <Link href="/play/tycoon" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface">🎮 Business Tycoon</Link>
+        <Link href="/play/tycoon" className="flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-surface"><Gamepad2 size={18} aria-hidden="true" style={{display:"inline-block",verticalAlign:"middle"}} /> Business Tycoon</Link>
         </nav>
         <div className="border-t border-border p-3">
           <details className="group relative">
@@ -243,7 +245,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="flex items-center justify-between gap-3 border-b border-border bg-paper px-4 py-3 lg:hidden print:hidden"><Link href="/business/website" className="text-sm font-semibold text-blue-600 underline">Your websites →</Link><Link href="/business/plans" className="rounded-full bg-[#c9a84c] px-5 py-2.5 text-sm font-semibold text-[#060e2a] shadow-md">Upgrade ✦</Link></div>
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-paper px-4 py-3 lg:hidden print:hidden"><Link href="/business/website" className="text-sm font-semibold text-blue-600 underline">Your websites →</Link><Link href="/business/plans" className="rounded-full bg-[#c9a84c] px-5 py-2.5 text-sm font-semibold text-[#060e2a] shadow-md">Upgrade <Sparkles size={18} aria-hidden="true" style={{display:"inline-block",verticalAlign:"middle"}} /></Link></div>
       <main className="mx-auto w-full max-w-5xl px-4 pb-24 pt-4 lg:px-8 lg:pb-10 lg:pt-8">
         {children}
       </main>

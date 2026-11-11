@@ -3,7 +3,7 @@ export const ventures = [
   {
     id: "suya",
     name: "Suya spot",
-    icon: "🍢",
+    icon: "utensils",
     cost: 90000,
     income: 22000,
     expense: 9000,
@@ -12,7 +12,7 @@ export const ventures = [
   {
     id: "salon",
     name: "Beauty studio",
-    icon: "💇🏾‍♀️",
+    icon: "scissors",
     cost: 150000,
     income: 34000,
     expense: 15000,
@@ -21,7 +21,7 @@ export const ventures = [
   {
     id: "provisions",
     name: "Neighbourhood store",
-    icon: "🛒",
+    icon: "cart",
     cost: 120000,
     income: 28000,
     expense: 12000,
@@ -30,7 +30,7 @@ export const ventures = [
   {
     id: "logistics",
     name: "Dispatch hub",
-    icon: "🛵",
+    icon: "bike",
     cost: 240000,
     income: 52000,
     expense: 23000,
@@ -39,7 +39,7 @@ export const ventures = [
   {
     id: "solar",
     name: "Solar enterprise",
-    icon: "☀️",
+    icon: "sun",
     cost: 360000,
     income: 74000,
     expense: 32000,
@@ -48,7 +48,7 @@ export const ventures = [
   {
     id: "agency",
     name: "Digital agency",
-    icon: "💻",
+    icon: "laptop",
     cost: 280000,
     income: 60000,
     expense: 25000,

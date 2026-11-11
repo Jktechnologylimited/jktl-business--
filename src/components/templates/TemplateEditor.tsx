@@ -1,4 +1,6 @@
 "use client";
+import { Sparkles } from "lucide-react";
+
 import { T } from "@/components/i18n/LanguageProvider";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -210,7 +212,7 @@ export function TemplateEditor({
           href={siteId ? `/business/plans?site=${siteId}` : "/business/plans"}
           className="rounded-full bg-[#c9a84c] px-6 py-3 font-semibold text-[#060e2a] shadow-md"
         >
-          Upgrade ✦
+          Upgrade <Sparkles size={18} aria-hidden="true" style={{display:"inline-block",verticalAlign:"middle"}} />
         </Link>
       </nav>
       <div className="flex flex-wrap items-center justify-between gap-4">

@@ -26,6 +26,7 @@ function load(file, deps) {
     }).outputText,
   )((n) => {
     if (n in deps) return deps[n];
+    if (n === "lucide-react") return require("lucide-react");
     if (n.startsWith("node:")) return require(n);
     throw Error("Unexpected " + n);
   }, out);

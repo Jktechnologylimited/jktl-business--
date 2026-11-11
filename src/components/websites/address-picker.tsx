@@ -99,7 +99,7 @@ export function AddressPicker({
           ? "Checking availability…"
           : state.error ||
             (state.available
-              ? "✓ This address is available."
+              ? "This address is available."
               : state.checked
                 ? "That address is taken. Try another name or a suggestion."
                 : "Enter a name to check availability.")}

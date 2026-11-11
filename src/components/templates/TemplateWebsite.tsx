@@ -1,4 +1,6 @@
 "use client";
+import { Star, Sparkles, X, Menu } from "lucide-react";
+
 import {
   useState,
   useRef,
@@ -224,7 +226,7 @@ function LegacyTemplateWebsite({
             <blockquote key={i}>
               {review.rating && review.rating > 0 ? (
                 <p aria-label={`${review.rating} out of 5 stars`}>
-                  {"★".repeat(review.rating)}
+                  {Array.from({length: review.rating}, (_, star) => <Star key={star} size={14} fill="currentColor" aria-hidden="true" style={{display:"inline-block",verticalAlign:"middle"}} />)}
                 </p>
               ) : null}
               <p>{review.quote}</p>
@@ -419,7 +421,7 @@ function LegacyTemplateWebsite({
             onClick={() => setOpen(!open)}
           >
             {open ? "Close" : "Menu"}{" "}
-            <span aria-hidden="true">{open ? "×" : "☰"}</span>
+            <span aria-hidden="true">{open ? <X size={18} /> : <Menu size={18} />}</span>
           </button>
         </div>
         <nav
@@ -488,9 +490,9 @@ function LegacyTemplateWebsite({
           </section>
           <div className={styles.ticker}>
             <span>{doc.brandName}</span>
-            <span aria-hidden="true">✦</span>
+            <Sparkles size={16} aria-hidden="true" />
             <span>{doc.eyebrow}</span>
-            <span aria-hidden="true">✦</span>
+            <Sparkles size={16} aria-hidden="true" />
             <a href={hrefFor("contact")}>Let’s connect ↗</a>
           </div>
         </>

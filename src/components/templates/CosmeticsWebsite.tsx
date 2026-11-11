@@ -1,5 +1,7 @@
-/* eslint-disable @next/next/no-img-element -- Bundled catalogue photographs and owner-provided HTTPS images are served without runtime image optimization. */
 "use client";
+import { Sparkles } from "lucide-react";
+/* eslint-disable @next/next/no-img-element -- Bundled catalogue photographs and owner-provided HTTPS images are served without runtime image optimization. */
+
 import {
   useEffect,
   useRef,
@@ -359,7 +361,7 @@ export function CosmeticsWebsite({
           {Array.from({ length: 6 }, (_, i) => (
             <span key={i} aria-hidden={i > 0 ? true : undefined}>
               {doc.eyebrow}
-              <span aria-hidden="true">✦</span>
+              <span aria-hidden="true"><Sparkles size={12} /></span>
             </span>
           ))}
         </div>

@@ -1,4 +1,6 @@
 "use client";
+import { Sparkles } from "lucide-react";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ExternalLink, Plus, Copy, ArrowUpRight } from "lucide-react";
@@ -218,7 +220,7 @@ export function SiteList({ mode }: { mode: "demo" | "live" }) {
                 }
                 className="rounded-full bg-[#c9a84c] px-4 py-2 font-semibold text-[#060e2a]"
               >
-                Upgrade ✦
+                Upgrade <Sparkles size={18} aria-hidden="true" style={{display:"inline-block",verticalAlign:"middle"}} />
               </Link>
             </div>
           </article>

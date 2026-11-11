@@ -1,4 +1,6 @@
 "use client";
+import { Settings, UserRound, Menu } from "lucide-react";
+import { GameIcon } from "@/components/games/GameIcon";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -129,7 +131,7 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
           aria-expanded={panel === "scene"}
           onClick={() => setPanel(panel === "scene" ? "none" : "scene")}
         >
-          ⚙
+          <Settings size={22} aria-hidden="true" />
         </button>
         <GameSwitcher current="tycoon"/>
         <nav>
@@ -152,7 +154,7 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
         ))}
       </div>
       <div className={styles.founder}>
-        <span aria-hidden="true">👩🏾‍💼</span>
+        <span aria-hidden="true"><UserRound size={24} aria-hidden="true" /></span>
         <div>
           <strong>{signedIn ? "JKTL founder" : "Guest founder"}</strong>
           <small>
@@ -207,10 +209,10 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
             </label>
             <span>
               {built >= 12
-                ? "Neighbourhood builder 🏆"
+                ? "Neighbourhood builder"
                 : built >= 6
-                  ? "Local enterprise 🌟"
-                  : "New founder 🌱"}
+                  ? "Local enterprise"
+                  : "New founder"}
             </span>
           </div>
           <CityScene
@@ -332,7 +334,7 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
                   >
                     {ventures.map((v) => (
                       <option value={v.id} key={v.id}>
-                        {v.icon} {v.name}
+                        <GameIcon name={v.icon} size={18} /> {v.name}
                       </option>
                     ))}
                   </select>
@@ -363,7 +365,7 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
               onClick={() => setState((s) => gameAction(s, { type: "week" }))}
             >
               {state.week >= 260
-                ? "260 weeks completed 🏆"
+                ? "260 weeks completed"
                 : "Advance one week →"}
             </button>
           </section>
@@ -376,7 +378,7 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
               }
             >
               {state.digital
-                ? "✓ Digital presence active"
+                ? "Digital presence active"
                 : "Go digital · ₦75,000"}
             </button>
             <p className={styles.muted}>
@@ -387,7 +389,7 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
               onClick={() => setState((s) => gameAction(s, { type: "solar" }))}
             >
               {state.solar
-                ? "✓ Solar resilience active"
+                ? "Solar resilience active"
                 : "Solar resilience · ₦130,000"}
             </button>
             <p className={styles.muted}>
@@ -450,10 +452,10 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
       </div>
       <nav className={styles.dock} aria-label="Game controls">
         {[
-          ["build", "🏗", "Build & manage"],
-          ["market", "↗", "Market"],
-          ["journal", "▤", "Journal"],
-          ["help", "?", "How to play"],
+          ["build", "build", "Build & manage"],
+          ["market", "trend", "Market"],
+          ["journal", "journal", "Journal"],
+          ["help", "help", "How to play"],
         ].map(([key, icon, label]) => (
           <button
             key={key}
@@ -461,7 +463,7 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
             aria-pressed={panel === key}
             onClick={() => setPanel(panel === key ? "none" : key)}
           >
-            <span aria-hidden="true">{icon}</span>
+            <span aria-hidden="true"><GameIcon name={icon} size={20} /></span>
             {label}
           </button>
         ))}
@@ -471,7 +473,7 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
           aria-pressed={panel === "menu"}
           onClick={() => setPanel(panel === "menu" ? "none" : "menu")}
         >
-          <span aria-hidden="true">☰</span>More
+          <span aria-hidden="true"><Menu size={22} aria-hidden="true" /></span>More
         </button>
         <button
           type="button"

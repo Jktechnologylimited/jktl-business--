@@ -1,4 +1,6 @@
 "use client";
+import { Sparkles, Star } from "lucide-react";
+
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   beautyServiceSlug,
@@ -257,7 +259,7 @@ export function BeautyWebsite({
       </a>
       {barber && (
         <div className={styles.barberTicker} aria-label="Our approach">
-          {doc.featureItems.join("　 ✦　 ")}
+          {doc.featureItems.map((item,i)=><span key={i}>{item} <Sparkles size={14} aria-hidden="true" style={{display:"inline-block",marginInline:16}} /></span>)}
         </div>
       )}
       <header className={styles.navbar}>
@@ -365,7 +367,7 @@ export function BeautyWebsite({
                 {treatments.map((service, i) => (
                   <article key={i}>
                     <span className={styles.spaSymbol} aria-hidden="true">
-                      ✧
+                      <Sparkles size={28} aria-hidden="true" />
                     </span>
                     <h3>
                       {link(
@@ -416,7 +418,7 @@ export function BeautyWebsite({
               <div>
                 {doc.featureItems.map((item, i) => (
                   <p key={i}>
-                    <span aria-hidden="true">✦</span>
+                    <Sparkles size={16} aria-hidden="true" />
                     {item}
                   </p>
                 ))}
@@ -814,7 +816,7 @@ export function BeautyWebsite({
                 {stories.slice(0, 3).map((story, i) => (
                   <blockquote key={i}>
                     <p aria-label={`${story.rating || 5} out of 5 stars`}>
-                      ★★★★★
+                      {Array.from({length: story.rating || 5}, (_, star) => <Star key={star} size={14} fill="currentColor" aria-hidden="true" style={{display:"inline-block",verticalAlign:"middle"}} />)}
                     </p>
                     <p>“{story.quote}”</p>
                     <cite>{story.name}</cite>

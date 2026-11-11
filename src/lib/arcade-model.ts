@@ -9,14 +9,14 @@ export function shuffled<T>(values: readonly T[], seed: number): T[] {
   return result;
 }
 export const MARKET_ITEMS = [
-  { id: "mango", name: "Mango", icon: "🥭" },
-  { id: "pepper", name: "Pepper", icon: "🌶️" },
-  { id: "coconut", name: "Coconut", icon: "🥥" },
-  { id: "banana", name: "Banana", icon: "🍌" },
-  { id: "pineapple", name: "Pineapple", icon: "🍍" },
-  { id: "tomato", name: "Tomato", icon: "🍅" },
-  { id: "basket", name: "Basket", icon: "🧺" },
-  { id: "drum", name: "Talking drum", icon: "🥁" },
+  { id: "mango", name: "Mango", icon: "apple" },
+  { id: "pepper", name: "Pepper", icon: "flame" },
+  { id: "coconut", name: "Coconut", icon: "circle" },
+  { id: "banana", name: "Banana", icon: "banana" },
+  { id: "pineapple", name: "Pineapple", icon: "palm" },
+  { id: "tomato", name: "Tomato", icon: "cherry" },
+  { id: "basket", name: "Basket", icon: "basket" },
+  { id: "drum", name: "Talking drum", icon: "drum" },
 ] as const;
 export function memoryDeck(seed: number) {
   return shuffled(

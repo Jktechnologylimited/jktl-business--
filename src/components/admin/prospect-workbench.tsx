@@ -604,7 +604,7 @@ export function ProspectWorkbench({
                       </div>
                       <div className="mt-0.5 text-xs text-ink-muted">
                         {[p.category, p.city || p.state].filter(Boolean).join(" · ")}
-                        {p.rating ? ` · ${p.rating}★ (${p.reviews ?? 0})` : ""}
+                        {p.rating ? ` · ${p.rating}/5 (${p.reviews ?? 0})` : ""}
                         {p.email ? ` · ${p.email}` : " · no email"}
                         {p.phone ? ` · ${p.phone}` : ""}
                       </div>

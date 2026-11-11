@@ -1,0 +1,3 @@
+import {Apple,Flame,Circle,Banana,TreePalm,Cherry,ShoppingBasket,Drum,Utensils,Scissors,ShoppingCart,Bike,Sun,Laptop,Sparkles,Building2,Type,TrendingUp,Hammer,BookOpen,HelpCircle} from "lucide-react";
+const icons={apple:Apple,flame:Flame,circle:Circle,banana:Banana,palm:TreePalm,cherry:Cherry,basket:ShoppingBasket,drum:Drum,utensils:Utensils,scissors:Scissors,cart:ShoppingCart,bike:Bike,sun:Sun,laptop:Laptop,sparkles:Sparkles,buildings:Building2,letters:Type,trend:TrendingUp,build:Hammer,journal:BookOpen,help:HelpCircle};
+export function GameIcon({name,size=24}:{name:string;size?:number}){const Icon=icons[name as keyof typeof icons]||Sparkles;return <Icon size={size} aria-hidden="true" style={{display:"inline-block",verticalAlign:"middle"}}/>;}

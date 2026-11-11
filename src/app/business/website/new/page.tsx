@@ -1,3 +1,4 @@
+import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
@@ -35,7 +36,7 @@ export default async function Page({
           href="/business/plans"
           className="self-start rounded-full bg-[#c9a84c] px-6 py-3 font-semibold text-[#060e2a] shadow-md"
         >
-          Upgrade ✦
+          Upgrade <Sparkles size={18} aria-hidden="true" style={{display:"inline-block",verticalAlign:"middle"}} />
         </Link>
       </div>
       <CreateWebsite

@@ -23,6 +23,7 @@ function loadTs(path, dependencies) {
   const exports = {};
   new Function("require", "exports", code)((name) => {
     if (name in dependencies) return dependencies[name];
+    if (name === "lucide-react") return require("lucide-react");
     throw new Error(`Unexpected dependency ${name}`);
   }, exports);
   return exports;

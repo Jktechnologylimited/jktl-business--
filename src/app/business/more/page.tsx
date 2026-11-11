@@ -1,4 +1,6 @@
 "use client";
+import { Gamepad2 } from "lucide-react";
+
 import { FeatureBadge } from "@/components/features/FeatureBadge";
 import { T } from "@/components/i18n/LanguageProvider";
 
@@ -49,7 +51,7 @@ export default function MorePage() {
         className="rounded-2xl border border-border bg-surface p-5"
       >
         <strong>
-          🎮 JKTL Business Tycoon <FeatureBadge slug="tycoon" />
+          <Gamepad2 size={18} aria-hidden="true" style={{display:"inline-block",verticalAlign:"middle"}} /> JKTL Business Tycoon <FeatureBadge slug="tycoon" />
         </strong>
         <p className="mt-1 text-sm text-ink-muted">
           Build a Nigerian neighbourhood. Play with your existing JKTL account.
