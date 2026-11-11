@@ -39,9 +39,8 @@ export async function GET(request: NextRequest) {
     const summaries = await listDailySummaries(start, end);
     const results = await Promise.allSettled(
       summaries.map((s) => {
-        // Lead with whatever the owner needs to act on. "You are owed ₦X" is
-        // worth more at 6am than a tally of yesterday, and a business with a
-        // clean book gets the plain numbers instead of a scolding.
+        // Identify overdue customer invoices clearly: the operating system
+        // adds the app name separately as notification sender attribution.
         const parts: string[] = [];
         if (s.todayBookings > 0) parts.push(`${s.todayBookings} booked today`);
         parts.push(`${formatKobo(s.revenueKobo)} yesterday`);
@@ -49,7 +48,7 @@ export async function GET(request: NextRequest) {
         else if (s.owedKobo > 0) parts.push(`${formatKobo(s.owedKobo)} outstanding`);
 
         return sendPush(s.organizationId, {
-          title: s.overdueCount > 0 ? "You're owed money" : "Your day ahead",
+          title: s.overdueCount > 0 ? "Your customers have overdue invoices" : "Your day ahead",
           body: parts.join(" · "),
           url: "/business/reports",
         });

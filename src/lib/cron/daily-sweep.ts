@@ -261,7 +261,7 @@ export async function runDailySweep(budgetMs = DEFAULT_BUDGET_MS): Promise<Daily
         if (summary.overdueCount > 0) parts.push(`${formatKobo(summary.owedKobo)} overdue`);
         else if (summary.owedKobo > 0) parts.push(`${formatKobo(summary.owedKobo)} outstanding`);
         return sendPush(summary.organizationId, {
-          title: summary.overdueCount > 0 ? "You're owed money" : "Your day ahead",
+          title: summary.overdueCount > 0 ? "Your customers have overdue invoices" : "Your day ahead",
           body: parts.join(" · "),
           url: "/business/reports",
         });

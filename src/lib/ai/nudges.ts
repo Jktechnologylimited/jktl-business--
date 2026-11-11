@@ -102,7 +102,7 @@ export const NUDGES: NudgeDefinition[] = [
   },
   {
     id: "chase_overdue_invoice",
-    title: "You're owed money",
+    title: "Your customers have overdue invoices",
     body: "An invoice has been unpaid for over a month. Send a reminder from the invoice — it takes one tap.",
     url: "/business/invoices",
     repeatable: true,
