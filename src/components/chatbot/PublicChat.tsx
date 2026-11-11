@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- Owner-approved HTTPS avatars are fetched by the browser, avoiding an arbitrary image proxy. */
 "use client";
+import { startVisiblePolling } from "@/lib/browser/visible-polling";
 import { useEffect, useRef, useState } from "react";
 import type { publicConfig } from "@/lib/chatbot/public";
 import styles from "./PublicChat.module.css";
@@ -116,11 +117,12 @@ export function PublicChat({
         }
       } catch {}
     }
-    void load();
-    const timer = human ? setInterval(() => void load(), 15000) : null;
+    // Only an active human handoff needs recurring reads.
+    const stop = human ? startVisiblePolling(load, 15000) : null;
+    if (!human) void load();
     return () => {
       active = false;
-      if (timer) clearInterval(timer);
+      stop?.();
     };
   }, [token, human, storeKey]);
   async function ensureSession() {

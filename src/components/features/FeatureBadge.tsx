@@ -1,4 +1,6 @@
 "use client";
+import { usePathname } from "next/navigation";
+import { startVisiblePolling } from "@/lib/browser/visible-polling";
 import {
   createContext,
   useContext,
@@ -15,31 +17,42 @@ type Feature = {
 const Context = createContext<Feature[]>([]);
 export function FeatureBadgeProvider({ children }: { children: ReactNode }) {
   const [features, setFeatures] = useState<Feature[]>([]);
+  const pathname = usePathname();
+  const badgesNeeded =
+    !/^\/(?:template-canvas|chatbots|sites)(?:\/|$)/.test(pathname || "") &&
+    !/^\/templates\/[^/]+/.test(pathname || "");
   useEffect(() => {
+    if (!badgesNeeded) return;
     let active = true;
     async function refresh() {
       try {
-        const r = await fetch("/api/public/features", { cache: "no-store" });
+        const r = await fetch("/api/public/features", { cache: "default" });
         if (!r.ok) {
           if (active) setFeatures([]);
           return;
         }
         const d = await r.json();
-        if (active && Array.isArray(d.features)) setFeatures(d.features);
+        if (active && Array.isArray(d.features)) {
+          const now = Date.now();
+          setFeatures(
+            d.features.map((feature: Feature) => ({
+              ...feature,
+              show_new:
+                feature.show_new &&
+                (!feature.ends_at || Date.parse(feature.ends_at) > now),
+            })),
+          );
+        }
       } catch {
         if (active) setFeatures([]);
       }
     }
-    void refresh();
-    const interval = setInterval(refresh, 30000);
-    const focus = () => void refresh();
-    window.addEventListener("focus", focus);
+    const stop = startVisiblePolling(refresh, 300000, 300000);
     return () => {
       active = false;
-      clearInterval(interval);
-      window.removeEventListener("focus", focus);
+      stop();
     };
-  }, []);
+  }, [badgesNeeded]);
   return <Context.Provider value={features}>{children}</Context.Provider>;
 }
 export function FeatureBadge({

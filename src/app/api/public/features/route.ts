@@ -3,7 +3,9 @@ import { query } from "@/lib/custom/service";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const headers = {
-    "Cache-Control": "no-store",
+    "Cache-Control": "public, max-age=0, must-revalidate",
+    "CDN-Cache-Control": "public, s-maxage=60",
+    "Vercel-CDN-Cache-Control": "public, s-maxage=60",
     "Access-Control-Allow-Origin":
       request.headers.get("origin") === "https://www.jktl.com.ng"
         ? "https://www.jktl.com.ng"
@@ -16,6 +18,17 @@ export async function GET(request: Request) {
     );
     return NextResponse.json({ features }, { headers });
   } catch {
-    return NextResponse.json({ features: [] }, { headers, status: 503 });
+    return NextResponse.json(
+      { features: [] },
+      {
+        headers: {
+          ...headers,
+          "Cache-Control": "no-store",
+          "CDN-Cache-Control": "no-store",
+          "Vercel-CDN-Cache-Control": "no-store",
+        },
+        status: 503,
+      },
+    );
   }
 }

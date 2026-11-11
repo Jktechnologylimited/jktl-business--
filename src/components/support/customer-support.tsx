@@ -1,4 +1,5 @@
 "use client";
+import { startVisiblePolling } from "@/lib/browser/visible-polling";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/custom/contracts";
@@ -9,6 +10,7 @@ import { useBusinessStore } from "@/lib/store";
 type Row = Record<string, unknown>;
 export function CustomerSupport() {
   const permissionDirty = useRef(false);
+  const refreshVersion = useRef(0);
   const mode = useBusinessStore((s) => s.mode);
   const params = useSearchParams();
   const [projects, setProjects] = useState<Row[]>([]);
@@ -32,33 +34,47 @@ export function CustomerSupport() {
     [quote, setQuote] = useState(""),
     [name, setName] = useState(""),
     [consent, setConsent] = useState(false);
-  const refresh = useCallback(async () => {
-    if (mode !== "live") return;
-    try {
-      const home = await support.supportHomeAction();
-      setCases(home.cases);
-      setProjects(home.projects);
-      if (caseId) {
-        const d = await support.supportCaseAction(caseId);
-        setData(d);
-        if (!permissionDirty.current)
-          setScopes(
-            Array.isArray(d.case.consent_scopes) ? d.case.consent_scopes : [],
-          );
-      }
+  const refresh = useCallback(
+    async (includeReviews = true) => {
+      if (mode !== "live") return;
+      const version = ++refreshVersion.current;
       try {
-        setHistory((await reviews.reviewHomeAction()).reviews);
-      } catch {}
-    } catch {
-      setError("Could not load support. Check your sign-in and connection.");
-    }
-  }, [caseId, mode]);
+        const home = await support.supportHomeAction();
+        if (version !== refreshVersion.current) return;
+        setCases(home.cases);
+        setProjects(home.projects);
+        if (caseId) {
+          const d = await support.supportCaseAction(caseId);
+          if (version !== refreshVersion.current) return;
+          setData(d);
+          if (!permissionDirty.current)
+            setScopes(
+              Array.isArray(d.case.consent_scopes) ? d.case.consent_scopes : [],
+            );
+        }
+        if (includeReviews) {
+          try {
+            const result = await reviews.reviewHomeAction();
+            if (version === refreshVersion.current) setHistory(result.reviews);
+          } catch {}
+        }
+      } catch {
+        if (version !== refreshVersion.current) return;
+        setError("Could not load support. Check your sign-in and connection.");
+      }
+    },
+    [caseId, mode],
+  );
   useEffect(() => {
-    const initial = setTimeout(() => void refresh(), 0);
-    const timer = setInterval(() => void refresh(), 15000);
+    let initial = true;
+    const stop = startVisiblePolling(() => {
+      const includeReviews = initial;
+      initial = false;
+      return refresh(includeReviews);
+    }, 30000);
     return () => {
-      clearTimeout(initial);
-      clearInterval(timer);
+      stop();
+      refreshVersion.current++;
     };
   }, [refresh]);
   async function run(fn: () => Promise<unknown>) {

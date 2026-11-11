@@ -1,43 +1,25 @@
 "use client";
-
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { useBusinessStore } from "@/lib/store";
+import { needsBusinessBootstrap } from "@/lib/business-bootstrap";
 
+// Avoid loading/initialising the private offline store on public sites, previews
+// and game frames. The authenticated workspace keeps its existing store/actions.
+const BusinessDataBootstrap = dynamic(() =>
+  import("./business-data-bootstrap").then((m) => m.BusinessDataBootstrap),
+);
 export function AppBootstrap() {
   const pathname = usePathname();
-  const hydrate = useBusinessStore((s) => s.hydrate);
-  const setOnline = useBusinessStore((s) => s.setOnline);
-
+  const registered = useRef(false);
   useEffect(() => {
-    // Public chat frames must not restore a Business account or sync private dashboard data.
-    if (pathname.startsWith("/chatbots/")) return;
-    hydrate();
-
-    const goOnline = () => setOnline(true);
-    const goOffline = () => setOnline(false);
-    window.addEventListener("online", goOnline);
-    window.addEventListener("offline", goOffline);
-
-    // Only register in production: `sw.js` treats /_next/static/* as
-    // cache-first/immutable, which is correct once — but wrong for a dev
-    // server, where the same chunk path can serve different code on every
-    // restart. Registering it in dev makes the browser silently keep
-    // running stale JS (surfaces as ChunkLoadError or a "function is not a
-    // function" error for something you just added) no matter how many
-    // times the dev server itself is restarted.
+    if (registered.current || pathname.startsWith("/chatbots/")) return;
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
+      registered.current = true;
       navigator.serviceWorker.register("/sw.js").catch(() => {
-        // Registration can fail in unsupported contexts — the app still
-        // works online, it just won't cache for offline use this session.
+        registered.current = false;
       });
     }
-
-    return () => {
-      window.removeEventListener("online", goOnline);
-      window.removeEventListener("offline", goOffline);
-    };
-  }, [hydrate, setOnline, pathname]);
-
-  return null;
+  }, [pathname]);
+  return needsBusinessBootstrap(pathname) ? <BusinessDataBootstrap /> : null;
 }

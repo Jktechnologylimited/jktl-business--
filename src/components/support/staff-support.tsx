@@ -1,6 +1,7 @@
 "use client";
+import { startVisiblePolling } from "@/lib/browser/visible-polling";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import * as actions from "@/lib/actions/support-actions";
 import { websiteTemplates } from "@/lib/website-templates";
 import { subscribeToPush, isPushSupported } from "@/lib/push-client";
@@ -11,8 +12,9 @@ import { HelpLibrary } from "./help-library";
 type Row = Record<string, unknown>;
 export function StaffSupport() {
   const params = useSearchParams();
-  const [customOnly,setCustomOnly]=useState(false);
-  const [foundingOnly,setFoundingOnly]=useState(false);
+  const refreshVersion = useRef(0);
+  const [customOnly, setCustomOnly] = useState(false);
+  const [foundingOnly, setFoundingOnly] = useState(false);
   const [queue, setQueue] = useState<Row[]>([]),
     [isOwner, setIsOwner] = useState(false),
     [installEvent, setInstallEvent] = useState<
@@ -38,21 +40,26 @@ export function StaffSupport() {
     return () => window.removeEventListener("beforeinstallprompt", onInstall);
   }, []);
   const refresh = useCallback(async () => {
+    const version = ++refreshVersion.current;
     try {
       const result = await actions.supportQueueAction();
+      const detail = caseId
+        ? await actions.staffSupportCaseAction(caseId)
+        : null;
+      if (version !== refreshVersion.current) return;
       setQueue(result.cases);
       setIsOwner(result.owner);
-      if (caseId) setData(await actions.staffSupportCaseAction(caseId));
+      if (detail) setData(detail);
     } catch (e) {
+      if (version !== refreshVersion.current) return;
       setMessage(e instanceof Error ? e.message : "Could not refresh support.");
     }
   }, [caseId]);
   useEffect(() => {
-    const initial = setTimeout(() => void refresh(), 0);
-    const timer = setInterval(() => void refresh(), 15000);
+    const stop = startVisiblePolling(refresh, 30000);
     return () => {
-      clearTimeout(initial);
-      clearInterval(timer);
+      stop();
+      refreshVersion.current++;
     };
   }, [refresh]);
   async function run(fn: () => Promise<unknown>) {
@@ -228,29 +235,59 @@ export function StaffSupport() {
       )}
       <div className="grid gap-6 xl:grid-cols-[300px_1fr]">
         <aside className="space-y-3">
-          <label className="flex gap-2 text-sm"><input type="checkbox" checked={customOnly} onChange={event=>setCustomOnly(event.target.checked)}/>Custom projects only</label>
+          <label className="flex gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={customOnly}
+              onChange={(event) => setCustomOnly(event.target.checked)}
+            />
+            Custom projects only
+          </label>
           {queue.length === 0 && (
             <p className="text-sm text-ink-muted">No cases in your queue.</p>
           )}
-          <label className="flex gap-2 text-sm"><input type="checkbox" checked={foundingOnly} onChange={e=>setFoundingOnly(e.target.checked)}/>Founding accounts only</label>
-          {params.get("organization")&&<a className="text-sm underline" href="/admin/support">Clear business filter</a>}
-          {queue.filter(c=>(!customOnly||c.custom_project_id)&&(!foundingOnly||c.care_priority)&&(!params.get("organization")||c.organization_id===params.get("organization"))).map((c) => (
-            <button
-              key={String(c.id)}
-              className="block w-full rounded-2xl border border-border bg-paper p-4 text-left text-sm"
-              onClick={() => {
-                setCaseId(String(c.id));
-                setData(null);
-                setDocument("");
-              }}
-            >
-              <strong>{String(c.subject)}</strong>
-              {Boolean(c.care_priority)&&<span className="block text-xs font-semibold text-primary">Founding customer · Priority follow-up</span>}
-              <p className="mt-2 text-ink-muted">
-                {String(c.business_name)} · {String(c.status)}
-              </p>
-            </button>
-          ))}
+          <label className="flex gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={foundingOnly}
+              onChange={(e) => setFoundingOnly(e.target.checked)}
+            />
+            Founding accounts only
+          </label>
+          {params.get("organization") && (
+            <a className="text-sm underline" href="/admin/support">
+              Clear business filter
+            </a>
+          )}
+          {queue
+            .filter(
+              (c) =>
+                (!customOnly || c.custom_project_id) &&
+                (!foundingOnly || c.care_priority) &&
+                (!params.get("organization") ||
+                  c.organization_id === params.get("organization")),
+            )
+            .map((c) => (
+              <button
+                key={String(c.id)}
+                className="block w-full rounded-2xl border border-border bg-paper p-4 text-left text-sm"
+                onClick={() => {
+                  setCaseId(String(c.id));
+                  setData(null);
+                  setDocument("");
+                }}
+              >
+                <strong>{String(c.subject)}</strong>
+                {Boolean(c.care_priority) && (
+                  <span className="block text-xs font-semibold text-primary">
+                    Founding customer · Priority follow-up
+                  </span>
+                )}
+                <p className="mt-2 text-ink-muted">
+                  {String(c.business_name)} · {String(c.status)}
+                </p>
+              </button>
+            ))}
         </aside>
         <section className="min-w-0 rounded-2xl border border-border bg-paper p-5">
           {!data || data.case.id !== caseId ? (
@@ -260,7 +297,16 @@ export function StaffSupport() {
               <h2 className="text-xl font-semibold">
                 {String(data.case.subject)}
               </h2>
-              {data.attachments?.map(file=><p key={String(file.id)}><a className="underline" href={`/api/admin/support/${String(data.case.id)}/attachments/${String(file.id)}`}>{String(file.file_name)}</a></p>)}
+              {data.attachments?.map((file) => (
+                <p key={String(file.id)}>
+                  <a
+                    className="underline"
+                    href={`/api/admin/support/${String(data.case.id)}/attachments/${String(file.id)}`}
+                  >
+                    {String(file.file_name)}
+                  </a>
+                </p>
+              ))}
               {data.project && (
                 <div className="my-4 border border-border p-4 text-sm">
                   <p>

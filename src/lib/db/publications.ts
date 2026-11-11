@@ -26,7 +26,7 @@ export async function publishedArticles(
 ) {
   const sql = getSql();
   const rows = await sql.query(
-    `SELECT p.*,ep.slug author_slug,ep.display_name profile_name,ep.bio author_bio,ep.avatar_url author_avatar FROM jktl_publications p LEFT JOIN editorial_profiles ep ON ep.user_id=p.created_by WHERE p.kind=$1 AND p.status='published' AND p.published_at<=now() AND ($2::text IS NULL OR p.slug=$2) ORDER BY p.featured DESC,p.published_at DESC,p.id DESC LIMIT 200 OFFSET $3`,
+    `SELECT p.id,p.slug,p.kind,p.title,p.excerpt,CASE WHEN $2::text IS NULL THEN '' ELSE p.body END AS body,p.cover_image,p.author,p.status,p.revision,p.published_at,p.updated_at,p.subtitle,p.category,p.tags,p.seo_title,p.meta_description,p.series_slug,p.chapter,p.product,p.version_label,p.features,p.sensitive,p.featured,ep.slug author_slug,ep.display_name profile_name,ep.bio author_bio,ep.avatar_url author_avatar FROM jktl_publications p LEFT JOIN editorial_profiles ep ON ep.user_id=p.created_by WHERE p.kind=$1 AND p.status='published' AND p.published_at<=now() AND ($2::text IS NULL OR p.slug=$2) ORDER BY p.featured DESC,p.published_at DESC,p.id DESC LIMIT 200 OFFSET $3`,
     [kind, slug || null, slug ? 0 : offset],
   );
   return rows.map((r) => {

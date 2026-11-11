@@ -103,6 +103,6 @@ export const config = {
      * - Next.js internals (_next/static, _next/image)
      * - PWA/static files (icons, manifest, favicon)
      */
-    "/((?!_next/static|_next/image|favicon.png|apple-touch-icon.png|manifest.webmanifest|icon-.*\\.png|sw.js).*)",
+    "/((?!_next/static|_next/image|favicon.png|apple-touch-icon.png|manifest.webmanifest|icon-.*\\.png|sw.js|template-photos/|template-art/|template-previews/|api/site-metrics(?:/|$)|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|css|js|map|woff|woff2|ttf|otf|mp4|webm|pdf)$).*)",
   ],
 };
