@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {
+import { ArrowUpRight,
   ArrowRight,
   Plus,
   Globe,
@@ -134,7 +134,7 @@ export default async function Overview() {
                         rel="noopener noreferrer"
                         className="text-blue-600 underline"
                       >
-                        View live site ↗
+                        View live site <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
                       </a>
                     )}
                     <Link

@@ -22,7 +22,9 @@ test("corrections preserve identities and financial data; sensitive edits synchr
       "utf8",
     );
     await db.exec(migration);
-    await db.exec(migration);
+    const executiveMigration = readFileSync(new URL("../migrations/078_executive_associate.sql", import.meta.url), "utf8");
+    await db.exec(executiveMigration);
+    await db.exec(executiveMigration);
     const correct = async (k, id, old, changes, actor = owner) =>
       (
         await q(
@@ -131,6 +133,16 @@ test("corrections preserve identities and financial data; sensitive edits synchr
       (await q("SELECT role FROM admin_users WHERE id=$1", [team]))[0].role,
       "analyst",
     );
+    const executiveBefore = { name: "Correct Team", email: "correct@example.test", role: "analyst" };
+    await correct("team", team, executiveBefore, {...executiveBefore, role:"executive_associate"});
+    assert.equal((await q("SELECT role FROM admin_users WHERE id=$1", [team]))[0].role, "executive_associate");
+    await assert.rejects(() => correct("team", owner, {name:"Owner",email:"owner@example.test",role:"owner"}, {name:"Owner",email:"owner@example.test",role:"analyst"}, team), /Access denied/);
+    // Every replayed role constraint must continue accepting an assigned associate.
+    for (const file of ["033_editorial.sql", "037_support_reviews.sql", "047_growth_gaming_staff.sql", "055_editorial_team.sql"]) {
+      const source = readFileSync(new URL("../migrations/"+file, import.meta.url), "utf8");
+      const add = source.split("\n").find(line => line.startsWith("ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_check"));
+      await db.exec("ALTER TABLE admin_users DROP CONSTRAINT IF EXISTS admin_users_role_check;" + add);
+    }
     const self = { name: "Owner", email: "owner@example.test", role: "owner" };
     await assert.rejects(
       () => correct("team", owner, self, { ...self, role: "analyst" }),

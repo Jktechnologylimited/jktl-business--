@@ -99,6 +99,7 @@ test("navigation is filtered by capability, and never empty", () => {
 
   const managerNav = navFor("affiliate_manager").map((i) => i.label);
   assert.deepEqual(managerNav, [
+    "Team structure",
     "Knowledge base",
     "Emails",
     "Distribution",
@@ -107,7 +108,7 @@ test("navigation is filtered by capability, and never empty", () => {
   ]);
 
   const analystNav = navFor("analyst").map((i) => i.label);
-  assert.deepEqual(analystNav, ["Knowledge base"]);
+  assert.deepEqual(analystNav, ["Team structure", "Knowledge base"]);
   assert.ok(navFor("analyst", {view_company_finance: true}).some(i => i.label === "Insights"));
 
   // Every role can reach at least one page, or signing in would be a dead end.
@@ -173,4 +174,17 @@ test("restricted company finance access never creates a sign-in redirect loop",(
  assert.equal(adminLandingPath('analyst',{view_company_finance:true}),'/admin/insights');
  assert.equal(adminLandingPath('affiliate_manager'),'/admin/affiliates');
  assert.equal(adminLandingPath('support'),'/admin/support');
+});
+
+
+test("Executive Associate coordinates operations without credential, financial or team authority", () => {
+  assert.equal(normaliseRole("executive_associate"), "executive_associate");
+  assert.equal(adminLandingPath("executive_associate"), "/admin/team/structure");
+  for (const permission of ["view_team_structure", "view_knowledge", "manage_support", "compose_email"]) assert.equal(can("executive_associate", permission), true, permission);
+  for (const permission of ["manage_team", "view_businesses", "record_payouts", "manage_company_finance", "view_company_finance", "manage_custom", "manage_domains", "fulfill_domains", "manage_communications", "send_broadcasts", "manage_email", "manage_affiliates"]) {
+    assert.equal(can("executive_associate", permission), false, permission);
+    assert.equal(can("executive_associate", permission, {[permission]:true}), false, "overrides must not escalate " + permission);
+  }
+  assert.ok(navFor("executive_associate").some(item => item.href === "/admin/team/structure"));
+  assert.ok(!navFor("executive_associate").some(item => item.href === "/admin/team"));
 });

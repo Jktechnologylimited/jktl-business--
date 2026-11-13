@@ -95,7 +95,7 @@ test("Writer and Editor roles are least privileged; official publishing is opt-i
   assert.equal(can("writer", "manage_content"), true);
   assert.deepEqual(
     navFor("writer").map((n) => n.href),
-    ["/admin/content"],
+    ["/admin/team/structure", "/admin/knowledge", "/admin/content"],
   );
   assert.equal(can("writer", "review_content"), false);
   assert.equal(canPublish(editor, { kind: "blog" }), true);

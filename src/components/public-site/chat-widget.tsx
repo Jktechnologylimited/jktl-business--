@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot, MessageCircle, X } from "lucide-react";
+import { ArrowLeft, Bot, MessageCircle, X } from "lucide-react";
 import { formatKobo } from "@/lib/format";
 import { waLink, telLink, mailLink } from "@/lib/contact";
 import type { Product, Service } from "@/lib/types";
@@ -80,7 +80,7 @@ export function ChatWidget({
       if (services.length === 0) {
         return {
           lines: ["We haven't listed services here yet — message us directly and we'll help."],
-          options: [{ label: "Chat with a person", action: "whatsapp" }, { label: "⬅ Back", next: "root" }],
+          options: [{ label: "Chat with a person", action: "whatsapp" }, { label: "Back", next: "root" }],
         };
       }
       const lines = [
@@ -90,7 +90,7 @@ export function ChatWidget({
       const svcOptions: ChatOption[] = services
         .slice(0, 4)
         .map((s) => ({ label: `Book ${s.name}`, action: "scroll-book", serviceId: s.id }));
-      svcOptions.push({ label: "⬅ Back", next: "root" });
+      svcOptions.push({ label: "Back", next: "root" });
       return { lines, options: svcOptions };
     }
 
@@ -98,14 +98,14 @@ export function ChatWidget({
       if (products.length === 0) {
         return {
           lines: ["We don't have products listed here yet — ask us directly!"],
-          options: [{ label: "Chat with a person", action: "whatsapp" }, { label: "⬅ Back", next: "root" }],
+          options: [{ label: "Chat with a person", action: "whatsapp" }, { label: "Back", next: "root" }],
         };
       }
       const lines = [
         "Here's what's in stock:",
         ...products.slice(0, 8).map((p) => `• ${p.name} — ${formatKobo(p.priceKobo)}${p.stockQty <= 0 ? " (sold out)" : ""}`),
       ];
-      return { lines, options: [{ label: "⬅ Back", next: "root" }] };
+      return { lines, options: [{ label: "Back", next: "root" }] };
     }
 
     if (id === "location") {
@@ -114,7 +114,7 @@ export function ChatWidget({
         : ["We haven't added an address here yet — message us and we'll send directions."];
       const locOptions: ChatOption[] = [];
       if (locationLine && wa) locOptions.push({ label: "Chat with a person", action: "whatsapp" });
-      locOptions.push({ label: "⬅ Back", next: "root" });
+      locOptions.push({ label: "Back", next: "root" });
       return { lines, options: locOptions };
     }
 
@@ -125,7 +125,7 @@ export function ChatWidget({
       if (tel) lines.push(`Call us: ${phone}`);
       if (mail) lines.push(`Email us: ${email}`);
       if (lines.length === 0) lines.push("We haven't added contact details here yet.");
-      return { lines, options: [{ label: "⬅ Back", next: "root" }] };
+      return { lines, options: [{ label: "Back", next: "root" }] };
     }
 
     // root
@@ -240,7 +240,7 @@ export function ChatWidget({
                   onClick={() => choose(opt)}
                   className="rounded-full border border-border-strong px-3 py-1.5 text-xs font-medium text-ink hover:border-primary hover:text-primary"
                 >
-                  {opt.label}
+                  {opt.next === "root" ? <ArrowLeft size={16} className="inline-block align-middle" aria-hidden="true" /> : null} {opt.label}
                 </button>
               ))}
             </div>

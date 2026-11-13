@@ -2,7 +2,7 @@
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useResponsivePreview } from "./useResponsivePreview";
-import { Monitor, Smartphone } from "lucide-react";
+import { ArrowUpRight, Monitor, Smartphone } from "lucide-react";
 import {
   getWebsiteTemplate,
   templateLoginPath,
@@ -63,7 +63,7 @@ export function TemplatePreview({
               : `https://business.jktl.com.ng${templateLoginPath(id)}`
           }
         >
-          Select Template ↗
+          Select Template <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
         </a>
       </header>
       <div className={styles.stage} data-device={device}>

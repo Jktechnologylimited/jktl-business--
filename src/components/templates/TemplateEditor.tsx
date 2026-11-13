@@ -1,5 +1,5 @@
 "use client";
-import { Sparkles } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 
 import { T } from "@/components/i18n/LanguageProvider";
 import { useState, useEffect } from "react";
@@ -206,7 +206,7 @@ export function TemplateEditor({
           rel="noopener noreferrer"
           className="break-all text-sm font-semibold text-blue-600 underline"
         >
-          {profile.subdomain}.jktl.com.ng ↗
+          {profile.subdomain}.jktl.com.ng <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
         </a>
         <Link
           href={siteId ? `/business/plans?site=${siteId}` : "/business/plans"}

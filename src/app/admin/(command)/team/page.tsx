@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TeamOrganogram } from "@/components/admin/team-organogram";
 import { PageHeader } from "@/components/app/page-header";
 import { TeamManager } from "@/components/admin/team-manager";
 import { guardAdminPage } from "@/lib/admin-page-guard";
@@ -31,6 +32,7 @@ export default async function AdminTeamPage() {
         do — an affiliate manager can approve partners and record payouts
         without being able to move anything else.
       </p>
+      <TeamOrganogram members={team.filter(member => !member.disabledAt && !member.revokedAt).map(({ name, role }) => ({ name, role }))} />
       <TeamManager team={team} />
     </div>
   );

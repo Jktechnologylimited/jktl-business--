@@ -55,10 +55,10 @@ const saved={version:1,week:5,cash:700000,city:'Lagos',plots:Array.from({length:
    await page.getByRole('button',{name:/Upgrade ·/}).waitFor();
    await page.getByRole('button',{name:'Close game panel',exact:true}).click();
    if(mode==='mobile')await page.getByRole('button',{name:'Open city controls',exact:true}).click();
-   await page.getByRole('button',{name:'Ⅱ Pause',exact:true}).click();
+   await page.getByRole('button',{name:'Pause',exact:true}).click();
    assert.equal(await page.locator('[data-renderer]').getAttribute('data-animated'),'false');
    await page.emulateMedia({reducedMotion:'reduce'});
-   await page.getByRole('button',{name:'▶ Resume',exact:true}).click();
+   await page.getByRole('button',{name:'Resume',exact:true}).click();
    assert.equal(await page.locator('[data-renderer]').getAttribute('data-animated'),'false');
    assert.equal(await page.getByRole('button',{name:'Use 2D',exact:true}).count(),0);
    assert.equal(await page.locator('[data-world]').count(),0);

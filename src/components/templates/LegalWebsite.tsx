@@ -1,4 +1,6 @@
 "use client";
+import { ArrowUpRight } from "lucide-react";
+
 import { useState, type CSSProperties, type ReactNode } from "react";
 import {
   beautyServiceSlug,
@@ -97,7 +99,7 @@ export function LegalWebsite({
       "contact",
       <>
         {doc.ctaLabel}
-        <span aria-hidden="true">↗</span>
+        <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
       </>,
       styles.button,
     );
@@ -508,7 +510,7 @@ export function LegalWebsite({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Made with JKTL ↗
+              Made with JKTL <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
             </a>
           )}
         </div>

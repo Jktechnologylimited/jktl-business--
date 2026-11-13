@@ -1,4 +1,6 @@
 "use client";
+import { ArrowUpRight } from "lucide-react";
+
 import { useState } from "react";
 import {
   adminDomainsAction,
@@ -356,7 +358,7 @@ export function DomainAdmin({ initial }: { initial: Data }) {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Open Paystack transactions ↗
+                      Open Paystack transactions <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
                     </a>
                     <RefundForm
                       id={text(o, "id")}

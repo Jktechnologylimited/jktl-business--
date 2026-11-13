@@ -1,4 +1,6 @@
 "use client";
+import { ArrowUpRight } from "lucide-react";
+
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import {
@@ -279,7 +281,7 @@ export function EditorialManager({
               target="_blank"
               rel="noreferrer"
             >
-              JKTL Status ↗
+              JKTL Status <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
             </a>
             .
           </p>
@@ -825,7 +827,7 @@ export function EditorialManager({
                         rel="noreferrer"
                         href={`https://jktl.com.ng/${routes[form.kind]}/${form.slug}`}
                       >
-                        Open public article ↗
+                        Open public article <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
                       </a>
                     )}
                   </div>

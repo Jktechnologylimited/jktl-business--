@@ -1,5 +1,5 @@
 ALTER TABLE admin_users DROP CONSTRAINT IF EXISTS admin_users_role_check;
-ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_check CHECK(role IN('owner','affiliate_manager','analyst','writer','editor','support','growth_gaming_lead'));
+ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_check CHECK(role IN('owner','affiliate_manager','analyst','writer','editor','support','growth_gaming_lead','executive_associate'));
 ALTER TABLE jktl_publications DROP CONSTRAINT IF EXISTS jktl_publications_kind_check;
 ALTER TABLE jktl_publications ADD CONSTRAINT jktl_publications_kind_check CHECK(kind IN('blog','column','release','update'));
 ALTER TABLE jktl_publications DROP CONSTRAINT IF EXISTS jktl_publications_status_check;

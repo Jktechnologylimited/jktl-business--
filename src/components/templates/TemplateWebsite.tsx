@@ -1,5 +1,5 @@
 "use client";
-import { Star, Sparkles, X, Menu } from "lucide-react";
+import { ArrowUpRight, Star, Sparkles, X, Menu } from "lucide-react";
 
 import {
   useState,
@@ -262,7 +262,7 @@ function LegacyTemplateWebsite({
               <h3>{item.title}</h3>
               <p>{item.description}</p>
               <a href={hrefFor("contact")}>
-                Find out more <span aria-hidden="true">↗</span>
+                Find out more <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
               </a>
             </article>
           ))}
@@ -292,7 +292,7 @@ function LegacyTemplateWebsite({
           <h2>{doc.featureTitle}</h2>
           <p>{doc.featureText}</p>
           <a href={hrefFor("contact")} className={styles.outline}>
-            Start a conversation ↗
+            Start a conversation <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
           </a>
         </div>
         <ol>
@@ -448,7 +448,7 @@ function LegacyTemplateWebsite({
             <a href={hrefFor("book")}>Book an appointment</a>
           )}
           <a href={hrefFor("contact")} className={styles.navContact}>
-            Get in touch ↗
+            Get in touch <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
           </a>
         </nav>
       </header>
@@ -469,7 +469,7 @@ function LegacyTemplateWebsite({
                   )}
                   className={styles.primary}
                 >
-                  {doc.ctaLabel} ↗
+                  {doc.ctaLabel} <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
                 </a>
                 <a
                   href={hrefFor(sectionEnabled("about") ? "about" : "contact")}
@@ -493,7 +493,7 @@ function LegacyTemplateWebsite({
             <Sparkles size={16} aria-hidden="true" />
             <span>{doc.eyebrow}</span>
             <Sparkles size={16} aria-hidden="true" />
-            <a href={hrefFor("contact")}>Let’s connect ↗</a>
+            <a href={hrefFor("contact")}>Let’s connect <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" /></a>
           </div>
         </>
       )}
@@ -530,7 +530,7 @@ function LegacyTemplateWebsite({
             {multipage && !path && (
               <p className={styles.pageMore}>
                 <a href={hrefFor(key === "offerings" ? "offerings" : key)}>
-                  Explore {key === "offerings" ? "our services" : "our story"} ↗
+                  Explore {key === "offerings" ? "our services" : "our story"} <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
                 </a>
               </p>
             )}
@@ -545,7 +545,7 @@ function LegacyTemplateWebsite({
           <div className={styles.contactLinks}>
             {email && (
               <a className={styles.primary} href={`mailto:${channel(email)}`}>
-                Email us ↗
+                Email us <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
               </a>
             )}
             {phone && (
@@ -631,7 +631,7 @@ function LegacyTemplateWebsite({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Built with JKTL ↗
+            Built with JKTL <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
           </a>
         )}
       </footer>

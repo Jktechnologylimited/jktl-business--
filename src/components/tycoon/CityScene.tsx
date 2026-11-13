@@ -1,5 +1,5 @@
 "use client";
-import { Sun, Moon } from "lucide-react";
+import { ArrowUpRight, Sun, Moon, Play, Pause } from "lucide-react";
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -88,7 +88,7 @@ export function CityScene({
               <div className={styles.toolbar}>
                 <div>
                   <Link className={styles.runLink} href="/play/run">
-                    Run & earn points ↗
+                    Run & earn points <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
                   </Link>
                   <button onClick={() => setNight(!night)} aria-pressed={night}>
                     {night ? <><Sun size={16} aria-hidden="true" /> Day</> : <><Moon size={16} aria-hidden="true" /> Night</>}
@@ -97,7 +97,7 @@ export function CityScene({
                     onClick={() => setPaused(!paused)}
                     aria-pressed={paused}
                   >
-                    {paused ? "▶ Resume" : "Ⅱ Pause"}
+                    {paused ? <><Play size={16} className="inline-block align-middle" aria-hidden="true" /> Resume</> : <><Pause size={16} className="inline-block align-middle" aria-hidden="true" /> Pause</>}
                   </button>
                   <button
                     aria-label="Zoom out city"

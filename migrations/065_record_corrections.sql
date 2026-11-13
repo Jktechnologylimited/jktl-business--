@@ -31,7 +31,7 @@ BEGIN
  IF email_changed AND actor_role<>'owner' THEN RAISE EXCEPTION 'Only an owner can correct sign-in email addresses'; END IF;
  IF p_kind IN('affiliate','partner') AND (p_changes-ARRAY['name','email','note'])<>'{}'::jsonb THEN RAISE EXCEPTION 'Invalid profile fields'; END IF;
  IF p_kind='team' THEN
-  IF (p_changes-ARRAY['name','email','role'])<>'{}'::jsonb OR p_changes->>'role' NOT IN('owner','affiliate_manager','analyst','writer','editor','support','growth_gaming_lead') THEN RAISE EXCEPTION 'Select a valid team role'; END IF;
+  IF (p_changes-ARRAY['name','email','role'])<>'{}'::jsonb OR p_changes->>'role' NOT IN('owner','affiliate_manager','analyst','writer','editor','support','growth_gaming_lead','executive_associate') THEN RAISE EXCEPTION 'Select a valid team role'; END IF;
   role_changed:=old_role IS DISTINCT FROM p_changes->>'role';
   IF role_changed AND p_id=p_actor THEN RAISE EXCEPTION 'You cannot change your own team role'; END IF;
   IF role_changed AND old_role='owner' AND EXISTS(SELECT 1 FROM admin_users WHERE id=p_id AND disabled_at IS NULL AND staff_revoked_at IS NULL) AND NOT EXISTS(SELECT 1 FROM admin_users WHERE id<>p_id AND role='owner' AND disabled_at IS NULL AND staff_revoked_at IS NULL) THEN RAISE EXCEPTION 'Keep at least one active owner'; END IF;

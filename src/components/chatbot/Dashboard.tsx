@@ -1,4 +1,6 @@
 "use client";
+import { ArrowUpRight } from "lucide-react";
+
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -268,7 +270,7 @@ function BotPanel({
           rel="noopener noreferrer"
           href={data.origin + "/chatbots/c/" + bot.slug}
         >
-          Open standalone chat ↗
+          Open standalone chat <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
         </a>
         <p className="mt-3 text-sm text-ink-muted">
           {String(bot.conversations_count || 0)} total conversations ·{" "}

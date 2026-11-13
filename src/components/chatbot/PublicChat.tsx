@@ -1,5 +1,7 @@
+
 /* eslint-disable @next/next/no-img-element -- Owner-approved HTTPS avatars are fetched by the browser, avoiding an arbitrary image proxy. */
 "use client";
+import { ArrowUpRight } from "lucide-react";
 import { startVisiblePolling } from "@/lib/browser/visible-polling";
 import { useEffect, useRef, useState } from "react";
 import type { publicConfig } from "@/lib/chatbot/public";
@@ -336,7 +338,7 @@ export function PublicChat({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Talk to a Human on WhatsApp ↗
+            Talk to a Human on WhatsApp <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
           </a>
         )}
         {config.settings.leadCapture && (

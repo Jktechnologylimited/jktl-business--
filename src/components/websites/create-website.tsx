@@ -1,4 +1,6 @@
 "use client";
+import { ArrowUpRight } from "lucide-react";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -84,7 +86,7 @@ export function CreateWebsite({
             rel="noopener noreferrer"
             className="text-blue-600 underline"
           >
-            Preview {getWebsiteTemplate(template)?.name} ↗
+            Preview {getWebsiteTemplate(template)?.name} <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
           </a>
           <Link href="/business/templates" className="text-blue-600 underline">
             Browse visual template library

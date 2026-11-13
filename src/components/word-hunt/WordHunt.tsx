@@ -7,7 +7,7 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import {
+import { ArrowUpRight,
   ArrowRight,
   Check,
   Clock3,
@@ -250,7 +250,7 @@ export function WordHunt({ seed }: { seed: number }) {
           <div className={styles.sticker} aria-hidden="true">
             <span>W O R D</span>
             <b>HUNT</b>
-            <span>MADE FOR YOUR MIND ↗</span>
+            <span>MADE FOR YOUR MIND <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" /></span>
           </div>
         </section>
         <div className={styles.layout}>
@@ -512,7 +512,7 @@ export function WordHunt({ seed }: { seed: number }) {
         <footer className={styles.footer}>
           A good moment, by JKTL.{" "}
           <a href="https://games.jktl.com.ng" target="_top">
-            Find your next game ↗
+            Find your next game <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
           </a>
         </footer>
       </div>

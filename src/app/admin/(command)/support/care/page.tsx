@@ -1,3 +1,5 @@
+
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { query } from "@/lib/custom/service";
@@ -137,7 +139,7 @@ export default async function Page({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Review live JKTL website ↗
+                Review live JKTL website <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
               </a>
             )}
           </div>

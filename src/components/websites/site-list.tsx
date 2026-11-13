@@ -158,7 +158,7 @@ export function SiteList({ mode }: { mode: "demo" | "live" }) {
                   rel="noopener noreferrer"
                   className="break-all text-sm font-semibold text-blue-600 underline"
                 >
-                  {s.url} ↗
+                  {s.url} <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
                 </a>
                 {!s.published && (
                   <p className="mt-2 text-xs leading-6 text-ink-muted">

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
+import { ArrowUpRight,
   Check,
   Copy,
   ExternalLink,
@@ -493,7 +493,7 @@ export function PartnerWorkspace({
                                     rel="noopener noreferrer"
                                     className="text-xs text-blue-600 underline"
                                   >
-                                    View ↗
+                                    View <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
                                   </a>
                                 </div>
                               </div>

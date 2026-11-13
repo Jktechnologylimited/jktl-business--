@@ -59,6 +59,7 @@ if (!url) {
       "075_growth_completion.sql",
       "076_company_finance.sql",
       "077_buyer_paid_fees.sql",
+      "078_executive_associate.sql",
     ].map((name) =>
       readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
     ),

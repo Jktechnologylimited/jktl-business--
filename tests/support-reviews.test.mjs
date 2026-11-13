@@ -43,6 +43,7 @@ test("Support is a scoped role; guides cover real flows and refuse credential ha
   assert.deepEqual(
     navFor("support").map((n) => n.href),
     [
+      "/admin/team/structure",
       "/admin/knowledge",
       "/admin/partner-support",
       "/admin/support",

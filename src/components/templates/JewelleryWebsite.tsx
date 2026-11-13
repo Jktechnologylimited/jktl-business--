@@ -656,7 +656,7 @@ export function JewelleryWebsite({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {s.platform} ↗
+                {s.platform} <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
               </a>
             ))}
           </div>
@@ -674,7 +674,7 @@ export function JewelleryWebsite({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Built with JKTL ↗
+              Built with JKTL <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
             </a>
           )}
         </div>

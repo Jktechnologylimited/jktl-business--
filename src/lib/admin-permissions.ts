@@ -20,6 +20,7 @@
 
 export type AdminRole =
   | "owner"
+  | "executive_associate"
   | "affiliate_manager"
   | "analyst"
   | "writer"
@@ -70,11 +71,18 @@ export type AdminCapability =
   | "view_company_finance"
   | "view_insights"
   | "view_knowledge"
+  | "view_team_structure"
   | "export_insights"
   | "manage_team"
   | "run_daily_job";
 
 const MATRIX: Record<AdminRole, AdminCapability[]> = {
+  executive_associate: [
+    "manage_support",
+    "compose_email",
+    "view_insights",
+    "export_insights",
+  ],
   growth_gaming_lead: ["growth_workspace", ...GROWTH_PERMISSIONS],
   support: ["manage_support", "fulfill_domains"],
   owner: [
@@ -128,7 +136,8 @@ export function can(
   if (capability === "view_company_finance")
     return role === "analyst" && overrides.view_company_finance === true;
   if (capability === "manage_company_finance") return false;
-  if (capability === "view_knowledge") return role in MATRIX;
+  if (capability === "view_knowledge" || capability === "view_team_structure")
+    return role in MATRIX;
   if (
     role === "editor" &&
     (EDITORIAL_PERMISSIONS as readonly string[]).includes(capability)
@@ -148,7 +157,8 @@ export function can(
 
 /** Unknown roles get nothing. A role typo in the database must fail closed. */
 export function normaliseRole(role: string | null | undefined): AdminRole {
-  return role === "growth_gaming_lead" ||
+  return role === "executive_associate" ||
+    role === "growth_gaming_lead" ||
     role === "owner" ||
     role === "affiliate_manager" ||
     role === "analyst" ||
@@ -160,6 +170,7 @@ export function normaliseRole(role: string | null | undefined): AdminRole {
 }
 
 export const ROLE_LABEL: Record<AdminRole, string> = {
+  executive_associate: "Executive Associate",
   growth_gaming_lead: "Growth & Gaming Lead",
   support: "Support",
   owner: "Owner",
@@ -170,6 +181,8 @@ export const ROLE_LABEL: Record<AdminRole, string> = {
 };
 
 export const ROLE_DESCRIPTION: Record<AdminRole, string> = {
+  executive_associate:
+    "Coordinate operations, support, email communications and operational reports. No payouts, financial changes, credentials, team management or infrastructure changes.",
   growth_gaming_lead:
     "Marketing execution, customer acquisition, affiliate and partner growth, community engagement, and approved JKTL Games content. No financial, infrastructure or team management authority.",
   support:
@@ -192,6 +205,7 @@ export function adminLandingPath(
   permissions: Record<string, boolean> = {},
 ) {
   if (can(role, "view_company_finance", permissions)) return "/admin/insights";
+  if (role === "executive_associate") return "/admin/team/structure";
   if (can(role, "growth_workspace", permissions)) return "/admin/growth";
   if (can(role, "manage_support", permissions)) return "/admin/support";
   if (can(role, "manage_content", permissions)) return "/admin/content";
@@ -218,6 +232,11 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
+  {
+    href: "/admin/team/structure",
+    label: "Team structure",
+    capability: "view_team_structure",
+  },
   {
     href: "/admin/knowledge",
     label: "Knowledge base",

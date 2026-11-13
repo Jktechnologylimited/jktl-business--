@@ -519,7 +519,7 @@ export function DressmakerWebsite({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Built with JKTL ↗
+              Built with JKTL <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
             </a>
           )}
         </div>

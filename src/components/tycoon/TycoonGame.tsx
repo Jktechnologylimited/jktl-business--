@@ -1,5 +1,5 @@
 "use client";
-import { Settings, UserRound, Menu } from "lucide-react";
+import { ArrowUpRight, Settings, UserRound, Menu } from "lucide-react";
 import { GameIcon } from "@/components/games/GameIcon";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -288,11 +288,11 @@ export function TycoonGame({ returnTo }: { returnTo?: "main" | "games" }) {
             <button type="button" onClick={() => setPanel("help")}>
               How to play
             </button>
-            <Link href="/play/word-hunt" target="_top">Word Hunt ↗</Link>
-            <Link href="/play/run" target="_top">Street Run ↗</Link>
-            <Link href="https://games.jktl.com.ng" target="_top">All games ↗</Link>
+            <Link href="/play/word-hunt" target="_top">Word Hunt <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" /></Link>
+            <Link href="/play/run" target="_top">Street Run <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" /></Link>
+            <Link href="https://games.jktl.com.ng" target="_top">All games <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" /></Link>
             <Link href="https://jktl.com.ng" target="_top">
-              Main site ↗
+              Main site <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
             </Link>
             <a href="https://jktl.com.ng/pricing" target="_top">
               Explore JKTL Business

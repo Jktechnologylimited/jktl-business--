@@ -2,7 +2,7 @@
 import { GameIcon } from "@/components/games/GameIcon";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Gamepad2, X } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Gamepad2, X } from "lucide-react";
 import styles from "./Games.module.css";
 import { GameUpdates } from "./GameUpdates";
 import { GAMES } from "@/lib/game-catalog";
@@ -96,7 +96,7 @@ export function GameSwitcher({
             All games
           </Link>
           <Link href="https://jktl.com.ng" target="_top">
-            JKTL main site ↗
+            JKTL main site <ArrowUpRight size={16} className="inline-block align-middle" aria-hidden="true" />
           </Link>
         </nav>
       )}
