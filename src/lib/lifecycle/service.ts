@@ -121,17 +121,18 @@ export async function reconcileLifecycle() {
     (await query("SELECT to_regclass('public.renewal_items') present"))[0]
       ?.present
   ) {
+    const renewalRegister = (await query("SELECT to_regclass('public.renewal_details') present"))[0]?.present ? "renewal_details" : "renewal_items";
     await query(
-      `INSERT INTO lifecycle_handoffs(organization_id,cycle_key,reason) SELECT organization_id,'renewal-date:'||item_key,'Renewal date is missing: '||name||'. Confirm the service date before sending a reminder.' FROM renewal_items WHERE due_on IS NULL ON CONFLICT(organization_id,cycle_key) DO UPDATE SET status='OPEN',revision=lifecycle_handoffs.revision+1,updated_at=now() WHERE lifecycle_handoffs.status='DONE'`,
+      `INSERT INTO lifecycle_handoffs(organization_id,cycle_key,reason) SELECT organization_id,'renewal-date:'||item_key,'Renewal date is missing: '||name||'. Confirm the service date before sending a reminder.' FROM ${renewalRegister} WHERE due_on IS NULL ON CONFLICT(organization_id,cycle_key) DO UPDATE SET status='OPEN',revision=lifecycle_handoffs.revision+1,updated_at=now() WHERE lifecycle_handoffs.status='DONE'`,
     );
     await query(
-      `UPDATE lifecycle_handoffs h SET status='DONE',revision=revision+1,updated_at=now() WHERE status<>'DONE' AND h.cycle_key LIKE 'renewal-date:%' AND NOT EXISTS(SELECT 1 FROM renewal_items i WHERE h.cycle_key='renewal-date:'||i.item_key AND i.due_on IS NULL)`,
+      `UPDATE lifecycle_handoffs h SET status='DONE',revision=revision+1,updated_at=now() WHERE status<>'DONE' AND h.cycle_key LIKE 'renewal-date:%' AND NOT EXISTS(SELECT 1 FROM ${renewalRegister} i WHERE h.cycle_key='renewal-date:'||i.item_key AND i.due_on IS NULL)`,
     );
     await query(
-      `INSERT INTO lifecycle_handoffs(organization_id,cycle_key,reason) SELECT i.organization_id,'renewal:'||i.item_key||':'||i.due_on::text,CASE WHEN i.days_left<=-7 THEN 'Renewal overdue: '||i.name ELSE 'Renewal email needs provider review: '||i.name END FROM renewal_items i WHERE i.due_on IS NOT NULL AND(i.days_left<=-7 OR EXISTS(SELECT 1 FROM renewal_reminders r WHERE r.item_key=i.item_key AND r.due_on=i.due_on AND(r.state='UNKNOWN' OR(r.state='FAILED' AND r.attempts>=3)))) ON CONFLICT DO NOTHING`,
+      `INSERT INTO lifecycle_handoffs(organization_id,cycle_key,reason) SELECT i.organization_id,'renewal:'||i.item_key||':'||i.due_on::text,CASE WHEN i.days_left<=-7 THEN 'Renewal overdue: '||i.name ELSE 'Renewal email needs provider review: '||i.name END FROM ${renewalRegister} i WHERE i.due_on IS NOT NULL AND COALESCE((to_jsonb(i)->>'reminders_enabled')::boolean,true) AND(i.days_left<=-7 OR EXISTS(SELECT 1 FROM renewal_reminders r WHERE r.item_key=i.item_key AND r.due_on=i.due_on AND(r.state='UNKNOWN' OR(r.state='FAILED' AND r.attempts>=3)))) ON CONFLICT DO NOTHING`,
     );
     await query(
-      `UPDATE lifecycle_handoffs h SET status='DONE',revision=revision+1,updated_at=now() WHERE status<>'DONE' AND h.cycle_key LIKE 'renewal:%' AND NOT EXISTS(SELECT 1 FROM renewal_items i WHERE h.cycle_key='renewal:'||i.item_key||':'||i.due_on::text AND(i.days_left<=-7 OR EXISTS(SELECT 1 FROM renewal_reminders r WHERE r.item_key=i.item_key AND r.due_on=i.due_on AND(r.state='UNKNOWN' OR(r.state='FAILED' AND r.attempts>=3)))))`,
+      `UPDATE lifecycle_handoffs h SET status='DONE',revision=revision+1,updated_at=now() WHERE status<>'DONE' AND h.cycle_key LIKE 'renewal:%' AND NOT EXISTS(SELECT 1 FROM ${renewalRegister} i WHERE h.cycle_key='renewal:'||i.item_key||':'||i.due_on::text AND(i.days_left<=-7 OR EXISTS(SELECT 1 FROM renewal_reminders r WHERE r.item_key=i.item_key AND r.due_on=i.due_on AND(r.state='UNKNOWN' OR(r.state='FAILED' AND r.attempts>=3)))))`,
     );
   }
   await query("UPDATE lifecycle_settings SET last_scan_at=now() WHERE id=true");

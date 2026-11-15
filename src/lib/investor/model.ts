@@ -403,7 +403,7 @@ export const DEFINITIONS = [
   ],
   [
     "Game activity",
-    "Accounts whose latest saved Tycoon progress was updated in the selected period. Guests, other games and the separate Fantasy database are not measured here. This is not DAU, MAU, retention or sessions.",
+    "Accounts whose latest saved Tycoon progress was updated in the selected period. Guests and other games are not measured here. This is not DAU, MAU, retention or sessions.",
   ],
   [
     "Partner figures",

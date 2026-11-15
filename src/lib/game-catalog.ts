@@ -79,14 +79,4 @@ export const GAMES = [
     cover: "/game-covers/tycoon.svg",
     fresh: false,
   },
-  {
-    id: "fantasy",
-    name: "Fantasy",
-    description: "Practice the stock market.",
-    category: "Business",
-    icon: "trend",
-    href: "https://fantasy.jktl.com.ng",
-    cover: "/game-covers/fantasy.svg",
-    fresh: false,
-  },
 ] as const;

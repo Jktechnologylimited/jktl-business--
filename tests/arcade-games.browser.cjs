@@ -268,7 +268,7 @@ const origin = process.env.ARCADE_TEST_ORIGIN || "http://localhost:3180";
           .getByRole("combobox", { name: "Choose a game" })
           .locator("option")
           .count(),
-        9,
+        8,
       );
       await page
         .getByRole("combobox", { name: "Choose a game" })
@@ -283,7 +283,7 @@ const origin = process.env.ARCADE_TEST_ORIGIN || "http://localhost:3180";
         ),
         true,
       );
-      console.log("PASS Main nine-game picker embeds new game on mobile");
+      console.log("PASS Main eight-game picker embeds an available game on mobile");
     }
     assert.deepEqual(errors, []);
     await page.close();

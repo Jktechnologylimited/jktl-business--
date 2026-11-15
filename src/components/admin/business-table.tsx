@@ -82,6 +82,7 @@ export function AdminBusinessTable({ businesses }: { businesses: AdminBusinessRo
                       <div className="font-medium text-ink">{b.displayName || b.organizationName}</div>
                       <div className="text-xs text-ink-muted">{b.subdomain}.{ROOT_DOMAIN}</div>
                       <div className="mt-1 flex flex-col gap-0.5 text-[11px] text-ink-faint">
+                        {b.billingEmail && <a href={"mailto:"+b.billingEmail} className="text-blue-600 hover:underline">Billing: {b.billingEmail}</a>}
                         {b.ownerEmail || b.email ? (
                           <a href={`mailto:${b.ownerEmail || b.email}`} className="hover:text-primary hover:underline">
                             {b.ownerEmail || b.email}
@@ -100,7 +101,8 @@ export function AdminBusinessTable({ businesses }: { businesses: AdminBusinessRo
                     <td className="px-4 py-3 text-ink-muted">{getIndustry(b.businessType as BusinessType).label}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
-                        <StatusPill tone={sub.tone}>{sub.label}</StatusPill>
+                        {b.clientStatus && <StatusPill tone={b.clientStatus === "ACTIVE" ? "primary" : "neutral"}>{b.clientStatus === "ACTIVE" ? "Active client" : b.clientStatus === "PAUSED" ? "Client paused" : "Client closed"}</StatusPill>}
+                        {(!b.clientStatus || b.subscriptionStatus !== "inactive") && <StatusPill tone={sub.tone}>{sub.label}</StatusPill>}
                         {b.published ? <span className="text-[11px] text-ink-faint">Published</span> : <span className="text-[11px] text-ink-faint">Not published</span>}
                       </div>
                     </td>

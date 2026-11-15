@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   };
   try {
     const features = await query(
-      `SELECT slug,name,category,route,description,(is_new AND(starts_at IS NULL OR starts_at<=now())AND(ends_at IS NULL OR ends_at>now())) AS show_new,ends_at,starts_at FROM feature_registry ORDER BY name`,
+      `SELECT slug,name,category,route,description,(is_new AND(starts_at IS NULL OR starts_at<=now())AND(ends_at IS NULL OR ends_at>now())) AS show_new,ends_at,starts_at FROM feature_registry WHERE slug<>'fantasy' ORDER BY name`,
     );
     return NextResponse.json({ features }, { headers });
   } catch {

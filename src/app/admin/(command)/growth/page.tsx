@@ -72,8 +72,8 @@ export default async function Page() {
         </div>
       </section>
       <p className="text-sm text-ink-muted">
-        Social publishing and remote Fantasy administration require an
-        authorized integration. No game scores, rewards or leaderboards can be
+        Social publishing requires an authorized integration. Game scores,
+        rewards and leaderboards cannot be
         changed here.
       </p>
     </div>

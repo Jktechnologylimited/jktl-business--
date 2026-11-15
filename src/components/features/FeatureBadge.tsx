@@ -78,7 +78,6 @@ export function FeatureBadge({
     "/products/business-tools": "business-tools",
     "/products/ai-receptionist": "ai-receptionist",
     "/games/business-tycoon": "tycoon",
-    "/games": "fantasy",
   };
   const feature = features.find(
     (f) =>

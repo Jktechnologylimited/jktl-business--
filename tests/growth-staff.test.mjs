@@ -1,4 +1,5 @@
 import test from "node:test";
+import { growthContentPermission } from "../src/lib/growth/content.ts";
 import assert from "node:assert/strict";
 import { PGlite } from "@electric-sql/pglite";
 import ts from "typescript";
@@ -138,6 +139,7 @@ test("Growth staff use existing identity, least privilege, approved publishing, 
     const actions = load("../src/lib/actions/growth-actions.ts", {
       "@/lib/growth/service": service,
       "@/lib/publications": publications,
+      "@/lib/growth/content": { growthContentPermission },
       "@/lib/support/model": supportModel,
       "next/server": { after: () => {} },
       "@/lib/distribution/notifications": {
@@ -179,6 +181,7 @@ test("Growth staff use existing identity, least privilege, approved publishing, 
     let signedIn = null;
     const staffSignIn = load("../src/lib/growth/auth.ts", {
       "server-only": {},
+      "@/lib/admin-permissions": permissions,
       "@/lib/db/auth": businessAuth,
       "@/lib/db/admin-auth": auth,
       "@/lib/session": {
@@ -240,7 +243,7 @@ test("Growth staff use existing identity, least privilege, approved publishing, 
     const nav = permissions.navFor(session.role, session.permissions);
     assert.deepEqual(
       nav.map((n) => n.href),
-      ["/admin/team/structure", "/admin/knowledge", "/admin/growth"],
+      ["/admin/team/payment-details", "/admin/team/structure", "/admin/knowledge", "/admin/growth"],
     );
     for (const cap of [
       "record_payouts",
@@ -308,6 +311,7 @@ test("Growth staff use existing identity, least privilege, approved publishing, 
     const publish = new FormData();
     publish.set("id", publication.id);
     publish.set("revision", "1");
+    publish.set("previewed", "on");
     await assert.rejects(actions.publishGrowthDraftAction(publish));
     const approve = new FormData();
     approve.set("id", publication.id);
@@ -326,6 +330,8 @@ test("Growth staff use existing identity, least privilege, approved publishing, 
     draft.set("id", publication.id);
     draft.set("revision", "1");
     draft.set("title", "Updated event title");
+    draft.set("coverImage", "https://images.example.test/approved-event.jpg");
+    draft.set("body", "Join our community event and explore the latest games.\n\n![Community event](https://images.example.test/approved-event.jpg)");
     await actions.saveGrowthDraftAction(draft);
     publish.set("revision", "2");
     await assert.rejects(
@@ -342,7 +348,12 @@ test("Growth staff use existing identity, least privilege, approved publishing, 
     await actions.approveGrowthDraftAction(approve);
     adminCookie = null;
     businessUser = userId;
+    publish.delete("previewed");
+    await assert.rejects(actions.publishGrowthDraftAction(publish), /previewed/);
+    assert.equal((await query("SELECT status FROM jktl_publications"))[0].status, "draft");
+    publish.set("previewed", "on");
     await actions.publishGrowthDraftAction(publish);
+    assert.equal((await query("SELECT cover_image FROM jktl_publications"))[0].cover_image, "https://images.example.test/approved-event.jpg");
     assert.equal(
       (await query("SELECT status FROM jktl_publications"))[0].status,
       "published",

@@ -117,6 +117,8 @@ export interface BusinessProfile {
 }
 
 export interface AppUser {
+  /** Navigation only; every Team route still enforces current permissions. */
+  teamWorkspacePath?: string;
   id: string;
   name: string;
   email: string;

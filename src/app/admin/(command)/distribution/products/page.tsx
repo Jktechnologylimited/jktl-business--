@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   await guardAdminPage("manage_team");
   const rows = await query(
-    "SELECT slug,name,partner_mode,partner_actions FROM feature_registry ORDER BY name",
+    "SELECT slug,name,partner_mode,partner_actions FROM feature_registry WHERE slug<>'fantasy' ORDER BY name",
   );
   return (
     <div className="space-y-5 text-ink">

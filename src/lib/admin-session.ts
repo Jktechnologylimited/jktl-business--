@@ -15,12 +15,14 @@ import { ROLE_LABEL, can, type AdminCapability } from "@/lib/admin-permissions";
 // ("jktl_session") AND scoped to the /admin path — the browser will never
 // even attach this cookie to a request for /business/* or an API route
 // used by a business account, and vice versa. Two separate credentials,
-// two separate cookies. Assigned Growth staff may instead use a current Business
-// session and an explicitly linked staff profile; email matching never grants access.
+// two separate cookies for legacy accounts awaiting connection. Linked Team
+// identities use a current Business session and an explicitly assigned Team
+// profile; email matching never grants access.
 const COOKIE_NAME = "jktl_admin_session";
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days, seconds
 
 export async function startAdminSession(adminUserId: string): Promise<void> {
+  await endSession();
   const sessionId = await createAdminSession(adminUserId);
   const store = await cookies();
   store.set(COOKIE_NAME, sessionId, {
@@ -37,7 +39,7 @@ export async function endAdminSession(): Promise<void> {
   const sessionId = store.get(COOKIE_NAME)?.value;
   const linkedStaff = await getAdminSession();
   if (sessionId) await destroyAdminSession(sessionId);
-  store.delete(COOKIE_NAME);
+  store.set(COOKIE_NAME, "", { path: "/admin", maxAge: 0 });
   if (linkedStaff?.businessUserId) await endSession();
 }
 

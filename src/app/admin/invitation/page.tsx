@@ -42,6 +42,7 @@ export default async function Page({
         {ROLE_LABEL[invitation.role as AdminRole] || "Team"}.
       </p>
       <p>{String(invitation.message)}</p>
+      <p>Your Team login also opens your own JKTL Business workspace. You will not need a separate signup. Paid services still use the normal checkout.</p>
       <p>
         Expires{" "}
         {new Date(String(invitation.expires_at)).toLocaleString("en-NG", {

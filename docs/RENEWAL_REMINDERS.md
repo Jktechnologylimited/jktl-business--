@@ -60,6 +60,49 @@ use an independent scheduler/monitor if you need alerts when the hosting platfor
 itself is unavailable. Cron routes require the existing CRON_SECRET. Manual tools
 use the existing authenticated team session and do not require sharing that secret.
 
+## Editable business contacts and service-specific emails
+
+Migration `080_renewal_communication_details.sql` extends this same register. Choose
+a business on the Renewals page, or use **Edit business communication** in the
+owner's business list. Authorized communications managers can edit the name used
+in renewal emails, contact person, primary billing email, phone, additional
+contacts, internal notes and active/paused/closed client relationship. This does
+not change sign-in identities, public website content or paid entitlements.
+Additional addresses are saved for human follow-up; they are not automatically
+CC'd. An explicit service-specific email overrides the business contact; a blank
+business contact falls back to the current active owner. Edits use revision checks
+and atomic audit records, and immediately invalidate the relevant dashboard paths.
+
+Each tracked service also has an editable billing interval, exact services
+covered, renewal price/date, previous payment date/amount and payment-history note.
+Historical amounts are explicitly owner-reported records. They do not issue
+receipts, mark invoices paid, verify provider transactions, refund money or create
+commissions. The due date must be advanced after an externally paid renewal is
+reconciled. Native verified payments retain their existing automatic date updates.
+
+Annual services use 30/14/7/1 days before, due day, and seven days overdue. Monthly
+services use 7/3/1 days before, due day and seven days overdue. Existing daily jobs
+are reused. The legacy register respects paused clients/services and suppresses
+monthly reminders outside seven days, including during a rolling deployment.
+Emails identify the business, list only its recorded services, show its current
+renewal price and readable due date, and use a **Review renewal** action. The
+existing branded provider, Reply-To, security and promotional eligibility rules
+remain in use. HTML paragraphs/line breaks and plain-text copy carry the same
+service information. Drafting, previewing and updating these details never sends
+an email. The first automatic scan after a newly entered eligible date may send
+the current reminder window.
+
+For an externally managed contract that is also an unaccepted Custom service,
+the tracking record may link to that exact same-tenant service. This permits
+renewal communication without accepting the contract or charging the customer.
+Once accepted, the native contract supplies the current price/date and keeps the
+same reminder key; the duplicate tracking row is excluded. Pausing/cancelling the
+source contract stops its linked reminders. Queued sends recheck contacts, dates,
+price, name, scope and pauses. A stale retry is cancelled for a fresh reviewed
+send rather than changing an already-used provider idempotency payload. Existing
+Customer follow-ups handle seven-day overdue and exhausted/uncertain delivery
+cases. A global pause or per-service pause does not disable the customer's login.
+
 Validation uses real PostgreSQL semantics in PGlite, mocked email/push providers,
 owner/manager authorization checks and browser fixtures. No live reminders or
 charges are issued during implementation. The initial live inventory contained

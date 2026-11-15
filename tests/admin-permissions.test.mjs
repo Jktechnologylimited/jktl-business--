@@ -99,6 +99,7 @@ test("navigation is filtered by capability, and never empty", () => {
 
   const managerNav = navFor("affiliate_manager").map((i) => i.label);
   assert.deepEqual(managerNav, [
+    "My payment details",
     "Team structure",
     "Knowledge base",
     "Emails",
@@ -108,7 +109,7 @@ test("navigation is filtered by capability, and never empty", () => {
   ]);
 
   const analystNav = navFor("analyst").map((i) => i.label);
-  assert.deepEqual(analystNav, ["Team structure", "Knowledge base"]);
+  assert.deepEqual(analystNav, ["My payment details", "Team structure", "Knowledge base"]);
   assert.ok(navFor("analyst", {view_company_finance: true}).some(i => i.label === "Insights"));
 
   // Every role can reach at least one page, or signing in would be a dead end.

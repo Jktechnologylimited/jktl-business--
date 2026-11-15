@@ -6,7 +6,7 @@ export async function featureAdminAction() {
   await requireAdminCapability("manage_features");
   return {
     features: await query(
-      "SELECT * FROM feature_registry ORDER BY category,name",
+      "SELECT * FROM feature_registry WHERE slug<>'fantasy' ORDER BY category,name",
     ),
     audit: await query(
       "SELECT * FROM feature_badge_audit ORDER BY id DESC LIMIT 100",

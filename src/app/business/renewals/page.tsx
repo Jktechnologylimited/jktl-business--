@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { owner, query } from "@/lib/custom/service";
-import { renewalInstalled } from "@/lib/renewals/service";
-import { renewalKinds } from "@/lib/renewals/model";
+import { renewalInstalled, renewalRegister } from "@/lib/renewals/service";
+import { renewalKinds, renewalDay } from "@/lib/renewals/model";
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Your renewals | JKTL Business",
@@ -11,7 +11,7 @@ export default async function Page() {
   const session = await owner();
   const items = (await renewalInstalled())
     ? await query(
-        "SELECT item_key,kind,name,due_on,days_left,path,amount_kobo FROM renewal_items WHERE organization_id=$1 ORDER BY due_on NULLS LAST",
+        `SELECT * FROM ${await renewalRegister()} WHERE organization_id=$1 ORDER BY due_on NULLS LAST`,
         [session.organizationId],
       )
     : [];
@@ -36,9 +36,11 @@ export default async function Page() {
           <h2 className="my-2 text-xl font-semibold">{String(item.name)}</h2>
           <p>
             {item.due_on
-              ? "Renewal date: " + String(item.due_on).slice(0, 10)
+              ? "Renewal date: " + renewalDay(item.due_on)
               : "Renewal date needs confirmation"}
           </p>
+          <p className="mt-3 whitespace-pre-line text-sm">{String(item.service_scope || item.name)}</p>
+          {item.amount_kobo != null && <p className="mt-2 font-semibold">{new Intl.NumberFormat("en-NG",{style:"currency",currency:"NGN"}).format(Number(item.amount_kobo)/100)}{item.billing_interval === "ANNUAL" ? " / year" : item.billing_interval === "MONTHLY" ? " / month" : ""}</p>}
           {Number(item.days_left) < 0 && (
             <p className="mt-2 text-danger">
               This renewal date has passed. Review the service status or contact

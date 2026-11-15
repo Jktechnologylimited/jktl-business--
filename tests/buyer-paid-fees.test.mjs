@@ -310,6 +310,7 @@ test("migration seeds an inactive proposal; publishing requires provider gates, 
       /latest policy/,
     );
     const pub = load("src/app/api/public/transaction-fees/route.ts", {
+      "@/lib/public-response-cache": load("src/lib/public-response-cache.ts"),
       "next/server": await import("next/server.js"),
       "@/lib/merchant-fees/service": f.fees,
     });
@@ -641,6 +642,7 @@ test("the public disclosure publishes only an approved live invoice schedule and
       providerEvidence: "private approval",
     };
   const route = load("src/app/api/public/transaction-fees/route.ts", {
+      "@/lib/public-response-cache": load("src/lib/public-response-cache.ts"),
     "next/server": next,
     "@/lib/merchant-fees/service": {
       activationGate: () => "live",

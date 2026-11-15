@@ -880,6 +880,7 @@ export async function sendCustomNoticeEmail(p: {
   key: string;
   path?: string;
   category?: MailContext["category"];
+  actionLabel?: string;
 }): Promise<EmailResult> {
   const url =
     (process.env.NEXT_PUBLIC_APP_URL || "https://business.jktl.com.ng") +
@@ -887,7 +888,7 @@ export async function sendCustomNoticeEmail(p: {
   return send(
     p.to,
     p.subject,
-    `<p>${escapeHtml(p.detail)}</p>${mailAction("Review your workspace", url)}`,
+    `<p>${escapeHtml(p.detail).replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>")}</p>${mailAction(p.actionLabel || "Review your workspace", url)}`,
     `${p.detail}\n\n${url}`,
     {
       category: p.category || "service",

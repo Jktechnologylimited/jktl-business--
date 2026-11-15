@@ -44,13 +44,7 @@ function save(key: string, value: string[]) {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {}
 }
-export function GameHub({
-  business,
-  fantasy,
-}: {
-  business: string;
-  fantasy: string;
-}) {
+export function GameHub({ business }: { business: string }) {
   const [active, setActive] = useState<string | null>(null),
     [query, setQuery] = useState(""),
     [category, setCategory] = useState("All"),
@@ -58,8 +52,14 @@ export function GameHub({
     [recent, setRecent] = useState<string[]>([]);
   useEffect(() => {
     const read = () => {
-      const id = new URL(window.location.href).searchParams.get("game");
-      setActive(GAMES.some((g) => g.id === id) ? id : null);
+      const url = new URL(window.location.href);
+      const id = url.searchParams.get("game");
+      const available = GAMES.some((g) => g.id === id);
+      setActive(available ? id : null);
+      if (id && !available) {
+        url.searchParams.delete("game");
+        window.history.replaceState({}, "", url);
+      }
     };
     const timer = setTimeout(() => {
       setFavourites(stored("jktl-game-favourites"));
@@ -96,8 +96,7 @@ export function GameHub({
   }
   const game = GAMES.find((g) => g.id === active);
   if (game) {
-    const source =
-      game.id === "fantasy" ? fantasy : `${business}${game.href}?return=games`;
+    const source = `${business}${game.href}?return=games`;
     return (
       <main className={styles.hub}>
         <header className={styles.bar}>

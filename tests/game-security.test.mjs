@@ -136,6 +136,7 @@ test('Business recovery uses configured account origin, never request Host',asyn
   let message, limits=0;
   const previous=process.env.NEXT_PUBLIC_APP_URL;process.env.NEXT_PUBLIC_APP_URL=origin;
   const actions=load('../src/lib/actions/auth-actions.ts',{
+    '@/lib/db/admin-auth':{},'@/lib/team-business-access':{TeamBusinessConflict:class extends Error{}},'@/lib/custom/service':{},
     '@/lib/distribution/referrals':{},'next/headers':{headers:async()=>new Headers({host:'hostile.example','x-real-ip':'203.0.113.8'})},
     '@/lib/db/auth':{findUserByEmail:async()=>({id:'a',email:'a@example.test',name:'A'}),createPasswordResetToken:async()=> 'local-test-token'},
     '@/lib/db/organizations':{},'@/lib/session':{},'@/lib/email':{sendPasswordResetEmail:async m=>{message=m;}},

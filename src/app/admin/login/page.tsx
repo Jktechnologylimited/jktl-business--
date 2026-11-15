@@ -3,6 +3,7 @@ import { SignInFrame } from "@/components/auth/SignInFrame";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,8 +52,8 @@ export default function AdminLoginPage() {
           Team sign in
         </h1>
         <p className="mt-1.5 text-sm text-ink-muted">
-          Sign in with your team account. Existing linked accounts can continue
-          using their Business credentials.
+          Use your Team email and password. The same account opens your Business
+          workspace and permitted Team tools; no separate signup is needed.
         </p>
 
         <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
@@ -85,6 +86,7 @@ export default function AdminLoginPage() {
             {pending ? "Signing in…" : "Sign in"}
           </Button>
         </form>
+        <Link href="/forgot-password" className="mt-4 text-sm font-medium text-primary underline">Forgot password?</Link>
       </div>
     </SignInFrame>
   );

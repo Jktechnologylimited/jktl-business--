@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { activeFeePolicy, activationGate } from "@/lib/merchant-fees/service";
+import { publicResponseCache, noResponseCache } from "@/lib/public-response-cache";
 export const dynamic = "force-dynamic";
 export async function GET() {
   try {
@@ -14,12 +15,12 @@ export async function GET() {
             sources: ["INVOICE"],
           }
         : { approved: false },
-      { headers: { "Cache-Control": "public, max-age=60, s-maxage=60" } },
+      { headers: publicResponseCache() },
     );
   } catch {
     return NextResponse.json(
       { approved: false },
-      { headers: { "Cache-Control": "no-store" } },
+      { status: 503, headers: noResponseCache },
     );
   }
 }

@@ -258,7 +258,7 @@ export async function investorPdf(report: InvestorReport) {
       `Views ${e.views}; CTA events ${e.cta}; contact events ${e.contacts}; booking events ${e.bookings}; sites with events ${e.sites}.`,
     );
     line(
-      `Accounts with their latest Tycoon save in the period: ${e.recentSavers}. Excludes guests, other games and Fantasy. This is not MAU.`,
+      `Accounts with their latest Tycoon save in the period: ${e.recentSavers}. Excludes guests and other games. This is not MAU.`,
     );
   } else line("Engagement sources unavailable.");
   if (report.portfolio.available) {

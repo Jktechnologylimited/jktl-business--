@@ -28,6 +28,13 @@ import type {
 } from "@/lib/types";
 
 const SESSION_KEY = "jktl.session.v1";
+let observingSync = false;
+function observeSync(set: (partial: Partial<BusinessStore>) => void) {
+  if (observingSync) return;
+  observingSync = true;
+  onSyncProgress((state) => set({ pendingSyncCount: state.pending, syncing: state.syncing }));
+  void outboxCount().then((count) => set({ pendingSyncCount: count }));
+}
 type Mode = "demo" | "live";
 
 interface SessionShape {
@@ -227,6 +234,7 @@ interface BusinessStore {
   setOnline: (online: boolean) => void;
 
   login: (email: string, password: string) => Promise<ActionOutcome>;
+  resumeServerSession: () => Promise<ActionOutcome>;
   openDemo: () => void;
   /** Stashes signup details; the real account isn't created until business
    * type is chosen in onboarding (createLiveAccount), since the backend
@@ -324,8 +332,7 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
       },
     }));
 
-    onSyncProgress((state) => set({ pendingSyncCount: state.pending, syncing: state.syncing }));
-    outboxCount().then((count) => set({ pendingSyncCount: count }));
+    observeSync(set);
 
     if (session.mode === "live" && session.authenticated && session.organizationId) {
       void hydrateLiveData(session.organizationId, set, get);
@@ -344,11 +351,32 @@ export const useBusinessStore = create<BusinessStore>((set, get) => ({
   login: async (email, password) => {
     const result = await loginAction(email, password);
     if (!result.ok) return { ok: false, error: result.error };
-    const existing = readSession();
-    const session: SessionShape = { ...existing, authenticated: true, onboardingComplete: true, mode: "live", organizationId: result.data.organizationId };
+    return get().resumeServerSession();
+  },
+
+  resumeServerSession: async () => {
+    // A Team server session must initialize this device too. Never rehydrate a
+    // different account's cached data or replay its pending offline mutations.
+    let result = await pullAllAction();
+    if (!result.ok) return { ok: false, error: result.error };
+    const prior = readSession();
+    const pending = await outboxCount();
+    if (prior.organizationId !== result.data.organization.id && pending > 0)
+      return { ok: false, error: "This browser has unsynced changes for another workspace. Sign in to that workspace and sync them before switching accounts." };
+    if (pending > 0) {
+      const organizationId = result.data.organization.id;
+      const userId = result.data.user.id;
+      await processOutbox();
+      result = await pullAllAction();
+      if (!result.ok) return { ok: false, error: result.error };
+      if (result.data.organization.id !== organizationId || result.data.user.id !== userId)
+        return { ok: false, error: "Your signed-in account changed. Reload before continuing." };
+    }
+    const session: SessionShape = { ...defaultSession, authenticated: true, onboardingComplete: true, mode: "live", organizationId: result.data.organization.id, businessType: result.data.profile.businessType, businessName: result.data.profile.displayName, avatarUrl: result.data.user.avatarUrl };
     writeSession(session);
-    set({ authenticated: true, onboardingComplete: true, mode: "live" });
-    await hydrateLiveData(result.data.organizationId, set, get);
+    set({ hydrated: true, authenticated: true, onboardingComplete: true, mode: "live", data: result.data });
+    observeSync(set);
+    await putCachedTenant(result.data.organization.id, result.data);
     return { ok: true };
   },
 

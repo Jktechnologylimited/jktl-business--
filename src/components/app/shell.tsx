@@ -65,7 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-paper lg:pl-60">
-      <SupportDock />
+      <SupportDock key={`${mode}:${profile.organizationId}:${user.id}`} />
       {/*
         Sync runs behind the scenes: while the outbox is draining the user sees a
         small spinner, not a running commentary on how many changes are queued.
@@ -183,6 +183,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <LifeBuoy className="size-4" />
                 <T>Help & guides</T>
               </Link>
+              {mode === "live" && user.teamWorkspacePath && <Link href={user.teamWorkspacePath} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface"><Users className="size-4" aria-hidden="true" />Team workspace</Link>}
               <button
                 onClick={handleLogout}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger hover:bg-danger-soft"
@@ -233,6 +234,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <LifeBuoy className="size-4" />
                 <T>Help & guides</T>
               </Link>
+              {mode === "live" && user.teamWorkspacePath && <Link href={user.teamWorkspacePath} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface"><Users className="size-4" aria-hidden="true" />Team workspace</Link>}
               <button
                 onClick={handleLogout}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger hover:bg-danger-soft"

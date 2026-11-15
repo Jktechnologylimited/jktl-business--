@@ -187,6 +187,27 @@ export function brandingSettings(raw: unknown): Branding {
 export function serviceDiscoveryCategory(category: MailCategory) {
   return category !== "security" && category !== "marketing";
 }
+// Keep configured items for a future launch, while excluding this paused app
+// from previews and outbound discovery footers in both HTML and plain text.
+function availablePromotion(promotion: Promotion) {
+  if (promotion.productId === "fantasy") return false;
+  try {
+    const url = new URL(promotion.url);
+    if (url.hostname === "fantasy.jktl.com.ng") return false;
+    if (
+      (url.hostname === "jktl.com.ng" ||
+        url.hostname.endsWith(".jktl.com.ng")) &&
+      /^\/(?:games|play)\/fantasy(?:\/|$)/i.test(
+        decodeURIComponent(url.pathname),
+      )
+    )
+      return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function selectPromotions(
   rows: Promotion[],
   b: Branding,
@@ -213,6 +234,7 @@ export function selectPromotions(
     .filter(
       (p) =>
         p.enabled &&
+        availablePromotion(p) &&
         (serviceDiscoveryCategory(category) ||
           p.categories.includes(category)) &&
         httpsUrl(p.url, true) &&
@@ -248,7 +270,9 @@ export function mailLayout(input: {
     promos =
       input.category === "security" || !b.promotionsEnabled
         ? []
-        : (input.promotions || []).slice(0, b.maxPromotions),
+        : (input.promotions || [])
+            .filter(availablePromotion)
+            .slice(0, b.maxPromotions),
     e = escapeHtml;
   const copy = b.copyright.replaceAll(
     "{year}",

@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { requireAdminCapability } from "@/lib/admin-session";
 import { query } from "@/lib/custom/service";
 import { mailAddress } from "@/lib/mail/addresses";
+import { id as validId } from "@/lib/custom/model";
+import { communicationInput, trackedDetailsInput, renewalAmount } from "@/lib/renewals/details";
+import { saveCommunicationDetails } from "@/lib/renewals/contact-store";
 import {
   dispatchRenewals,
   queueRenewal,
@@ -26,6 +29,12 @@ async function audit(
 function refresh() {
   revalidatePath("/admin/emails/renewals");
   revalidatePath("/business/renewals");
+  revalidatePath("/admin");
+}
+export async function saveBusinessCommunicationAction(form: FormData) {
+  const a = await actor();
+  await saveCommunicationDetails(validId(String(form.get("organization") || "")), communicationInput(form), a.id);
+  refresh();
 }
 export async function configureRenewalsAction(form: FormData) {
   const a = await actor();
@@ -92,8 +101,9 @@ export async function saveTrackedRenewalAction(form: FormData) {
     due = String(form.get("due") || ""),
     email = String(form.get("recipient") || "").trim(),
     raw = String(form.get("amount") || ""),
-    amount = raw ? Math.round(Number(raw) * 100) : null,
+    amount = renewalAmount(raw),
     id = String(form.get("id") || "");
+  const details = trackedDetailsInput(form);
   if (
     due &&
     (!/^\d{4}-\d{2}-\d{2}$/.test(due) ||
@@ -122,21 +132,18 @@ export async function saveTrackedRenewalAction(form: FormData) {
     amount,
     email ? mailAddress(email) : null,
     form.get("cancel") === "on" ? "CANCELLED" : "ACTIVE",
+    details.billingInterval,details.serviceScope,details.lastPaidOn,details.lastPaidKobo,details.paymentNote,details.remindersEnabled,
   ];
   const rows = id
     ? await query(
-        "UPDATE renewal_tracked_services SET name=$2,kind=$3,due_on=$4,amount_kobo=$5,recipient=$6,status=$7,updated_at=now() WHERE organization_id=$1 AND id=$8 RETURNING id",
-        [...values, id],
+        `WITH changed AS(UPDATE renewal_tracked_services SET name=$2,kind=$3,due_on=$4,amount_kobo=$5,recipient=$6,status=$7,billing_interval=$8,service_scope=$9,last_paid_on=$10,last_paid_kobo=$11,payment_note=$12,reminders_enabled=$13,revision=revision+1,updated_at=now() WHERE organization_id=$1 AND id=$14 AND revision=$15 RETURNING *) INSERT INTO renewal_audit(actor_id,event,item_key,detail) SELECT $16,'TRACKED_RENEWAL_SAVED','tracked:'||id::text,to_jsonb(changed)-'created_by' FROM changed RETURNING item_key`,
+        [...values, validId(id), details.revision, a.id],
       )
     : await query(
-        "INSERT INTO renewal_tracked_services(organization_id,name,kind,due_on,amount_kobo,recipient,status,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id",
+        `WITH changed AS(INSERT INTO renewal_tracked_services(organization_id,name,kind,due_on,amount_kobo,recipient,status,billing_interval,service_scope,last_paid_on,last_paid_kobo,payment_note,reminders_enabled,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *) INSERT INTO renewal_audit(actor_id,event,item_key,detail) SELECT $14,'TRACKED_RENEWAL_SAVED','tracked:'||id::text,to_jsonb(changed)-'created_by' FROM changed RETURNING item_key`,
         [...values, a.id],
       );
-  if (!rows.length) throw Error("Current tracked subscription required.");
-  await audit(a.id, "TRACKED_RENEWAL_SAVED", "tracked:" + rows[0].id, {
-    due: due || null,
-    status: values[6],
-  });
+  if (!rows.length) throw Error("Current tracked subscription changed. Refresh before saving.");
   refresh();
 }
 

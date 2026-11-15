@@ -44,6 +44,7 @@ test("PostgreSQL stores scoped drafts, atomic publication and bounded audit with
     await db.exec(migration);
     let scopes = ["content:read", "content:write", "content:publish"];
     const store = load("../src/lib/custom/site-store.ts", {
+      "./site-cache-tags": { invalidateManagedSite: () => {} },
       "server-only": {},
       "./service": {
         query,
@@ -219,6 +220,7 @@ test("PostgreSQL stores scoped drafts, atomic publication and bounded audit with
 });
 test("storage validates bounded payloads and rejects injected field paths", async () => {
   const store = load("../src/lib/custom/site-store.ts", {
+      "./site-cache-tags": { invalidateManagedSite: () => {} },
     "server-only": {},
     "./service": {},
     "./model": model,

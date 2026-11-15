@@ -49,7 +49,7 @@ export async function supportCaseAction(caseId: string) {
     case: c,
     project: await supportProjectContext(c),
     messages: await query(
-      "SELECT * FROM(SELECT id,sender,body,guide_ids,created_at FROM support_messages WHERE case_id=$1 ORDER BY created_at DESC,id DESC LIMIT 120) recent ORDER BY created_at,id",
+      "SELECT * FROM(SELECT id,sender,body,guide_ids,CASE WHEN sender='assistant' AND actor_id IN('ai','guide') THEN actor_id ELSE NULL END AS answer_mode,created_at FROM support_messages WHERE case_id=$1 ORDER BY created_at DESC,id DESC LIMIT 120) recent ORDER BY created_at,id",
       [c.id],
     ),
   };

@@ -3,7 +3,7 @@ import { GameHub } from "@/components/games/GameHub";
 export const metadata: Metadata = {
   title: "JKTL Games | Free Nigerian Arcade, Word & Business Games",
   description:
-    "Jump through Kora Skybound, find Nigerian words, outrun the masquerade, build a city or practice the stock market. Explore free JKTL games and switch between them in one place.",
+    "Jump through Kora Skybound, find Nigerian words, outrun the masquerade or build a city. Explore free JKTL games and switch between them in one place.",
 };
 export default function Page() {
   return (
@@ -11,7 +11,6 @@ export default function Page() {
       business={
         process.env.GAME_BUSINESS_ORIGIN || "https://business.jktl.com.ng"
       }
-      fantasy={process.env.FANTASY_APP_ORIGIN || "https://fantasy.jktl.com.ng"}
     />
   );
 }

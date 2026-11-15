@@ -14,6 +14,8 @@ import { listMembers } from "@/lib/db/members";
 import { getBusinessProfile, getInfrastructure, getOrganization, getUser } from "@/lib/db/organizations";
 import type { ActionResult } from "./types";
 import type { TenantData } from "@/lib/types";
+import { linkedBusinessStaff } from "@/lib/db/admin-auth";
+import { adminLandingPath } from "@/lib/admin-permissions";
 
 /** Pulls everything for the signed-in org in one round of parallel queries —
  * the "live" equivalent of the mock layer's buildTenantData(). Used on
@@ -46,9 +48,10 @@ export async function pullAllAction(): Promise<ActionResult<TenantData>> {
       return { ok: false, error: "Account not found." };
     }
 
+    const team = await linkedBusinessStaff(userId);
     return {
       ok: true,
-      data: { organization, profile, user, members, customers, services, products, testimonials, bookings, sales, saleItems, expenses, invoices, invoiceItems, movements, infrastructure },
+      data: { organization, profile, user: { ...user, teamWorkspacePath: team ? adminLandingPath(team.role, team.permissions) : undefined }, members, customers, services, products, testimonials, bookings, sales, saleItems, expenses, invoices, invoiceItems, movements, infrastructure },
     };
   } catch (err) {
     console.error(err);

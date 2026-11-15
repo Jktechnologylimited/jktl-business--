@@ -1032,8 +1032,7 @@ export function relevantGuides(question: string) {
     .slice(0, 3)
     .map((r) => r.g);
 }
-export function guideReply(question: string) {
-  const guides = relevantGuides(question);
+export function guideReply(question: string, guides = relevantGuides(question)) {
   const g = guides[0] || HELP_GUIDES.find(g=>g.id==="first-website")!;
   return {
     guides: guides.length ? guides : [g],
@@ -1046,4 +1045,20 @@ export function guideReply(question: string) {
         .join("\n\n") +
       "\n\nIf these steps do not solve it, request a human in Help & support. Never share passwords, OTPs or card details.",
   };
+}
+
+/** Generated text may reference only the supplied guides' real destinations. */
+export function safeGuideLinks(reply: string, guides: HelpGuide[]) {
+  const allowed = new Set(["/help", "/business/help"]);
+  for (const guide of guides) {
+    allowed.add(guide.route);
+    allowed.add("/help/" + guide.id);
+  }
+  for (const path of [...allowed]) if (path.startsWith("/") && !path.startsWith("//"))
+    allowed.add("https://business.jktl.com.ng" + path);
+  const urls = [
+    ...(reply.match(/https?:\/\/[^\s<>"')]+/g) || []),
+    ...[...reply.matchAll(/(?:^|[\s("'])((?:\/[A-Za-z])[A-Za-z0-9/?=&_.#%-]*)/g)].map(match => match[1]),
+  ];
+  return urls.every(url => allowed.has(url.replace(/[.,;:!]+$/, "")));
 }

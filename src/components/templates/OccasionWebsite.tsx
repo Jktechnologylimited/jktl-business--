@@ -382,7 +382,7 @@ export function OccasionWebsite({
       </div>
     </section>
   );
-  const process = (
+  const processSection = (
     <section className={styles.process}>
       <p className={styles.eyebrow}>{doc.featureTitle}</p>
       <div>
@@ -681,7 +681,7 @@ export function OccasionWebsite({
                 {reviewSection}
               </>
             )}
-            {process}
+            {processSection}
             {questions}
           </>
         ) : (
@@ -701,7 +701,7 @@ export function OccasionWebsite({
             {path === "about" && (
               <>
                 {about(true)}
-                {process}
+                {processSection}
                 {!!beauty.stylists.length && (
                   <section className={styles.team}>
                     <h2>Meet your artists</h2>

@@ -126,9 +126,10 @@ export interface SessionInfo {
   organizationId: string;
 }
 
-export async function createSession(userId: string, organizationId: string): Promise<string> {
+export async function createSession(userId: string, organizationId: string, days = SESSION_DAYS): Promise<string> {
+  if (days !== 7 && days !== SESSION_DAYS) throw Error("Invalid session lifetime.");
   const sql = getSql();
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
   const rows = await sql`
     INSERT INTO sessions (user_id, organization_id, expires_at)
     VALUES (${userId}, ${organizationId}, ${expiresAt})

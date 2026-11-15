@@ -5,8 +5,13 @@ import { revalidatePath } from "next/cache";
 import { requireAdminCapability } from "@/lib/admin-session";
 import { getSql } from "@/lib/db/client";
 import { rate } from "@/lib/support/service";
+import { growthContentPermission } from "@/lib/growth/content";
 export async function uploadEditorialImageAction(f: FormData) {
-  const a = await requireAdminCapability("manage_content");
+  // Growth uses this same media store without gaining editorial permissions.
+  const category = f.get("growthCategory");
+  const a = await requireAdminCapability(
+    category === null ? "manage_content" : growthContentPermission(category),
+  );
   await rate("editorial-media:" + a.id, 10);
   const file = f.get("file"),
     alt = String(f.get("alt") || "").trim();
@@ -46,11 +51,17 @@ export async function uploadEditorialImageAction(f: FormData) {
     b,
     { access: "public", contentType: mime, addRandomSuffix: false },
   );
+  let id: string;
   try {
-    await getSql()`INSERT INTO editorial_media(url,alt,created_by) VALUES(${blob.url},${alt},${a.id})`;
+    const rows =
+      await getSql()`INSERT INTO editorial_media(url,alt,created_by) VALUES(${blob.url},${alt},${a.id}) RETURNING id`;
+    id = String(rows[0].id);
   } catch (e) {
     await del(blob.url).catch(() => {});
     throw e;
   }
   revalidatePath("/admin/content");
+  for (const section of ["content", "games", "community"])
+    revalidatePath("/admin/growth/" + section);
+  return { id, url: blob.url, alt };
 }

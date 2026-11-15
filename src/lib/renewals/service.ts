@@ -4,7 +4,12 @@ import { sendPush } from "@/lib/push";
 import { query } from "@/lib/custom/service";
 import { mailAddress } from "@/lib/mail/addresses";
 import { sendCustomNoticeEmail } from "@/lib/email";
-import { reminderBucket, renewalMessage } from "./model";
+import { reminderBucket, renewalMessage, renewalDay } from "./model";
+// A new deployment installs the enriched view before serving requests. The
+// fallback keeps rolling deployments and older databases readable.
+export async function renewalRegister() {
+  return (await query("SELECT to_regclass('public.renewal_details') present"))[0]?.present ? "renewal_details" : "renewal_items";
+}
 export async function renewalInstalled() {
   return Boolean(
     (await query("SELECT to_regclass('public.renewal_settings') present"))[0]
@@ -20,10 +25,11 @@ export async function centralRenewalsEnabled() {
     )
   );
 }
-export async function renewalItem(key: string, org?: string) {
+export async function renewalItem(key: string, org?: string, resolvedRegister?: "renewal_items" | "renewal_details") {
+  const register = resolvedRegister || await renewalRegister();
   return (
     await query(
-      "SELECT * FROM renewal_items WHERE item_key=$1 AND ($2::uuid IS NULL OR organization_id=$2::uuid)",
+      `SELECT * FROM ${register} WHERE item_key=$1 AND ($2::uuid IS NULL OR organization_id=$2::uuid)`,
       [key, org || null],
     )
   )[0];
@@ -31,6 +37,7 @@ export async function renewalItem(key: string, org?: string) {
 export async function queueRenewal(key: string, manual = false) {
   const item = await renewalItem(key);
   if (!item) throw Error("Current subscription required.");
+  if (item.reminders_enabled === false) throw Error("Review this business and enable its renewal reminders first.");
   if (!item.due_on)
     throw Error("Provide the renewal date before sending a reminder.");
   const email = mailAddress(item.recipient);
@@ -45,7 +52,7 @@ export async function queueRenewal(key: string, manual = false) {
       new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos" }).format(
         new Date(),
       )
-    : reminderBucket(Number(item.days_left));
+    : reminderBucket(Number(item.days_left), item.billing_interval);
   if (!bucket) return null;
   const rows = await query(
     `INSERT INTO renewal_reminders(item_key,organization_id,due_on,bucket,recipient) SELECT $1,$2,$3,$4,$5 WHERE NOT EXISTS(SELECT 1 FROM renewal_reminders WHERE item_key=$1 AND due_on=$3::date AND recipient=$5 AND ((state IN('QUEUED','SUBMITTING','UNKNOWN','FAILED')) OR(state='ACCEPTED' AND updated_at>now()-interval '24 hours'))) ON CONFLICT DO NOTHING RETURNING id`,
@@ -60,6 +67,7 @@ export async function reconcileRenewals() {
 }
 export async function dispatchRenewals(limit = 10, budgetMs = 20000) {
   await reconcileRenewals();
+  const register = await renewalRegister();
   const end = Date.now() + budgetMs;
   let accepted = 0,
     failed = 0,
@@ -71,10 +79,11 @@ export async function dispatchRenewals(limit = 10, budgetMs = 20000) {
       )
     )[0];
     if (!row) break;
-    const item = await renewalItem(String(row.item_key));
+    const item = await renewalItem(String(row.item_key), undefined, register);
     if (
       !item ||
-      String(item.due_on).slice(0, 10) !== String(row.due_on).slice(0, 10) ||
+      renewalDay(item.due_on) !== renewalDay(row.due_on) ||
+      item.reminders_enabled === false ||
       mailAddress(item.recipient) !== row.recipient
     ) {
       await query(
@@ -83,7 +92,14 @@ export async function dispatchRenewals(limit = 10, budgetMs = 20000) {
       );
       continue;
     }
-    const payload = row.payload || renewalMessage(item);
+    const currentPayload = renewalMessage(item);
+    // A retry must retain its exact idempotent payload. If business details,
+    // price or scope changed, cancel for a fresh reviewed send, never send stale copy.
+    if (row.payload && Object.entries(currentPayload).some(([key,value]) => row.payload[key] !== value)) {
+      await query("UPDATE renewal_reminders SET state='CANCELLED',lease_until=NULL,last_error='RENEWAL_DETAILS_CHANGED',updated_at=now() WHERE id=$1", [row.id]);
+      continue;
+    }
+    const payload = row.payload || currentPayload;
     if (!row.payload)
       await query(
         "UPDATE renewal_reminders SET payload=$2::jsonb WHERE id=$1",
@@ -127,7 +143,7 @@ export async function dispatchRenewals(limit = 10, budgetMs = 20000) {
             body:
               String(item.name) +
               " · Renewal " +
-              String(item.due_on).slice(0, 10),
+              renewalDay(item.due_on),
             url: String(item.path),
           });
       } catch {
@@ -146,9 +162,10 @@ export async function dispatchRenewals(limit = 10, budgetMs = 20000) {
 export async function runCentralRenewals() {
   if (!(await centralRenewalsEnabled())) return null;
   try {
+    const register = await renewalRegister();
     const queued = (
       await query(
-        `WITH candidates AS(SELECT i.*,CASE WHEN days_left<=-7 THEN 'overdue-7' WHEN days_left<=0 THEN 'due' WHEN days_left<=1 THEN '1' WHEN days_left<=7 THEN '7' WHEN days_left<=14 THEN '14' ELSE '30' END bucket FROM renewal_items i WHERE due_on IS NOT NULL AND recipient LIKE '%@%' AND days_left BETWEEN -30 AND 30 AND(legacy_reminded_at IS NULL OR legacy_reminded_at<now()-interval '24 hours')) INSERT INTO renewal_reminders(item_key,organization_id,due_on,bucket,recipient) SELECT i.item_key,i.organization_id,i.due_on,i.bucket,lower(i.recipient) FROM candidates i WHERE NOT EXISTS(SELECT 1 FROM renewal_reminders r WHERE r.item_key=i.item_key AND r.due_on=i.due_on AND lower(r.recipient)=lower(i.recipient) AND(r.state IN('QUEUED','SUBMITTING','UNKNOWN','FAILED') OR(r.state='ACCEPTED' AND r.updated_at>now()-interval '24 hours'))) AND NOT EXISTS(SELECT 1 FROM renewal_reminders done WHERE done.item_key=i.item_key AND done.due_on=i.due_on AND lower(done.recipient)=lower(i.recipient) AND done.bucket=i.bucket) ORDER BY i.due_on LIMIT 300 ON CONFLICT DO NOTHING RETURNING id`,
+        `WITH candidates AS(SELECT i.*,CASE WHEN days_left<=-7 THEN 'overdue-7' WHEN days_left<=0 THEN 'due' WHEN days_left<=1 THEN '1' WHEN to_jsonb(i)->>'billing_interval'='MONTHLY' AND days_left<=3 THEN '3' WHEN days_left<=7 THEN '7' WHEN days_left<=14 THEN '14' ELSE '30' END bucket FROM ${register} i WHERE due_on IS NOT NULL AND recipient LIKE '%@%' AND days_left BETWEEN -30 AND CASE WHEN to_jsonb(i)->>'billing_interval'='MONTHLY' THEN 7 ELSE 30 END AND COALESCE((to_jsonb(i)->>'reminders_enabled')::boolean,true) AND(legacy_reminded_at IS NULL OR legacy_reminded_at<now()-interval '24 hours')) INSERT INTO renewal_reminders(item_key,organization_id,due_on,bucket,recipient) SELECT i.item_key,i.organization_id,i.due_on,i.bucket,lower(i.recipient) FROM candidates i WHERE NOT EXISTS(SELECT 1 FROM renewal_reminders r WHERE r.item_key=i.item_key AND r.due_on=i.due_on AND lower(r.recipient)=lower(i.recipient) AND(r.state IN('QUEUED','SUBMITTING','UNKNOWN','FAILED') OR(r.state='ACCEPTED' AND r.updated_at>now()-interval '24 hours'))) AND NOT EXISTS(SELECT 1 FROM renewal_reminders done WHERE done.item_key=i.item_key AND done.due_on=i.due_on AND lower(done.recipient)=lower(i.recipient) AND done.bucket=i.bucket AND done.state<>'CANCELLED') ORDER BY i.due_on LIMIT 300 ON CONFLICT DO NOTHING RETURNING id`,
       )
     ).length;
     const delivery = await dispatchRenewals(10, 12000);

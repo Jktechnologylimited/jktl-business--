@@ -77,6 +77,7 @@ function SignupForm({ searchParams }: { searchParams: AuthQuery }) {
           <Link href={signIn}>
             <T>Log in</T>
           </Link>
+          <span>Team member? Use your existing Team sign-in details.</span>
         </p>
         <div className="ml-auto flex items-center gap-2">
           <ThemeControl />

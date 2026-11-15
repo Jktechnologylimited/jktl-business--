@@ -1,6 +1,42 @@
 import type { HelpGuide } from "@/lib/support/knowledge";
 export const PLATFORM_GUIDES: HelpGuide[] = [
   {
+    id: "support-ai",
+    title: "Ask JKTL AI and reach a human when you need one",
+    tags: ["ask ai", "assistant", "knowledge", "guidance", "human", "support"],
+    route: "/business/help",
+    summary: "JKTL AI explains the documented platform workflows and provides approved links to the right screen and full help article.",
+    steps: [
+      "Choose Ask AI in your Business workspace and describe what you want to do. Include the screen name or error, but never a password, OTP, card number or private customer record.",
+      "Read the steps and use Open screen for the relevant tool or Read full guide for its complete documentation. The assistant retrieves from the existing JKTL knowledge base rather than inventing policies or prices.",
+      "Live conversations use the existing support assistant and are saved to your own account. If an AI provider is unavailable, the reply is clearly labelled as knowledge-base guidance.",
+      "Choose Talk to a person for more help. The same conversation enters the existing support queue; sensitive issues are escalated to an authorized team member. This does not guarantee an immediate live reply.",
+      "Choose Check replies when you want an update, or open Full conversation in Help & support. Closing the panel pauses its activity; the quick assistant does not poll in the background.",
+      "Follow payment, domain, publishing and account changes through their normal authorized screens. A helpful chat response is not proof that any operation or payment happened.",
+    ],
+    problems: [
+      "If sending is not confirmed, check the saved conversation before sending again. The assistant does not silently retry your message.",
+      "If the hosting platform itself is unavailable, saved guides may still help, but live AI and support requests need working hosting. Use the existing support contact while service is restored.",
+    ],
+    escalate: "Use Talk to a person or the existing WhatsApp contact when guidance is insufficient. Authentication, billing corrections, refunds, security and ownership require an authorized person.",
+  },
+  {
+    id: "platform-service-outage",
+    title: "What to do when JKTL Business or a hosted website is unavailable",
+    tags: ["unavailable", "outage", "paused", "suspended", "loading", "quota", "connection"],
+    route: "/business/help",
+    summary: "Check the affected URL and error before retrying a payment or changing a domain. Hosting availability and domain registration are separate.",
+    steps: [
+      "Keep the exact website URL, error text and time. Compare a public page with the screen that failed; cached pages may still open while a live function is unavailable.",
+      "Check your connection and try once in another browser. Do not repeatedly submit checkout, create duplicate invoices or assume a failed page means a payment was rejected.",
+      "Contact JKTL with the affected URL and error. A hosting usage-limit suspension needs the authorized hosting owner to restore capacity or access; an assistant cannot lift that limit.",
+      "Keep your existing domain and nameservers unchanged unless an authorized operator confirms a required change. A hosted site outage alone does not prove your domain expired.",
+      "After service is restored, check the current account, saved content, payment status and publication result before repeating any action.",
+    ],
+    problems: ["A working public page does not prove every authenticated or live service is healthy.", "AI replies, code changes and retries cannot by themselves restore suspended hosting."],
+    escalate: "Use JKTL support for service restoration. Ask an authorized billing operator to reconcile any payment whose outcome is unknown before paying again.",
+  },
+  {
     id: "multiple-websites",
     title: "Create multiple websites and choose available subdomains",
     tags: [
@@ -289,6 +325,9 @@ export const PLATFORM_GUIDES: HelpGuide[] = [
       "Follow the relevant renewal or invoice action. A domain renewal, a website plan and business email are separate services unless your agreement explicitly bundles them.",
       "Keep the payment reference and wait for verification. Check the new expiry or service date after fulfillment; a receipt alone may not prove the registrar completed a renewal.",
       "If a due date or service is missing, ask the Team to confirm it. The renewal screen can only remind you about dates recorded in the system.",
+      "Read the services covered and billing interval for each renewal. An infrastructure bundle may include several services; its price is not automatically the price of every separate product.",
+      "Annual reminders normally start 30 days before, followed by 14, 7 and 1 day before, the due date and seven days overdue. Monthly services use 7, 3 and 1 day before. Human follow-up may be needed for overdue or unresolved delivery.",
+      "For a payment made outside JKTL checkout, ask the authorized billing team to reconcile it and update the due date. A saved historical note alone does not extend a domain or verify a provider transaction.",
       "Do not rely on a reminder as a guarantee that a service will stay active. Review upcoming dates yourself and allow time for unresolved payment or provider issues.",
     ],
     problems: [
@@ -391,15 +430,15 @@ export const PLATFORM_GUIDES: HelpGuide[] = [
   {
     id: "games-and-accounts",
     title: "Play JKTL games and understand saved progress",
-    tags: ["games", "runner", "tycoon", "word", "fantasy", "points", "login"],
+    tags: ["games", "runner", "tycoon", "word", "points", "login"],
     route: "https://jktl.com.ng/games",
     summary:
       "Use the Games navigation to find available experiences and check each game’s own sign-in and save behavior.",
     steps: [
       "Open Games and choose the experience you want to play. Guest play and saved progress depend on the game.",
       "Read the controls or first-run instructions before starting. On mobile, keep the play area visible and use the game’s navigation to change games.",
-      "Game points, demo trading prices and practice cash are entertainment data, not money in a JKTL customer wallet.",
-      "If you want to save, use the game’s supported account flow. Do not assume guest progress transfers automatically to another browser or a separate Fantasy service.",
+      "Game points and practice cash are entertainment data, not money in a JKTL customer wallet.",
+      "Business Tycoon can save progress with your existing Business login. Team members use their existing Team credentials without another signup. Browser-only progress in other games does not automatically transfer between devices.",
       "Use a free-website link in a game only if you want to create or manage a Business website. Playing a game does not publish a website or purchase a service.",
       "For loading problems, check connection, browser support and device performance. Avoid clearing local data before asking about unsaved progress.",
     ],

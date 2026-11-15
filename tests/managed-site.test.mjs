@@ -122,6 +122,7 @@ test("normal Business sessions govern managed editing, publication, images and p
       validateCmsSession: async () => null,
     };
     const store = load("../src/lib/custom/site-store.ts", {
+      "./site-cache-tags": { invalidateManagedSite: () => {} },
       "server-only": {},
       "./service": service,
       "./model": model,
@@ -135,6 +136,7 @@ test("normal Business sessions govern managed editing, publication, images and p
       "./site-schema": schema,
     });
     const actions = load("../src/lib/actions/managed-site-actions.ts", {
+      "@/lib/custom/site-cache-tags": { invalidateManagedSite: () => {} },
       "@/lib/custom/managed-site": managed,
       "@/lib/custom/site-store": store,
       "@/lib/custom/site-schema": schema,

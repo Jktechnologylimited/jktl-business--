@@ -72,6 +72,34 @@ access to unrelated private conversations or the full staff support queue.
 - Existing `distribution_audit` for assignments, permissions, suspensions,
   revocations, denials, content approval/publication, applicant reviews and work.
 
+## Content images and publication preview
+
+Marketing content, Game announcements and Community announcements share the same
+editor. **Content images** uploads a cover or inserts an inline Markdown image,
+with a required image description and rights confirmation. The current limits
+are PNG, JPEG or WebP, at most 512 KB. Previously uploaded images can be reused.
+Growth sees its own uploaded media; the Owner can see the latest shared items.
+
+**Preview content** renders current unsaved text, formatting, cover and inline
+images privately. After saving, **Preview saved revision** renders the exact
+revision that can be approved and published. Owner approval and publication
+controls appear in that saved preview. Publishing requires an explicit preview
+confirmation as well as the existing exact-revision Owner approval. Edits to
+text or image URLs increment the revision and clear approval. Previewing and
+uploading never publish the article.
+
+This reuses `editorial_media`, the existing media upload action and its existing
+Blob storage configuration (`BLOB_READ_WRITE_TOKEN` on the server). It creates no
+new provider, storage table or migration. If that existing connection is absent,
+the editor explains the limitation and keeps the HTTPS cover URL available.
+Images are public assets immediately after upload; unpublished article text
+remains private. The preview uses the same Markdown library and HTTPS-image/raw
+HTML restrictions as the Main publication renderer, within the Business theme.
+
+Validation uses mocked storage and isolated PostgreSQL. Real uploads require the
+existing media credential; no production upload or publication was performed.
+Changes remain local until deployment is requested.
+
 ## Explicit integration gaps
 
 The separate Fantasy repository has its own authenticated admin system; there is
@@ -110,3 +138,15 @@ exact-revision approval, clearing approval on edits, safe applicant recommendati
 hidden resource submissions, current-session permission changes and revocation.
 The role remains present when earlier prebuild migrations replay. Full regression,
 TypeScript, lint, production build and responsive UI checks are separate checks.
+
+Content-media verification: `tests/growth-content-media.test.mjs` covers
+category permissions, missing storage configuration, required rights/descriptions,
+file size/signature/type checks, cleanup after database failures and the existing
+Writer upload path. The Growth regression also checks that image edits clear
+approval and that publication requires preview confirmation. The combined
+Growth, media, Editorial and marketing-upload suites passed 13 tests; the
+knowledge-base suite passed as well. TypeScript, targeted ESLint and the
+production build passed. Browser fixtures at 390px and 1440px exercise cover and
+inline uploads, formatted/private previews, explicit preview-before-publish,
+Owner review, stale-revision errors and missing-storage fallback, without live
+uploads or publications.

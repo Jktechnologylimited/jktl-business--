@@ -47,7 +47,7 @@ export async function createPartnerWorkspaceAction(f: FormData) {
 export async function partnerWorkspaceDataAction(id: string) {
   const { w } = await workspace(id);
   const registry = await query(
-    "SELECT slug,name,route,partner_mode,partner_actions FROM feature_registry WHERE partner_mode<>'UNAVAILABLE' ORDER BY category,name",
+    "SELECT slug,name,route,partner_mode,partner_actions FROM feature_registry WHERE partner_mode<>'UNAVAILABLE' AND slug<>'fantasy' ORDER BY category,name",
   );
   let website = null;
   if (w.organization_id) {

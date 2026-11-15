@@ -4,7 +4,8 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import ts from "typescript";
 import { PGlite } from "@electric-sql/pglite";
-import { reminderBucket, renewalMessage } from "../src/lib/renewals/model.ts";
+import { reminderBucket, renewalMessage, renewalDay } from "../src/lib/renewals/model.ts";
+import { mailAddress } from "../src/lib/mail/addresses.ts";
 const require = createRequire(import.meta.url);
 function load(file, deps) {
   const m = { exports: {} };
@@ -122,7 +123,7 @@ test("register, owner contacts, duplicate protection, missed runs, stale dates, 
               : { ok: false };
         },
       },
-      "./model": { reminderBucket, renewalMessage },
+      "./model": { reminderBucket, renewalMessage, renewalDay },
     });
     assert.equal(await service.centralRenewalsEnabled(), false);
     assert.equal(await service.runCentralRenewals(), null);
@@ -283,6 +284,9 @@ test("renewal controls reject unauthorized operators before reading records or s
       },
     },
     "@/lib/mail/addresses": { mailAddress: () => "" },
+    "@/lib/custom/model": { id: v => v },
+    "@/lib/renewals/details": load("src/lib/renewals/details.ts", {"@/lib/mail/addresses":{mailAddress}}),
+    "@/lib/renewals/contact-store": { saveCommunicationDetails: async () => { calls++; } },
     "@/lib/renewals/service": {
       queueRenewal: async () => {
         calls++;
@@ -301,6 +305,7 @@ test("renewal controls reject unauthorized operators before reading records or s
     "processRenewalsAction",
     "retryRenewalAction",
     "saveTrackedRenewalAction",
+    "saveBusinessCommunicationAction",
     "confirmRenewalAcceptanceAction",
     "runRenewalCheckAction",
   ])

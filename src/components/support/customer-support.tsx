@@ -124,7 +124,7 @@ export function CustomerSupport() {
       <header>
         <h1 className="text-3xl font-semibold">Help & support</h1>
         <p className="mt-3 text-sm leading-7 text-ink-muted">
-          Start with the guide assistant. Ask for a person whenever you need
+          Start with JKTL AI and the platform guides. Ask for a person whenever you need
           one. Never send passwords, card details, OTPs or private customer
           records.
         </p>
@@ -252,7 +252,7 @@ export function CustomerSupport() {
                 disabled={busy}
                 className="rounded-xl bg-primary px-5 py-3 text-on-primary"
               >
-                {busy ? "Finding help…" : "Ask the assistant"}
+                {busy ? "Finding help…" : "Ask JKTL AI"}
               </button>
             </form>
           ) : data && data.case.id === caseId ? (

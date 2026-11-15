@@ -31,3 +31,26 @@ Managed storage endpoints `/api/custom/cms/content` and `/api/custom/cms/media` 
 ## Managed Business editor (no client secrets)
 
 For a site without its own CMS, enable Editor inside JKTL Business and import the explicit public-content manifest. The editor runs at /business/custom/<project UUID>/edit with the client's existing Business login. Normal owner activation/membership/scopes are checked for every operation. The independent website can read only published content/images through /api/custom/sites/<project UUID>/content and /api/custom/sites/<project UUID>/media/<file>. These public endpoints have no write methods or draft/audit responses. Managed sites require no new private environment variables; Business uses its existing DATABASE_URL/session/provider configuration.
+
+### Shared public-content consumption pattern
+
+Use one server-only published loader per website. Wrap that loader with React
+`cache()` and share it between the layout, metadata and pages, as the K.K. Ubani
+integration does. This deduplicates a render's reads without caching editing
+permissions. Use a fixed project/origin, omit cookies and Authorization, bound the
+timeout, validate the published response, and do not poll from every browser or
+fetch again from every child component. Keep CMS editor reads/writes uncached.
+
+The managed public endpoint keeps HTTP responses `no-store`. Its internal Data
+Cache stores only published snapshots; each request still checks LIVE/managed-CMS
+eligibility and the distributed rate limit. Do not override that revocation
+policy by adding a long client-side fetch/ISR cache without agreeing a revocation
+window and implementing invalidation on that website too. A short public HTML
+cache could reduce central invocations further, but is a separate, opt-in client
+rollout. Central invalidation cannot purge another deployment's HTML/data cache.
+
+On 429, respect Retry-After; on an uncertain failure, do not add automatic rapid
+retries. Existing safe source-content fallbacks are retained. A central project
+suspension withdraws its managed snapshot; it does not take down a separately
+hosted website or remove its original source fallback. No client repository is
+changed by this central optimization.

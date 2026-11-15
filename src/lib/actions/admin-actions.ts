@@ -7,6 +7,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { signInGrowthStaff } from "@/lib/growth/auth";
 import { verifyAdminLogin } from "@/lib/db/admin-auth";
+import { ensureTeamBusinessAccess, TeamBusinessConflict } from "@/lib/team-business-access";
+import { startSession } from "@/lib/session";
+import { authRateLimit } from "@/lib/security/auth-rate-limit";
 import {
   startAdminSession,
   endAdminSession,
@@ -71,6 +74,7 @@ export async function adminLoginAction(
   password: string,
 ): Promise<ActionResult<{ path: string }>> {
   try {
+    await authRateLimit(email.trim().toLowerCase(), "team-login", 10, 600);
     const admin = await verifyAdminLogin(email, password);
     if (!admin) {
       const path = await signInGrowthStaff(email, password);
@@ -81,7 +85,14 @@ export async function adminLoginAction(
         ok: false,
         error: "That email and password don't match a team account.",
       };
-    await startAdminSession(admin.id);
+    try {
+      const login = await ensureTeamBusinessAccess(query, admin.id);
+      await startSession(login.user.id, login.organizationId);
+    } catch (error) {
+      if (!(error instanceof TeamBusinessConflict)) throw error;
+      await startAdminSession(admin.id);
+      return { ok: true, data: { path: "/admin/business" } };
+    }
     return {
       ok: true,
       data: {

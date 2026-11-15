@@ -95,7 +95,7 @@ test("Writer and Editor roles are least privileged; official publishing is opt-i
   assert.equal(can("writer", "manage_content"), true);
   assert.deepEqual(
     navFor("writer").map((n) => n.href),
-    ["/admin/team/structure", "/admin/knowledge", "/admin/content"],
+    ["/admin/team/payment-details", "/admin/team/structure", "/admin/knowledge", "/admin/content"],
   );
   assert.equal(can("writer", "review_content"), false);
   assert.equal(canPublish(editor, { kind: "blog" }), true);
@@ -300,6 +300,7 @@ test("official releases need Owner approval and explicit Editor publication perm
 test("public endpoint validates destinations and hides database errors", async () => {
   let failing = false;
   const api = load("../src/app/api/publications/route.ts", {
+    "@/lib/public-response-cache": load("../src/lib/public-response-cache.ts", {}),
     "next/server": { NextResponse: { json: (b, o) => Response.json(b, o) } },
     "@/lib/publications": { PUBLICATION_KINDS },
     "@/lib/db/publications": {

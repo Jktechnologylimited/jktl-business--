@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { KeyRound, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +71,7 @@ export function BusinessRowActions({ organizationId, businessName }: { organizat
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <Link className="text-xs font-medium text-primary hover:underline" href={"/admin/emails/renewals?organization="+organizationId+"#business-contact"}>Edit business communication</Link>
       <button
         type="button"
         onClick={() => void reset()}

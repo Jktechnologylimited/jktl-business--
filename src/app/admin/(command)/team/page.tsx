@@ -32,7 +32,8 @@ export default async function AdminTeamPage() {
         do — an affiliate manager can approve partners and record payouts
         without being able to move anything else.
       </p>
-      <TeamOrganogram members={team.filter(member => !member.disabledAt && !member.revokedAt).map(({ name, role }) => ({ name, role }))} />
+      <TeamOrganogram />
+      <Link href="/admin/team/payments" className="self-start rounded-lg border border-border p-3 text-sm">Review team payment details</Link>
       <TeamManager team={team} />
     </div>
   );

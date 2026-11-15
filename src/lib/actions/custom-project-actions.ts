@@ -1,4 +1,5 @@
 "use server";
+import { invalidateManagedSite, invalidateManagedOrganization } from "@/lib/custom/site-cache-tags";
 import { after } from "next/server";
 import { createCase } from "@/lib/support/service";
 import { processSupportNotifications } from "@/lib/support/notifications";
@@ -272,6 +273,7 @@ export async function saveCustomProjectAction(input: {
         );
     if (!rows.length)
       throw Error("Reload this project; another team member updated it.");
+    invalidateManagedSite(String(rows[0].id), org);
     await audit(org, a.id, "PROJECT_SAVED", {}, String(rows[0].id));
     return { ok: true as const };
   } catch (e) {
@@ -303,6 +305,7 @@ export async function configureCustomCmsAction(
         "UPDATE custom_projects SET cms_tested_at=now(),revision=revision+1 WHERE id=$1",
         [p.id],
       );
+      invalidateManagedSite(String(p.id), String(p.organization_id));
       await audit(
         String(p.organization_id),
         a.id,
@@ -317,6 +320,7 @@ export async function configureCustomCmsAction(
       "UPDATE custom_projects SET cms_key_hash=$2,cms_tested_at=NULL,revision=revision+1 WHERE id=$1",
       [p.id, digest(key)],
     );
+    invalidateManagedSite(String(p.id), String(p.organization_id));
     await audit(
       String(p.organization_id),
       a.id,
@@ -341,6 +345,7 @@ export async function setCustomReadyAction(orgId: string, ready: boolean) {
       throw Error(
         "Configure and test at least one live project before marking the client ready.",
       );
+    invalidateManagedOrganization(id(orgId));
     await audit(orgId, a.id, ready ? "PILOT_READY" : "PILOT_DISABLED");
     return { ok: true as const };
   } catch (e) {

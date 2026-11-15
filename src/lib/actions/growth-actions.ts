@@ -5,10 +5,10 @@ import { redact } from "@/lib/support/model";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { flushProgramNotices } from "@/lib/distribution/notifications";
-function categoryPermission(category: string) {
-  if (category === "games") return "growth_games" as const;
-  if (category === "community") return "growth_community" as const;
-  return "growth_marketing" as const;
+import { growthContentPermission } from "@/lib/growth/content";
+function refreshContentWorkspace() {
+  for (const section of ["content", "games", "community"])
+    revalidatePath("/admin/growth/" + section);
 }
 export async function saveGrowthDraftAction(f: FormData) {
   const category = field(f, "category", 20);
@@ -16,7 +16,7 @@ export async function saveGrowthDraftAction(f: FormData) {
     !["marketing", "social", "games", "community", "landing"].includes(category)
   )
     throw Error("Choose a content category");
-  const a = await growth(categoryPermission(category));
+  const a = await growth(growthContentPermission(category));
   const p = parsePublication({
     id: String(f.get("id") || ""),
     revision: Number(f.get("revision") || 0),
@@ -37,7 +37,7 @@ export async function saveGrowthDraftAction(f: FormData) {
       )
     )[0];
     if (!old) throw Error("Only your own drafts can be edited");
-    await growth(categoryPermission(String(old.growth_category)));
+    await growth(growthContentPermission(old.growth_category));
   }
   let link = String(f.get("link") || "").trim();
   if (link) {
@@ -51,7 +51,6 @@ export async function saveGrowthDraftAction(f: FormData) {
         "www.jktl.com.ng",
         "business.jktl.com.ng",
         "games.jktl.com.ng",
-        "fantasy.jktl.com.ng",
       ].includes(url.hostname)
     )
       throw Error("Use an approved JKTL HTTPS destination");
@@ -86,7 +85,7 @@ export async function saveGrowthDraftAction(f: FormData) {
       "Only your current unpublished draft can be edited; reload or use another slug",
     );
   await audit(a.id, "GROWTH_DRAFT_SAVED", String(rows[0].id), { category });
-  revalidatePath("/admin/growth/content");
+  refreshContentWorkspace();
 }
 export async function approveGrowthDraftAction(f: FormData) {
   const a = await growth("manage_team");
@@ -100,17 +99,21 @@ export async function approveGrowthDraftAction(f: FormData) {
   await audit(a.id, "GROWTH_PUBLICATION_APPROVED", String(rows[0].id), {
     revision: rows[0].revision,
   });
-  revalidatePath("/admin/growth/content");
+  refreshContentWorkspace();
 }
 export async function publishGrowthDraftAction(f: FormData) {
   const a = await growth("growth_publish_approved");
+  if (f.get("previewed") !== "on")
+    throw Error(
+      "Confirm you have previewed this saved revision before publishing",
+    );
   const candidate = (
     await query("SELECT growth_category FROM jktl_publications WHERE id=$1", [
       uuid(f.get("id")),
     ])
   )[0];
   if (!candidate) throw Error("Invalid draft");
-  await growth(categoryPermission(String(candidate.growth_category)));
+  await growth(growthContentPermission(candidate.growth_category));
   const rows = await query(
     `UPDATE jktl_publications SET status='published',published_at=now(),updated_at=now(),updated_by=$2,revision=revision+1 WHERE id=$1 AND created_by=$2 AND status='draft' AND revision=$3 AND growth_approved_revision=revision AND growth_approved_by IS NOT NULL AND length(body)>=50 RETURNING id,slug,kind`,
     [String(f.get("id")), a.id, Number(f.get("revision"))],
@@ -120,7 +123,7 @@ export async function publishGrowthDraftAction(f: FormData) {
       "Only your exact Owner-approved current draft can be published",
     );
   await audit(a.id, "GROWTH_PUBLICATION_PUBLISHED", String(rows[0].id));
-  revalidatePath("/admin/growth/content");
+  refreshContentWorkspace();
   revalidatePath("/api/publications");
 }
 export async function createGrowthLeadAction(f: FormData) {

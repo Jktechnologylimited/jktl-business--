@@ -1,6 +1,6 @@
 # JKTL casual games
 
-Four original, guest-play games join the existing five. No accounts, payments, migrations, external art services or extra runtime dependencies are needed.
+Four original, guest-play games sit alongside four other available games. Fantasy is paused. No accounts, payments, migrations, external art services or extra runtime dependencies are needed for guest play.
 
 | Game | Direct public route | Controls / round |
 | --- | --- | --- |
@@ -13,11 +13,21 @@ Four original, guest-play games join the existing five. No accounts, payments, m
 
 `src/lib/game-catalog.ts` is the Business catalogue and game-switcher registry. `/play` (also the root of games.jktl.com.ng through the existing host rewrite) offers original SVG covers, search, categories, favourites, recent selections and Pick for me. Selecting a game mounts one iframe; returning to the catalogue unmounts it. Browser Back/Forward and `?game=<known-id>` are supported. Unknown IDs are ignored. No unverified popularity or player counts are displayed.
 
-Main's `/games` intentionally retains immediate Tycoon gameplay, with all nine choices in `components/games/GameStage.tsx`. Keep this small Main registry aligned when adding games. Fantasy retains its existing All games link; its authentication and trading code are unchanged.
+Main's `/games` intentionally retains immediate Tycoon gameplay, with eight available choices in `components/games/GameStage.tsx`. Keep this small Main registry aligned when adding games. Fantasy is paused in Main and Business: remove its public catalogue/menu entry, sitemap entry, Growth card, feature discovery and email promotions. Its older embedded routes temporarily redirect to the available games. The standalone repository and data remain intact; hosting and DNS are unchanged.
 
 Favourites/recent selections and casual best scores are stored on the current browser/origin only, and gracefully tolerate unavailable storage. They are not synchronized account records, verified leaderboards, rewards or cash. Fantasy keeps its own existing persistence.
 
 Original SVG cover illustrations are in `public/game-covers/`; no reference screenshots or third-party game assets were reused.
+
+Fantasy pause verification: 19 catalogue/host/email/public-feature/knowledge tests,
+2 Partner service tests and 11 Main SEO/tool tests passed. Both production builds
+and TypeScript/targeted lint checks passed. The built apps were checked at 1440px,
+390px and 320px: eight choices, working Word Hunt navigation, stale favourites
+and `?game=fantasy` handling, clean Main sitemap and no requests to the Fantasy
+hostname. The old embedded entry points return static HTTP 307 redirects with
+`noindex` and cache hits. The redirect cache has no periodic regeneration; a
+future deployment can restore the app. No production data, hosting or DNS was
+changed, and the changes remain undeployed.
 
 ## Verification
 

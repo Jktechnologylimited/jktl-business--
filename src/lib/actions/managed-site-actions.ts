@@ -12,6 +12,7 @@ import { managedFields, siteManifest } from "@/lib/custom/site-schema";
 import { requireAdminCapability } from "@/lib/admin-session";
 import { id, cmsScopes } from "@/lib/custom/model";
 import { rateLimit } from "@/lib/domains/store";
+import { invalidateManagedSite } from "@/lib/custom/site-cache-tags";
 export async function managedEditorAction(project: string) {
   try {
     const p = await managedSite(project, "read");
@@ -132,6 +133,7 @@ export async function saveManagedCmsConfigAction(
       [id(project), revision, enabled, JSON.stringify(fields), permissions],
     );
     if (!rows.length) throw Error();
+    invalidateManagedSite(project, String(rows[0].organization_id));
     await audit(
       String(rows[0].organization_id),
       a.id,

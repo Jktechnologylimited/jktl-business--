@@ -466,7 +466,10 @@ export const TEAM_GUIDES: HelpGuide[] = [
       "The Growth and Gaming role is a Team role with explicitly assigned workspace permissions.",
     steps: [
       "Sign into the assigned Team identity and open the Growth workspace. Verify which modules are enabled for your role.",
+      "Your Team email and password also work at the Business sign-in page; do not create another account. Use Open JKTL Business in Team navigation, and Team workspace in the Business account menu to switch. Your own Business workspace does not grant access to other customers or extra paid features.",
       "Use approved product facts, resources and campaign materials. A growth role does not automatically grant customer billing or ownership access.",
+      "In Marketing content, Game announcements or Community announcements, use Content images to upload a cover or an image inside the article. Choose PNG, JPEG or WebP up to 512 KB, describe the image and confirm permission to publish it. Uploaded images are public assets; do not upload private customer material.",
+      "Use Preview content to check current edits, then save the unpublished draft. Open Preview saved revision for the exact version the Owner reviews. After approval, preview that saved revision and confirm its images and links before publishing. Saving another edit clears approval; previewing by itself never publishes.",
       "Check game links, mobile playability, controls and supported save behavior before promoting an experience.",
       "Keep optional website CTAs subtle and accurate. Game points and fictional trading cash must not be represented as real customer funds.",
       "Use published resources and current programme terms when recruiting partners or affiliates. Do not invent commissions or promise guaranteed earnings.",
@@ -475,6 +478,7 @@ export const TEAM_GUIDES: HelpGuide[] = [
     ],
     problems: [
       "A disabled module can reflect an intentional permission decision.",
+      "If uploads are unavailable, ask the Owner to check the existing media-storage connection. An approved HTTPS cover image URL remains available.",
       "AI receptionist calls and automated bookings remain paused until the responsible Team validates launch readiness.",
     ],
     escalate:

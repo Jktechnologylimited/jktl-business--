@@ -17,6 +17,8 @@ import { computeStorageOverageKobo } from "@/lib/billing";
  */
 
 export interface AdminBusinessRow {
+  clientStatus?: "ACTIVE" | "PAUSED" | "CLOSED" | null;
+  billingEmail?: string;
   organizationId: string;
   organizationName: string;
   displayName: string;
@@ -59,6 +61,8 @@ function mapRow(row: Record<string, unknown>): AdminBusinessRow {
   const storageUsedBytes = Number(row.storage_used_bytes ?? 0);
   const storageLimitBytes = Number(row.storage_limit_bytes ?? 0);
   return {
+    clientStatus: (row.client_status as AdminBusinessRow["clientStatus"]) || null,
+    billingEmail: (row.billing_email as string) || "",
     organizationId: row.organization_id as string,
     organizationName: row.organization_name as string,
     displayName: row.display_name as string,
@@ -94,6 +98,8 @@ export async function listBusinessesForAdmin(): Promise<AdminBusinessRow[]> {
   const rows = await sql`
     SELECT
       o.id AS organization_id,
+      communication.client_status,
+      communication.billing_email,
       o.name AS organization_name,
       o.created_at AS org_created_at,
       bp.display_name,
@@ -127,6 +133,7 @@ export async function listBusinessesForAdmin(): Promise<AdminBusinessRow[]> {
     FROM organizations o
     JOIN business_profiles bp ON bp.organization_id = o.id
     LEFT JOIN infrastructure_accounts ia ON ia.organization_id = o.id
+    LEFT JOIN business_communication_profiles communication ON communication.organization_id=o.id
     ORDER BY o.created_at DESC
   `;
   return rows.map(mapRow);

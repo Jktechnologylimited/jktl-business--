@@ -74,7 +74,7 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone(); url.pathname = "/play"; return NextResponse.rewrite(url);
   }
   if ((gameHost === `fantasy.${ROOT_DOMAIN}` || gameHost === "fantasy.localhost") && request.nextUrl.pathname === "/") {
-    return new NextResponse("Connect fantasy.jktl.com.ng to the JKTL Fantasy hosting project. This is the Business deployment.", {status:503,headers:{"Cache-Control":"no-store","Content-Type":"text/plain"}});
+    return new NextResponse("This game is unavailable. Explore available games at https://games.jktl.com.ng.", {status:503,headers:{"Cache-Control":"no-store","Content-Type":"text/plain"}});
   }
   const subdomain = extractSubdomain(host);
   if (subdomain) {

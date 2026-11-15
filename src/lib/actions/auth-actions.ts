@@ -22,6 +22,9 @@ import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
 import type { ActionResult } from "./types";
 import type { BusinessType } from "@/lib/types";
 import { authRateLimit } from "@/lib/security/auth-rate-limit";
+import { verifyAdminLogin } from "@/lib/db/admin-auth";
+import { ensureTeamBusinessAccess, TeamBusinessConflict } from "@/lib/team-business-access";
+import { query } from "@/lib/custom/service";
 
 async function limitIp(action: string, limit: number, seconds: number) {
   const h = await headers();
@@ -81,7 +84,11 @@ export async function loginAction(
 ): Promise<ActionResult<{ organizationId: string }>> {
   try {
     await limitIp("login-ip", 30, 600);
-    const result = await verifyLogin(email, password);
+    let result = await verifyLogin(email, password);
+    if (!result) {
+      const team = await verifyAdminLogin(email, password);
+      if (team) result = await ensureTeamBusinessAccess(query, team.id);
+    }
     if (!result) {
       return {
         ok: false,
@@ -92,6 +99,7 @@ export async function loginAction(
     await consumeReferralVisit(result.organizationId).catch(() => {});
     return { ok: true, data: { organizationId: result.organizationId } };
   } catch (err) {
+    if (err instanceof TeamBusinessConflict) return { ok: false, error: err.message };
     console.error(err instanceof Error ? err.name : "unknown");
     return {
       ok: false,

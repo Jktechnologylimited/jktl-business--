@@ -19,7 +19,7 @@ export default async function Clients() {
     [p.id],
   );
   const products = await query(
-    "SELECT slug,name FROM feature_registry WHERE partner_mode<>'UNAVAILABLE' AND 'REQUEST_SETUP'=ANY(partner_actions) ORDER BY name",
+    "SELECT slug,name FROM feature_registry WHERE partner_mode<>'UNAVAILABLE' AND slug<>'fantasy' AND 'REQUEST_SETUP'=ANY(partner_actions) ORDER BY name",
   );
   return (
     <div className="space-y-7 text-ink">

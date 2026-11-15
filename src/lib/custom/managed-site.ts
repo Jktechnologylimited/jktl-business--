@@ -3,6 +3,8 @@ import { owner, query } from "./service";
 import { id } from "./model";
 import { siteManifest } from "./site-schema";
 import { SiteError, type SiteAccess } from "./site-store";
+export const publicManagedSiteEligibility =
+  "p.managed_cms=true AND p.billing_only=false AND p.status='LIVE'";
 export async function managedSite(
   projectValue: unknown,
   operation: "read" | "write" | "publish" | "upload",
@@ -41,7 +43,7 @@ export async function publicManagedSite(projectValue: unknown) {
   const project = id(projectValue);
   const p = (
     await query(
-      "SELECT organization_id FROM custom_projects WHERE id=$1 AND managed_cms=true AND billing_only=false AND status='LIVE'",
+      `SELECT p.organization_id FROM custom_projects p WHERE p.id=$1 AND ${publicManagedSiteEligibility}`,
       [project],
     )
   )[0];

@@ -9,8 +9,9 @@
  * The dashboard uses Plus Jakarta Sans throughout its interface, matching
  * the Main site. Customer websites retain seven independent font pairings,
  * including the classic Cormorant Garamond / Plus Jakarta Sans pairing.
- * Fraunces is bundled locally to avoid Turbopack's Google font URL resolver
- * failure on Vercel, while retaining the existing typeface and CSS variable.
+ * Fraunces, Space Grotesk, Playfair Display and Poppins are bundled locally
+ * to avoid Google font URL resolver failures while retaining their existing
+ * typefaces, weights and CSS variables.
  */
 import localFont from "next/font/local";
 import {
@@ -19,12 +20,9 @@ import {
   JetBrains_Mono,
   Baloo_2,
   Quicksand,
-  Playfair_Display,
-  Poppins,
   Work_Sans,
   Bebas_Neue,
   Manrope,
-  Space_Grotesk,
   Inter,
 } from "next/font/google";
 
@@ -35,8 +33,24 @@ export const jetBrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--f
 export const baloo2 = Baloo_2({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-baloo-2", display: "swap" });
 export const quicksand = Quicksand({ subsets: ["latin"], variable: "--font-quicksand", display: "swap" });
 
-export const playfairDisplay = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-playfair-display", display: "swap" });
-export const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-poppins", display: "swap" });
+export const playfairDisplay = localFont({
+  src: "./fonts/playfair-display-variable.ttf",
+  weight: "600 700",
+  style: "normal",
+  variable: "--font-playfair-display",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
+});
+export const poppins = localFont({
+  src: [
+    { path: "./fonts/poppins-regular.ttf", weight: "400", style: "normal" },
+    { path: "./fonts/poppins-medium.ttf", weight: "500", style: "normal" },
+    { path: "./fonts/poppins-semibold.ttf", weight: "600", style: "normal" },
+  ],
+  variable: "--font-poppins",
+  display: "swap",
+  adjustFontFallback: "Arial",
+});
 
 export const fraunces = localFont({
   src: "./fonts/fraunces-variable.ttf",
@@ -51,7 +65,14 @@ export const workSans = Work_Sans({ subsets: ["latin"], variable: "--font-work-s
 export const bebasNeue = Bebas_Neue({ subsets: ["latin"], weight: "400", variable: "--font-bebas-neue", display: "swap" });
 export const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 
-export const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["500", "600"], variable: "--font-space-grotesk", display: "swap" });
+export const spaceGrotesk = localFont({
+  src: "./fonts/space-grotesk-variable.ttf",
+  weight: "500 600",
+  style: "normal",
+  variable: "--font-space-grotesk",
+  display: "swap",
+  adjustFontFallback: "Arial",
+});
 export const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 /** Every font `.variable` used anywhere in the site-font system — applied

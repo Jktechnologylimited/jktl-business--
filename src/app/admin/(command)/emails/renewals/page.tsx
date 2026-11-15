@@ -2,8 +2,9 @@ import Link from "next/link";
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { query } from "@/lib/custom/service";
 import { ActionForm } from "@/components/distribution/action-form";
-import { renewalInstalled, renewalItem } from "@/lib/renewals/service";
-import { renewalKinds, renewalMessage } from "@/lib/renewals/model";
+import { renewalInstalled, renewalItem, renewalRegister } from "@/lib/renewals/service";
+import { renewalKinds, renewalMessage, renewalDay } from "@/lib/renewals/model";
+import { BusinessCommunicationForm } from "@/components/admin/business-communication-form";
 import {
   runRenewalCheckAction,
   confirmRenewalAcceptanceAction,
@@ -24,6 +25,7 @@ export default async function Page({
     kind?: string;
     status?: string;
     edit?: string;
+    organization?: string;
   }>;
 }) {
   await guardAdminPage("manage_communications");
@@ -37,22 +39,24 @@ export default async function Page({
       </section>
     );
   const params = await searchParams,
+    register = await renewalRegister(),
+    organization = /^[a-f0-9-]{36}$/i.test(params.organization || "") ? params.organization! : "",
     settings = (
       await query(
         "SELECT *,enabled AND(last_scan_at IS NULL OR last_scan_at<now()-interval '36 hours') stale FROM renewal_settings WHERE id=true",
       )
     )[0],
     items = await query(
-      `SELECT i.*,r.state,r.updated_at reminded_at,r.last_error FROM renewal_items i LEFT JOIN LATERAL(SELECT state,updated_at,last_error FROM renewal_reminders WHERE item_key=i.item_key AND due_on=i.due_on ORDER BY created_at DESC LIMIT 1)r ON true WHERE ($1='' OR i.name ILIKE '%'||$1||'%' OR i.business_name ILIKE '%'||$1||'%') AND($2='' OR kind=$2) AND($3='' OR($3='missing' AND(due_on IS NULL OR recipient IS NULL OR recipient NOT LIKE '%@%')) OR($3='overdue' AND days_left<0) OR($3='soon' AND days_left BETWEEN 0 AND 30) OR($3='attention' AND r.state IN('FAILED','UNKNOWN','SUBMITTING'))) ORDER BY due_on NULLS FIRST,item_key LIMIT 200`,
-      [(params.q || "").slice(0, 120), params.kind || "", params.status || ""],
+        `SELECT i.*,r.state,r.updated_at reminded_at,r.last_error FROM ${register} i LEFT JOIN LATERAL(SELECT state,updated_at,last_error FROM renewal_reminders WHERE item_key=i.item_key AND due_on=i.due_on ORDER BY created_at DESC LIMIT 1)r ON true WHERE ($1='' OR i.name ILIKE '%'||$1||'%' OR i.business_name ILIKE '%'||$1||'%') AND($2='' OR kind=$2) AND($3='' OR($3='missing' AND(due_on IS NULL OR recipient IS NULL OR recipient NOT LIKE '%@%')) OR($3='overdue' AND days_left<0) OR($3='soon' AND days_left BETWEEN 0 AND 30) OR($3='attention' AND r.state IN('FAILED','UNKNOWN','SUBMITTING'))) AND($4='' OR i.organization_id::text=$4) ORDER BY due_on NULLS FIRST,item_key LIMIT 200`,
+      [(params.q || "").slice(0, 120), params.kind || "", params.status || "",organization],
     );
   const counts = (
       await query(
-        `SELECT count(*)::int total,count(*) FILTER(WHERE days_left BETWEEN 0 AND 30)::int soon,count(*) FILTER(WHERE days_left<0)::int overdue,count(*) FILTER(WHERE due_on IS NULL OR recipient IS NULL OR recipient NOT LIKE '%@%')::int missing FROM renewal_items`,
+        `SELECT count(*)::int total,count(*) FILTER(WHERE days_left BETWEEN 0 AND 30)::int soon,count(*) FILTER(WHERE days_left<0)::int overdue,count(*) FILTER(WHERE due_on IS NULL OR recipient IS NULL OR recipient NOT LIKE '%@%')::int missing FROM ${register}`,
       )
     )[0],
     recent = await query(
-      "SELECT r.*,i.name,i.business_name FROM renewal_reminders r LEFT JOIN renewal_items i ON i.item_key=r.item_key ORDER BY r.created_at DESC LIMIT 40",
+      `SELECT r.*,i.name,i.business_name FROM renewal_reminders r LEFT JOIN ${register} i ON i.item_key=r.item_key ORDER BY r.created_at DESC LIMIT 40`,
     ),
     orgs = await query(
       "SELECT o.id,COALESCE(b.display_name,o.name) name FROM organizations o LEFT JOIN business_profiles b ON b.organization_id=o.id ORDER BY name LIMIT 500",
@@ -64,7 +68,8 @@ export default async function Page({
             params.edit,
           ])
         )[0]
-      : null;
+      : null,
+    profile = organization && register === "renewal_details" ? (await query(`SELECT o.id AS organization_id,o.name AS organization_name,c.business_name,c.contact_name,c.billing_email,c.phone,c.additional_emails,c.client_status,c.notes,c.revision,owner.email AS owner_email FROM organizations o LEFT JOIN business_communication_profiles c ON c.organization_id=o.id LEFT JOIN LATERAL(SELECT u.email FROM organization_members m JOIN users u ON u.id=m.user_id WHERE m.organization_id=o.id AND m.active=true AND m.role='owner' ORDER BY m.created_at,m.id LIMIT 1)owner ON true WHERE o.id=$1`,[organization]))[0] : null;
   const message = preview ? renewalMessage(preview) : null,
     stale = Boolean(settings.stale);
   const card = "rounded-xl border border-border bg-paper p-5",
@@ -80,6 +85,11 @@ export default async function Page({
           charge customers or renew services.
         </p>
       </header>
+      <form className={card + " grid gap-3 sm:flex sm:items-end"}>
+        <label className="min-w-0 sm:flex-1">Choose a business to edit communication details<select name="organization" className={input} defaultValue={organization}><option value="">All businesses</option>{orgs.map(o=><option key={String(o.id)} value={String(o.id)}>{String(o.name)}</option>)}</select></label>
+        <button className={button + " w-full sm:w-auto"}>Open business details</button>
+      </form>
+      {profile && <BusinessCommunicationForm profile={profile} />}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
           ["Tracked services", counts.total],
@@ -100,7 +110,10 @@ export default async function Page({
           at 7 days overdue. Missed runs catch up with the current reminder,
           rather than sending every missed message. No reminders are sent
           automatically beyond 30 days overdue.
+          Monthly services use 7, 3 and 1 day before renewal instead. Overdue or
+          repeatedly failed messages appear in Customer follow-ups for the team.
         </p>
+        <Link className="text-sm text-blue-600 underline" href="/admin/support/follow-ups">Open customer follow-ups</Link>
         <p className="text-sm">
           Last automatic check:{" "}
           {settings.last_scan_at
@@ -150,6 +163,7 @@ export default async function Page({
         </button>
       </ActionForm>
       <form className="flex flex-wrap gap-3">
+        {organization && <input type="hidden" name="organization" value={organization} />}
         <input
           className={input + " sm:max-w-xs"}
           name="q"
@@ -206,7 +220,7 @@ export default async function Page({
                 <p>
                   Due:{" "}
                   {item.due_on
-                    ? String(item.due_on).slice(0, 10)
+                    ? renewalDay(item.due_on)
                     : "Missing renewal date"}
                 </p>
                 <p>
@@ -216,6 +230,9 @@ export default async function Page({
                 </p>
               </div>
             </div>
+            <p className="mt-3 whitespace-pre-line text-sm">{String(item.service_scope || item.name)}</p>
+            {item.amount_kobo != null && <p className="mt-2 font-semibold">{new Intl.NumberFormat("en-NG",{style:"currency",currency:"NGN"}).format(Number(item.amount_kobo)/100)}{item.billing_interval === "ANNUAL" ? " / year" : item.billing_interval === "MONTHLY" ? " / month" : ""}</p>}
+            {item.reminders_enabled === false && <p className="mt-2 text-sm text-ink-muted">Reminders paused for this business or service.</p>}
             <p className="my-3 text-xs">
               Central reminder for this cycle:{" "}
               {item.state === "ACCEPTED"
@@ -223,7 +240,7 @@ export default async function Page({
                 : String(item.state || "Not yet queued")}
               . Provider acceptance does not confirm inbox delivery.
             </p>
-            <div className="flex gap-4 text-sm">
+            <div className="flex flex-wrap gap-4 text-sm">
               <Link
                 className="text-blue-600 underline"
                 href={"?item=" + encodeURIComponent(String(item.item_key))}
@@ -238,6 +255,7 @@ export default async function Page({
                   Edit tracked subscription
                 </Link>
               )}
+              <Link className="text-blue-600 underline" href={"?organization="+String(item.organization_id)+"#business-contact"}>Edit business contact</Link>
             </div>
           </article>
         ))}
@@ -260,7 +278,7 @@ export default async function Page({
             <input type="hidden" name="item" value={String(preview.item_key)} />
             <button
               className={button}
-              disabled={!preview.due_on || !preview.recipient}
+              disabled={!preview.due_on || !preview.recipient || preview.reminders_enabled === false}
             >
               Queue this reminder
             </button>
@@ -375,13 +393,14 @@ export default async function Page({
         </p>
         <ActionForm action={saveTrackedRenewalAction} className="space-y-3">
           <input type="hidden" name="id" value={String(editing?.id || "")} />
+          <input type="hidden" name="revision" value={Number(editing?.revision || 0)} />
           <label className="block">
             Business account
             <select
               name="organization"
               required
               className={input}
-              defaultValue={String(editing?.organization_id || "")}
+              defaultValue={String(editing?.organization_id || organization)}
             >
               <option value="">Choose an account</option>
               {orgs.map((o) => (
@@ -391,6 +410,8 @@ export default async function Page({
               ))}
             </select>
           </label>
+          <label className="block">Services included in this renewal<textarea className={input} name="scope" maxLength={2000} rows={4} defaultValue={String(editing?.service_scope || "")} placeholder="List only the domain, hosting, email or other services actually included in this plan." /></label>
+          <label className="block">Billing interval<select name="interval" className={input} defaultValue={String(editing?.billing_interval || "")}><option value="">Needs confirmation</option><option value="ANNUAL">Annual</option><option value="MONTHLY">Monthly</option><option value="ONCE">One-time</option></select></label>
           <label className="block">
             Service name
             <input
@@ -421,7 +442,7 @@ export default async function Page({
               className={input}
               type="date"
               name="due"
-              defaultValue={String(editing?.due_on || "").slice(0, 10)}
+              defaultValue={renewalDay(editing?.due_on)}
             />
           </label>
           <label className="block">
@@ -440,7 +461,7 @@ export default async function Page({
             />
           </label>
           <label className="block">
-            Billing email (optional; otherwise current owner)
+            Service-specific billing email (optional; otherwise business contact or owner)
             <input
               className={input}
               type="email"
@@ -448,6 +469,10 @@ export default async function Page({
               defaultValue={String(editing?.recipient || "")}
             />
           </label>
+          <div className="grid gap-3 sm:grid-cols-2"><label>Previous payment date<input name="lastPaidOn" type="date" className={input} defaultValue={renewalDay(editing?.last_paid_on)} /></label><label>Previous payment amount (NGN)<input name="lastPaidAmount" type="number" min="0" step="0.01" className={input} defaultValue={editing?.last_paid_kobo != null ? Number(editing.last_paid_kobo)/100 : ""} /></label></div>
+          <label className="block">Payment/history note<textarea name="paymentNote" className={input} rows={3} maxLength={1000} defaultValue={String(editing?.payment_note || "")} /></label>
+          <p className="text-xs text-ink-muted">Previous payments are owner-reported history. Saving them does not issue a receipt, verify a provider payment, extend a service or change the next due date automatically.</p>
+          <label className="flex gap-3"><input name="remindersEnabled" type="checkbox" defaultChecked={editing?.reminders_enabled === true} />Allow reminders for this service after reviewing the dates, contact and services included</label>
           {editing && (
             <label className="flex gap-3">
               <input

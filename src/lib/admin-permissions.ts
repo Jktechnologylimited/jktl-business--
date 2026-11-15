@@ -74,6 +74,8 @@ export type AdminCapability =
   | "view_team_structure"
   | "export_insights"
   | "manage_team"
+  | "manage_own_payment_details"
+  | "manage_team_payments"
   | "run_daily_job";
 
 const MATRIX: Record<AdminRole, AdminCapability[]> = {
@@ -136,6 +138,9 @@ export function can(
   if (capability === "view_company_finance")
     return role === "analyst" && overrides.view_company_finance === true;
   if (capability === "manage_company_finance") return false;
+  if (capability === "manage_own_payment_details")
+    return Object.hasOwn(MATRIX, role);
+  if (capability === "manage_team_payments") return false;
   if (capability === "view_knowledge" || capability === "view_team_structure")
     return role in MATRIX;
   if (
@@ -232,6 +237,16 @@ export interface AdminNavItem {
  * needs attention, then the queues.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
+  {
+    href: "/admin/team/payment-details",
+    label: "My payment details",
+    capability: "manage_own_payment_details",
+  },
+  {
+    href: "/admin/team/payments",
+    label: "Team payment details",
+    capability: "manage_team_payments",
+  },
   {
     href: "/admin/team/structure",
     label: "Team structure",

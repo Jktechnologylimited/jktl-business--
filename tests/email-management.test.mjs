@@ -954,6 +954,7 @@ test("new programme invitations retain approval gates and secure resend rotates 
       "original-business-password",
     );
     const teams = load("../src/lib/actions/team-invitation-actions.ts", {
+      "@/lib/team-business-access": {},
       "@/lib/admin-session": {
         requireAdminCapability: async (cap) => {
           if (!permissions.can(context.role, cap)) throw Error("Denied");

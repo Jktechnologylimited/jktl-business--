@@ -39,7 +39,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: `frame-ancestors 'self' https://jktl.com.ng https://www.jktl.com.ng https://games.jktl.com.ng https://fantasy.jktl.com.ng ${localFrames.join(" ")}`,
+            value: `frame-ancestors 'self' https://jktl.com.ng https://www.jktl.com.ng https://games.jktl.com.ng ${localFrames.join(" ")}`,
           },
         ],
       },

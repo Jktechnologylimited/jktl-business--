@@ -2,6 +2,7 @@ import "server-only";
 import { query, validateCmsSession } from "./service";
 import { id, digest } from "./model";
 import { rateLimit } from "@/lib/domains/store";
+import { invalidateManagedSite } from "./site-cache-tags";
 export class SiteError extends Error {
   constructor(public status: number) {
     super("Website content request unavailable");
@@ -119,13 +120,23 @@ function snapshot(row: Record<string, unknown>) {
 export async function loadSiteContent(
   access: SiteAccess,
   view: "draft" | "published",
+  expectedRevision?: number,
 ) {
   if (view === "draft" && !access.user) throw new SiteError(403);
+  if (view === "published") {
+    const rows = await query(
+      "SELECT published FROM custom_site_content WHERE project_id=$1 AND organization_id=$2" +
+        (expectedRevision === undefined ? "" : " AND revision=$3"),
+      [access.project, access.organization, ...(expectedRevision === undefined ? [] : [expectedRevision])],
+    );
+    // A publish/delete raced admission. Never cache the wrong revision or an error.
+    if (expectedRevision && !rows.length) throw new SiteError(409);
+    return { published: rows[0]?.published ?? null };
+  }
   const rows = await query(
     "SELECT project_id,revision,draft,published,audit FROM custom_site_content WHERE project_id=$1 AND organization_id=$2",
     [access.project, access.organization],
   );
-  if (view === "published") return { published: rows[0]?.published ?? null };
   return rows[0] ? snapshot(rows[0]) : null;
 }
 export async function saveSiteContent(
@@ -173,6 +184,7 @@ export async function saveSiteContent(
           params,
         );
   if (!rows[0]) throw new SiteError(409);
+  if (mode === "publish") invalidateManagedSite(access.project, access.organization);
   return snapshot(rows[0]);
 }
 

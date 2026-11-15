@@ -1,6 +1,8 @@
 "use client";
 import { JktlMark } from "@/components/app/logo";
 import { ThemeControl } from "@/components/settings/theme-control";
+import { openTeamBusinessAction } from "@/lib/actions/team-business-actions";
+import { ActionForm } from "@/components/distribution/action-form";
 import { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -126,6 +128,9 @@ export function OperationsFrame({
           </nav>
         </div>
         <div className={styles.sideFoot}>
+          {kind === "admin" && <ActionForm action={openTeamBusinessAction}>
+            <button className="mb-4 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-3 text-sm font-semibold"><ArrowUpRight size={16} aria-hidden="true" />Open JKTL Business</button>
+          </ActionForm>}
           <p>JK TECHNOLOGY LIMITED</p>
           <p>Build better. Grow together.</p>
           <Link href="https://jktl.com.ng">

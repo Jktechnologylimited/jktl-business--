@@ -1,7 +1,8 @@
 "use server";
 import { limitInvitationRequest } from "@/lib/mail/invitation-rate";
 import { requireAdminCapability, getAdminSession } from "@/lib/admin-session";
-import { getSession } from "@/lib/session";
+import { getSession, startSession } from "@/lib/session";
+import { ensureTeamBusinessAccess } from "@/lib/team-business-access";
 import { query } from "@/lib/custom/service";
 import { rate } from "@/lib/support/service";
 import {
@@ -12,7 +13,7 @@ import {
   acceptTeamInvitation,
 } from "@/lib/mail/invitations";
 import { sendRoleInvitationEmail } from "@/lib/email";
-import { ROLE_LABEL } from "@/lib/admin-permissions";
+import { ROLE_LABEL, adminLandingPath, normaliseRole } from "@/lib/admin-permissions";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
@@ -120,5 +121,7 @@ export async function acceptTeamUserInvitationAction(f: FormData) {
     teamId: team?.id,
     passwordHash,
   });
-  redirect(accepted.business_user_id ? "/admin" : "/admin/login");
+  const login = await ensureTeamBusinessAccess(query, String(accepted.id));
+  await startSession(login.user.id, login.organizationId);
+  redirect(adminLandingPath(normaliseRole(String(accepted.role))));
 }

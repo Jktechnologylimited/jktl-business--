@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PUBLICATION_KINDS, type PublicationKind } from "@/lib/publications";
 import { publishedArticles } from "@/lib/db/publications";
+import { publicResponseCache, noResponseCache } from "@/lib/public-response-cache";
 export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const kind = req.nextUrl.searchParams.get("kind");
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
   )
     return NextResponse.json(
       { error: "Invalid publication query." },
-      { status: 400 },
+      { status: 400, headers: noResponseCache },
     );
   try {
     const articles = await publishedArticles(
@@ -28,19 +29,19 @@ export async function GET(req: NextRequest) {
     if (slug && !articles.length)
       return NextResponse.json(
         { error: "Not found." },
-        { status: 404, headers: { "Cache-Control": "no-store" } },
+        { status: 404, headers: noResponseCache },
       );
     return NextResponse.json(
       {
         articles,
         nextOffset: !slug && articles.length === 200 ? offset + 200 : null,
       },
-      { headers: { "Cache-Control": "no-store" } },
+      { headers: publicResponseCache() },
     );
   } catch {
     return NextResponse.json(
       { error: "Publications are temporarily unavailable." },
-      { status: 503, headers: { "Cache-Control": "no-store" } },
+      { status: 503, headers: noResponseCache },
     );
   }
 }

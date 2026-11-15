@@ -1,6 +1,5 @@
 "use client";
 import { authSearchParams, type AuthQuery } from "@/lib/auth-page";
-import { growthDestinationAction } from "@/lib/actions/growth-auth-actions";
 import { emailIntent, emailDestination } from "@/lib/product-intent";
 import { gameReturnUrl } from "@/lib/game-routing";
 import { SignInFrame } from "@/components/auth/SignInFrame";
@@ -60,6 +59,7 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
         "programs",
         "affiliate-invite",
         "partner-invite",
+        "team-invite",
       ].includes(params.get("next") || "")
     ) {
       router.replace(emailDestination(params) || "/business");
@@ -101,10 +101,8 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
       router.push("/play/tycoon");
       return;
     }
-    const staffPath = nextTemplate ? null : await growthDestinationAction();
     router.push(
-      staffPath ||
-        (nextTemplate ? templateEditorPath(nextTemplate) : "/business"),
+      nextTemplate ? templateEditorPath(nextTemplate) : "/business",
     );
   }
 
@@ -119,6 +117,7 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
           "programs",
           "affiliate-invite",
           "partner-invite",
+          "team-invite",
         ].includes(value || "")
       )
         router.replace(emailDestination(params) || "/business");
@@ -155,6 +154,7 @@ function LoginForm({ searchParams }: { searchParams: AuthQuery }) {
         <p className="mt-1.5 text-sm text-ink-muted">
           <T>Sign in to run your business today.</T>
         </p>
+        <p className="mt-2 text-sm text-ink-muted">Team member? Use your existing Team email and password here. <Link className="font-medium text-primary underline" href="/admin/login">Open Team workspace</Link></p>
 
         {selected && (
           <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm">

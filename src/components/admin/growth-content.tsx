@@ -1,12 +1,13 @@
 import { growth, query } from "@/lib/growth/service";
 import { ActionForm } from "@/components/distribution/action-form";
 import {
-  saveGrowthDraftAction,
   approveGrowthDraftAction,
   publishGrowthDraftAction,
 } from "@/lib/actions/growth-actions";
 import { can } from "@/lib/admin-permissions";
-const input = "block w-full rounded-lg border border-border bg-paper p-3";
+import { GrowthContentEditor } from "./growth-content-editor";
+import { GrowthSavedPreview } from "./growth-content-preview";
+import type { GrowthMedia } from "@/lib/growth/content";
 export async function GrowthContent({
   category,
 }: {
@@ -23,6 +24,16 @@ export async function GrowthContent({
     "SELECT id,slug,kind,title,excerpt,body,cover_image,status,revision,created_by,growth_category,growth_link,growth_approved_revision FROM jktl_publications WHERE growth_category IS NOT NULL AND(created_by=$1 OR $2) AND(CASE WHEN $3::text IS NULL THEN growth_category IN('marketing','social','landing') ELSE growth_category=$3 END) ORDER BY updated_at DESC LIMIT 50",
     [a.id, a.role === "owner", category || null],
   );
+  const media: GrowthMedia[] = (
+    await query(
+      "SELECT id,url,alt FROM editorial_media WHERE created_by=$1 OR $2 ORDER BY created_at DESC LIMIT 24",
+      [a.id, a.role === "owner"],
+    )
+  ).map((image) => ({
+    id: String(image.id),
+    url: String(image.url),
+    alt: String(image.alt),
+  }));
   return (
     <section className="space-y-5">
       <h2 className="text-2xl font-semibold">
@@ -38,7 +49,11 @@ export async function GrowthContent({
         publish. Social and landing-page categories are editorial briefs; they
         do not post to social platforms or change the Main homepage.
       </p>
-      <DraftForm category={category} />
+      <GrowthContentEditor
+        category={category}
+        media={media}
+        uploadsAvailable={!!process.env.BLOB_READ_WRITE_TOKEN}
+      />
       {rows.map((r) => (
         <article
           className="space-y-4 rounded-xl border border-border bg-paper p-5"
@@ -52,10 +67,18 @@ export async function GrowthContent({
               ? "Owner approved"
               : "Review required"}
           </p>
-          <details>
-            <summary>Read exact content</summary>
-            <p className="my-3">{String(r.excerpt)}</p>
-            <p className="whitespace-pre-wrap">{String(r.body)}</p>
+          <GrowthSavedPreview
+            key={String(r.id) + ":" + String(r.revision)}
+            revision={Number(r.revision)}
+            content={{
+              title: String(r.title),
+              excerpt: String(r.excerpt),
+              body: String(r.body),
+              coverImage: String(r.cover_image || ""),
+              kind: String(r.kind),
+              slug: String(r.slug),
+            }}
+          >
             {r.growth_link && (
               <p className="mt-3 break-all">
                 Campaign URL:{" "}
@@ -64,128 +87,66 @@ export async function GrowthContent({
                 </a>
               </p>
             )}
-          </details>
-          {r.status === "draft" && r.created_by === a.id && (
-            <details>
-              <summary>Edit draft (clears approval)</summary>
-              <DraftForm row={r} category={category} />
-            </details>
-          )}
-          {r.status === "draft" && a.role === "owner" && (
-            <ActionForm action={approveGrowthDraftAction}>
-              <input type="hidden" name="id" value={String(r.id)} />
-              <input type="hidden" name="revision" value={String(r.revision)} />
-              <label className="flex gap-3">
-                <input type="checkbox" name="approved" required />I reviewed
-                this exact content, claims, destinations and image rights.
-              </label>
-              <button className="mt-3 rounded border border-border p-3">
-                Approve revision
-              </button>
-            </ActionForm>
-          )}
-          {r.status === "draft" &&
-            r.created_by === a.id &&
-            can(a.role, "growth_publish_approved", a.permissions) && (
-              <ActionForm action={publishGrowthDraftAction}>
+            {r.status === "draft" && a.role === "owner" && (
+              <ActionForm action={approveGrowthDraftAction}>
                 <input type="hidden" name="id" value={String(r.id)} />
                 <input
                   type="hidden"
                   name="revision"
                   value={String(r.revision)}
                 />
-                <button
-                  disabled={r.growth_approved_revision !== r.revision}
-                  className="rounded-lg bg-primary p-3 text-on-primary disabled:opacity-50"
-                >
-                  Publish approved announcement
+                <label className="flex gap-3">
+                  <input type="checkbox" name="approved" required />I reviewed
+                  this exact content, claims, destinations and image rights.
+                </label>
+                <button className="mt-3 rounded border border-border p-3">
+                  Approve revision
                 </button>
               </ActionForm>
             )}
+            {r.status === "draft" &&
+              r.created_by === a.id &&
+              can(a.role, "growth_publish_approved", a.permissions) && (
+                <ActionForm action={publishGrowthDraftAction}>
+                  <input type="hidden" name="id" value={String(r.id)} />
+                  <input
+                    type="hidden"
+                    name="revision"
+                    value={String(r.revision)}
+                  />
+                  <label className="mb-3 flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      name="previewed"
+                      required
+                      className="mt-1"
+                    />
+                    I previewed this saved revision, including its images and
+                    links, and am ready to publish it live.
+                  </label>
+                  <button
+                    disabled={r.growth_approved_revision !== r.revision}
+                    className="rounded-lg bg-primary p-3 text-on-primary disabled:opacity-50"
+                  >
+                    Publish approved announcement
+                  </button>
+                </ActionForm>
+              )}
+          </GrowthSavedPreview>
+          {r.status === "draft" && r.created_by === a.id && (
+            <details>
+              <summary>Edit draft (clears approval)</summary>
+              <GrowthContentEditor
+                key={String(r.revision)}
+                row={r}
+                category={category}
+                media={media}
+                uploadsAvailable={!!process.env.BLOB_READ_WRITE_TOKEN}
+              />
+            </details>
+          )}
         </article>
       ))}
     </section>
-  );
-}
-function DraftForm({
-  row: r = {},
-  category,
-}: {
-  row?: Record<string, unknown>;
-  category?: string;
-}) {
-  return (
-    <ActionForm
-      action={saveGrowthDraftAction}
-      className="grid gap-4 rounded-xl border border-border p-5"
-    >
-      <input type="hidden" name="id" value={String(r.id || "")} />
-      <input type="hidden" name="revision" value={Number(r.revision || 0)} />
-      <label>
-        Category
-        <select
-          name="category"
-          className={input}
-          defaultValue={String(r.growth_category || category || "marketing")}
-        >
-          {(category ? [category] : ["marketing", "social", "landing"]).map(
-            (c) => (
-              <option key={c}>{c}</option>
-            ),
-          )}
-        </select>
-      </label>
-      <label>
-        Destination
-        <select
-          name="kind"
-          className={input}
-          defaultValue={String(r.kind || "release")}
-        >
-          <option value="release">Releases & Updates</option>
-          <option value="blog">Blog</option>
-        </select>
-      </label>
-      {[
-        ["slug", "URL slug", 100],
-        ["title", "Title", 180],
-        ["excerpt", "Summary", 400],
-        ["coverImage", "HTTPS image URL (optional)", 2000],
-        ["link", "JKTL campaign destination (optional)", 2000],
-      ].map(([key, label, max]) => (
-        <label key={String(key)}>
-          {String(label)}
-          <input
-            className={input}
-            name={String(key)}
-            required={!["coverImage", "link"].includes(String(key))}
-            maxLength={Number(max)}
-            defaultValue={String(
-              r[
-                key === "coverImage"
-                  ? "cover_image"
-                  : key === "link"
-                    ? "growth_link"
-                    : String(key)
-              ] || "",
-            )}
-          />
-        </label>
-      ))}
-      <label>
-        Content
-        <textarea
-          name="body"
-          required
-          maxLength={60000}
-          rows={8}
-          className={input}
-          defaultValue={String(r.body || "")}
-        />
-      </label>
-      <button className="rounded-lg bg-primary p-3 text-on-primary">
-        Save unpublished draft
-      </button>
-    </ActionForm>
   );
 }

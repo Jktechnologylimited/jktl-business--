@@ -467,8 +467,8 @@ export function InvestorDashboard({ report }: { report: InvestorReport }) {
           )}
           <p className="mt-4 text-sm">
             {e ? e.recentSavers : "Unavailable"} accounts have their latest
-            saved Tycoon progress in this period. Guests, other games and
-            Fantasy are excluded; this is not MAU.
+            saved Tycoon progress in this period. Guests and other games are
+            excluded; this is not MAU.
           </p>
         </section>
       </div>

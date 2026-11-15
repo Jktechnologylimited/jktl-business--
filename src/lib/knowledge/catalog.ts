@@ -89,7 +89,7 @@ export function topicFor(g: HelpGuide): Topic {
   if (["business-email", "email-replies-delivery"].includes(id)) return "email";
   if (["payments", "plans", "refunds", "payment-recovery"].includes(id))
     return "billing";
-  if (["support-permissions", "reviews"].includes(id)) return "support";
+  if (["support-permissions", "support-ai", "platform-service-outage", "reviews"].includes(id)) return "support";
   if (
     ["access", "pwa", "appearance", "ai-receptionist"].includes(id) ||
     /password|profile-photo|offline|sync-safety|team-member|business-details/.test(

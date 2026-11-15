@@ -126,6 +126,7 @@ test("Custom onboarding, billing, independent CMS grants and tenant boundaries u
   }).rateLimit;
   const supportCalls = [];
   const actions = load("../src/lib/actions/custom-project-actions.ts", {
+    "@/lib/custom/site-cache-tags": { invalidateManagedSite: () => {}, invalidateManagedOrganization: () => {} },
     "@/lib/admin-session": {
       requireAdminCapability: async (cap) => {
         if (!can(role, cap)) throw Error("Forbidden");

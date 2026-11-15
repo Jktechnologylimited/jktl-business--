@@ -4,6 +4,18 @@ import {
   parseNameservers,
   type Query,
 } from "./model";
+export class RateLimitError extends Error {
+  constructor(public retryAfter: number) {
+    super("Too many requests. Please try again shortly.");
+  }
+}
+export function rateLimitWindow(org: string, action: string, seconds: number) {
+  const now = Date.now();
+  return {
+    bucket: `${org}:${action}:${Math.floor(now / (seconds * 1000))}`,
+    retryAfter: Math.max(1, Math.ceil((seconds * 1000 - now % (seconds * 1000)) / 1000)),
+  };
+}
 export async function rateLimit(
   q: Query,
   org: string,
@@ -11,12 +23,12 @@ export async function rateLimit(
   limit: number,
   seconds: number,
 ) {
-  const bucket = `${org}:${action}:${Math.floor(Date.now() / (seconds * 1000))}`;
+  const { bucket, retryAfter } = rateLimitWindow(org, action, seconds);
   const rows = await q(
     `INSERT INTO domain_rate_limits(bucket,hits,expires_at) VALUES($1,1,now()+$2::int*interval '1 second') ON CONFLICT(bucket) DO UPDATE SET hits=domain_rate_limits.hits+1 WHERE domain_rate_limits.hits<$3 RETURNING hits`,
     [bucket, seconds * 2, limit],
   );
-  if (!rows.length) throw Error("Too many requests. Please try again shortly.");
+  if (!rows.length) throw new RateLimitError(retryAfter);
 }
 export async function reserveOrder(
   q: Query,

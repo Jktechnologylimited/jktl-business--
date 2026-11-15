@@ -41,7 +41,7 @@ export function KnowledgeIndex({
         </p>
         <p className="mt-5 text-xs text-white/70">
           {articles.length} practical guides · Steps, troubleshooting and
-          escalation · Reviewed 8 November 2026
+          escalation · Updated 15 November 2026
         </p>
       </header>
       <form

@@ -322,23 +322,7 @@ export default async function Page({
             Test Tycoon
           </Link>
         </article>
-        <article className="rounded-xl border border-border p-5">
-          <h3 className="font-semibold">JKTL Fantasy</h3>
-          <a
-            className="underline"
-            href="https://games.jktl.com.ng"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open game experience
-          </a>
-          <p className="mt-3">
-            The separate Fantasy repository has account sign-on but no connected
-            team content or analytics API. Descriptions, settings, scores,
-            leaderboards, results and rewards cannot be changed here. Source
-            development requires separately assigned GitHub access.
-          </p>
-        </article>
+        <Link className="inline-block rounded-lg border border-border px-4 py-3 font-semibold" href="/play">Browse available games</Link>
         <GrowthContent category="games" />
       </div>
     );
@@ -417,8 +401,8 @@ export default async function Page({
           {String(leads?.paying || 0)} with verified website payments.
         </p>
         <p className="text-sm text-ink-muted">
-          Campaign-level click attribution, social engagement, acquisition cost
-          and remote Fantasy analytics have no connected data source. UTM links
+          Campaign-level click attribution, social engagement and acquisition
+          cost have no connected data source. UTM links
           are available in content drafts; no conversion is attributed to a
           campaign by inference.
         </p>

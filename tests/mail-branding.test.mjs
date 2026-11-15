@@ -9,11 +9,29 @@ import { applyMigrationBatch } from "../scripts/sql-statements.mjs";
 import { uncertainProviderRejection } from "../src/lib/mail/provider-outcome.ts";
 import * as permissions from "../src/lib/admin-permissions.ts";
 import * as addresses from "../src/lib/mail/addresses.ts";
+import * as invoicePolicy from "../src/lib/invoicing/policy.ts";
 const promotions = load("../src/lib/mail/promotions.ts", {
   "server-only": {},
   "./promotion-defaults": promotionDefaults,
 });
 const layout = load("../src/lib/mail/layout.ts", { "./addresses": addresses });
+test("paused Fantasy is excluded from discovery selection and final HTML/text even for stored custom promotions", () => {
+  const rows = [
+    ["https://fantasy.jktl.com.ng", ""],
+    ["https://jktl.com.ng/games/fantasy?utm_source=mail", ""],
+    ["https://business.jktl.com.ng/play/fantasy", ""],
+    ["https://jktl.com.ng/games/%66antasy", ""],
+    ["https://jktl.com.ng/games", "fantasy"],
+    ["https://jktl.com.ng/templates", "templates"],
+  ].map(([url, productId], i) => ({ id: String(i), title: productId === "templates" ? "Website Templates" : "Paused Fantasy", description: "Product details", url, productId, enabled: true, priority: i, categories: ["invitation"] }));
+  const selected = layout.selectPromotions(rows, layout.DEFAULT_BRANDING, "invitation");
+  assert.deepEqual(selected.map((p) => p.productId), ["templates"]);
+  const rendered = layout.mailLayout({title:"Join the Team",bodyHtml:"<p>Invitation</p>",text:"Invitation",category:"invitation",promotions:rows});
+  for (const output of [rendered.html, rendered.text]) {
+    assert.doesNotMatch(output, /fantasy/i);
+    assert.match(output, /https:\/\/jktl.com.ng\/templates/);
+  }
+});
 function load(file, deps) {
   const m = { exports: {} };
   new Function(
@@ -372,6 +390,7 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
     process.env.RESEND_API_KEY = "mock-only";
     try {
       const email = load("../src/lib/email.ts", {
+        "@/lib/invoicing/policy": invoicePolicy,
         resend: { Resend },
         "@/lib/mail/service": service,
         "@/lib/mail/addresses": addresses,
@@ -405,6 +424,11 @@ test("real schema, admin configuration, opt-out, product ownership, event queues
         delivered[1].payload.text.includes("Awaiting supplier confirmation"),
       );
       assert.ok(delivered[1].payload.html.includes("JKTL logo"));
+      await email.sendCustomNoticeEmail({to:"customer@example.test",subject:"Example — annual renewal",detail:"Hello, Example.\n\nServices covered:\nDomain and hosting\nBusiness email\n\nRenewal amount: NGN 117,000.",path:"/business/renewals",actionLabel:"Review renewal",key:"mock-renewal-only"});
+      const renewal=delivered[2].payload;
+      assert.match(renewal.html,/Services covered:<br>Domain and hosting<br>Business email/);
+      assert.match(renewal.html,/Review renewal/);assert.match(renewal.text,/https:\/\/business.jktl.com.ng\/business\/renewals/);
+      assert.equal(delivered[2].options.idempotencyKey,"mock-renewal-only");
     } finally {
       if (old === undefined) delete process.env.RESEND_API_KEY;
       else process.env.RESEND_API_KEY = old;

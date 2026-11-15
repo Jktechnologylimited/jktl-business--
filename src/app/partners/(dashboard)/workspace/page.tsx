@@ -16,7 +16,7 @@ export default async function Page({
     [p.id],
   );
   const products = await query(
-    "SELECT slug,name,partner_mode FROM feature_registry WHERE partner_mode<>'UNAVAILABLE' AND slug<>'ai-receptionist' ORDER BY name",
+    "SELECT slug,name,partner_mode FROM feature_registry WHERE partner_mode<>'UNAVAILABLE' AND slug NOT IN('ai-receptionist','fantasy') ORDER BY name",
   );
   return (
     <div className="space-y-7 text-ink">

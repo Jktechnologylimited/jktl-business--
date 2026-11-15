@@ -116,14 +116,13 @@ test("slice spawning is deterministic, missing fruit costs hearts, coal misses d
   );
   assert.equal(stepSlice({ ...a, seconds: 59.99 }, 0.04).phase, "over");
 });
-test("catalogue has nine unique guest destinations and all four new routes", () => {
-  assert.equal(GAMES.length, 9);
-  assert.equal(new Set(GAMES.map((g) => g.id)).size, 9);
+test("catalogue has eight available guest destinations, without the paused Fantasy app", () => {
+  assert.equal(GAMES.length, 8);
+  assert.equal(new Set(GAMES.map((g) => g.id)).size, 8);
   assert.equal(GAMES.filter((g) => g.fresh).length, 4);
   for (const g of GAMES) {
-    assert.ok(
-      g.href.startsWith("/play/") || g.href === "https://fantasy.jktl.com.ng",
-    );
+    assert.ok(g.href.startsWith("/play/"));
+    assert.notEqual(g.id, "fantasy");
     assert.ok(g.cover.startsWith("/game-covers/"));
   }
 });
