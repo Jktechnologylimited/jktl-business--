@@ -64,8 +64,9 @@ export type WebsiteOffering = {
   preparation?: string;
 };
 export type WebsiteDocument = {
-  design?: "legal" | "dressmaker" | "jewellery" | "cosmetics";
+  design?: "legal" | "dressmaker" | "jewellery" | "cosmetics" | "medical";
   legalVariant?: "family";
+  medicalVariant?: "forest" | "cinematic";
   aboutImage?: string;
   demoContent?: boolean;
   beauty?: BeautyContent;
@@ -4822,6 +4823,100 @@ websiteTemplates.push({
   }
 } as WebsiteTemplate);
 
+// Nacre is an original JKTL multi-page adaptation of the supplied medical-spa recording.
+const medicalDocument: WebsiteDocument = JSON.parse(JSON.stringify(spaDocument));
+Object.assign(medicalDocument, {
+  design: "medical", demoContent: true, brandName: "Nacre Aesthetics",
+  eyebrow: "A considered approach to feeling like yourself.",
+  headline: "Still you.\nJust more radiant.",
+  intro: "Thoughtful skin consultations and personal treatment plans. A quieter space to explore what feels right for you, at every stage of life.",
+  ctaLabel: "Request a consultation", accent: "#392820", paper: "#f5f0e8", ink: "#29231e",
+  heroImage: "/template-photos/african/spa-mask.jpg",
+  aboutTitle: "Care that starts with a conversation.",
+  aboutText: "Your goals, your comfort and your questions come first. We take time to understand what matters to you, explain the available options and agree a plan together. Decisions about treatment follow an individual consultation, with clear costs and aftercare discussed before you choose.",
+  offeringsTitle: "Small steps. A personal approach.",
+  offerings: [
+    { title: "Skin consultation", slug: "skin-consultation", description: "A personal conversation about your skin, routine and goals, with time for questions before deciding on your next step.", image: "/template-photos/african/doctor-team.jpg", benefits: ["Discuss your priorities", "Explore suitable options", "Agree your next step"] },
+    { title: "Skin renewal", slug: "skin-renewal", description: "Explore professional skin-care options with a practitioner. Suitability, treatment choices and expected recovery are discussed in your consultation.", image: "/template-photos/african/spa-mask.jpg", benefits: ["Individual suitability review", "Clear treatment information", "Personal care guidance"] },
+    { title: "Ongoing skin care", slug: "ongoing-skin-care", description: "Build a considered routine around your skin and everyday life. Review your plan with your practitioner as your needs change.", image: "/template-photos/african/spa-care.jpg", benefits: ["Review your routine", "Understand aftercare", "Discuss follow-up support"] }
+  ],
+  galleryTitle: "A little room to pause.",
+  gallery: [
+    { src: "/template-photos/african/spa-mask.jpg", alt: "African woman enjoying a quiet skin-care ritual" },
+    { src: "/template-photos/african/portrait-elder.jpg", alt: "Portrait of an African man in traditional attire" },
+    { src: "/template-photos/african/doctor-team.jpg", alt: "African healthcare professionals in conversation" }
+  ],
+  featureTitle: "A clear path, from hello to follow-up.",
+  featureText: "Start with a conversation. Understand your options. Make a decision in your own time.",
+  featureItems: ["Tell us about your goals and ask your questions.", "Review a personal plan, costs and suitability with your practitioner.", "Discuss your treatment, aftercare and any follow-up together."],
+  faqTitle: "A few things you might be wondering.",
+  faqs: [
+    { question: "Where should I start?", answer: "Start with a consultation. Share your goals and questions so your practitioner can explain the options and whether any treatment is suitable for you." },
+    { question: "Do I need to choose a treatment before booking?", answer: "No. You can request a consultation to discuss your skin and explore your options before making a treatment decision." },
+    { question: "How much will a treatment cost?", answer: "Ask the clinic for its current consultation fee and a personal quote. The treatment plan, costs and any follow-up should be explained before you agree to proceed." },
+    { question: "Does sending a request confirm my appointment?", answer: "No. A request starts the conversation. The clinic will confirm availability, arrangements and your appointment separately." }
+  ],
+  contactTitle: "Your first visit is simply a conversation.",
+  contactText: "Tell us what you would like to explore and when you would like to visit. We will discuss availability and the next step with you.",
+  serviceAreas: [], reviews: [], socials: [], logoUrl: "",
+  seoTitle: "Nacre Aesthetics | Personal Skin Consultations",
+  seoDescription: "Explore personal skin consultations, considered skin renewal and ongoing care at Nacre Aesthetics. Discover our approach and request a consultation."
+});
+medicalDocument.beauty = { ...medicalDocument.beauty!, design: "spa", demoContent: true,
+  aboutImage: "/template-photos/african/doctor-team.jpg", stylists: [],
+  philosophy: ["Your questions come first", "A plan around you", "Clear choices and aftercare"],
+  hours: [{ day: "Consultations", hours: "By appointment · contact the clinic for availability" }],
+  contact: { phone: "", email: "", address: "", whatsapp: "", mapUrl: "" },
+  pages: [
+    ["", "Personal skin consultations", medicalDocument.intro],
+    ["about", "Our approach to personal care", medicalDocument.aboutText],
+    ["services", "Explore our skin-care services", "Explore skin consultations, skin renewal and ongoing care. Speak with a practitioner about suitability and a plan that reflects your goals."],
+    ["gallery", "A space for considered care", "Explore our approach to considered skin care and personal conversations. These editorial photographs illustrate the template, not patient results."],
+    ["book", "Request a skin consultation", medicalDocument.contactText],
+    ["contact", "Contact the clinic", "Ask about a personal skin consultation, availability and your next step. Use the clinic contact details or send a general enquiry to the team."]
+  ].map(([path, title, description]) => ({ path, title: title + " | Nacre Aesthetics", description }))
+};
+websiteTemplates.unshift({ id: "nacre-aesthetics", name: "Medical Spa — Nacre", category: "Beauty & Aesthetics", kind: "website", sourceId: "nacre-aesthetics", layout: "wellness", sectionOrder: ["offerings", "about", "feature", "gallery", "faq"], document: medicalDocument });
+
+// Two additional owner-supplied screen recordings: distinct layouts, same safe CMS.
+for (const variant of ["forest", "cinematic"] as const) {
+  const cinematic = variant === "cinematic";
+  const brand = cinematic ? "Luneform Aesthetics" : "Lumivie Skin";
+  const id = cinematic ? "luneform-aesthetics" : "lumivie-skin";
+  const doc = JSON.parse(JSON.stringify(medicalDocument)) as WebsiteDocument;
+  Object.assign(doc, {
+    medicalVariant: variant, brandName: brand,
+    eyebrow: cinematic ? "Personal aesthetics. A considered next chapter." : "Your skin. Your pace. Your plan.",
+    headline: cinematic ? "More confidence.\nStill completely you." : "Good skin begins\nwith a conversation.",
+    intro: cinematic ? "A personal approach to skin and confidence. Explore your options, make space for your questions and choose your next step in your own time." : "Explore skin care that puts your questions first. Clear conversations, individual choices and a plan that fits around you.",
+    heroImage: cinematic ? "/template-photos/african/glam-hero.jpg" : "/template-photos/african/spa-care.jpg",
+    paper: cinematic ? "#f8f5ef" : "#eee9d8", ink: cinematic ? "#30241e" : "#192f25", accent: cinematic ? "#6b3b2a" : "#203c2c",
+    aboutTitle: cinematic ? "A personal touch. An informed choice." : "Carefully considered. Always personal.",
+    aboutText: cinematic ? "We believe a good care experience begins with listening. Share what matters to you, understand the available choices and agree your next step with a practitioner. Your plan and its costs are discussed before you make a decision." : "Your first conversation is about you. We make room for your questions, explain suitable options and discuss practical next steps. From your first enquiry to any follow-up, you should understand your plan and feel comfortable asking for more information.",
+    offeringsTitle: cinematic ? "Find your own kind of confidence." : "Explore what feels right for your skin.",
+    featureTitle: cinematic ? "It starts with a real conversation." : "A clear plan. Every step explained.",
+    featureText: "A conversation, a considered plan and care that moves at your pace. Ask about suitability, current fees and follow-up before deciding.",
+    featureItems: ["Start with a conversation about your goals and questions.", "Map out suitable options and agree a clear plan and quote.", "Choose whether to proceed, in your own time.", "Review aftercare and discuss the right follow-up for you."],
+    contactTitle: cinematic ? "Your next chapter starts with hello." : "Let’s talk about your skin.",
+    contactText: "Ask about a consultation, suitable services or a future visit. The team will confirm appointment availability and arrangements with you.",
+    seoTitle: brand + " | Personal Skin & Aesthetic Consultations",
+    seoDescription: "Discover personal skin consultations and considered care at " + brand + ". Explore services, understand our approach and request a consultation."
+  });
+  doc.offerings = cinematic ? [
+    { title: "Your first consultation", slug: "first-consultation", description: "A personal conversation about your goals and the questions you want to explore before deciding on a treatment.", image: "/template-photos/african/doctor-team.jpg", benefits: ["Share your priorities", "Explore suitable options", "Understand your next step"] },
+    { title: "Skin texture & tone", slug: "skin-texture-tone", description: "Discuss your skin texture, tone and routine with a practitioner. Explore which care options may suit your individual needs.", image: "/template-photos/african/spa-mask.jpg", benefits: ["A personal skin discussion", "Clear information about options", "Guidance before you choose"] },
+    { title: "Long-term skin care", slug: "long-term-skin-care", description: "Take a considered approach to your skin over time. Review your routine and discuss follow-up with the team.", image: "/template-photos/african/glam-hero.jpg", benefits: ["Understand your routine", "Discuss aftercare", "Review your plan together"] }
+  ] : [
+    { title: "Skin health consultation", slug: "skin-health", description: "Start with a conversation about your skin, routine and priorities. Explore suitable next steps with your practitioner.", image: "/template-photos/african/doctor-team.jpg", benefits: ["Time for your questions", "Your routine reviewed", "An agreed next step"] },
+    { title: "Fine lines & skin changes", slug: "skin-changes", description: "Discuss the skin changes you have noticed and learn about available options, their suitability and what to expect.", image: "/template-photos/african/spa-mask.jpg", benefits: ["Understand available options", "Discuss suitability and recovery", "Receive a personal quote"] },
+    { title: "Personal care planning", slug: "personal-care-planning", description: "Explore a thoughtful care plan that considers your goals, preferences and everyday life, with no need to rush your decision.", image: "/template-photos/african/spa-care.jpg", benefits: ["A plan around your goals", "Costs explained clearly", "Follow-up discussed together"] }
+  ];
+  doc.gallery = [{ src: doc.heroImage, alt: "African woman in an editorial skin and beauty portrait" }, { src: "/template-photos/african/doctor-team.jpg", alt: "African healthcare professionals in conversation" }, { src: "/template-photos/african/spa-mask.jpg", alt: "African woman during a skin-care ritual" }, { src: "/template-photos/african/spa-care.jpg", alt: "African woman taking a moment for skin care" }];
+  doc.beauty!.pages = doc.beauty!.pages.map(page => ({ ...page, title: page.title.replaceAll("Nacre Aesthetics", brand), description: page.description.replaceAll("Nacre Aesthetics", brand) }));
+  doc.beauty!.philosophy = ["A conversation first", "Clear choices and costs", "Care at your own pace"];
+  websiteTemplates.unshift({ id, name: cinematic ? "Aesthetic Clinic — Luneform" : "Medical Spa — Lumivie", category: "Beauty & Aesthetics", kind: "website", sourceId: id, layout: "wellness", sectionOrder: ["offerings", "about", "feature", "gallery", "faq"], document: doc });
+}
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -4849,13 +4944,14 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
   ) as WebsiteDocument;
   if (brandName?.trim()) {
     document.brandName = brandName.trim().slice(0, 120);
-    if (
+    if (document.beauty && (
+      document.design === "medical" ||
       document.beauty?.design === "bridal" ||
       document.beauty?.design === "nail" ||
       document.beauty?.design === "extensions" ||
       document.beauty?.design === "tress" ||
       document.beauty?.design === "tattoo"
-    ) {
+    )) {
       document.beauty.pages = document.beauty.pages.map((page) => ({
         ...page,
         title: page.title
@@ -4869,7 +4965,7 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
         ?.replaceAll(template.document.brandName, document.brandName)
         .slice(0, 320);
     }
-    if (document.design === "cosmetics") {
+    if (document.design === "cosmetics" || document.design === "medical") {
       document.seoDescription = document.seoDescription
         ?.replaceAll(template.document.brandName, document.brandName)
         .slice(0, 320);
@@ -4879,7 +4975,9 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
         .toUpperCase()
         .replace(/\s&\s/, "\n& ");
     document.seoTitle = (
-      document.design === "legal"
+      document.design === "medical"
+        ? `Personal skin consultations | ${document.brandName}`
+        : document.design === "legal"
         ? `Considered counsel | ${document.brandName}`
         : document.design === "cosmetics"
           ? `Cosmetics & everyday beauty | ${document.brandName}`
@@ -4949,12 +5047,17 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   const result: Record<string, unknown> = { version: 1 };
   if (source.design !== undefined) {
     if (
-      !["legal", "dressmaker", "jewellery", "cosmetics"].includes(
+      !["legal", "dressmaker", "jewellery", "cosmetics", "medical"].includes(
         String(source.design),
       )
     )
       throw Error("Unsupported website design.");
     result.design = source.design;
+    if (source.medicalVariant !== undefined) {
+      if (source.design !== "medical" || !["forest", "cinematic"].includes(String(source.medicalVariant)))
+        throw Error("Unsupported medical website variant.");
+      result.medicalVariant = source.medicalVariant;
+    }
     if (source.legalVariant !== undefined) {
       if (source.legalVariant !== "family")
         throw Error("Unsupported website legal variant.");
@@ -5268,6 +5371,8 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
     if (new Set(categories.map((c) => c.slug)).size !== categories.length)
       throw Error("Please use unique product category URLs.");
   }
+  if (result.design === "medical" && !(result.beauty as BeautyContent | undefined)?.version)
+    throw Error("Medical templates require complete care and contact settings.");
   return result as WebsiteDocument;
 }
 

@@ -50,6 +50,8 @@ const TONE_COLOR: Record<Tone, string> = {
   accent: "var(--color-accent)",
   danger: "var(--color-danger)",
   neutral: "var(--color-ink-faint)",
+  success: "var(--color-success)",
+  warning: "var(--color-warning)",
 };
 
 const axisTick = { fill: "var(--color-ink-muted)", fontSize: 11 };

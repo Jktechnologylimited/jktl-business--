@@ -79,6 +79,13 @@ editor. **Content images** uploads a cover or inserts an inline Markdown image,
 with a required image description and rights confirmation. The current limits
 are PNG, JPEG or WebP, at most 512 KB. Previously uploaded images can be reused.
 Growth sees its own uploaded media; the Owner can see the latest shared items.
+The cover is selected by uploading or reusing an image, with a visible preview
+and Remove control. There is no cover-image URL entry field. Existing saved
+covers are retained until explicitly replaced or removed; removing a cover
+detaches it from the draft without deleting a reusable media asset.
+Slug, title, summary and Markdown content show example placeholders. Inline
+uploads insert Markdown at the content cursor, and the existing preview renders
+that Markdown before approval or publication.
 
 **Preview content** renders current unsaved text, formatting, cover and inline
 images privately. After saving, **Preview saved revision** renders the exact
@@ -91,7 +98,8 @@ uploading never publish the article.
 This reuses `editorial_media`, the existing media upload action and its existing
 Blob storage configuration (`BLOB_READ_WRITE_TOKEN` on the server). It creates no
 new provider, storage table or migration. If that existing connection is absent,
-the editor explains the limitation and keeps the HTTPS cover URL available.
+the editor explains the limitation and permits writing/previewing drafts and
+reusing existing media, without offering a manual cover URL fallback.
 Images are public assets immediately after upload; unpublished article text
 remains private. The preview uses the same Markdown library and HTTPS-image/raw
 HTML restrictions as the Main publication renderer, within the Business theme.

@@ -26,6 +26,10 @@
   --color-accent-soft: #f8ecd8;
 
   /* Status */
+  --color-success: #166534;
+  --color-success-soft: #dcfce7;
+  --color-warning: #9a3412;
+  --color-warning-soft: #ffedd5;
   --color-info: #2f6fad;
   --color-info-soft: #e6eef7;
   --color-danger: #c4432b;
@@ -85,6 +89,10 @@
     --color-accent-strong: #b8842a;
     --color-accent-soft: #3a2c12;
 
+    --color-success: #86efac;
+    --color-success-soft: #123a29;
+    --color-warning: #fdba74;
+    --color-warning-soft: #46270e;
     --color-info: #5b9bd9;
     --color-info-soft: #1b2b3d;
     --color-danger: #e2664c;
@@ -119,6 +127,10 @@
   --color-accent: #c98a2c;
   --color-accent-strong: #a6701f;
   --color-accent-soft: #f8ecd8;
+  --color-success: #166534;
+  --color-success-soft: #dcfce7;
+  --color-warning: #9a3412;
+  --color-warning-soft: #ffedd5;
   --color-info: #2f6fad;
   --color-info-soft: #e6eef7;
   --color-danger: #c4432b;
@@ -149,6 +161,10 @@
   --color-accent-strong: #b8842a;
   --color-accent-soft: #3a2c12;
 
+  --color-success: #86efac;
+  --color-success-soft: #123a29;
+  --color-warning: #fdba74;
+  --color-warning-soft: #46270e;
   --color-info: #5b9bd9;
   --color-info-soft: #1b2b3d;
   --color-danger: #e2664c;

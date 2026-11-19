@@ -134,7 +134,7 @@ export function SubscriptionBilling({ demo }: { demo: boolean }) {
               : `${formatKobo(contract.monthlyFeeKobo)} a month. Cancel anytime.`}
           </p>
         </div>
-        <StatusPill tone={cancelled ? "neutral" : lastFailed ? "danger" : "primary"}>
+        <StatusPill tone={cancelled ? "warning" : lastFailed ? "danger" : "success"}>
           {cancelled ? "Cancelled" : lastFailed ? "Payment issue" : "Active"}
         </StatusPill>
       </div>

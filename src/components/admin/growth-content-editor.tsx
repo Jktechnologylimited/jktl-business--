@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, useTransition } from "react";
 import { unstable_rethrow } from "next/navigation";
-import { Eye, ImagePlus, Upload } from "lucide-react";
+import { Eye, ImagePlus, Upload, X } from "lucide-react";
 import { ActionForm } from "@/components/distribution/action-form";
 import { saveGrowthDraftAction } from "@/lib/actions/growth-actions";
 import { uploadEditorialImageAction } from "@/lib/actions/editorial-media-actions";
@@ -170,11 +170,11 @@ export function GrowthContentEditor({
           </label>
           {(
             [
-              ["slug", "URL slug", 100],
-              ["title", "Title", 180],
-              ["excerpt", "Summary", 400],
+              ["slug", "URL slug", 100, "e.g. new-games-this-week"],
+              ["title", "Title", 180, "e.g. Discover this week’s new games"],
+              ["excerpt", "Summary", 400, "A short introduction explaining what’s new and why it matters."],
             ] as const
-          ).map(([key, label, max]) => (
+          ).map(([key, label, max, placeholder]) => (
             <label key={key}>
               {label}
               <input
@@ -182,6 +182,7 @@ export function GrowthContentEditor({
                 name={key}
                 required
                 maxLength={max}
+                placeholder={placeholder}
                 pattern={key === "slug" ? "[a-z0-9]+(-[a-z0-9]+)*" : undefined}
                 readOnly={key === "slug" && !!row.id}
                 value={form[key]}
@@ -202,6 +203,35 @@ export function GrowthContentEditor({
               are public assets, even while the article is a private draft. Use
               only images cleared for publication.
             </p>
+            <input type="hidden" name="coverImage" value={form.coverImage} />
+            <div
+              aria-label="Selected cover image"
+              className="space-y-3 rounded-lg border border-border bg-surface p-3"
+            >
+              <p className="text-sm font-semibold">Cover image · optional</p>
+              {form.coverImage ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={form.coverImage}
+                    alt={images.find((image) => image.url === form.coverImage)?.alt || `Cover for ${form.title || "this announcement"}`}
+                    className="max-h-64 w-full rounded-lg object-contain"
+                  />
+                  <button
+                    type="button"
+                    className={button}
+                    onClick={() => setForm((current) => ({ ...current, coverImage: "" }))}
+                  >
+                    <X size={16} aria-hidden="true" />
+                    Remove cover image
+                  </button>
+                </>
+              ) : (
+                <p className="text-sm text-ink-muted">
+                  No cover image selected. Upload an image or choose a previously uploaded image below.
+                </p>
+              )}
+            </div>
             {uploadsAvailable ? (
               <>
                 <label className="block">
@@ -218,6 +248,7 @@ export function GrowthContentEditor({
                   <input
                     className={input}
                     maxLength={300}
+                    placeholder="e.g. Players taking part in the JKTL community game night"
                     value={alt}
                     onChange={(e) => setAlt(e.target.value)}
                   />
@@ -254,9 +285,9 @@ export function GrowthContentEditor({
               </>
             ) : (
               <p role="status" className="text-sm">
-                Image uploads need the existing media-storage connection. An
-                Owner must configure it; you can still use an approved HTTPS
-                image URL below.
+                Image uploads are not configured yet. Ask the Owner to connect
+                the existing media storage. You can still write and preview a
+                draft or reuse previously uploaded images below.
               </p>
             )}
             {notice && (
@@ -267,19 +298,6 @@ export function GrowthContentEditor({
                 {notice}
               </p>
             )}
-            <label className="block">
-              Cover image HTTPS URL · optional
-              <input
-                className={input}
-                name="coverImage"
-                type="url"
-                maxLength={2000}
-                value={form.coverImage}
-                onChange={(e) =>
-                  setForm({ ...form, coverImage: e.target.value })
-                }
-              />
-            </label>
             {images.length > 0 && (
               <details>
                 <summary className="cursor-pointer font-semibold">
@@ -321,7 +339,7 @@ export function GrowthContentEditor({
               </details>
             )}
           </section>
-          <label htmlFor={bodyId}>Content</label>
+          <label htmlFor={bodyId}>Content (Markdown)</label>
           <textarea
             id={bodyId}
             ref={bodyRef}
@@ -329,6 +347,7 @@ export function GrowthContentEditor({
             required
             maxLength={60000}
             rows={12}
+            placeholder={"## What’s new\n\nWrite your announcement here. Use **bold** for key details.\n\n- First update\n- Second update\n\n[Explore JKTL games](https://jktl.com.ng/games)"}
             className={input}
             value={form.body}
             onChange={(e) => setForm({ ...form, body: e.target.value })}
@@ -344,6 +363,7 @@ export function GrowthContentEditor({
               name="link"
               type="url"
               maxLength={2000}
+              placeholder="https://jktl.com.ng/games"
               value={form.link}
               onChange={(e) => setForm({ ...form, link: e.target.value })}
             />

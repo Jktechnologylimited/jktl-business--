@@ -16,10 +16,10 @@ const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "jktl.com.ng";
 const ALL = "all";
 
 const SUBSCRIPTION_META: Record<AdminBusinessRow["subscriptionStatus"], { label: string; tone: Tone }> = {
-  active: { label: "Active", tone: "primary" },
+  active: { label: "Active", tone: "success" },
   past_due: { label: "Past due", tone: "danger" },
-  canceled: { label: "Canceled", tone: "neutral" },
-  inactive: { label: "Inactive", tone: "neutral" },
+  canceled: { label: "Canceled", tone: "warning" },
+  inactive: { label: "Inactive", tone: "warning" },
 };
 
 export function AdminBusinessTable({ businesses }: { businesses: AdminBusinessRow[] }) {
@@ -101,7 +101,7 @@ export function AdminBusinessTable({ businesses }: { businesses: AdminBusinessRo
                     <td className="px-4 py-3 text-ink-muted">{getIndustry(b.businessType as BusinessType).label}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
-                        {b.clientStatus && <StatusPill tone={b.clientStatus === "ACTIVE" ? "primary" : "neutral"}>{b.clientStatus === "ACTIVE" ? "Active client" : b.clientStatus === "PAUSED" ? "Client paused" : "Client closed"}</StatusPill>}
+                        {b.clientStatus && <StatusPill tone={b.clientStatus === "ACTIVE" ? "success" : "warning"}>{b.clientStatus === "ACTIVE" ? "Active client" : b.clientStatus === "PAUSED" ? "Client paused" : "Client closed"}</StatusPill>}
                         {(!b.clientStatus || b.subscriptionStatus !== "inactive") && <StatusPill tone={sub.tone}>{sub.label}</StatusPill>}
                         {b.published ? <span className="text-[11px] text-ink-faint">Published</span> : <span className="text-[11px] text-ink-faint">Not published</span>}
                       </div>

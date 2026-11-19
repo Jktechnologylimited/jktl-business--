@@ -24,6 +24,7 @@ import { LegalWebsite } from "./LegalWebsite";
 import { BeautyWebsite, type BeautyRequest } from "./BeautyWebsite";
 import { OccasionWebsite } from "./OccasionWebsite";
 import { TattooWebsite } from "./TattooWebsite";
+import { MedicalWebsite } from "./MedicalWebsite";
 import { CosmeticsWebsite } from "./CosmeticsWebsite";
 export type TemplateContact = {
   email?: string;
@@ -652,6 +653,7 @@ export function TemplateWebsite(
 ) {
   if (templatePageKind(props.template) === "landing")
     return <LegacyTemplateWebsite {...props} />;
+  if (props.document.design === "medical") return <MedicalWebsite {...props} />;
   if (props.document.design === "jewellery")
     return <JewelleryWebsite {...props} />;
   if (props.document.design === "dressmaker")

@@ -201,6 +201,8 @@ const TONE_TO_RANKED: Record<Tone, "primary" | "accent" | "info" | "danger"> = {
   info: "info",
   danger: "danger",
   neutral: "info",
+  success: "primary",
+  warning: "accent",
 };
 
 export function BookingMixSection({ mix, noShow }: { mix: BookingStatusSlice[]; noShow: NoShowRate }) {

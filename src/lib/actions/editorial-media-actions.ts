@@ -41,7 +41,7 @@ export async function uploadEditorialImageAction(f: FormData) {
     throw Error("Choose a valid PNG, JPEG or WebP.");
   if (!process.env.BLOB_READ_WRITE_TOKEN)
     throw Error(
-      "Image uploads are not configured. An approved HTTPS image URL can still be used.",
+      "Image uploads are not configured. Ask the Owner to connect the existing media storage.",
     );
   const blob = await put(
     "editorial/" +

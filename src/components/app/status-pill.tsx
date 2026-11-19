@@ -3,7 +3,7 @@ import { T } from "@/components/i18n/LanguageProvider";
 import { cn } from "@/lib/utils";
 import type { BookingStatus, InvoiceStatus, PaymentStatus } from "@/lib/types";
 
-export type Tone = "primary" | "info" | "accent" | "danger" | "neutral";
+export type Tone = "primary" | "info" | "accent" | "danger" | "neutral" | "success" | "warning";
 
 const toneClasses: Record<Tone, string> = {
   primary: "bg-primary-soft text-primary-strong",
@@ -11,6 +11,8 @@ const toneClasses: Record<Tone, string> = {
   accent: "bg-accent-soft text-accent-strong",
   danger: "bg-danger-soft text-danger",
   neutral: "bg-surface-strong text-ink-muted",
+  success: "bg-success-soft text-success",
+  warning: "bg-warning-soft text-warning",
 };
 
 export function StatusPill({
@@ -40,9 +42,9 @@ const bookingLabels: Record<BookingStatus, string> = {
   no_show: "No-show",
 };
 const bookingTones: Record<BookingStatus, Tone> = {
-  pending: "accent",
+  pending: "info",
   confirmed: "info",
-  completed: "primary",
+  completed: "success",
   cancelled: "danger",
   no_show: "danger",
 };
@@ -58,8 +60,8 @@ const invoiceLabels: Record<InvoiceStatus, string> = {
 };
 const invoiceTones: Record<InvoiceStatus, Tone> = {
   draft: "neutral",
-  pending: "accent",
-  paid: "primary",
+  pending: "info",
+  paid: "success",
   overdue: "danger",
 };
 export function invoiceStatusMeta(status: InvoiceStatus) {
@@ -72,9 +74,9 @@ const paymentLabels: Record<PaymentStatus, string> = {
   partial: "Partial",
 };
 const paymentTones: Record<PaymentStatus, Tone> = {
-  paid: "primary",
-  pending: "accent",
-  partial: "accent",
+  paid: "success",
+  pending: "info",
+  partial: "warning",
 };
 export function paymentStatusMeta(status: PaymentStatus) {
   return { label: paymentLabels[status], tone: paymentTones[status] };
