@@ -7,6 +7,7 @@ import {
 import { getWebsiteTemplate } from "@/lib/website-templates";
 import { cache } from "react";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getPublicSiteBySubdomain } from "@/lib/db/public";
 import { publicSiteAssistant } from "@/lib/public-site-assistant";
 import { isProspectOrganization } from "@/lib/db/prospects";
@@ -29,7 +30,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { subdomain } = await params;
   const site = await getSite(subdomain.toLowerCase());
-  if (!site) return { title: "Site not found — JKTL Business" };
+  if (!site?.profile.published) notFound();
 
   if (
     site.profile.websiteDocument &&
@@ -67,20 +68,7 @@ export default async function PublicSitePage({
   const { subdomain } = await params;
   const site = await getSite(subdomain.toLowerCase());
 
-  if (!site) {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-paper px-6 text-center">
-        <h1 className="font-display text-xl font-semibold text-ink">
-          This site isn&apos;t available
-        </h1>
-        <p className="max-w-sm text-sm text-ink-muted">
-          It may not be published yet, or the address is incorrect. If this is
-          your business, sign in to JKTL Business and publish your site from
-          Website settings.
-        </p>
-      </div>
-    );
-  }
+  if (!site?.profile.published) notFound();
 
   // The website's AI chatbot is only offered when the business actually has
   // the receptionist switched on. Its greeting and pack are resolved here
