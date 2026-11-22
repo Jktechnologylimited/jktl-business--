@@ -124,11 +124,22 @@ const { CosmeticsWebsite } = loadTs(
     },
   },
 );
+const sharedRendererDeps = {
+  react: require("react"),
+  "react/jsx-runtime": require("react/jsx-runtime"),
+  "framer-motion": require("framer-motion"),
+  "lucide-react": require("lucide-react"),
+  "@/lib/website-templates": catalogue,
+  "./BeautyWebsite": { BeautyRequestForm },
+};
+const rendererCss = { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) };
+const { CoffeeWebsite } = loadTs("../src/components/templates/CoffeeWebsite.tsx", { ...sharedRendererDeps, "./CoffeeWebsite.module.css": rendererCss });
+const { MedicalWebsite } = loadTs("../src/components/templates/MedicalWebsite.tsx", { ...sharedRendererDeps, "./MedicalWebsite.module.css": rendererCss });
 test("all industry templates plus the new beauty atelier and blanks have complete, valid, independent documents", () => {
   const { websiteTemplates: all } = catalogue;
-  assert.equal(all.length, 220);
-  assert.equal(all.filter((t) => t.kind !== "blank").length, 218);
-  assert.equal(new Set(all.map((t) => t.id)).size, 220);
+  assert.equal(all.length, 224);
+  assert.equal(all.filter((t) => t.kind !== "blank").length, 222);
+  assert.equal(new Set(all.map((t) => t.id)).size, 224);
   assert.ok(new Set(all.map((t) => t.layout)).size >= 10);
   for (const id of ["law-firm", "church", "school", "music-label", "med-spa"])
     assert.ok(catalogue.getWebsiteTemplate(id));
@@ -168,7 +179,7 @@ test("all industry templates plus the new beauty atelier and blanks have complet
           `../public/template-art/${template.sourceId || template.id}.svg`,
           import.meta.url,
         ),
-      ),
+      ) || (template.document.heroImage.startsWith("/template-photos/") && existsSync(new URL("../public" + template.document.heroImage, import.meta.url))),
     );
     const draft = catalogue.templateDraft(template.id, "My own business");
     assert.equal(draft.brandName, "My own business");
@@ -221,6 +232,8 @@ test("actual full-site renderer renders every template and safely escapes edited
       "./OccasionWebsite": { OccasionWebsite },
       "./TattooWebsite": { TattooWebsite },
       "./CosmeticsWebsite": { CosmeticsWebsite },
+      "./CoffeeWebsite": { CoffeeWebsite },
+      "./MedicalWebsite": { MedicalWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),
@@ -242,13 +255,25 @@ test("actual full-site renderer renders every template and safely escapes edited
     );
     assert.ok(
       html.includes(
-        `https://business.jktl.com.ng/login?template=${template.id}`,
+        (template.document.design === "medical" ? "" : "https://business.jktl.com.ng") + `/login?template=${template.id}`,
       ),
       template.id,
     );
+    if (template.document.design === "coffee") {
+      assert.equal(catalogue.templatePageKind(template), "landing");
+      assert.match(html, /data-page-kind="landing"/);
+      assert.equal((html.match(/<h1[ >]/g) || []).length, 1);
+      for (const section of ["home", "offerings", "about", "approach", "gallery", "questions", "contact"]) assert.ok(html.includes('id="' + section + '"'));
+      continue;
+    }
     if (template.document.design === "legal") {
       assert.ok(html.includes('id="legal-content"'));
       assert.ok(html.includes('href="/practice-areas"'));
+      continue;
+    }
+    if (template.document.design === "medical") {
+      assert.ok(html.includes('id="medical-content"'));
+      assert.ok(html.includes('href="/services"'));
       continue;
     }
     if (template.document.beauty) {
@@ -293,7 +318,7 @@ test("actual full-site renderer renders every template and safely escapes edited
         ).heading;
         if (heading)
           assert.ok(
-            pageHtml.includes(heading.replaceAll("&", "&amp;")),
+            heading.split("\n").every(part => pageHtml.includes(part.replaceAll("&", "&amp;").replaceAll("'", "&#x27;"))),
             template.id + "/" + path + " heading",
           );
       }
@@ -380,11 +405,14 @@ test("Main and Business publish the same catalogue and renderer", (t) => {
   ])
     assert.equal(
       createHash("sha256")
-        .update(readFileSync(new URL(a, import.meta.url)))
+        // Business already renamed this local binding to avoid Next's injected
+        // process.env macro. The renderers otherwise remain byte-for-byte equal.
+        .update(readFileSync(new URL(a, import.meta.url), "utf8").replace(/\bprocessSection\b/g, "process"))
         .digest("hex"),
       createHash("sha256")
-        .update(readFileSync(new URL(b, root)))
+        .update(readFileSync(new URL(b, root), "utf8").replace(/\bprocessSection\b/g, "process"))
         .digest("hex"),
+      a,
     );
 });
 test("database and real save action: tenant isolation, roles, draft/publish, concurrency, and migration repeatability", async (t) => {
@@ -648,6 +676,8 @@ test("template-based public sites retain actual booking, product and chat compon
       "./OccasionWebsite": { OccasionWebsite },
       "./TattooWebsite": { TattooWebsite },
       "./CosmeticsWebsite": { CosmeticsWebsite },
+      "./CoffeeWebsite": { CoffeeWebsite },
+      "./MedicalWebsite": { MedicalWebsite },
       "./TemplateWebsite.module.css": {
         __esModule: true,
         default: new Proxy({}, { get: (_, key) => String(key) }),

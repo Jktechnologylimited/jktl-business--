@@ -64,7 +64,7 @@ export type WebsiteOffering = {
   preparation?: string;
 };
 export type WebsiteDocument = {
-  design?: "legal" | "dressmaker" | "jewellery" | "cosmetics" | "medical";
+  design?: "legal" | "dressmaker" | "jewellery" | "cosmetics" | "medical" | "coffee";
   legalVariant?: "family";
   medicalVariant?: "forest" | "cinematic";
   aboutImage?: string;
@@ -4917,6 +4917,55 @@ for (const variant of ["forest", "cinematic"] as const) {
   websiteTemplates.unshift({ id, name: cinematic ? "Aesthetic Clinic — Luneform" : "Medical Spa — Lumivie", category: "Beauty & Aesthetics", kind: "website", sourceId: id, layout: "wellness", sectionOrder: ["offerings", "about", "feature", "gallery", "faq"], document: doc });
 }
 
+// Coffee-shop reference supplied by the owner: original content and locally served assets.
+websiteTemplates.unshift({
+  id: "kora-coffee", name: "Coffee Shop Landing Page — Kora", category: "Food & Hospitality",
+  kind: "landing", sourceId: "kora-coffee", layout: "hospitality",
+  sectionOrder: ["offerings", "about", "feature", "gallery", "faq"],
+  document: {
+    version: 1, design: "coffee", demoContent: true,
+    brandName: "Kora Coffee", eyebrow: "GOOD COFFEE. GOOD COMPANY.",
+    headline: "Coffee.\nA little more life.",
+    intro: "For slow mornings, bright ideas and one more conversation. Find your favourite cup and make a little room for the good stuff.",
+    ctaLabel: "Explore the menu", accent: "#ffca18", paper: "#f6f0e3", ink: "#3b201a",
+    heroImage: "/template-photos/coffee/house-latte.jpg",
+    aboutImage: "/template-photos/african/chef.jpg",
+    aboutTitle: "Made with care.\nShared with everyone.",
+    aboutText: "Coffee is our reason to slow down and bring people together. At Kora Coffee, we make space for a familiar favourite, a different flavour and a conversation that lasts a little longer. Ask us about the beans, the brew or what to try next. There is always something to talk about over a cup.",
+    offeringsTitle: "Find your flavour.",
+    offerings: [
+      { title: "House latte", slug: "house-latte", category: "Hot drinks", description: "Espresso meets silky milk and a little latte art. An easy favourite for your everyday coffee moment.", image: "/template-photos/coffee/house-latte.jpg", benefits: ["Espresso and steamed milk", "A smooth, comforting cup", "Ask about milk options"], preparation: "Ask the team about current ingredients, allergens, sizes and prices before ordering." },
+      { title: "Flat white", slug: "flat-white", category: "Hot drinks", description: "A coffee-forward cup finished with finely textured milk. For mornings that call for something a little bolder.", image: "/template-photos/coffee/coffee-moments.jpg", benefits: ["Coffee-forward flavour", "Finely textured milk", "Made to enjoy slowly"], preparation: "Ask the team about current ingredients, allergens, sizes and prices before ordering." },
+      { title: "Iced latte", slug: "iced-latte", category: "Iced drinks", description: "Coffee, milk and plenty of ice. A refreshing way to make your afternoon feel like a well-earned break.", image: "/template-photos/coffee/iced-latte.jpg", benefits: ["Served over ice", "A refreshing coffee break", "Ask about milk options"], preparation: "Ask the team about current ingredients, allergens, sizes and prices before ordering." },
+      { title: "House blend beans", slug: "house-blend-beans", category: "Beans", description: "Take your coffee ritual home. Talk to us about the current beans, roast profile and the grind that suits your brewing setup.", image: "/template-photos/coffee/roasted-beans.jpg", benefits: ["For your home coffee ritual", "Ask about the current roast", "Discuss the right grind"], preparation: "The team will confirm the available roast, pack size, grind and price with you." },
+      { title: "Coffee for company", slug: "coffee-for-company", category: "Hot drinks", description: "Good conversations deserve good coffee. Get in touch to arrange drinks for a small gathering or a team catch-up.", image: "/template-photos/coffee/coffee-moments.jpg", benefits: ["A cup for the whole table", "Discuss your gathering", "Arrangements confirmed by the team"], preparation: "Send an enquiry with your group size and preferred date. Availability, prices and arrangements are confirmed separately." }
+    ],
+    galleryTitle: "Life around the cup.",
+    gallery: [
+      { src: "/template-photos/coffee/coffee-moments.jpg", alt: "Latte art in ceramic cups beside green plants" },
+      { src: "/template-photos/coffee/iced-latte.jpg", alt: "Iced coffee with milk swirling through a tall glass" },
+      { src: "/template-photos/coffee/roasting.jpg", alt: "Coffee beans inside a roasting machine" },
+      { src: "/template-photos/african/chef.jpg", alt: "African chefs preparing food together in a professional kitchen" },
+      { src: "/template-photos/coffee/house-latte.jpg", alt: "A freshly prepared latte in a black ceramic cup" },
+      { src: "/template-photos/coffee/roasted-beans.jpg", alt: "A close view of roasted coffee beans" }
+    ],
+    featureTitle: "Good beans.\nA little craft.\nYour kind of cup.",
+    featureText: "A great coffee moment comes from the details. Explore the beans, find a brew you enjoy and make the ritual your own.",
+    featureItems: ["Start with the beans. Ask about the current roast and the flavours to look for.", "Find your brew. Talk to the team about hot, iced and milk options.", "Make it your moment. Sit back, catch up or take a little coffee joy with you."],
+    faqTitle: "Curious? We like that.",
+    faqs: [
+      { question: "How do I place an order?", answer: "Explore the menu and send an enquiry about the drinks or beans you would like. The team will confirm current availability, prices and collection or delivery arrangements directly. Sending an enquiry does not take payment or confirm an order." },
+      { question: "Can I ask about milk choices or allergens?", answer: "Yes. Include any ingredient or allergen questions in your enquiry. The team will confirm the current options and preparation arrangements before you order." },
+      { question: "Can I buy beans for home?", answer: "Ask about the current beans, pack sizes and grind options. Tell us how you brew at home so the team can help you choose." },
+      { question: "Can you help with coffee for a group?", answer: "Send your preferred date, group size and what you have in mind. The team will discuss availability and provide the details before you decide." }
+    ],
+    contactTitle: "Let's talk coffee.",
+    contactText: "Ask about the menu, a bag of beans or coffee for your next gathering. Share what you have in mind and the team will confirm the details with you.",
+    seoTitle: "Kora Coffee | Coffee, Beans & Good Company",
+    seoDescription: "Explore the Kora Coffee menu, from house lattes and iced coffee to beans for home. Meet our approach to coffee and get in touch about your next cup."
+  }
+});
+
 export const templatePageKind = (
   template: WebsiteTemplate,
 ): "website" | "landing" =>
@@ -4965,17 +5014,21 @@ export function templateDraft(id: string, brandName?: string): WebsiteDocument {
         ?.replaceAll(template.document.brandName, document.brandName)
         .slice(0, 320);
     }
-    if (document.design === "cosmetics" || document.design === "medical") {
+    if (document.design === "cosmetics" || document.design === "medical" || document.design === "coffee") {
       document.seoDescription = document.seoDescription
         ?.replaceAll(template.document.brandName, document.brandName)
         .slice(0, 320);
     }
+    if (document.design === "coffee")
+      document.aboutText = document.aboutText.replaceAll(template.document.brandName, document.brandName);
     if (document.design === "legal" && document.legalVariant !== "family")
       document.headline = document.brandName
         .toUpperCase()
         .replace(/\s&\s/, "\n& ");
     document.seoTitle = (
-      document.design === "medical"
+      document.design === "coffee"
+        ? `Coffee, beans & good company | ${document.brandName}`
+        : document.design === "medical"
         ? `Personal skin consultations | ${document.brandName}`
         : document.design === "legal"
         ? `Considered counsel | ${document.brandName}`
@@ -5019,7 +5072,7 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   const image = (value: string) => {
     if (
       /^\/template-art\/[a-z0-9-]+\.svg$/.test(value) ||
-      /^\/template-photos\/(?:beauty|legal|african)\/[a-z0-9-]+\.jpg$/.test(
+      /^\/template-photos\/(?:beauty|legal|african|coffee)\/[a-z0-9-]+\.jpg$/.test(
         value,
       )
     )
@@ -5047,7 +5100,7 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   const result: Record<string, unknown> = { version: 1 };
   if (source.design !== undefined) {
     if (
-      !["legal", "dressmaker", "jewellery", "cosmetics", "medical"].includes(
+      !["legal", "dressmaker", "jewellery", "cosmetics", "medical", "coffee"].includes(
         String(source.design),
       )
     )
@@ -5358,7 +5411,8 @@ export function parseWebsiteDocument(raw: unknown): WebsiteDocument {
   if (
     result.design === "dressmaker" ||
     result.design === "jewellery" ||
-    result.design === "cosmetics"
+    result.design === "cosmetics" ||
+    result.design === "coffee"
   ) {
     const slugs = (result.offerings as WebsiteOffering[]).map(
       beautyServiceSlug,
@@ -5610,6 +5664,11 @@ export function websitePageMeta(
       heading: doc.brandName,
     };
   }
+  if (doc.design === "coffee") return {
+    heading: doc.headline,
+    title: (doc.seoTitle || doc.brandName + " | Coffee & good company").slice(0, 100),
+    description: (doc.seoDescription || doc.intro).replace(/\s+/g, " ").slice(0, 160),
+  };
   const look =
     doc.design === "dressmaker" ||
     doc.design === "jewellery" ||

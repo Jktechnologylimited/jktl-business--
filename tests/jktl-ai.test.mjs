@@ -40,7 +40,7 @@ test('JKTL AI uses bounded existing support context and preserves safe fallback 
  let providerCalls=0,handoffs=0,payload=null,inserted=null;
  const query=async(sql,params=[])=>{
   if(sql.startsWith('SELECT subject,status'))return[{subject:'How do I publish my website?',status:'AI'}];
-  if(sql.includes('SELECT sender,body'))return[{sender:'user',body:'How do I publish my website?'}];
+  if(sql.includes('SELECT sender,body')){assert.match(sql,/organization_id=\$2/);assert.deepEqual(params,['fixture-case','fixture-org']);return[{sender:'user',body:'How do I publish my website?'}];}
   if(sql.startsWith('INSERT INTO support_messages')){inserted={mode:params[2],reply:params[3],guides:JSON.parse(params[4])};return[{id:'fixture-message'}];}
   if(sql.includes('UPDATE support_cases')){handoffs++;return[];}
   throw Error('Unexpected query in isolated assistant fixture');
@@ -64,4 +64,34 @@ test('JKTL AI uses bounded existing support context and preserves safe fallback 
  await service.answerCase('fixture-case','fixture-org','How do I publish my website?');assert.equal(handoffs,1);
  configured=false;const before=providerCalls;
  await service.answerCase('fixture-case','fixture-org','How do I publish my website?');assert.equal(providerCalls,before);assert.equal(inserted.mode,'guide');
+ const handoffsBefore=handoffs;configured=true;
+ for(const question of ['Hi','Thanks','Help me']){
+  await service.answerCase('fixture-case','fixture-org',question);
+  assert.equal(providerCalls,before);assert.equal(handoffs,handoffsBefore);assert.deepEqual(inserted.guides,[]);
+ }
+});
+
+
+test('guide conversations greet, clarify and acknowledge without dumping unrelated instructions',()=>{
+ for(const question of ['Hi','Hello!','Good morning','thanks','thank you','help me','okay']){
+  const answer=knowledge.guideReply(question);
+  assert.equal(answer.guides.length,0,question);assert.equal(answer.needsHuman,false,question);
+  assert.ok(answer.reply.length<220);assert.doesNotMatch(answer.reply,/1\. |template|publish/i);
+ }
+ const missing=knowledge.guideReply('zxqvunsupportedtopic');assert.equal(missing.guides.length,0);assert.equal(missing.needsHuman,true);
+ assert.doesNotMatch(missing.reply,/first website|select a template/i);
+});
+test('guide follow-ups retain the task, advance steps and allow topic changes',()=>{
+ const question='How do I publish my first website?';
+ const first=knowledge.guideReply(question),guide=first.guides[0];
+ assert.equal(first.guides.length,1);assert.ok(first.reply.includes(guide.steps[0]));assert.ok(first.reply.includes(guide.steps[1]));
+ const history=[{sender:'user',body:question},{sender:'assistant',body:first.reply,guideIds:[guide.id]}];
+ const next=knowledge.guideReply('What next?',undefined,history);
+ assert.equal(next.guides[0].id,guide.id);assert.ok(next.reply.includes(guide.steps[2]));assert.ok(!next.reply.includes(guide.steps[0]));
+ const simpler=knowledge.guideReply('Explain that more simply',undefined,history);assert.equal(simpler.guides[0].id,guide.id);assert.ok(simpler.reply.length<first.reply.length);
+ const changed='Where do I check domain renewals?';
+ assert.deepEqual(knowledge.relevantGuides(changed,history).map(g=>g.id),knowledge.relevantGuides(changed).map(g=>g.id));
+ // An approved guide pointer retains context when older explicit topic words fall out of the bounded history.
+ const shortHistory=[{sender:'user',body:'Next'},{sender:'assistant',body:next.reply,guideIds:[guide.id]}];
+ assert.equal(knowledge.guideReply('And then?',undefined,shortHistory).guides[0].id,guide.id);
 });

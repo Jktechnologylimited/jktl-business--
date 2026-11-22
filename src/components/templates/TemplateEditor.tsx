@@ -260,7 +260,8 @@ export function TemplateEditor({
               {text("ctaLabel", "Main button label", false, 60)}
               {text("heroImage", "Hero image HTTPS URL", false, 2000)}
               {(content.design === "jewellery" ||
-                content.design === "cosmetics") &&
+                content.design === "cosmetics" ||
+                content.design === "coffee") &&
                 text(
                   "aboutImage",
                   "Story and campaign photograph",
@@ -283,7 +284,8 @@ export function TemplateEditor({
               )}
               {(content.design === "dressmaker" ||
                 content.design === "jewellery" ||
-                content.design === "cosmetics") && (
+                content.design === "cosmetics" ||
+                content.design === "coffee") && (
                 <label className="flex gap-3 text-sm">
                   <input
                     type="checkbox"
@@ -389,10 +391,12 @@ export function TemplateEditor({
                   </label>
                   {(content.design === "dressmaker" ||
                     content.design === "jewellery" ||
-                    content.design === "cosmetics") && (
+                    content.design === "cosmetics" ||
+                    content.design === "coffee") && (
                     <>
                       {(content.design === "jewellery" ||
-                        content.design === "cosmetics") && (
+                        content.design === "cosmetics" ||
+                        content.design === "coffee") && (
                         <label className="block text-sm">
                           Product category
                           <input
@@ -413,7 +417,7 @@ export function TemplateEditor({
                         </label>
                       )}
                       <label className="block text-sm">
-                        Collection image URL
+                        {content.design === "coffee" ? "Menu image URL" : "Collection image URL"}
                         <input
                           className={field}
                           value={item.image || ""}
@@ -447,10 +451,11 @@ export function TemplateEditor({
                     </>
                   )}
                   {(content.design === "legal" ||
-                    content.design === "cosmetics") && (
+                    content.design === "cosmetics" ||
+                    content.design === "coffee") && (
                     <>
                       <label className="block text-sm">
-                        {content.design === "cosmetics"
+                        {content.design === "cosmetics" || content.design === "coffee"
                           ? "Product highlights — one per line"
                           : "Approach points — one per line"}
                         <textarea

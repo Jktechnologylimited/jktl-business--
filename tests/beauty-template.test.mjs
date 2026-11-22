@@ -63,12 +63,14 @@ const { TemplateWebsite } = load(
     "./OccasionWebsite": { OccasionWebsite: () => null },
     "./TattooWebsite": { TattooWebsite: () => null },
     "./CosmeticsWebsite": { CosmeticsWebsite: () => null },
+    "./MedicalWebsite": { MedicalWebsite: () => null },
+    "./CoffeeWebsite": { CoffeeWebsite: () => null },
     "./TemplateWebsite.module.css": css,
   },
 );
 const draft = () => catalogue.templateDraft("hair-salon", "Studio Example");
 test("one versioned salon entry gains ten real pages; saved v1 salons keep their old document and renderer", () => {
-  assert.equal(catalogue.websiteTemplates.length, 220);
+  assert.equal(catalogue.websiteTemplates.length, 224);
   const doc = draft();
   assert.equal(doc.beauty.version, 2);
   assert.deepEqual(catalogue.parseWebsiteDocument(doc), doc);

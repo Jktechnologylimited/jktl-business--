@@ -108,7 +108,9 @@ export function beautyStructuredData(
   return {
     "@context": "https://schema.org",
     "@type":
-      doc.design === "legal"
+      doc.design === "coffee"
+        ? "CafeOrCoffeeShop"
+        : doc.design === "legal"
         ? "LegalService"
         : b?.design === "tattoo"
           ? "TattooParlor"
@@ -142,7 +144,8 @@ export function beautyStructuredData(
     ...(!(doc.design === "legal" ||
     doc.design === "dressmaker" ||
     doc.design === "jewellery" ||
-    doc.design === "cosmetics"
+    doc.design === "cosmetics" ||
+    doc.design === "coffee"
       ? doc.demoContent
       : b?.demoContent) &&
     (details.address || profile.address)

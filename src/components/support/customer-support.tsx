@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { startVisiblePolling } from "@/lib/browser/visible-polling";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
@@ -7,13 +8,19 @@ import * as support from "@/lib/actions/support-actions";
 import * as reviews from "@/lib/actions/review-actions";
 import { HELP_GUIDES } from "@/lib/support/knowledge";
 import { useBusinessStore } from "@/lib/store";
+import { BookOpen, MessageSquare, Plus, Sparkles } from "lucide-react";
+import { openSupportAssistant } from "./support-navigation";
+import { SupportStatus } from "./support-status";
+import styles from "./support-workspace.module.css";
 type Row = Record<string, unknown>;
 export function CustomerSupport() {
   const permissionDirty = useRef(false);
+  const conversationPanel = useRef<HTMLDivElement>(null);
   const refreshVersion = useRef(0);
   const mode = useBusinessStore((s) => s.mode);
   const params = useSearchParams();
   const [projects, setProjects] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(mode === "live");
   const [project, setProject] = useState(params.get("project") || "");
   const [category, setCategory] = useState("WEBSITE_CONTENT");
   const [caseId, setCaseId] = useState(params.get("case") || ""),
@@ -61,6 +68,8 @@ export function CustomerSupport() {
       } catch {
         if (version !== refreshVersion.current) return;
         setError("Could not load support. Check your sign-in and connection.");
+      } finally {
+        if (version === refreshVersion.current) setLoading(false);
       }
     },
     [caseId, mode],
@@ -101,6 +110,10 @@ export function CustomerSupport() {
       setBusy(false);
     }
   }
+  function focusConversation() {
+    if (window.matchMedia("(max-width:1279px)").matches)
+      requestAnimationFrame(() => { conversationPanel.current?.scrollIntoView({ block: "start", behavior: "auto" }); conversationPanel.current?.focus({ preventScroll: true }); });
+  }
   if (mode !== "live")
     return (
       <div className="rounded-2xl border border-border bg-surface p-6">
@@ -121,13 +134,14 @@ export function CustomerSupport() {
     );
   return (
     <section className="space-y-6" style={{ overflowWrap: "anywhere" }}>
-      <header>
-        <h1 className="text-3xl font-semibold">Help & support</h1>
-        <p className="mt-3 text-sm leading-7 text-ink-muted">
+      <header className={styles.heading}>
+        <div><h1>Help & support</h1>
+        <p>
           Start with JKTL AI and the platform guides. Ask for a person whenever you need
           one. Never send passwords, card details, OTPs or private customer
           records.
-        </p>
+        </p></div>
+        <div className={styles.tools}><button type="button" className={styles.primary} onClick={event => openSupportAssistant(event.currentTarget)}><Sparkles size={16} aria-hidden="true" />Ask AI first</button><Link prefetch={false} href="/help"><BookOpen size={16} aria-hidden="true" />Knowledge base</Link></div>
       </header>
       {error && (
         <p role="alert" className="rounded-xl border border-danger p-4 text-sm">
@@ -143,39 +157,49 @@ export function CustomerSupport() {
         </p>
       )}
       <div className="grid gap-6 xl:grid-cols-[260px_1fr]">
-        <aside className="rounded-2xl border border-border p-4">
+        <aside id="conversations" className={`${styles.customerAside} order-2 xl:order-1`} aria-label="Your support conversations">
           <button
-            className="mb-4 text-sm font-semibold text-primary"
+            type="button"
+            className={styles.new}
+            disabled={busy}
             onClick={() => {
               setCaseId("");
               permissionDirty.current = false;
               setData(null);
+              setSubject("");
+              setBody("");
+              focusConversation();
             }}
           >
-            + New conversation
+            <Plus size={16} aria-hidden="true" />New conversation
           </button>
-          <div className="space-y-2">
+          <h2 className={styles.queueHeading}>Your conversations<span>{cases.length}</span></h2>
+          <div className={styles.customerCases} aria-busy={loading}>
+            {!cases.length && <p className={styles.empty} role="status"><MessageSquare size={23} aria-hidden="true" />{loading ? "Loading conversations…" : "Your conversations will appear here after you send a question."}</p>}
             {cases.map((c) => (
               <button
-                className="block w-full rounded-xl bg-surface p-3 text-left text-sm"
+                type="button"
+                disabled={busy}
+                aria-pressed={caseId === c.id}
+                className={styles.caseButton}
                 key={String(c.id)}
                 onClick={() => {
                   permissionDirty.current = false;
                   setData(null);
                   setCaseId(String(c.id));
+                  focusConversation();
                 }}
               >
-                {String(c.subject)}
-                <span className="mt-1 block text-xs text-ink-muted">
-                  {String(c.status)}
-                </span>
+                <strong>{String(c.subject)}</strong>
+                <div className="mt-2"><SupportStatus status={c.status} /></div>
               </button>
             ))}
           </div>
         </aside>
-        <div className="rounded-2xl border border-border bg-paper p-5">
+        <div ref={conversationPanel} tabIndex={-1} role="region" aria-label="Support conversation" className="order-1 scroll-mt-20 rounded-2xl border border-border bg-paper p-5 focus-visible:outline-2 focus-visible:outline-primary xl:order-2">
           {!caseId ? (
             <form
+              id="support-compose"
               className="space-y-4"
               onSubmit={(e) => {
                 e.preventDefault();
@@ -192,6 +216,7 @@ export function CustomerSupport() {
                 });
               }}
             >
+              <div><h2 className={styles.newTitle}>Start a conversation</h2><p className={styles.newIntro}>Tell us what you need. JKTL AI helps first, and you can ask the team to take over.</p></div>
               {projects.length > 0 && (
                 <label className="block text-sm">
                   Related project
@@ -233,6 +258,7 @@ export function CustomerSupport() {
                   required
                   minLength={3}
                   maxLength={160}
+                  placeholder="e.g. Connect my custom domain"
                   className="mt-2 w-full rounded-xl border border-border-strong bg-paper p-3"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
@@ -243,6 +269,7 @@ export function CustomerSupport() {
                 <textarea
                   required
                   maxLength={3000}
+                  placeholder="What were you trying to do, and what happened?"
                   className="mt-2 min-h-32 w-full rounded-xl border border-border-strong bg-paper p-3"
                   value={body}
                   onChange={(e) => setBody(e.target.value)}

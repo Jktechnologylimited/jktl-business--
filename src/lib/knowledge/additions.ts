@@ -8,6 +8,8 @@ export const PLATFORM_GUIDES: HelpGuide[] = [
     summary: "JKTL AI explains the documented platform workflows and provides approved links to the right screen and full help article.",
     steps: [
       "Choose Ask AI in your Business workspace and describe what you want to do. Include the screen name or error, but never a password, OTP, card number or private customer record.",
+      "Thinking means your reply is being prepared. Typing reveals the checked response, and Done means the reply is complete—not that an account change or payment has been performed. Use Show full reply to skip the typing effect. Reduced-motion settings display the whole reply immediately.",
+      "Continue with a follow-up such as What next? or Explain that. Enter sends your question; Shift + Enter adds a new line. You can draft the next question while a reply is being prepared.",
       "Read the steps and use Open screen for the relevant tool or Read full guide for its complete documentation. The assistant retrieves from the existing JKTL knowledge base rather than inventing policies or prices.",
       "Live conversations use the existing support assistant and are saved to your own account. If an AI provider is unavailable, the reply is clearly labelled as knowledge-base guidance.",
       "Choose Talk to a person for more help. The same conversation enters the existing support queue; sensitive issues are escalated to an authorized team member. This does not guarantee an immediate live reply.",

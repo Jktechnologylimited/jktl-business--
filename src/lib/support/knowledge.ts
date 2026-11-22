@@ -972,7 +972,31 @@ export const HELP_GUIDES: HelpGuide[] = [
       "Support can explain these business tools. Changes to private customer records, money, account ownership or irreversible deletion require the business owner or an authorized team member; the scoped Support website tool cannot make them.",
   },
 ];
-export function relevantGuides(question: string) {
+export type SupportTurn = { sender: string; body: string; guideIds?: string[] };
+const greeting = /^(?:hi|hello|hey|good morning|good afternoon|good evening)[!.?\s]*$/i;
+const thanks = /^(?:thanks(?: a lot)?|thank you(?: very much)?|cheers|that helps|got it)[!.?\s]*$/i;
+const vague = /^(?:help(?: me)?|start|i need help|can you help(?: me)?|yes|no|ok(?:ay)?|sure)[!.?\s]*$/i;
+const followUp = /\b(?:it|that|this|those|them|next|continue)\b|^(?:what now|and then|then what|still|simpler|explain|where do i go|what about|tell me more|more details|can you elaborate)\b/i;
+const explicitTopic = /\b(?:domains?|invoices?|websites?|templates?|emails?|partners?|affiliates?|bookings?|inventory|subdomains?|refunds?|passwords?|reports?|renewals?|subscriptions?|commissions?)\b/i;
+function priorTurns(question: string, history: SupportTurn[]) {
+  const turns = history.slice(-6);
+  // The server history already includes the current saved user message.
+  if (turns.at(-1)?.sender === "user" && turns.at(-1)?.body.trim() === question.trim()) turns.pop();
+  return turns;
+}
+function contextualQuestion(question: string, history: SupportTurn[]) {
+  if (!followUp.test(question) || explicitTopic.test(question)) return question;
+  const prior = priorTurns(question, history).filter(turn => turn.sender === "user")
+    .reverse().find(turn => !greeting.test(turn.body) && !thanks.test(turn.body) && !vague.test(turn.body) && explicitTopic.test(turn.body));
+  if (prior) return prior.body + " " + question;
+  const recent = priorTurns(question, history).filter(turn => turn.sender === "assistant" && turn.guideIds?.length).at(-1);
+  const guide = HELP_GUIDES.find(item => item.id === recent?.guideIds?.[0]);
+  return guide ? guide.title + " " + question : question;
+}
+
+export function relevantGuides(question: string, history: SupportTurn[] = []) {
+  if (greeting.test(question.trim()) || thanks.test(question.trim()) || vague.test(question.trim())) return [];
+  question = contextualQuestion(question, history);
   if (
     /what (?:is|does|can).*jktl|jktl.*(?:overview|features)|what.*business.*do/i.test(
       question,
@@ -1032,18 +1056,34 @@ export function relevantGuides(question: string) {
     .slice(0, 3)
     .map((r) => r.g);
 }
-export function guideReply(question: string, guides = relevantGuides(question)) {
-  const g = guides[0] || HELP_GUIDES.find(g=>g.id==="first-website")!;
+export function guideReply(question: string, suppliedGuides?: HelpGuide[], history: SupportTurn[] = []) {
+  const input = question.trim();
+  if (greeting.test(input)) return { reply: "Hi! What would you like to do in JKTL Business today?", guides: [] as HelpGuide[], kind: "smalltalk", needsHuman: false };
+  if (thanks.test(input)) return { reply: "You’re welcome. Is there anything else you’d like help with?", guides: [] as HelpGuide[], kind: "smalltalk", needsHuman: false };
+  if (vague.test(input)) return { reply: "Of course. What are you trying to do—set up a website, manage a domain, send an invoice, or something else?", guides: [] as HelpGuide[], kind: "clarify", needsHuman: false };
+  const guides = suppliedGuides ?? relevantGuides(input, history), guide = guides[0];
+  if (!guide) return {
+    reply: "I don’t have a verified JKTL guide for that yet. Which screen or task are you asking about? You can also choose Talk to a person for help.",
+    guides: [] as HelpGuide[], kind: "clarify", needsHuman: !followUp.test(input),
+  };
+  const previous = priorTurns(input, history).filter(turn => turn.sender === "assistant").at(-1)?.body || "";
+  if (/\b(?:simpler|simplify|shorter|explain|don.t understand|confused)\b/i.test(input)) return {
+    reply: guide.summary + "\n\nWhich part would you like me to explain: finding the screen, completing the form, or what happens afterwards?",
+    guides: [guide], kind: "guide", needsHuman: false,
+  };
+  if (/\b(?:not working|doesn.t work|didn.t work|still|stuck|error|failed)\b/i.test(input)) return {
+    reply: (guide.problems[0] || guide.summary) + "\n\nWhat do you see on the screen, and at which step does it stop? Leave out passwords, payment details and private customer information.",
+    guides: [guide], kind: "guide", needsHuman: false,
+  };
+  const continuing = /^(?:(?:ok(?:ay)?|great|thanks)[,!. ]+)?(?:next|continue|what.s next|what next|what now|and then|then what|what do i do next|tell me more|more details)\b/i.test(input);
+  const lastStep = continuing ? guide.steps.reduce((last, step, index) => previous.includes(step) ? index : last, -1) : -1;
+  const start = continuing ? (lastStep >= 0 ? lastStep + 1 : 2) : 0;
+  const steps = guide.steps.slice(start, start + 2);
   return {
-    guides: guides.length ? guides : [g],
-    reply:
-      g.summary +
-      "\n\n" +
-      g.steps
-        .slice(0, 4)
-        .map((s, i) => `${i + 1}. ${s}`)
-        .join("\n\n") +
-      "\n\nIf these steps do not solve it, request a human in Help & support. Never share passwords, OTPs or card details.",
+    reply: (continuing ? (steps.length ? "Here’s the next part:" : "That covers the documented steps for this task.") : guide.summary)
+      + (steps.length ? "\n\n" + steps.map((step, index) => `${index + 1}. ${step}`).join("\n\n") : "")
+      + "\n\n" + (continuing ? "Did that work, or are you stuck at a particular step?" : "Are you already on that screen, or would you like help finding it?"),
+    guides: [guide], kind: "guide", needsHuman: false,
   };
 }
 

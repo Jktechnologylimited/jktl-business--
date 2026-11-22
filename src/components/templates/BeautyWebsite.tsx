@@ -1364,11 +1364,13 @@ export function BeautyRequestForm({
   initialService = "",
   onRequest,
   initialMessage = "",
+  contactLabel = "A NOTE TO THE STUDIO",
 }: {
   kind: "appointment" | "contact";
   document: WebsiteDocument;
   initialService?: string;
   initialMessage?: string;
+  contactLabel?: string;
   onRequest?: (
     input: BeautyRequest,
   ) => Promise<{ ok: boolean; error?: string }>;
@@ -1431,7 +1433,7 @@ export function BeautyRequestForm({
       <p className={styles.eyebrow}>
         {kind === "appointment"
           ? "YOUR APPOINTMENT REQUEST"
-          : "A NOTE TO THE STUDIO"}
+          : contactLabel}
       </p>
       {!onRequest && (
         <p className={styles.finePrint}>

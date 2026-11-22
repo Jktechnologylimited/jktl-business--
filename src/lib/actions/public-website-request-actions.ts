@@ -73,8 +73,8 @@ export async function submitBeautyWebsiteRequestAction(
       return { ok: false, error: "This website is not accepting requests." };
     const doc = parseWebsiteDocument(site.profile.websiteDocument);
     if (
-      (!doc.beauty && doc.design !== "legal" && doc.design !== "cosmetics") ||
-      ((doc.design === "legal" || doc.design === "cosmetics") &&
+      (!doc.beauty && doc.design !== "legal" && doc.design !== "cosmetics" && doc.design !== "coffee") ||
+      ((doc.design === "legal" || doc.design === "cosmetics" || doc.design === "coffee") &&
         input.kind !== "contact")
     )
       return { ok: false, error: "This website is not accepting requests." };
@@ -166,7 +166,7 @@ export async function submitBeautyWebsiteRequestAction(
     return {
       ok: false,
       error:
-        "We could not save your request. Please try again shortly or contact the salon directly.",
+        "We could not save your request. Please try again shortly or contact the business directly.",
     };
   }
 }

@@ -1,0 +1,40 @@
+{
+  "note": "Original coffee-shop demonstration content. Still-life photography only; African people imagery reuses the documented african/chef.jpg asset. No external image request occurs at runtime.",
+  "assets": [
+    {
+      "file": "house-latte.jpg",
+      "id": 312418,
+      "provider": "Pexels",
+      "source": "https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg",
+      "license": "https://www.pexels.com/license/"
+    },
+    {
+      "file": "roasted-beans.jpg",
+      "id": 1695052,
+      "provider": "Pexels",
+      "source": "https://images.pexels.com/photos/1695052/pexels-photo-1695052.jpeg",
+      "license": "https://www.pexels.com/license/"
+    },
+    {
+      "file": "roasting.jpg",
+      "id": 894695,
+      "provider": "Pexels",
+      "source": "https://images.pexels.com/photos/894695/pexels-photo-894695.jpeg",
+      "license": "https://www.pexels.com/license/"
+    },
+    {
+      "file": "coffee-moments.jpg",
+      "id": "photo-1509042239860-f550ce710b93",
+      "provider": "Unsplash",
+      "source": "https://images.unsplash.com/photo-1509042239860-f550ce710b93",
+      "license": "https://unsplash.com/license"
+    },
+    {
+      "file": "iced-latte.jpg",
+      "id": "photo-1461023058943-07fcbe16d735",
+      "provider": "Unsplash",
+      "source": "https://images.unsplash.com/photo-1461023058943-07fcbe16d735",
+      "license": "https://unsplash.com/license"
+    }
+  ]
+}
