@@ -268,6 +268,11 @@ export const ADMIN_NAV: AdminNavItem[] = [
     capability: "compose_email",
   },
   {
+    href: "/admin/emails/renewals",
+    label: "Renewals & reminders",
+    capability: "manage_communications",
+  },
+  {
     href: "/admin/partner-support",
     label: "Partner support",
     capability: "manage_support",
@@ -280,6 +285,11 @@ export const ADMIN_NAV: AdminNavItem[] = [
   {
     href: "/admin/support",
     label: "Support inbox",
+    capability: "manage_support",
+  },
+  {
+    href: "/admin/support/follow-ups",
+    label: "Customer follow-ups",
     capability: "manage_support",
   },
   {
@@ -331,11 +341,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
   {
     href: "/admin/prospects",
     label: "Lead engine",
-    capability: "run_lead_engine",
-  },
-  {
-    href: "/admin/clients",
-    label: "Existing clients",
     capability: "run_lead_engine",
   },
   {

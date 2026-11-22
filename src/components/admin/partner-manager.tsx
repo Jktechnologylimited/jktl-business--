@@ -3,11 +3,14 @@ import { PartnerRateEditor } from "./partner-rate-editor";
 import { RecordDetailsEditor } from "./record-details-editor";
 import { importLegacyPartnerAction } from "@/lib/actions/legacy-partner-actions";
 import { useState } from "react";
+import Link from "next/link";
+import { EmptyState } from "@/components/app/empty-state";
 import { approvePartnerAction } from "@/lib/actions/partner-actions";
 import {
   setAffiliateStatusAction,
   rejectAffiliateApplicationAction,
 } from "@/lib/actions/admin-actions";
+import workspace from "@/components/admin/workspace.module.css";
 import styles from "@/components/domains/domains.module.css";
 type Row = Record<string, unknown>;
 export function PartnerManager({
@@ -41,24 +44,19 @@ export function PartnerManager({
     }
   }
   return (
-    <section className={styles.page}>
-      <header className={styles.hero}>
-        <p>JKTL TEAM / PARTNERS</p>
-        <h1>
-          Trusted relationships.
-          <br />
-          Clear agreements.
-        </h1>
+    <section className={`${styles.page} ${workspace.page}`}>
+      <header className={workspace.header}>
+        <h1>Partners</h1>
         <p>
           Review applications and record negotiated terms before approving
           access. Partner accounts use the existing programme authentication and
           commission ledger.
         </p>
       </header>
-      <div className={styles.body}>
+      <div className={`${styles.body} ${workspace.body}`}>
         {message && <p role="status">{message}</p>}
         {legacy && (
-          <section className={styles.section}>
+          <section className={`${styles.section} ${workspace.panel}`}>
             <h2>Earlier Main-site applications</h2>
             {!legacy.configured ? (
               <p>
@@ -109,11 +107,11 @@ export function PartnerManager({
             )}
           </section>
         )}
-        {!rows.length && <p>No partner applications yet.</p>}
+        {!rows.filter(row => row.status !== "rejected").length && <EmptyState title="No partner applications to review" description="Invite a partner through Emails, or share the public application page. New applications will appear here." action={<Link href="/admin/emails/invite" prefetch={false} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-on-primary">Invite a partner</Link>} />}
         {rows
           .filter((p) => p.status !== "rejected")
           .map((p) => (
-            <article key={String(p.id)} className={styles.section}>
+            <article key={String(p.id)} className={`${styles.section} ${workspace.panel}`}>
               <h2>{String(p.name)}</h2>
               <p>
                 {String(p.email)} · {String(p.status)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { CheckCircle2, Loader2, MailPlus, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatShortDate } from "@/lib/format";
@@ -35,8 +36,8 @@ export function ClientAccountManager({ clients }: { clients: ExistingClient[] })
   if (clients.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-paper p-5 text-sm text-ink-muted">
-        No existing clients marked yet. Mark a lead as an existing JKTL client from the lead engine, then it appears
-        here for onboarding instead of going into the cold sequence.
+        <p>No clients are waiting for this earlier onboarding flow.</p>
+        <Link href="/admin/custom-projects" prefetch={false} className="mt-3 inline-block text-sm font-semibold text-primary-strong underline">Manage custom clients</Link>
       </div>
     );
   }

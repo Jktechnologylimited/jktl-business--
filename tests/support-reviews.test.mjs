@@ -48,6 +48,7 @@ test("Support is a scoped role; guides cover real flows and refuse credential ha
       "/admin/knowledge",
       "/admin/partner-support",
       "/admin/support",
+      "/admin/support/follow-ups",
       "/admin/domains",
     ],
   );

@@ -1,0 +1,27 @@
+.page { background:transparent; min-height:0; }
+.header { margin-bottom:16px; }
+.header h1 { font-size:24px; line-height:1.25; letter-spacing:-.035em; font-weight:700; margin:0; }
+.header p { max-width:720px; font-size:13px; color:var(--color-ink-muted); line-height:1.6; margin-top:6px; }
+.body { max-width:none; padding:0; }
+.tabs { display:flex; flex-wrap:wrap; gap:4px; padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid var(--color-border); }
+.page .tabs button { background:transparent; color:var(--color-ink-muted); border:1px solid transparent; font-size:12px; padding:8px 12px; }
+.page .tabs button[aria-pressed="true"] { background:var(--color-primary-soft); color:var(--color-primary-strong); border-color:var(--color-border-strong); font-weight:600; }
+.page .panel { padding:18px; margin-bottom:12px; border-radius:12px; }
+.page .panel h2 { font-size:18px; margin-bottom:10px; }
+.page .panel h3 { font-size:16px; }
+.page .panel p { font-size:13px; line-height:1.65; }
+.page form { gap:14px; }
+.page .record { padding:0; }
+.record > summary { cursor:pointer; display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:14px 18px; font-size:14px; font-weight:600; list-style:none; }
+.record > summary::-webkit-details-marker { display:none; }
+.record > summary > svg { flex-shrink:0; color:var(--color-ink-muted); }
+.record[open] > summary > svg { transform:rotate(90deg); }
+.recordBody { padding:0 18px 18px; border-top:1px solid var(--color-border); }
+.recordBody > p:first-child { margin-top:12px; }
+.meta { font-size:12px; font-weight:400; color:var(--color-ink-muted); overflow-wrap:anywhere; }
+.links { display:flex; flex-wrap:wrap; gap:8px; }
+.links a { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--color-border); border-radius:8px; padding:8px 12px; font-size:12px; font-weight:600; }
+.legacy { border-top:1px solid var(--color-border); padding-top:14px; margin-top:20px; }
+.legacy summary { cursor:pointer; font-size:13px; font-weight:600; }
+.page button:focus-visible,.record > summary:focus-visible { outline:2px solid var(--color-accent); outline-offset:3px; }
+@media(max-width:640px) { .header h1 { font-size:22px; } .page .panel { padding:14px; } .page .record { padding:0; } .record > summary { padding:14px; } .recordBody { padding:0 14px 14px; } .page input,.page select,.page textarea { font-size:16px; } .page .tabs button { min-height:40px; } }

@@ -1,3 +1,4 @@
+import { WorkspaceUnavailable } from "@/components/admin/workspace-unavailable";
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { adminEmailAction } from "@/lib/actions/business-email-actions";
 import { EmailAdmin } from "@/components/business-email/email-admin";
@@ -8,8 +9,6 @@ export default async function Page() {
   return r.ok ? (
     <EmailAdmin initial={r.data} />
   ) : (
-    <p>
-      Business Email management is unavailable. Check database migration 036.
-    </p>
+    <WorkspaceUnavailable title="Business email could not be loaded" detail="Check the Business database connection and email-service configuration, then try again." />
   );
 }

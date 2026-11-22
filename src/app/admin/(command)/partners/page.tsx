@@ -1,3 +1,4 @@
+import { WorkspaceUnavailable } from "@/components/admin/workspace-unavailable";
 import { legacyPartnerApplicationsAction } from "@/lib/actions/legacy-partner-actions";
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { query } from "@/lib/custom/service";
@@ -15,9 +16,6 @@ export default async function Page() {
   return rows ? (
     <PartnerManager initial={rows} legacy={legacy} />
   ) : (
-    <p>
-      Partner management is unavailable. Check migration 036 and database
-      configuration.
-    </p>
+    <WorkspaceUnavailable title="Partners could not be loaded" detail="Check the Business database connection and partner configuration, then try again. Existing applications and agreements have not been changed." />
   );
 }

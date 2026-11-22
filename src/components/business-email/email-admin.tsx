@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import * as actions from "@/lib/actions/business-email-actions";
+import workspace from "@/components/admin/workspace.module.css";
 import styles from "@/components/domains/domains.module.css";
 type Row = Record<string, unknown>;
 type Data = {
@@ -50,21 +51,16 @@ export function EmailAdmin({ initial }: { initial: Data }) {
       new Date(String(s.renews_at)).getTime() < now + 30 * 86400000,
   );
   return (
-    <div className={styles.page}>
-      <header className={styles.hero}>
-        <p>JKTL TEAM / BUSINESS EMAIL</p>
-        <h1>
-          Professional email.
-          <br />
-          Carefully managed.
-        </h1>
+    <div className={`${styles.page} ${workspace.page}`}>
+      <header className={workspace.header}>
+        <h1>Business email</h1>
         <p>
           Review customers, licensed services, setup requests and renewals. Paid
           checkout is controlled separately for each plan.
         </p>
       </header>
-      <div className={styles.body}>
-        <nav className={styles.adminTabs}>
+      <div className={`${styles.body} ${workspace.body}`}>
+        <nav className={workspace.tabs} aria-label="Business email sections">
           {[
             "Overview",
             "Customers & services",
@@ -144,7 +140,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
                 </article>
               ))}
             </section>
-            <section className={styles.section}>
+            <section className={`${styles.section} ${workspace.panel}`}>
               <h2>Provisioning checklist</h2>
               <ol>
                 <li>Confirm domain ownership and the paid order.</li>
@@ -173,7 +169,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
         )}
         {tab === "Customers & services" && (
           <>
-            <section className={styles.section}>
+            <section className={`${styles.section} ${workspace.panel}`}>
               <h2>Link an existing email service</h2>
               <p>
                 Linking records metadata only. It does not migrate, modify or
@@ -277,7 +273,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
               </form>
             </section>
             {data.services.map((s) => (
-              <article key={String(s.id)} className={styles.section}>
+              <article key={String(s.id)} className={`${styles.section} ${workspace.panel}`}>
                 <h2>{String(s.domain)}</h2>
                 <p>
                   {String(s.organization_name)} · {String(s.status)} ·{" "}
@@ -295,7 +291,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
         {tab === "Pricing plans" && (
           <>
             <nav
-              className={styles.adminTabs}
+              className={workspace.tabs}
               aria-label="Choose email plan to edit"
             >
               {data.plans.map((p) => (
@@ -313,7 +309,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
               .map((p) => (
                 <section
                   key={String(p.id) + p.revision}
-                  className={styles.section}
+                  className={`${styles.section} ${workspace.panel}`}
                 >
                   <h2>{String(p.name)}</h2>
                   <form
@@ -441,7 +437,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
                   </form>
                 </section>
               ))}
-            <section className={styles.section}>
+            <section className={`${styles.section} ${workspace.panel}`}>
               <h2>Customer-specific price</h2>
               <form
                 className={styles.form}
@@ -504,7 +500,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
         {tab === "Orders & provisioning" && (
           <>
             {data.orders.map((o) => (
-              <article className={styles.section} key={String(o.id)}>
+              <article className={`${styles.section} ${workspace.panel}`} key={String(o.id)}>
                 <h3>
                   {String(o.domain)} · {String(o.plan_name)}
                 </h3>
@@ -539,7 +535,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
         )}
         {tab === "Mailboxes & domains" &&
           data.services.map((s) => (
-            <section key={String(s.id) + s.revision} className={styles.section}>
+            <section key={String(s.id) + s.revision} className={`${styles.section} ${workspace.panel}`}>
               <h2>{String(s.domain)}</h2>
               <p>
                 Ownership{" "}
@@ -590,7 +586,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
             </section>
           ))}
         {tab === "Renewals" && (
-          <section className={styles.section}>
+          <section className={`${styles.section} ${workspace.panel}`}>
             <h2>Renewal tracking</h2>
             <p>
               Reminder days are configurable per plan. Defaults are 30, 14, 7
@@ -612,7 +608,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
         )}
         {tab === "Support" &&
           data.requests.map((r) => (
-            <section key={String(r.id)} className={styles.section}>
+            <section key={String(r.id)} className={`${styles.section} ${workspace.panel}`}>
               <h2>
                 {String(r.domain)} · {String(r.kind)}
               </h2>
@@ -653,7 +649,7 @@ export function EmailAdmin({ initial }: { initial: Data }) {
             </section>
           ))}
         {tab === "Audit" && (
-          <section className={styles.section}>
+          <section className={`${styles.section} ${workspace.panel}`}>
             <h2>Recent activity</h2>
             {data.audit.map((a) => (
               <p className={styles.note} key={String(a.id)}>
@@ -679,7 +675,7 @@ function ServiceForm({
   run: (fn: () => Promise<{ ok: boolean; error?: string }>) => void;
 }) {
   return (
-    <section className={styles.section}>
+    <section className={`${styles.section} ${workspace.panel}`}>
       <h2>Configure {String(s.domain)}</h2>
       <p>
         Domain ownership {s.verified_at ? "verified" : "not yet verified"} ·

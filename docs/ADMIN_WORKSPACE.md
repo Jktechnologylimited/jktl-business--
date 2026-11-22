@@ -1,0 +1,11 @@
+# Team workspace navigation
+
+The Team dashboard keeps the existing navy/gold branding and role checks, with a compact sidebar organised into Customers, Communications, Growth & programmes, Services, Company & team, and Your workspace. Search filters only links the signed-in role may see. The active route uses the longest matching path, so nested email, support and team pages stay identifiable. Sidebar links do not prefetch authenticated pages.
+
+Custom clients are managed in **Customers → Custom Projects**. The earlier `/admin/clients` URL checks the Custom Projects capability and redirects there. No tenant, contact, invitation or billing data is deleted or moved. Unfinished lead-based client onboarding remains available as a collapsed section when records exist and the user also has lead-engine permission; an empty legacy section is not displayed. Existing client-creation actions and their server-side checks remain in place.
+
+Custom Projects provides Clients, Projects, Services, Invoices, Billing & Integration, Support and Audit. Empty project, service, invoice and activity views explain the next action and link to it. Missing prerequisites lead to Add client or Add project, rather than an unusable empty selector. Existing client and project edit forms expand from compact record rows. This does not change payment verification, service terms, CMS permissions or invitation prerequisites.
+
+Renewals and customer follow-ups are directly accessible in Customers when permitted. Emails, Support, Team, Affiliates and Growth use consistent section navigation. Pages that cannot load provide an explicit retry and a knowledge-base link. The authenticated route group also has loading and unexpected-error UI. No automatic retry loops or new polling were introduced.
+
+Validation: capability/route tests cover every role; browser fixtures exercise the real shared frame, compact Custom Projects components and CSS at desktop, 390px and 320px, light and dark, with isolated navigation and action transports. Production auth remains enforced by the existing session/page/action checks. Browser fixture data never touches live clients and no invitations or payments are sent. A production build and targeted lint/type checks are required before release. An owner-authenticated production walkthrough remains a separate release check.

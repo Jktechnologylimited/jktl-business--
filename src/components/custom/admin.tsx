@@ -3,6 +3,10 @@ import {RecordDetailsEditor} from "@/components/admin/record-details-editor";
 import { PortalAdmin } from "./portal-admin";
 import { ManagedCmsConfig } from "./managed-config";
 import { useState } from "react";
+import Link from "next/link";
+import { ChevronRight, Plus } from "lucide-react";
+import { EmptyState } from "@/components/app/empty-state";
+import workspace from "@/components/admin/workspace.module.css";
 import * as actions from "@/lib/actions/custom-project-actions";
 import styles from "@/components/domains/domains.module.css";
 type Row = Record<string, unknown>;
@@ -50,33 +54,15 @@ export function CustomAdmin({ initial }: { initial: Data }) {
     }
   }
   return (
-    <main className={styles.page}>
-      <header className={styles.hero}>
-        <p>JKTL TEAM / CUSTOM PROJECTS</p>
-        <h1>
-          Independent sites.
-          <br />
-          One client workspace.
-        </h1>
-        <p>
-          Configure projects and services, test a pilot, then invite the
-          customer. No production database URLs belong here.
-        </p>
+    <section className={`${styles.page} ${workspace.page}`}>
+      <header className={workspace.header}>
+        <h1>Custom projects</h1>
+        <p>Manage client contacts, websites, service agreements, invoices and support.</p>
       </header>
-      <div className={styles.body}>
-        <nav className={styles.links}>
-          {[
-            "Clients",
-            "Projects",
-            "Services",
-            "Invoices",
-            "Billing & Integration",
-            "Support",
-            "Audit",
-          ].map((t) => (
-            <button key={t} aria-pressed={tab === t} onClick={() => setTab(t)}>
-              {t}
-            </button>
+      <div className={`${styles.body} ${workspace.body}`}>
+        <nav className={workspace.tabs} aria-label="Custom project sections">
+          {["Clients", "Projects", "Services", "Invoices", "Billing & Integration", "Support", "Audit"].map(t => (
+            <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)}>{t}</button>
           ))}
         </nav>
         {message && (
@@ -85,7 +71,7 @@ export function CustomAdmin({ initial }: { initial: Data }) {
           </p>
         )}
         {secret && (
-          <div className={styles.section}>
+          <div className={`${styles.section} ${workspace.panel}`}>
             <h2>Integration key — shown once</h2>
             <p>
               Copy into this website’s server environment as
@@ -99,8 +85,9 @@ export function CustomAdmin({ initial }: { initial: Data }) {
         )}
         {tab === "Clients" && (
           <>
-            <section className={styles.section}>
-              <h2>Configure a client account</h2>
+            <details className={`${styles.section} ${workspace.panel} ${workspace.record}`} open={!data.clients.length}>
+              <summary><Plus size={16} aria-hidden="true" />Add a custom client</summary>
+              <div className={workspace.recordBody}>
               <p>
                 New clients receive an unusable random password until
                 activation. Existing account owners retain their account and
@@ -122,11 +109,11 @@ export function CustomAdmin({ initial }: { initial: Data }) {
               >
                 <label>
                   Business / client name
-                  <input name="name" required maxLength={200} />
+                  <input name="name" placeholder="e.g. K.K. Ubani & Co" required maxLength={200} />
                 </label>
                 <label>
                   Owner email
-                  <input name="email" type="email" required />
+                  <input name="email" type="email" placeholder="owner@example.com" required />
                 </label>
                 <label>
                   Existing organization ID (optional)
@@ -134,13 +121,12 @@ export function CustomAdmin({ initial }: { initial: Data }) {
                 </label>
                 <button disabled={busy}>Create client workspace</button>
               </form>
-            </section>
+              </div>
+            </details>
             {data.clients.map((c) => (
-              <section
-                className={styles.section}
-                key={String(c.organization_id)}
-              >
-                <h2>{String(c.name)}</h2>
+              <details className={`${styles.section} ${workspace.panel} ${workspace.record}`} key={String(c.organization_id)}>
+                <summary><ChevronRight size={16} aria-hidden="true" />{String(c.name)}<span className={workspace.meta}>{String(c.email)}</span></summary>
+                <div className={workspace.recordBody}>
                 <p>
                   {String(c.email)} ·{" "}
                   {c.activated_at ? "Account active" : "Activation pending"}
@@ -213,15 +199,19 @@ export function CustomAdmin({ initial }: { initial: Data }) {
                     Send individual invitation
                   </button>
                 </div>
-              </section>
+                </div>
+              </details>
             ))}
           </>
         )}
         {tab === "Projects" && (
           <>
-            <ProjectForm clients={data.clients} busy={busy} save={run} />
+            {!data.clients.length ? <EmptyState title="Add a client before attaching a website" description="A custom project belongs to a client. Add their business and contact details first." action={<button onClick={() => setTab("Clients")}>Add a client</button>} /> :
+              <details className={`${styles.section} ${workspace.panel} ${workspace.record}`} open={!data.projects.length}><summary><Plus size={16} aria-hidden="true" />Add a project</summary><div className={workspace.recordBody}><ProjectForm clients={data.clients} busy={busy} save={run} /></div></details>}
             {data.projects.map((p) => (
-              <section key={String(p.id)} className={styles.section}>
+              <details key={String(p.id)} className={`${styles.section} ${workspace.panel} ${workspace.record}`}>
+                <summary><ChevronRight size={16} aria-hidden="true" />{String(p.name)}<span className={workspace.meta}>{String(p.status)}</span></summary>
+                <div className={workspace.recordBody}>
                 <ProjectForm
                   project={p}
                   clients={data.clients}
@@ -264,14 +254,16 @@ export function CustomAdmin({ initial }: { initial: Data }) {
                     </button>
                   </div>
                 )}
-              </section>
+                </div>
+              </details>
             ))}
           </>
         )}
         {tab === "Services" && (
           <>
-            <section className={styles.section}>
-              <h2>Propose a service agreement</h2>
+            {!data.projects.length ? <EmptyState title="Attach a project before adding services" description="Choose the client website that this service agreement will cover." action={<button onClick={() => setTab("Projects")}>Add a project</button>} /> : <details className={`${styles.section} ${workspace.panel} ${workspace.record}`} open={!data.services.length}>
+              <summary><Plus size={16} aria-hidden="true" />Propose a service agreement</summary>
+              <div className={workspace.recordBody}>
               <p>
                 Use the client’s agreed prices, never illustrative defaults.
                 Existing accepted pricing is immutable: pause the old service
@@ -367,9 +359,11 @@ export function CustomAdmin({ initial }: { initial: Data }) {
                   Propose for customer approval
                 </button>
               </form>
-            </section>
+              </div>
+            </details>
+            }
             {data.services.map((s) => (
-              <section key={String(s.id)} className={styles.section}>
+              <section key={String(s.id)} className={`${styles.section} ${workspace.panel}`}>
                 <h3>{String(s.name)}</h3>
                 <p>{String(s.description)}</p>
                 <p>
@@ -403,16 +397,16 @@ export function CustomAdmin({ initial }: { initial: Data }) {
             ))}
           </>
         )}
-        {tab === "Billing & Integration" && <PortalAdmin projects={data.projects}/> }
+        {tab === "Billing & Integration" && (data.projects.length ? <PortalAdmin projects={data.projects}/> : <EmptyState title="Add a project to enable billing and integration" description="Invoices and integration keys must be attached to the correct client project." action={<button onClick={() => setTab("Projects")}>Add a project</button>} />)}
         {tab === "Invoices" && (
-          <section className={styles.section}>
+          <section className={`${styles.section} ${workspace.panel}`}>
             <h2>Custom invoices</h2>
             <p>
               Verified Paystack payments only. No manual “mark paid” control.
               Open invoices remain payable after a service is paused; review
               them separately before cancelling the service.
             </p>
-            <div className={styles.tableWrap}>
+            {!data.invoices.length ? <EmptyState title="No custom invoices yet" description="Create a project invoice in Billing & Integration, or configure an agreed recurring service in Services." action={<button onClick={() => setTab(data.projects.length ? "Billing & Integration" : "Projects")}>{data.projects.length ? "Create an invoice" : "Add a project"}</button>} /> : <div className={styles.tableWrap}>
               <table>
                 <thead>
                   <tr>
@@ -437,12 +431,13 @@ export function CustomAdmin({ initial }: { initial: Data }) {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </div>}
           </section>
         )}
+        {tab === "Support" && !data.requests.length && <EmptyState title="No project service requests" description="Client service requests appear here. Review connected project support tickets in the shared support inbox." action={<Link href="/admin/support" prefetch={false} className="inline-flex rounded-lg border border-border px-3 py-2 text-sm font-semibold">Open support inbox</Link>} />}
         {tab === "Support" &&
           data.requests.map((r) => (
-            <section key={String(r.id)} className={styles.section}>
+            <section key={String(r.id)} className={`${styles.section} ${workspace.panel}`}>
               <h3>
                 {String(r.kind)} · {String(r.status)}
               </h3>
@@ -488,9 +483,9 @@ export function CustomAdmin({ initial }: { initial: Data }) {
             </section>
           ))}
         {tab === "Audit" && (
-          <section className={styles.section}>
+          <section className={`${styles.section} ${workspace.panel}`}>
             <h2>Recent activity</h2>
-            <div className={styles.tableWrap}>
+            {!data.audit.length ? <EmptyState title="No recorded project activity" description="Client, project and billing changes will appear here after they are saved." action={<button onClick={() => setTab("Clients")}>Manage clients</button>} /> : <div className={styles.tableWrap}>
               <table>
                 <thead>
                   <tr>
@@ -511,11 +506,12 @@ export function CustomAdmin({ initial }: { initial: Data }) {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </div>}
           </section>
         )}
+        <div className={workspace.links}><Link href="/admin/emails/renewals" prefetch={false}>Renewals & reminders</Link><Link href="/admin/knowledge" prefetch={false}>Client setup guide</Link></div>
       </div>
-    </main>
+    </section>
   );
 }
 function ProjectForm({

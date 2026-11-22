@@ -147,15 +147,15 @@ test("each role is described in a sentence a person understands", () => {
   assert.match(ROLE_DESCRIPTION.affiliate_manager, /approve/i);
 });
 
-test("the client onboarding page needs the same capability as the lead engine", () => {
-  // Marking somebody as an existing client and creating their account is lead-
-  // engine work, so an affiliate manager — who can approve partners — must not be
-  // able to create organizations.
-  const clientNav = ADMIN_NAV.find((i) => i.href === "/admin/clients");
-  assert.ok(clientNav, "the clients page should be in the navigation");
-  assert.equal(clientNav.capability, "run_lead_engine");
-  assert.equal(can("affiliate_manager", "run_lead_engine"), false);
-  assert.equal(can("owner", "run_lead_engine"), true);
+test("custom clients have one permission-gated management destination", () => {
+  assert.ok(!ADMIN_NAV.some(item => item.href === "/admin/clients"));
+  const custom = ADMIN_NAV.find(item => item.href === "/admin/custom-projects");
+  assert.equal(custom.capability, "manage_custom");
+  assert.equal(can("affiliate_manager", "manage_custom"), false);
+  assert.equal(can("owner", "manage_custom"), true);
+  const renewals = ADMIN_NAV.find(item => item.href === "/admin/emails/renewals");
+  assert.equal(renewals.capability, "manage_communications");
+  assert.ok(!navFor("executive_associate").some(item => item.href === renewals.href));
 });
 
 test("credential actions are owner-level, not affiliate-manager level", () => {

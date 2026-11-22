@@ -3,185 +3,130 @@ import { JktlMark } from "@/components/app/logo";
 import { ThemeControl } from "@/components/settings/theme-control";
 import { openTeamBusinessAction } from "@/lib/actions/team-business-actions";
 import { ActionForm } from "@/components/distribution/action-form";
-import { useState, useEffect, type ReactNode } from "react";
+import { activeWorkspaceLink, groupAdminNavigation, type WorkspaceLink } from "@/lib/admin-navigation";
+import { useState, useLayoutEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LifeBuoy,
-  Star,
-  LayoutDashboard,
-  Users,
-  Mail,
-  Globe,
-  Layers,
-  ChartNoAxesCombined,
-  Handshake,
-  FileText,
-  Settings,
-  Menu,
-  X,
-  LogOut,
-  ArrowUpRight,
+  LifeBuoy, Star, LayoutDashboard, Users, Mail, Globe, Layers,
+  ChartNoAxesCombined, Handshake, FileText, Settings, Menu, X,
+  LogOut, ArrowUpRight, Search, ChevronDown, BookOpen, CreditCard, Bot,
 } from "lucide-react";
 import styles from "./operations-frame.module.css";
-type Nav = { href: string; label: string };
+
+const icons: Record<string, typeof Users> = {
+  "/admin/distribution": Handshake, "/admin/support": LifeBuoy,
+  "/admin/partner-support": LifeBuoy, "/admin/reviews": Star,
+  "/admin/support/follow-ups": LifeBuoy, "/admin/emails/renewals": CreditCard,
+  "/admin": LayoutDashboard, "/admin/insights": ChartNoAxesCombined,
+  "/admin/affiliates": Handshake, "/admin/partners": Handshake,
+  "/admin/domains": Globe, "/admin/business-email": Mail,
+  "/admin/custom-projects": Layers, "/admin/content": FileText,
+  "/admin/features": Settings, "/admin/emails": Mail,
+  "/admin/broadcasts": Mail, "/admin/knowledge": BookOpen,
+  "/admin/team": Users, "/admin/team/structure": Users,
+  "/admin/team/payment-details": CreditCard, "/admin/team/payments": CreditCard,
+  "/admin/website-refunds": CreditCard, "/admin/chatbot": Bot,
+  "/admin/prospects": Users,
+};
 export function OperationsFrame({
-  kind = "admin",
-  name,
-  role,
-  nav,
-  logout,
-  children,
+  kind = "admin", name, role, nav, homeHref, logout, children,
 }: {
   kind?: "admin" | "affiliate" | "partner";
-  name: string;
-  role: string;
-  nav: Nav[];
-  logout: () => Promise<void>;
-  children: ReactNode;
+  name: string; role: string; nav: WorkspaceLink[]; homeHref?: string;
+  logout: () => Promise<void>; children: ReactNode;
 }) {
-  const path = usePathname(),
-    [open, setOpen] = useState(false),
-    current = nav.find((n) => n.href === path);
-  useEffect(() => {
+  const path = usePathname(), [open, setOpen] = useState(false), [search, setSearch] = useState("");
+  const sidebar = useRef<HTMLElement>(null), trigger = useRef<HTMLButtonElement>(null);
+  const current = activeWorkspaceLink(nav, path);
+  const groups = kind === "admin" ? groupAdminNavigation(nav, search) : [{ id: "programme", label: "Your programme", items: nav }];
+  const home = kind === "admin" ? homeHref || nav[0]?.href || "/admin/knowledge" : kind === "partner" ? "/partners" : "/affiliates";
+  useLayoutEffect(() => {
     if (!open) return;
-    const escape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+    const previous = document.activeElement as HTMLElement | null;
+    const menuTrigger = trigger.current;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusables = () => Array.from(sidebar.current?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input, summary',
+    ) || []).filter(node => node.getClientRects().length > 0 && getComputedStyle(node).visibility !== "hidden");
+    // Focus after the triggering button has become inert. A one-off timer also
+    // works when animation frames are throttled; this is not a retry loop.
+    const focusTimer = window.setTimeout(() => focusables()[0]?.focus({ preventScroll: true }), 0);
+    const keydown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); setOpen(false); }
+      if (e.key !== "Tab") return;
+      const items = focusables(), index = items.indexOf(document.activeElement as HTMLElement);
+      e.preventDefault();
+      const next = index < 0 ? (e.shiftKey ? items.length - 1 : 0)
+        : (index + (e.shiftKey ? -1 : 1) + items.length) % items.length;
+      items[next]?.focus();
     };
-    window.addEventListener("keydown", escape);
-    return () => window.removeEventListener("keydown", escape);
+    const resize = () => { if (innerWidth > 760) setOpen(false); };
+    document.addEventListener("keydown", keydown, true);
+    window.addEventListener("resize", resize);
+    return () => {
+      document.body.style.overflow = overflow;
+      clearTimeout(focusTimer);
+      document.removeEventListener("keydown", keydown, true);
+      window.removeEventListener("resize", resize);
+      if (previous?.isConnected && previous !== document.body) previous.focus();
+      else menuTrigger?.focus();
+    };
   }, [open]);
-  const icons: Record<string, typeof Users> = {
-    "/admin/distribution": Handshake,
-    "/admin/support": LifeBuoy,
-    "/admin/reviews": Star,
-    "/admin": Users,
-    "/admin/insights": ChartNoAxesCombined,
-    "/admin/affiliates": Handshake,
-    "/admin/partners": Handshake,
-    "/admin/domains": Globe,
-    "/admin/business-email": Mail,
-    "/admin/custom-projects": Layers,
-    "/admin/content": FileText,
-    "/admin/features": Settings,
+  const navLink = (item: WorkspaceLink) => {
+    const Icon = icons[item.href] || LayoutDashboard;
+    return <Link href={item.href} prefetch={false} key={item.href}
+      aria-current={current?.href === item.href ? "page" : undefined}
+      onClick={() => setOpen(false)}><Icon size={16} aria-hidden="true" /><span>{item.label}</span></Link>;
   };
   return (
     <div className={styles.frame}>
-      {open && (
-        <button
-          className={styles.overlay}
-          aria-label="Close navigation"
-          onClick={() => setOpen(false)}
-        />
-      )}
-      <aside className={styles.sidebar} data-open={open}>
-        <button
-          className={styles.menu}
-          aria-label="Close navigation"
-          onClick={() => setOpen(false)}
-        >
-          <X size={18} />
-        </button>
-        <Link
-          className={styles.brand}
-          href={
-            kind === "admin"
-              ? "/admin/insights"
-              : kind === "partner"
-                ? "/partners"
-                : "/affiliates"
-          }
-        >
-          <JktlMark className="size-10" /> JKTL
-          <span>
-            {kind === "admin"
-              ? "TEAM WORKSPACE"
-              : kind === "partner"
-                ? "PARTNER WORKSPACE"
-                : "AFFILIATE WORKSPACE"}
-          </span>
-        </Link>
-        <div>
-          <p className={styles.sectionLabel}>
-            {kind === "admin" ? "Workspace" : "Your programme"}
-          </p>
-          <nav
-            className={styles.nav}
-            aria-label={
-              kind === "admin" ? "Team navigation" : "Programme navigation"
-            }
-          >
-            {nav.map((n) => {
-              const Icon = icons[n.href] || LayoutDashboard;
-              return (
-                <Link
-                  href={n.href}
-                  key={n.href}
-                  aria-current={path === n.href ? "page" : undefined}
-                  onClick={() => setOpen(false)}
-                >
-                  <Icon size={16} />
-                  {n.label}
-                </Link>
-              );
-            })}
-          </nav>
+      <a className={styles.skip} href="#workspace-content">Skip to content</a>
+      {open && <button className={styles.overlay} aria-label="Close navigation overlay" tabIndex={-1} onClick={() => setOpen(false)} />}
+      <aside ref={sidebar} id="workspace-navigation" className={styles.sidebar} data-open={open}
+        aria-label={kind === "admin" ? "Team workspace" : "Programme workspace"}>
+        <div className={styles.brandRow}>
+          <Link className={styles.brand} href={home} prefetch={false}>
+            <JktlMark className="size-8" /><span>JKTL<small>{kind === "admin" ? "Team workspace" : kind === "partner" ? "Partner workspace" : "Affiliate workspace"}</small></span>
+          </Link>
+          <button className={styles.menu} aria-label="Close navigation" onClick={() => setOpen(false)}><X size={18} /></button>
         </div>
+        {kind === "admin" && <div className={styles.search}>
+          <Search size={15} aria-hidden="true" />
+          <input aria-label="Find a workspace page" placeholder="Find a page…" value={search} onChange={e => setSearch(e.target.value)} />
+          {search && <button aria-label="Clear navigation search" onClick={() => setSearch("")}><X size={14} /></button>}
+        </div>}
+        <nav className={styles.navigation} aria-label={kind === "admin" ? "Team navigation" : "Programme navigation"}>
+          {groups.map(group => <details key={`${group.id}:${current?.href}:${Boolean(search)}`} className={styles.group}
+            open={Boolean(search) || group.items.some(item => item.href === current?.href) || ["customers", "help", "programme"].includes(group.id)}>
+            <summary className={styles.sectionLabel}>{group.label}<ChevronDown size={13} aria-hidden="true" /></summary>
+            <div className={styles.nav}>{group.items.map(navLink)}</div>
+          </details>)}
+          {!groups.length && <div className={styles.noResults} role="status">No pages match “{search}”.<button onClick={() => setSearch("")}>Clear search</button></div>}
+        </nav>
         <div className={styles.sideFoot}>
           {kind === "admin" && <ActionForm action={openTeamBusinessAction}>
-            <button className="mb-4 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-3 text-sm font-semibold"><ArrowUpRight size={16} aria-hidden="true" />Open JKTL Business</button>
+            <button className={styles.businessLink}><ArrowUpRight size={15} aria-hidden="true" />Open JKTL Business</button>
           </ActionForm>}
-          <p>JK TECHNOLOGY LIMITED</p>
-          <p>Build better. Grow together.</p>
-          <Link href="https://jktl.com.ng">
-            Visit main site <ArrowUpRight size={12} className="inline" />
-          </Link>
+          <a href="https://jktl.com.ng" target="_blank" rel="noreferrer">Visit main site <ArrowUpRight size={12} aria-hidden="true" /></a>
         </div>
       </aside>
-      <div className={styles.content}>
+      <div className={styles.content} inert={open || undefined}>
         <header className={styles.top}>
-          <div className="flex items-center gap-3">
-            <button
-              className={styles.menu}
-              aria-label="Open navigation"
-              aria-expanded={open}
-              onClick={() => setOpen(true)}
-            >
-              <Menu size={18} />
-            </button>
-            <div>
-              <div className={styles.pageTitle}>
-                {current?.label || "Workspace"}
-              </div>
-              <p>
-                {kind === "admin"
-                  ? "Your team, services and customers. One clear view."
-                  : "Your referrals, qualifying earnings and programme activity."}
-              </p>
-            </div>
+          <div className={styles.titleRow}>
+            <button ref={trigger} className={styles.menu} aria-label="Open navigation" aria-expanded={open}
+              aria-controls="workspace-navigation" onClick={() => setOpen(true)}><Menu size={18} /></button>
+            <div><p>{kind === "admin" ? "Team workspace" : "Your programme"}</p><div className={styles.pageTitle}>{current?.label || "Workspace"}</div></div>
           </div>
           <div className={styles.identity}>
             <ThemeControl />
-            <div className={styles.avatar} aria-hidden="true">
-              {name
-                .split(/\s+/)
-                .slice(0, 2)
-                .map((s) => s[0])
-                .join("")
-                .toUpperCase()}
-            </div>
-            <div>
-              <strong>{name}</strong>
-              <small>{role}</small>
-            </div>
-            <form action={logout}>
-              <button aria-label="Sign out">
-                <LogOut size={13} className="inline" /> Sign out
-              </button>
-            </form>
+            <div className={styles.avatar} aria-hidden="true">{name.split(/\s+/).slice(0, 2).map(s => s[0]).join("").toUpperCase()}</div>
+            <div className={styles.person}><strong>{name}</strong><small>{role}</small></div>
+            <form action={logout}><button aria-label="Sign out"><LogOut size={15} aria-hidden="true" /><span className={styles.signOutText}>Sign out</span></button></form>
           </div>
         </header>
-        <main className={styles.main}>{children}</main>
+        <main id="workspace-content" tabIndex={-1} className={styles.main}>{children}</main>
       </div>
     </div>
   );

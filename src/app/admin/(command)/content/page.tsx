@@ -1,3 +1,4 @@
+import { WorkspaceUnavailable } from "@/components/admin/workspace-unavailable";
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { requireAdminCapability } from "@/lib/admin-session";
 import { editorialWorkspace } from "@/lib/db/publications";
@@ -10,15 +11,7 @@ export default async function Page() {
   try {
     workspace = await editorialWorkspace(actor);
   } catch {
-    return (
-      <div className="rounded-2xl border border-border p-6">
-        <h1 className="text-xl font-semibold">Publishing is unavailable</h1>
-        <p className="mt-3 text-sm text-ink-muted">
-          Check the database connection and apply migration 055 with npm run
-          db:migrate, then reload. No posts have been changed.
-        </p>
-      </div>
-    );
+    return <WorkspaceUnavailable title="Editorial could not be loaded" detail="Check the database connection and publishing configuration, then try again. No posts have been changed." />;
   }
   return (
     <div>

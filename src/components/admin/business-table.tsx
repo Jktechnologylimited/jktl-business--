@@ -42,7 +42,7 @@ export function AdminBusinessTable({ businesses }: { businesses: AdminBusinessRo
   }, [businesses, query, type]);
 
   if (businesses.length === 0) {
-    return <EmptyState title="No businesses yet" description="Every business that signs up for JKTL Business will show up here." />;
+    return <EmptyState title="No business accounts yet" description="New Business signups appear here automatically. Add a custom client in Custom Projects to manage a JKTL-built website." />;
   }
 
   return (
@@ -53,7 +53,8 @@ export function AdminBusinessTable({ businesses }: { businesses: AdminBusinessRo
       <FilterTabs options={typeOptions} value={type} onChange={setType} />
 
       {filtered.length === 0 ? (
-        <EmptyState title="No matches" description={`No business matches "${query}".`} />
+        <EmptyState title="No matching businesses" description="Try another name or clear the search and business-type filter."
+          action={<button className="rounded-lg border border-border px-3 py-2 text-sm font-semibold" onClick={() => { setQuery(""); setType(ALL); }}>Clear filters</button>} />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-border">
           <table className="w-full min-w-[900px] text-left text-sm">

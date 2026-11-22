@@ -1,3 +1,4 @@
+import { WorkspaceUnavailable } from "@/components/admin/workspace-unavailable";
 import { guardAdminPage } from "@/lib/admin-page-guard";
 import { featureAdminAction } from "@/lib/actions/feature-actions";
 import { FeatureManager } from "@/components/features/FeatureManager";
@@ -11,9 +12,6 @@ export default async function Page() {
   return data ? (
     <FeatureManager initial={data} />
   ) : (
-    <p>
-      Feature management is unavailable. Check migration 036 and database
-      configuration.
-    </p>
+    <WorkspaceUnavailable title="Feature settings could not be loaded" detail="Check the Business database connection and feature configuration, then try again. Existing settings have not been changed." />
   );
 }

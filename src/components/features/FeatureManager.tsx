@@ -5,6 +5,7 @@ import {
   saveFeatureBadgeAction,
   registerFeatureAction,
 } from "@/lib/actions/feature-actions";
+import workspace from "@/components/admin/workspace.module.css";
 import styles from "@/components/domains/domains.module.css";
 type Row = Record<string, unknown>;
 export function FeatureManager({
@@ -32,24 +33,20 @@ export function FeatureManager({
     }
   }
   return (
-    <section className={styles.page}>
-      <header className={styles.hero}>
-        <p>JKTL TEAM / FEATURE MANAGEMENT</p>
-        <h1>
-          A small badge.
-          <br />A clear announcement.
-        </h1>
+    <section className={`${styles.page} ${workspace.page}`}>
+      <header className={workspace.header}>
+        <h1>Feature settings</h1>
         <p>
           Control NEW labels independently of product access or checkout. All
           new registry entries start with badges off.
         </p>
       </header>
-      <div className={styles.body}>
+      <div className={`${styles.body} ${workspace.body}`}>
         {message && <p role="status">{message}</p>}
         {data.features.map((f) => (
           <form
             key={String(f.slug) + f.revision}
-            className={styles.section}
+            className={`${styles.section} ${workspace.panel}`}
             onSubmit={(e) => {
               e.preventDefault();
               const d = new FormData(e.currentTarget);
@@ -135,7 +132,7 @@ export function FeatureManager({
           </form>
         ))}
         <form
-          className={styles.section}
+          className={`${styles.section} ${workspace.panel}`}
           onSubmit={(e) => {
             e.preventDefault();
             const d = new FormData(e.currentTarget);
@@ -165,7 +162,7 @@ export function FeatureManager({
           </div>
           <button disabled={busy}>Register with NEW off</button>
         </form>
-        <section className={styles.section}>
+        <section className={`${styles.section} ${workspace.panel}`}>
           <h2>Badge history</h2>
           {data.audit.map((a) => (
             <p className={styles.note} key={String(a.id)}>

@@ -6,6 +6,7 @@ import { AdminBusinessTable } from "@/components/admin/business-table";
 import { IntegrationHealth } from "@/components/admin/integration-health";
 import { listBusinessesForAdmin, summarize } from "@/lib/db/admin";
 import { formatKobo, formatGb } from "@/lib/format";
+import { ArrowUpRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export default async function AdminHomePage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="All businesses" />
+      <PageHeader title="All businesses" action={<Link href="/admin/custom-projects" prefetch={false} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-semibold">Custom clients<ArrowUpRight size={14} aria-hidden="true" /></Link>} />
       <p className="-mt-2 text-sm text-ink-muted">
         Every business on JKTL Business, at a glance — account and plan status only. Customer, booking and sales
         records stay inside each business&apos;s own dashboard.
@@ -33,8 +34,14 @@ export default async function AdminHomePage() {
       </div>
       <StatTile label="Combined recorded revenue (all businesses)" value={formatKobo(overview.totalRevenueKobo)} />
 
-      <Link href="/admin/support/care" className="rounded-xl border border-border bg-surface p-4 text-sm font-semibold">Founding customer setup & priority follow-up →</Link>
-      <IntegrationHealth />
+      <div className="flex flex-wrap gap-2">
+        <Link href="/admin/support/care" prefetch={false} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold">Customer setup & follow-up</Link>
+        <Link href="/admin/emails/renewals" prefetch={false} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold">Renewals & reminders</Link>
+      </div>
+      <details className="rounded-xl border border-border bg-paper p-4">
+        <summary className="cursor-pointer text-sm font-semibold">Integration health</summary>
+        <div className="mt-3"><IntegrationHealth /></div>
+      </details>
 
       <AdminBusinessTable businesses={businesses} />
     </div>

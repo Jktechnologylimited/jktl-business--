@@ -1,24 +1,15 @@
-import Link from "next/link";
+import { SectionNav } from "@/components/admin/section-nav";
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="space-y-5">
-      <nav
-        aria-label="Affiliate management"
-        className="flex flex-wrap gap-4 border-b border-border pb-4"
-      >
-        {[
-          ["Overview", "/admin/affiliates"],
-          ["Accounts", "/admin/affiliates#accounts"],
-          ["Referrals & Earnings", "/admin/distribution/finance"],
-          ["Marketing Materials", "/admin/distribution/resources"],
-          ["Support", "/admin/partner-support"],
-          ["Settings", "/admin/affiliates/settings"],
-        ].map(([label, href]) => (
-          <Link key={label} className="text-sm underline" href={href}>
-            {label}
-          </Link>
-        ))}
-      </nav>
+      <SectionNav label="Affiliate management" items={[
+        { label: "Overview", href: "/admin/affiliates" },
+        { label: "Accounts", href: "/admin/affiliates#accounts" },
+        { label: "Referrals & earnings", href: "/admin/distribution/finance" },
+        { label: "Marketing materials", href: "/admin/distribution/resources" },
+        { label: "Support", href: "/admin/partner-support" },
+        { label: "Settings", href: "/admin/affiliates/settings" },
+      ]} />
       {children}
     </div>
   );

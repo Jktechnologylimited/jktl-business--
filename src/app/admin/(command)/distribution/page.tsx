@@ -1,3 +1,4 @@
+import { WorkspaceUnavailable } from "@/components/admin/workspace-unavailable";
 import { PartnerAlerts } from "@/components/distribution/partner-alerts";
 import Link from "next/link";
 import { guardAdminPage } from "@/lib/admin-page-guard";
@@ -25,13 +26,7 @@ export default async function Distribution() {
       ),
     ]);
   } catch {
-    return (
-      <p role="alert">
-        Distribution policy management is unavailable. Apply migration 038 and
-        verify database configuration. Existing Affiliate and Partner operations
-        remain available.
-      </p>
-    );
+    return <WorkspaceUnavailable title="Programme policies could not be loaded" detail="Check the database connection and programme configuration. You can still open Affiliates or Partners from Growth & programmes." />;
   }
   const input = "w-full rounded-lg border border-border bg-paper p-3";
   return (

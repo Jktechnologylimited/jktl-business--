@@ -1256,6 +1256,7 @@ export async function createAccountForClientAction(
       });
 
       revalidatePath("/admin/clients");
+      revalidatePath("/admin/custom-projects");
       return { ok: true, data: { email: to } };
     } catch (err) {
       // Give the claim back so the lead can be retried rather than sitting there
@@ -1283,6 +1284,7 @@ export async function markAsExistingClientAction(
     await requireAdminCapability("run_lead_engine");
     await markAsExistingClient(prospectId, businessEmail.trim());
     revalidatePath("/admin/clients");
+    revalidatePath("/admin/custom-projects");
     return { ok: true, data: null };
   } catch (err) {
     console.error(err);

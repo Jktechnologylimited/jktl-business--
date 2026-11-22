@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/admin-session";
-import { ROLE_LABEL, navFor } from "@/lib/admin-permissions";
+import { ROLE_LABEL, navFor, adminLandingPath } from "@/lib/admin-permissions";
 import {
   isSchemaOutOfDateError,
   SCHEMA_OUT_OF_DATE_MESSAGE,
@@ -32,6 +32,7 @@ export default async function AdminLayout({
       name={admin.name}
       role={ROLE_LABEL[admin.role]}
       nav={navFor(admin.role, admin.permissions)}
+      homeHref={adminLandingPath(admin.role, admin.permissions)}
       logout={adminLogoutAction}
     >
       {children}

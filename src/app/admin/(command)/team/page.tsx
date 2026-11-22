@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { TeamOrganogram } from "@/components/admin/team-organogram";
 import { PageHeader } from "@/components/app/page-header";
 import { TeamManager } from "@/components/admin/team-manager";
@@ -21,19 +20,12 @@ export default async function AdminTeamPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader title="Team" />
-      <Link
-        href="/admin/growth"
-        className="self-start rounded-lg border border-border p-3 text-sm"
-      >
-        Open Growth & Gaming workspace →
-      </Link>
       <p className="-mt-2 text-sm text-ink-muted">
         People who can sign in here. Each has a role that decides what they can
         do — an affiliate manager can approve partners and record payouts
         without being able to move anything else.
       </p>
       <TeamOrganogram />
-      <Link href="/admin/team/payments" className="self-start rounded-lg border border-border p-3 text-sm">Review team payment details</Link>
       <TeamManager team={team} />
     </div>
   );
